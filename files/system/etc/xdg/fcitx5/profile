@@ -1,0 +1,38 @@
+# Bộ gõ mặc định của Samhie — mang từ Samhie 1.0 (skel/.config/fcitx5/profile).
+#
+# Không có file này thì fcitx5 tự dựng một nhóm ở lần chạy đầu, và nó chỉ thêm
+# những kiểu gõ HỢP VỚI LOCALE. Máy chạy en_US nên Unikey KHÔNG được thêm —
+# Ctrl+Space không có gì để chuyển sang. Đã gặp lại trong máy ảo 2026-09-27.
+#
+# Vì sao ở /etc/xdg chứ không ở /etc/skel: fcitx5 5.1.22 tìm `profile` theo
+# thứ tự ~/.config/fcitx5 → $XDG_CONFIG_DIRS/fcitx5 (mặc định /etc/xdg/fcitx5)
+# — src/lib/fcitx-utils/standardpaths_p_unix.cpp, pkgconfigDirs_. Nên tài khoản
+# có từ trước khi rebase (không nhận /etc/skel) vẫn có Unikey. Người dùng đổi gì
+# trong fcitx5-configtool thì fcitx5 lưu bản của họ vào ~/.config/fcitx5/profile
+# và bản đó thắng file này.
+#
+# Định dạng lấy từ nguồn fcitx5 (src/lib/fcitx/inputmethodconfig_p.h): nhóm là
+# [Groups/<số>], từng kiểu gõ là [Groups/<số>/Items/<số>], và [GroupOrder] xếp
+# thứ tự nhóm. Tên khoá "Default Layout" có dấu cách là đúng, không phải lỗi gõ.
+
+[Groups/0]
+Name=Default
+# Bàn phím vật lý; để "us" cho khớp trường hợp thường gặp.
+Default Layout=us
+# Kiểu gõ lúc mới đăng nhập. Để keyboard-us tức là KHỞI ĐẦU BẰNG TIẾNG ANH,
+# Ctrl+Space chuyển sang tiếng Việt. Muốn ngược lại thì đổi đúng dòng này
+# thành unikey.
+DefaultIM=keyboard-us
+
+[Groups/0/Items/0]
+Name=keyboard-us
+Layout=
+
+[Groups/0/Items/1]
+# unikey mặc định đã là Telex + UTF-8 (nguồn fcitx5-unikey,
+# src/unikey-config.h), nên không cần thêm conf/unikey.conf để đặt lại.
+Name=unikey
+Layout=
+
+[GroupOrder]
+0=Default

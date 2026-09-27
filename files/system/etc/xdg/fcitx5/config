@@ -1,0 +1,17 @@
+# Cấu hình chung của fcitx5 — mang từ Samhie 1.0 (skel/.config/fcitx5/config).
+# Nằm ở /etc/xdg vì cùng lý do với file `profile` bên cạnh.
+#
+# Chỉ đặt ĐÚNG MỘT khoá, mọi thứ khác để mặc định của fcitx5.
+#
+# Vì sao cần: mặc định của fcitx5 là mỗi CỬA SỔ giữ trạng thái bộ gõ riêng
+# (ShareInputState=No, xem src/lib/fcitx/globalconfig.cpp). Hậu quả người dùng
+# thấy: bật tiếng Việt ở một cửa sổ, rồi đóng một app khác đi — focus nhảy sang
+# cửa sổ nào đó vẫn đang để tiếng Anh, nhìn như "fcitx5 tự nhảy về EN".
+# Đã gặp thật trong máy ảo Samhie 1.0 (2026-09-10) với Edge + Konsole + Dolphin.
+#
+# All = mọi cửa sổ dùng CHUNG một trạng thái: Ctrl+Space một lần là tiếng Việt
+# ở khắp nơi, đóng mở app không đổi gì.
+# Ba giá trị hợp lệ: All, Program (chung theo từng ứng dụng), No (mặc định).
+
+[Behavior]
+ShareInputState=All

@@ -7,7 +7,8 @@
 #   1. Ưu tiên kho CHÍNH THỨC của Fedora. Gói ở đây được đội bảo mật Fedora vá.
 #   2. Chỉ Hyprland và họ hàng của nó lấy từ COPR, vì Fedora không có. COPR là
 #      kho cá nhân — nên chỉ bật đúng một COPR, đúng cái wiki Hyprland khuyên
-#      dùng, và gỡ nó khỏi image ngay sau khi cài (cleanup).
+#      dùng, và tắt nó trong image ngay sau khi cài (cleanup: file .repo vẫn
+#      còn nhưng enabled=0, không gói nào tải từ đó được nữa).
 #   3. App thường dùng (trình duyệt, xem ảnh, đọc PDF) cài bằng Flatpak để chạy
 #      trong sandbox.
 

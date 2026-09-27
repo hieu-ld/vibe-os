@@ -1,0 +1,160 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/module-list-v1.json
+# Phần CHUNG của mọi bản Samhie. samhie.yml và samhie-nvidia.yml chỉ khác nhau
+# ở image nền; mọi thứ còn lại nằm ở đây để hai bản không bao giờ lệch nhau.
+#
+# NGUYÊN TẮC CHỌN NGUỒN GÓI — đọc trước khi thêm gói mới:
+#   1. Ưu tiên kho CHÍNH THỨC của Fedora. Gói ở đây được đội bảo mật Fedora vá.
+#   2. Chỉ Hyprland và họ hàng của nó lấy từ COPR, vì Fedora không có. COPR là
+#      kho cá nhân — nên chỉ bật đúng một COPR, đúng cái wiki Hyprland khuyên
+#      dùng, và gỡ nó khỏi image ngay sau khi cài (cleanup).
+#   3. App thường dùng (trình duyệt, xem ảnh, đọc PDF) cài bằng Flatpak để chạy
+#      trong sandbox.
+
+modules:
+  # ── 1. Gói từ kho chính thức Fedora ────────────────────────────────────────
+  # Cài TRƯỚC module COPR. Như vậy quickshell, qt6ct… chắc chắn là bản Fedora;
+  # sang module sau, dnf thấy chúng đã có nên không kéo bản COPR đè lên.
+  - type: dnf
+    install:
+      packages:
+        # Giao diện tự vẽ (thanh trên, dock, popup, màn hình khoá — giai đoạn 3)
+        - quickshell
+        # TẠM: launcher và thông báo cho tới khi Quickshell làm thay (giai đoạn 3)
+        - fuzzel
+        - mako
+        - libnotify
+
+        # Màn hình đăng nhập. sddm-wayland-generic cho SDDM chạy trên Weston
+        # thay vì X11 — không cần cài X server chỉ để hiện ô mật khẩu.
+        - sddm
+        - sddm-wayland-generic
+
+        # Ứng dụng Qt/KDE: quản lý file, terminal, giải nén
+        - dolphin
+        - kio-extras              # thumbnail, giao thức mạng cho Dolphin
+        - ffmpegthumbs            # thumbnail video
+        - kdegraphics-thumbnailers
+        - kde-cli-tools           # kioclient: để menu "Open with" chạy ngoài Plasma
+        - konsole
+        - ark
+
+        # Giao diện ứng dụng Qt: Kvantum vẽ widget bằng SVG (giai đoạn 4)
+        - kvantum
+        - qt6ct
+        - plasma-breeze           # style Breeze làm nền dự phòng
+        - breeze-icon-theme       # bộ icon Samhie kế thừa breeze-dark
+
+        # Hệ thống: xin quyền admin, lưu mật khẩu, hộp thoại chọn file
+        - polkit-kde
+        - gnome-keyring
+        - xdg-desktop-portal-gtk
+
+        # Gõ tiếng Việt
+        - fcitx5
+        - fcitx5-unikey
+        - fcitx5-qt
+        - fcitx5-gtk
+        - fcitx5-configtool
+
+        # Tiện ích: clipboard, chụp màn hình, âm lượng, độ sáng, mạng
+        - cliphist
+        - grim
+        - slurp
+        - swappy
+        - playerctl
+        - brightnessctl
+        - pavucontrol
+        - NetworkManager-tui
+
+        # Font
+        - google-noto-sans-fonts
+        - jetbrains-mono-fonts-all
+
+        # Bảo mật
+        - firewalld
+
+  # ── 2. Hyprland từ COPR ────────────────────────────────────────────────────
+  # lionheartp/Hyprland là COPR mà wiki chính thức của Hyprland chỉ tới cho
+  # Fedora (kiểm lại 2026-09-27). COPR này còn chứa kitty, qt6ct, quickshell,
+  # matugen… bản riêng — `exclude` để chắc chắn KHÔNG gói nào trong số đó lọt vào.
+  - type: dnf
+    repos:
+      cleanup: true
+      copr:
+        - lionheartp/Hyprland
+    install:
+      packages:
+        - hyprland
+        - hyprland-guiutils       # hộp thoại của Hyprland (app treo, cảnh báo)
+        - xdg-desktop-portal-hyprland  # chia sẻ màn hình, chụp màn hình
+        - hyprlock                # màn hình khoá
+        - hypridle                # tự khoá khi rời máy
+      exclude:
+        - kitty
+        - qt6ct
+        - quickshell
+        - matugen
+        - cliphist
+        - nwg-look
+        - wlroots
+
+  # ── 3. VS Code từ kho của Microsoft ────────────────────────────────────────
+  # File .repo tự viết (files/dnf/vscode.repo) thay vì dùng file của Microsoft,
+  # vì file gốc để gpgcheck=0 — tức không kiểm chữ ký gói.
+  - type: dnf
+    repos:
+      cleanup: true
+      files:
+        - vscode.repo
+      keys:
+        - https://packages.microsoft.com/keys/microsoft.asc
+    install:
+      packages:
+        - code
+
+  # ── 4. File cấu hình của Samhie ────────────────────────────────────────────
+  # files/system soi gương đường dẫn thật: files/system/etc/xdg/hypr/hyprlock.conf
+  # sẽ nằm ở /etc/xdg/hypr/hyprlock.conf trong image.
+  - type: files
+    files:
+      - source: system
+        destination: /
+
+  - type: os-release
+    properties:
+      NAME: Samhie
+      PRETTY_NAME: Samhie
+      HOME_URL: https://github.com/hieu-ld/samhie
+      BUG_REPORT_URL: https://github.com/hieu-ld/samhie/issues
+
+  # ── 5. Dịch vụ hệ thống ────────────────────────────────────────────────────
+  - type: systemd
+    system:
+      enabled:
+        - sddm.service
+        - firewalld.service
+
+  - type: script
+    snippets:
+      - systemctl set-default graphical.target
+    scripts:
+      - firewall.sh
+
+  # ── 6. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────
+  # Edge cài bằng Flatpak chứ không đưa bản RPM vào image: image là công khai,
+  # nhét Edge vào là phân phối lại phần mềm đóng của Microsoft. Bản Flatpak tải
+  # file cài thẳng từ Microsoft về máy người dùng nên không vướng chuyện đó.
+  - type: default-flatpaks
+    configurations:
+      - notify: true
+        scope: system
+        install:
+          - com.microsoft.Edge
+          - com.github.tchx84.Flatseal   # xem và thu hồi quyền của app Flatpak
+          - org.kde.gwenview             # xem ảnh
+          - org.kde.okular               # đọc PDF
+
+  # Ký số image. Máy cài Samhie kiểm chữ ký trước khi nhận bản cập nhật, nên
+  # không ai đánh tráo được image giữa đường.
+  - type: signing

@@ -1,0 +1,8 @@
+# KHOÁ KÝ IMAGE — tuyệt đối không commit. Lộ file này là ai cũng ký được image
+# giả mạo Samhie. Bản thật chỉ nằm trong GitHub Secrets (SIGNING_SECRET).
+cosign.key
+cosign.private
+
+/Containerfile
+*.iso
+*.iso-CHECKSUM

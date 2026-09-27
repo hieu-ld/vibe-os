@@ -1,0 +1,15 @@
+---
+# yaml-language-server: $schema=https://schema.blue-build.org/recipe-v1.json
+# Bản cho máy có card NVIDIA (từ dòng GTX 16xx / RTX 20xx trở lên).
+# Image được đẩy lên ghcr.io/hieu-ld/samhie-nvidia
+name: samhie-nvidia
+description: Samhie cho máy có card NVIDIA — driver NVIDIA open đã ký sẵn.
+
+# base-nvidia giống hệt base-main, cộng thêm driver NVIDIA bản open do
+# Universal Blue build sẵn và KÝ SỐ. Nhờ đã ký nên bật Secure Boot được: chỉ cần
+# nạp khoá của Universal Blue một lần (`ujust enroll-secure-boot-key`).
+base-image: ghcr.io/ublue-os/base-nvidia
+image-version: 44
+
+modules:
+  - from-file: common.yml

@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+# In ngày hôm nay kiểu Việt: "Thứ 6, 25 tháng 9" / "Chủ nhật, 27 tháng 9".
+#
+# Tự ghép thay vì dùng `date +%A`: máy chạy locale en_US nên %A ra "Friday".
+# Cùng quy tắc với Samhie 1.0: vùng Việt Nam là do múi giờ quyết định, không
+# phải ngôn ngữ hệ thống.
+set -eu
+
+weekday=$(date +%u)   # 1 = thứ Hai … 7 = Chủ nhật
+if [ "$weekday" -eq 7 ]; then
+    name="Chủ nhật"
+else
+    name="Thứ $((weekday + 1))"
+fi
+
+echo "$name, $(date +%-d) tháng $(date +%-m)"

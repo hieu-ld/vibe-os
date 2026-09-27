@@ -1,0 +1,21 @@
+# Mở file bằng app nào — mặc định của Samhie.
+#
+# Vì sao cần: VS Code (file .desktop của Microsoft) chỉ khai mở được
+# application/x-code-workspace, nên chuột phải một file .txt trong Dolphin thì
+# "Open with" TRỐNG — đo trong máy ảo 2026-09-27. KWrite (từ kho Fedora) là app
+# mở nhanh file chữ; dòng dưới khai thêm VS Code cho file chữ và thư mục.
+#
+# Ở /etc/xdg vì KService 6.30 đọc mimeapps.list trong MỌI thư mục cấu hình,
+# bản hệ thống trước rồi bản người dùng sau (src/sycoca/kmimeassociations.cpp) —
+# nên người dùng đổi app mặc định thì ~/.config/mimeapps.list của họ thắng.
+#
+# text/plain phủ luôn các kiểu "con" của nó (.conf, .sh, .py, .json…) — KService
+# tự tính kế thừa kiểu MIME.
+
+[Default Applications]
+text/plain=org.kde.kwrite.desktop
+inode/directory=org.kde.dolphin.desktop
+
+[Added Associations]
+text/plain=org.kde.kwrite.desktop;com.microsoft.VSCode.desktop;
+inode/directory=org.kde.dolphin.desktop;com.microsoft.VSCode.desktop;

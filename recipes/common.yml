@@ -31,7 +31,7 @@ modules:
         - sddm
         - sddm-wayland-generic
 
-        # Ứng dụng Qt/KDE: quản lý file, terminal, giải nén
+        # Ứng dụng Qt/KDE: quản lý file, terminal, giải nén, soạn thảo
         - dolphin
         - kio-extras              # thumbnail, giao thức mạng cho Dolphin
         - ffmpegthumbs            # thumbnail video
@@ -39,6 +39,7 @@ modules:
         - kde-cli-tools           # kioclient: để menu "Open with" chạy ngoài Plasma
         - konsole
         - ark
+        - kwrite                  # mở nhanh file chữ; VS Code cho việc code
 
         # Giao diện ứng dụng Qt: Kvantum vẽ widget bằng SVG (giai đoạn 4)
         - kvantum

@@ -50,6 +50,11 @@ modules:
         # Hệ thống: xin quyền admin, lưu mật khẩu, hộp thoại chọn file
         - polkit-kde
         - gnome-keyring
+        # Module PAM mở khoá keyring bằng mật khẩu đăng nhập. Fedora tách nó ra
+        # gói riêng; thiếu nó thì /etc/pam.d/sddm lặng lẽ bỏ qua (dòng `-auth`)
+        # và app đầu tiên cần lưu mật khẩu sẽ bắt tạo keyring mới — gặp với
+        # Edge trong máy ảo 2026-09-27.
+        - gnome-keyring-pam
         - xdg-desktop-portal-gtk
 
         # Gõ tiếng Việt

@@ -41,9 +41,9 @@ modules:
         - ark
         - kwrite                  # mở nhanh file chữ; VS Code cho việc code
 
-        # Giao diện ứng dụng Qt: Kvantum vẽ widget bằng SVG (giai đoạn 4)
+        # Giao diện ứng dụng Qt: Kvantum vẽ widget bằng SVG (giai đoạn 4).
+        # plasma-integration cài ở khối riêng ngay dưới (không kéo weak deps).
         - kvantum
-        - qt6ct
         - plasma-breeze           # style Breeze làm nền dự phòng
         - breeze-icon-theme       # bộ icon Samhie kế thừa breeze-dark
 
@@ -80,6 +80,17 @@ modules:
 
         # Bảo mật
         - firewalld
+
+  # Platform theme "kde" cho app Qt ngoài Plasma: Dolphin/Konsole đọc màu, icon,
+  # font, widget style từ kdeglobals — gồm cả /etc/xdg/kdeglobals của image —
+  # y như trong Plasma. Thay qt6ct (chỉ đọc ~/.config, bảng màu định dạng riêng;
+  # đo 2026-09-28, xem PLAN). Weak deps kéo ~40 gói Plasma (kglobalacceld,
+  # kactivitymanagerd, aurorae…); tắt thì còn 6 gói / 35 MB, gồm con trỏ Breeze.
+  - type: dnf
+    install:
+      install-weak-deps: false
+      packages:
+        - plasma-integration
 
   # ── 2. Hyprland từ COPR ────────────────────────────────────────────────────
   # lionheartp/Hyprland là COPR mà wiki chính thức của Hyprland chỉ tới cho

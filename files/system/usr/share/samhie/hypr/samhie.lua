@@ -42,8 +42,10 @@ hl.monitor({
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 
--- Ứng dụng Qt (Dolphin, Konsole) lấy giao diện từ qt6ct, qt6ct trỏ tới Kvantum.
-hl.env("QT_QPA_PLATFORMTHEME", "qt6ct")
+-- Ứng dụng Qt (Dolphin, Konsole) lấy giao diện từ kdeglobals như trong Plasma:
+-- màu, icon, font, và widget style (Kvantum ở giai đoạn 4). Mặc định của Samhie
+-- ở /etc/xdg/kdeglobals, người dùng đè trong ~/.config/kdeglobals.
+hl.env("QT_QPA_PLATFORMTHEME", "kde")
 
 -- Gõ tiếng Việt. Trên Wayland, app GTK và Qt đời mới nói chuyện với fcitx5 qua
 -- giao thức text-input của Hyprland; hai biến này dành cho app Qt/XWayland đời

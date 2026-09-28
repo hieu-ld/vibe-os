@@ -144,6 +144,10 @@ modules:
     properties:
       NAME: Samhie
       PRETTY_NAME: Samhie
+      # Icon chữ S (files/system/usr/share/icons/hicolor/scalable/apps/samhie.svg)
+      # — màn hình "About", fastfetch… đọc khoá này. ID vẫn là fedora: đổi ID
+      # làm hỏng việc nhận diện kho COPR (README module os-release).
+      LOGO: samhie
       HOME_URL: https://github.com/hieu-ld/samhie
       BUG_REPORT_URL: https://github.com/hieu-ld/samhie/issues
 
@@ -166,6 +170,9 @@ modules:
   - type: script
     snippets:
       - systemctl set-default graphical.target
+      # Cache icon hicolor do gói cài tạo ra TRƯỚC khi có icon samhie; cache cũ
+      # hơn thư mục là app GTK có thể không thấy icon mới.
+      - gtk-update-icon-cache -f /usr/share/icons/hicolor
     scripts:
       - firewall.sh
       - plymouth.sh

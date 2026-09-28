@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Dấu hiệu Samhie: chữ S, user vẽ trong Figma (node 373:501, 2026-09-23).
+       Hai nửa là hai hình chữ nhật bo góc lồng nhau, mỗi nửa một gradient
+       dọc từ #00819C (mép ngoài) về #006175 (chỗ hai nửa gặp nhau).
+
+       Mang nguyên từ Samhie 1.0 (~/Projects/Distro/branding/logo.svg). Là
+       icon `samhie` của hệ thống — os-release khai LOGO=samhie. Chữ ghép
+       "Samhie" ở đáy màn hình khởi động (plymouth/themes/samhie/watermark.png)
+       cũng dựng từ file này, bằng scripts/build-logo.sh của bản 1.0. -->
+  <defs>
+    <linearGradient id="nua-tren" x1="32" y1="0" x2="32" y2="42" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00819C"/>
+      <stop offset="1" stop-color="#006175"/>
+    </linearGradient>
+    <linearGradient id="nua-duoi" x1="32" y1="64" x2="32" y2="22" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#00819C"/>
+      <stop offset="1" stop-color="#006175"/>
+    </linearGradient>
+  </defs>
+  <path fill="url(#nua-tren)" d="M2 8C2 3.58172 5.58172 0 10 0H60.4951C61.21 0 61.694 0.728319 61.4171 1.38736L55.5296 15.3995C54.9058 16.8842 53.4524 17.85 51.8419 17.85H47.5L51.8191 8.77993C52.1351 8.11633 51.6512 7.35 50.9162 7.35H13C10.7909 7.35 9 9.14086 9 11.35V30.65C9 32.8591 10.7909 34.65 13 34.65H38C40.2091 34.65 42 36.4409 42 38.65V42H10C5.58172 42 2 38.4183 2 34V8Z"/>
+  <path fill="url(#nua-duoi)" d="M62 56C62 60.4183 58.4183 64 54 64H3.50485C2.79 64 2.30602 63.2717 2.58293 62.6126L8.47036 48.6005C9.0942 47.1158 10.5476 46.15 12.1581 46.15H16.5L12.1809 55.2201C11.8649 55.8837 12.3488 56.65 13.0838 56.65H51C53.2091 56.65 55 54.8591 55 52.65V33.35C55 31.1409 53.2091 29.35 51 29.35H26C23.7909 29.35 22 27.5591 22 25.35V22H54C58.4183 22 62 25.5817 62 30V56Z"/>
+</svg>

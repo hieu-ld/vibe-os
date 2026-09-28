@@ -176,7 +176,11 @@ modules:
   # file cài thẳng từ Microsoft về máy người dùng nên không vướng chuyện đó.
   - type: default-flatpaks
     configurations:
-      - notify: true
+      # Không báo: dịch vụ của module chạy MỖI lần khởi động (timer OnBootSec=30,
+      # đọc /usr/libexec/bluebuild/default-flatpaks/system-flatpak-setup), nên
+      # notify: true là hai thông báo "Starting/Finished…" mỗi lần bật máy —
+      # user thấy trong máy ảo 2026-09-28. App đã cài thì lần sau bỏ qua.
+      - notify: false
         scope: system
         install:
           - com.microsoft.Edge

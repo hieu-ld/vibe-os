@@ -24,6 +24,7 @@ modules:
         # TẠM: launcher và thông báo cho tới khi Quickshell làm thay (giai đoạn 3)
         - fuzzel
         - mako
+        - swaybg                  # hình nền
         - libnotify
 
         # Màn hình đăng nhập. sddm-wayland-generic cho SDDM chạy trên Weston

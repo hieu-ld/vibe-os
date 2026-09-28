@@ -7,7 +7,10 @@
 -- Xem mặc định đang có gì: /usr/share/samhie/hypr/samhie.lua
 -- Tài liệu: https://wiki.hypr.land/Configuring/
 
-require("/usr/share/samhie/hypr/samhie")
+local samhie = require("/usr/share/samhie/hypr/samhie")
+
+-- Ví dụ: hình nền riêng (PNG/JPG)
+-- samhie.wallpaper = "~/Pictures/wallpaper.jpg"
 
 -- Ví dụ: đổi bo góc cửa sổ
 -- hl.config({ decoration = { rounding = 16 } })

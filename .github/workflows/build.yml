@@ -27,6 +27,7 @@ jobs:
         with:
           python-version: "3.12"
       - run: python3 tools/gen-theme.py --check --report
+      - run: python3 tools/build-wallpaper.py --check
 
   bluebuild:
     name: Build ${{ matrix.recipe }}

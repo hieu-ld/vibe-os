@@ -17,6 +17,22 @@
 local color = require("/usr/share/samhie/hypr/colors")
 
 -------------------
+---- TUỲ CHỌN ----
+-------------------
+
+-- Những thứ người dùng đổi bằng một dòng trong ~/.config/hypr/hyprland.lua:
+--     local samhie = require("/usr/share/samhie/hypr/samhie")
+--     samhie.wallpaper = "~/Pictures/nui.jpg"
+-- Chúng được ĐỌC lúc Hyprland khởi động / nạp lại cấu hình (hl.on bên dưới),
+-- tức là sau khi cả file của người dùng đã chạy xong, nên gán ở đâu sau dòng
+-- require cũng được.
+local samhie = {
+    -- Hình nền: file PNG/JPG. Mặc định là tranh núi đêm của Samhie
+    -- (tools/build-wallpaper.py). Đường dẫn bắt đầu bằng ~/ được hiểu là $HOME.
+    wallpaper = "/usr/share/backgrounds/samhie/samhie.png",
+}
+
+-------------------
 ---- CHƯƠNG TRÌNH ----
 -------------------
 
@@ -66,12 +82,27 @@ hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 -- máy KHÔNG tự khoá — nên luôn phải có bản mặc định.
 local idleCmd = "test -f ~/.config/hypr/hypridle.conf && exec hypridle || exec hypridle -c /etc/xdg/hypr/hypridle.conf"
 
+-- Hình nền do swaybg vẽ (TẠM, giai đoạn 3 Quickshell làm thay). Lệnh chạy qua
+-- shell nên đường dẫn được đặt trong ngoặc kép, thoát các ký tự đặc biệt.
+local function wallpaperCmd()
+    local path = samhie.wallpaper:gsub('[\\"$`]', "\\%0")
+    path = path:gsub("^~/", "$HOME/")
+    return 'pkill -x swaybg; exec swaybg -m fill -i "' .. path .. '"'
+end
+
 hl.on("hyprland.start", function()
+    hl.exec_cmd(wallpaperCmd())
     hl.exec_cmd("/usr/libexec/kf6/polkit-kde-authentication-agent-1")
     hl.exec_cmd("fcitx5 -d --replace")
     hl.exec_cmd("mako")
     hl.exec_cmd("wl-paste --watch cliphist store")
     hl.exec_cmd(idleCmd)
+end)
+
+-- Đổi samhie.wallpaper rồi lưu file là Hyprland tự nạp lại cấu hình — vẽ lại
+-- hình nền để thấy ngay, khỏi phải đăng xuất.
+hl.on("config.reloaded", function()
+    hl.exec_cmd(wallpaperCmd())
 end)
 
 -------------------
@@ -128,8 +159,8 @@ hl.config({
     },
 
     misc = {
-        -- Tắt hình nền anime và logo mặc định của Hyprland; nền là màu trơn cho
-        -- tới khi giai đoạn 2 mang wallpaper Samhie sang.
+        -- Tắt hình nền anime và logo mặc định của Hyprland. Hình nền thật do
+        -- swaybg vẽ (TỰ KHỞI ĐỘNG ở trên); màu này chỉ hiện khi file ảnh hỏng.
         force_default_wallpaper = 0,
         disable_hyprland_logo   = true,
         background_color        = "rgb(" .. color.bar .. ")",
@@ -246,3 +277,5 @@ hl.window_rule({
     },
     no_focus = true,
 })
+
+return samhie

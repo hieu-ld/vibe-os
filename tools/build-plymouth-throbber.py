@@ -3,8 +3,9 @@
 Sinh vòng xoay của màn hình khởi động (Plymouth) — kiểu 5 chấm đuổi nhau quanh
 vòng tròn như lúc Windows khởi động. User chọn kiểu này ở bản 1.0 (2026-09-24)
 trong ba bản thử (chấm trắng / vòng cung cyan / vòng cung trắng). Mang nguyên
-từ ~/Projects/Distro/scripts/build-plymouth-throbber.py (commit a47f18e), chỉ
-đổi chỗ lấy màu và chỗ ghi file.
+từ ~/Projects/Distro/scripts/build-plymouth-throbber.py (commit a47f18e): hình
+chấm giữ nguyên (độ đục trùng từng điểm ảnh), đổi chỗ lấy màu, chỗ ghi file,
+và màu giờ phẳng đúng mã (xem frame()).
 
     python3 tools/build-plymouth-throbber.py          # sinh lại 60 khung
     python3 tools/build-plymouth-throbber.py --check  # chỉ kiểm màu khung có khớp bảng màu
@@ -60,16 +61,21 @@ def dot_color():
 
 
 def frame(t, color):
+    # Vẽ và thu nhỏ CHỈ lớp độ đục, rồi đổ màu phẳng lên. Bản 1.0 thu nhỏ cả
+    # ảnh RGBA: LANCZOS vọt quá ở kênh màu nên tâm chấm lên tới #ffffff thay
+    # vì #e8e8e8 (đo trên ảnh chụp máy ảo 2026-09-28).
     big = SIZE * SUPER
-    im = Image.new("RGBA", (big, big), (0, 0, 0, 0))
-    d = ImageDraw.Draw(im)
+    mask = Image.new("L", (big, big), 0)
+    d = ImageDraw.Draw(mask)
     c, R, r = big / 2, RING * SUPER, DOT * SUPER
     for i in range(DOTS):
         p = (t - i * LAG) % 1.0
         a = -math.pi / 2 + p * 2 * math.pi - EASE * math.sin(p * 2 * math.pi)
         x, y = c + R * math.cos(a), c + R * math.sin(a)
-        d.ellipse([x - r, y - r, x + r, y + r], fill=color)
-    return im.resize((SIZE, SIZE), Image.LANCZOS)
+        d.ellipse([x - r, y - r, x + r, y + r], fill=255)
+    im = Image.new("RGBA", (SIZE, SIZE), color)
+    im.putalpha(mask.resize((SIZE, SIZE), Image.LANCZOS))
+    return im
 
 
 def check(color):

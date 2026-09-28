@@ -91,11 +91,16 @@ warning = "#8f5a00"
 success = "#1b7a45"
 warm    = "#8f5a00"
 
-# Font giao diện — bản 1.0: UI để mặc định (Noto Sans 10), Konsole dùng Hack.
+# Font giao diện — user chốt 2026-09-28 (thử trong máy ảo): Dongle Light 20.
+# Dongle rất "lùn" (chữ x thấp) nên cỡ số lớn; Hack 11 cao ngang Dongle 20
+# (đo bằng cách vẽ chữ: H cao 11,0px cả hai). File Dongle nằm ở
+# files/system/usr/share/fonts/dongle (Fedora không có gói; giấy phép OFL).
 [fonts]
-ui   = "Noto Sans"
-mono = "Hack"
-size = 10
+ui        = "Dongle"
+ui-weight = 300           # Light. 350 không có (xem README của font)
+size      = 20
+mono      = "Hack"        # terminal, code — Dongle không phải font đều nét
+mono-size = 11
 
 # Thông số riêng của KDE (kdeglobals), theo từng chế độ.
 [kde]

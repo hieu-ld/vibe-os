@@ -45,8 +45,8 @@ def load():
 
     fonts = pal.get("fonts", {})
     if not (isinstance(fonts.get("ui"), str) and isinstance(fonts.get("mono"), str)
-            and isinstance(fonts.get("size"), int)):
-        errors.append("[fonts] cần ui, mono (chuỗi) và size (số nguyên)")
+            and all(isinstance(fonts.get(k), int) for k in ("size", "mono-size", "ui-weight"))):
+        errors.append("[fonts] cần ui, mono (chuỗi) và size, mono-size, ui-weight (số nguyên)")
     for key in ("frame-contrast", "icon-theme"):
         if set(pal.get("kde", {}).get(key, {})) != set(MODES):
             errors.append(f"[kde] {key} cần đủ hai khoá dark và light")
@@ -223,9 +223,10 @@ def ini(sections):
 SCHEME_NAME = {"dark": ("SamhieDark", "Samhie Dark"), "light": ("SamhieLight", "Samhie Light")}
 
 
-def qt_font(family, size):
+def qt_font(family, size, weight=400):
     # Định dạng QFont::toString() của Qt 6 — đúng như KDE tự ghi vào kdeglobals.
-    return f"{family},{size},-1,5,400,0,0,0,0,0,0,0,0,0,0,1"
+    # Trường thứ 5 là độ đậm (300 = Light, 400 = Regular).
+    return f"{family},{size},-1,5,{weight},0,0,0,0,0,0,0,0,0,0,1"
 
 
 def kde_colors_file(mode):
@@ -256,11 +257,11 @@ def kdeglobals(pal):
     sections = [
         ("General", dict(
             ColorScheme=ident,
-            font=qt_font(f["ui"], f["size"]),
-            menuFont=qt_font(f["ui"], f["size"]),
-            toolBarFont=qt_font(f["ui"], f["size"]),
-            smallestReadableFont=qt_font(f["ui"], f["size"] - 2),
-            fixed=qt_font(f["mono"], f["size"]),
+            font=qt_font(f["ui"], f["size"], f["ui-weight"]),
+            menuFont=qt_font(f["ui"], f["size"], f["ui-weight"]),
+            toolBarFont=qt_font(f["ui"], f["size"], f["ui-weight"]),
+            smallestReadableFont=qt_font(f["ui"], f["size"] - 2, f["ui-weight"]),
+            fixed=qt_font(f["mono"], f["mono-size"]),
             shadeSortColumn="true",
         )),
         ("Icons", dict(Theme=pal["kde"]["icon-theme"]["dark"])),

@@ -3,11 +3,11 @@
 # ~/.config/kdeglobals — file này không bao giờ ghi vào đó.
 [General]
 ColorScheme=SamhieDark
-font=Noto Sans,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
-menuFont=Noto Sans,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
-toolBarFont=Noto Sans,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
-smallestReadableFont=Noto Sans,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
-fixed=Hack,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+font=Dongle,20,-1,5,300,0,0,0,0,0,0,0,0,0,0,1
+menuFont=Dongle,20,-1,5,300,0,0,0,0,0,0,0,0,0,0,1
+toolBarFont=Dongle,20,-1,5,300,0,0,0,0,0,0,0,0,0,0,1
+smallestReadableFont=Dongle,18,-1,5,300,0,0,0,0,0,0,0,0,0,0,1
+fixed=Hack,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 shadeSortColumn=true
 
 [Icons]

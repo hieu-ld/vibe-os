@@ -141,10 +141,16 @@ done < <(find "$THEME_DIR" -name '*.svg')
     echo "[Icon Theme]"
     echo "Name=Samhie"
     echo "Comment=Icon overrides for Samhie, everything else falls back to Breeze Dark"
-    echo "Comment[vi]=Icon riêng của Samhie, phần còn lại dùng Breeze Dark"
     # Thứ tự kế thừa quan trọng: breeze-dark trước để hợp tông nền tối, rồi
     # breeze, cuối cùng hicolor cho icon do app tự cài (Dolphin, Edge...).
     echo "Inherits=breeze-dark,breeze,hicolor"
+    # KDE chỉ tô lại icon SVG theo bảng màu (khối current-color-scheme) khi BỘ
+    # ĐANG CHỌN có khoá này — nó hỏi bộ đang chọn, không hỏi bộ chứa file icon
+    # (KIconLoader::createIconImage, kiconthemes). Bản 1.0 thiếu mà không ai
+    # thấy vì màu dự phòng #fcfcfc trùng nền tối; thiếu nó thì bản sáng ra icon
+    # trắng trên nền trắng. Đo trong máy ảo 2026-09-28: thiếu khoá thì thư mục
+    # Breeze về xanh mặc định thay vì ăn màu chọn của Samhie.
+    echo "FollowsColorScheme=true"
     echo "Directories=$(IFS=,; echo "${dir_list[*]}")"
     for d in "${dir_list[@]}"; do
         group=${d%%/*}

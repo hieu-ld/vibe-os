@@ -3,7 +3,7 @@
 # Bản cho máy dùng card AMD hoặc Intel. Máy có card NVIDIA dùng samhie-nvidia.yml.
 # Image được đẩy lên ghcr.io/hieu-ld/samhie
 name: samhie
-description: Samhie — Fedora Atomic + Hyprland + Quickshell, giao diện tự vẽ.
+description: Samhie — Fedora Atomic with Hyprland and a hand-drawn Quickshell desktop.
 
 # base-main = Fedora Atomic chưa có desktop nào, Universal Blue thêm sẵn codec,
 # ujust, dịch vụ tự cập nhật. Ghim số phiên bản Fedora (không dùng `latest`)

@@ -3,7 +3,7 @@
 # Bản cho máy có card NVIDIA (từ dòng GTX 16xx / RTX 20xx trở lên).
 # Image được đẩy lên ghcr.io/hieu-ld/samhie-nvidia
 name: samhie-nvidia
-description: Samhie cho máy có card NVIDIA — driver NVIDIA open đã ký sẵn.
+description: Samhie for NVIDIA GPUs — with the signed open NVIDIA driver.
 
 # base-nvidia giống hệt base-main, cộng thêm driver NVIDIA bản open do
 # Universal Blue build sẵn và KÝ SỐ. Nhờ đã ký nên bật Secure Boot được: chỉ cần

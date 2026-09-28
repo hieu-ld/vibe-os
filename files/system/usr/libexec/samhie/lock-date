@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# In ngày hôm nay kiểu Việt: "Thứ 6, 25 tháng 9" / "Chủ nhật, 27 tháng 9".
+# In ngày hôm nay kiểu Việt: "Thứ 2, 28/09/2026" / "Chủ nhật, 04/10/2026".
+# Định dạng user chốt 2026-09-28: giờ đứng trước (label riêng của hyprlock),
+# ngày ghi số đủ hai chữ số + năm.
 #
 # Tự ghép thay vì dùng `date +%A`: máy chạy locale en_US nên %A ra "Friday".
 # Cùng quy tắc với Samhie 1.0: vùng Việt Nam là do múi giờ quyết định, không
@@ -13,4 +15,4 @@ else
     name="Thứ $((weekday + 1))"
 fi
 
-echo "$name, $(date +%-d) tháng $(date +%-m)"
+echo "$name, $(date +%d/%m/%Y)"

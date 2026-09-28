@@ -1,0 +1,23 @@
+-- SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay.
+-- Màu bản tối, mã hex không có '#': dùng như "rgba(" .. color.accent .. "aa)".
+return {
+    bar           = "0a0a0a",
+    barText       = "e8e8e8",
+    barAccent     = "00c0e8",
+    card          = "171717",
+    secondary     = "262626",
+    subSecondary  = "3b3c3c",
+    text          = "e8e8e8",
+    textMuted     = "8f8f8f",
+    accent        = "00c0e8",
+    accentText    = "00c0e8",
+    onAccent      = "0a0a0a",
+    selection     = "006a80",
+    onSelection   = "f6f6f6",
+    link          = "5dc5d6",
+    visited       = "a082c8",
+    danger        = "e26767",
+    warning       = "e8a048",
+    success       = "54c48c",
+    warm          = "e8a048",
+}

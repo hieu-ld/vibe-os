@@ -12,16 +12,9 @@
 ---- BẢNG MÀU ----
 ------------------
 
--- Thang bề mặt 4 bậc + màu nhấn, chép từ SamhieDark.colors của Samhie 1.0.
--- Giai đoạn 2 sẽ chuyển bảng này thành MỘT file token dùng chung cho Hyprland,
--- Quickshell, Kvantum và kdeglobals. Tới lúc đó, sửa màu ở đây là tạm.
-local color = {
-    black         = "0a0a0a", -- thanh trên, dock
-    card          = "171717", -- vùng nội dung, popup nổi
-    secondary     = "262626", -- khung cửa sổ, sidebar
-    subSecondary  = "3b3c3c", -- viền, mặt nút
-    accent        = "00c0e8", -- cyan
-}
+-- Sinh từ theme/palette.toml (nguồn màu duy nhất của Samhie) — đổi màu thì sửa
+-- file đó rồi chạy tools/gen-theme.py, đừng ghi mã màu thẳng vào đây.
+local color = require("/usr/share/samhie/hypr/colors")
 
 -------------------
 ---- CHƯƠNG TRÌNH ----
@@ -137,7 +130,7 @@ hl.config({
         -- tới khi giai đoạn 2 mang wallpaper Samhie sang.
         force_default_wallpaper = 0,
         disable_hyprland_logo   = true,
-        background_color        = "rgb(" .. color.black .. ")",
+        background_color        = "rgb(" .. color.bar .. ")",
     },
 
     input = {

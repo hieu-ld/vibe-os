@@ -1,0 +1,132 @@
+# Bảng màu Samhie — NGUỒN MÀU DUY NHẤT.
+#
+# Mọi mã màu của Samhie nằm ở đây, và CHỈ ở đây. Cấu hình của từng app
+# (Hyprland, hyprlock, sau này Quickshell, Kvantum, kdeglobals, Konsole) được
+# SINH ra từ file này bằng:
+#
+#     python3 tools/gen-theme.py          # sinh lại mọi file
+#     python3 tools/gen-theme.py --check  # chỉ kiểm, không ghi (CI dùng)
+#
+# Đừng sửa tay file sinh ra — đầu mỗi file có dòng "SINH TỰ ĐỘNG".
+#
+# Mã màu lấy từ Samhie 1.0 (~/Projects/Distro, SamhieDark/SamhieLight.colors),
+# đã đo tương phản và user đã duyệt tận mắt ở đó. Tên vai trò bám bộ biến màu
+# trong Figma của user (Black, Card, Secondary, Sub Secondary...).
+#
+# CÁCH DÙNG MÀU — tinh thần "tone lạnh, tiết chế":
+#   ~90%  xám trung tính: mọi bề mặt, chữ, viền.
+#   ~8%   cyan/màu lạnh: CHỈ cho thứ đang được chọn / đang focus / đang chạy
+#         (viền cửa sổ focus, vạch active trên dock, vùng chọn, nút chính,
+#         dấu nhắc Konsole). Không dùng cyan làm nền lớn hay để trang trí.
+#   ~2%   màu ấm (warm): điểm nhấn hiếm — thứ cần mắt chú ý (cảnh báo, huy hiệu
+#         thông báo, đang ghi âm/ghi hình). Hiếm mới có giá trị tương phản.
+# Thêm vai trò mới thì hỏi trước: nó thuộc nhóm nào trong ba nhóm trên?
+
+# Giống nhau ở cả chế độ tối lẫn sáng.
+[shared]
+black = "#0a0a0a"   # Figma: Black
+white = "#fafafa"   # Figma: White
+cyan  = "#00c0e8"   # Figma: Cyan — màu nhấn gốc. Trên nền SÁNG chỉ dùng làm
+                    # nền (chữ đen đè lên), vì làm chữ thì chỉ đạt 2,2:1.
+
+[dark]
+# Thang bề mặt 4 bậc — user chốt 2026-09-13 bằng ảnh chụp Dolphin (bản 1.0):
+bar           = "#0a0a0a"  # thanh trên, dock                (Figma: Black)
+bar-text      = "#e8e8e8"  # chữ/icon trên thanh — tách riêng vì thanh luôn tối
+bar-accent    = "#00c0e8"  # vạch active, icon đang bật trên thanh
+card          = "#171717"  # vùng nội dung, popup, tooltip   (Figma: Card)
+secondary     = "#262626"  # khung cửa sổ, sidebar, thanh tab (Figma: Secondary)
+sub-secondary = "#3b3c3c"  # viền, mặt nút                   (Figma: Sub Secondary)
+
+text       = "#e8e8e8"
+text-muted = "#8f8f8f"     # chữ phụ, chữ bị vô hiệu hoá
+
+accent      = "#00c0e8"    # viền focus, vạch active, icon đang bật
+accent-text = "#00c0e8"    # cyan dùng làm CHỮ (link đang focus, dấu nhắc)
+on-accent   = "#0a0a0a"    # chữ đặt trên nền accent
+selection   = "#006a80"    # nền vùng chọn
+on-selection = "#f6f6f6"   # chữ trong vùng chọn
+
+link    = "#5dc5d6"
+visited = "#a082c8"
+
+danger  = "#e26767"        # lỗi, xoá, sai mật khẩu. Bản 1.0 là #e05e5e: chỉ đạt
+                           # 4,27:1 trên Secondary; sáng lên 1% là đạt 4,59:1
+warning = "#e8a048"        # cảnh báo — cũng là màu ấm chính
+success = "#54c48c"
+warm    = "#e8a048"        # điểm nhấn ấm (xem "CÁCH DÙNG MÀU" ở trên)
+
+[light]
+# Bản sáng giữ thanh trên + dock TỐI (bản 1.0 chốt vậy để giữ bộ icon nét sáng).
+bar           = "#1a1a1a"
+bar-text      = "#e8e8e8"  # KHÔNG phải `text` của bản sáng: #1c1c1c trên #1a1a1a
+bar-accent    = "#00c0e8"  # là chữ biến mất mà không lỗi nào báo (bản 1.0 suýt dính)
+card          = "#fafafa"
+secondary     = "#ededed"
+sub-secondary = "#d0d0d0"
+
+text       = "#1c1c1c"
+text-muted = "#6b6b6b"
+
+accent      = "#0d728f"    # cyan đậm — bản sáng cần sắc đậm mới đọc được
+accent-text = "#0d728f"
+on-accent   = "#fafafa"
+selection   = "#0d728f"
+on-selection = "#fafafa"   # chữ trong vùng chọn TRẮNG — `text` (#1c1c1c) chỉ đạt 3,10:1
+
+link    = "#0d728f"
+visited = "#6a4c93"
+
+danger  = "#b3261e"
+warning = "#8f5a00"
+success = "#1b7a45"
+warm    = "#8f5a00"
+
+# 16 màu ANSI của Konsole (bản 1.0, theme/konsole/Samhie.colorscheme).
+# Thứ tự: đen, đỏ, lục, vàng, lam, tím, cyan, trắng — thường / sáng (intense).
+[terminal]
+background = "#171717"     # = dark.card: vùng dấu nhắc là Card (user chốt)
+foreground = "#e4e4e4"
+normal = ["#3b3c3c", "#e05e5e", "#7acc8c", "#e2b262", "#60a0dc", "#b28cd6", "#00c0e8", "#d0d0d0"]
+bright = ["#5a5a5a", "#f07c7c", "#96dca5", "#f0c882", "#82b9eb", "#c8a8e6", "#52d6fa", "#f6f6f6"]
+
+# Lời hứa tương phản — gen-theme.py đo lại mỗi lần chạy, hụt là BÁO LỖI.
+# Chuẩn WCAG: 4,5:1 cho chữ thường, 3:1 cho thành phần giao diện (viền, icon).
+# Cặp nào cố ý thấp hơn thì ghi lý do ngay dưới.
+[[contrast]]
+fg = ["text", "text-muted", "accent-text", "danger", "warning", "success", "link"]
+bg = ["card", "secondary"]
+min = 4.5
+
+[[contrast]]
+fg = ["text"]
+bg = ["sub-secondary"]
+min = 4.5
+
+[[contrast]]
+fg = ["on-selection"]
+bg = ["selection"]
+min = 4.5
+
+[[contrast]]
+fg = ["bar-text"]
+bg = ["bar"]
+min = 4.5
+
+[[contrast]]
+fg = ["bar-accent"]
+bg = ["bar"]
+min = 3.0
+
+[[contrast]]
+fg = ["on-accent"]
+bg = ["accent"]
+min = 4.5
+
+[[contrast]]
+# Viền focus/vạch active nằm trên mọi bề mặt — chỉ cần mức "thành phần giao diện".
+# Không đòi trên sub-secondary: bản sáng chỉ đạt 3,56 cho accent trên mặt nút,
+# user đã chấp nhận ở bản 1.0 (mặt nút thì cyan là viền/icon, đạt 3:1).
+fg = ["accent"]
+bg = ["card", "secondary", "sub-secondary"]
+min = 3.0

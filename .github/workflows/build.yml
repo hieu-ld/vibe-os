@@ -16,8 +16,21 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # Sửa theme/palette.toml mà quên chạy tools/gen-theme.py thì dừng ở đây, trước
+  # khi tốn thời gian build image mang màu cũ. Cũng kiểm lại mọi mức tương phản.
+  theme:
+    name: Check theme colors
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python3 tools/gen-theme.py --check --report
+
   bluebuild:
     name: Build ${{ matrix.recipe }}
+    needs: theme
     runs-on: ubuntu-latest
     permissions:
       contents: read

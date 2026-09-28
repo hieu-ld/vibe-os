@@ -1,0 +1,35 @@
+<!-- Logo System Settings của Samhie — user VẼ trong Figma, node 379:556
+     (2026-09-23). Hình xuất thẳng từ Figma, không vẽ lại; bỏ clipPath tròn
+     của khung (hình vốn nằm gọn trong vòng tròn bán kính 14).
+     Khung 28x28 = cỡ gốc trên Figma; trên dock vẽ ở 32px.
+
+     VIỀN SÁNG (user xin 2026-09-23, theo hiệu ứng Glass của Figma, ánh sáng
+     -35°) — cùng cách với org.kde.dolphin.svg / utilities-terminal.svg, nét
+     gradient trắng chạy sát mép TRONG, sáng ở góc trên-trái, phản sáng nhẹ
+     góc dưới-phải:
+       - thân răng: chính đường viền thân, thu nhỏ quanh tâm 3.6% để nét 1px
+         nằm lọt vào trong thay vì tràn nửa ra ngoài (không dùng clipPath —
+         không chắc trình vẽ icon của KDE bật);
+       - vành giữa (r 7) và núm tâm (r 3): vòng tròn lùi vào 0.5px.
+     Bốn răng chéo (lớp đục 0.6) cố ý KHÔNG có viền: đường mép của chúng nằm
+     lẫn trong thân, vẽ viền là hiện vạch ngang giữa răng.
+     Đây là icon của CHÍNH ứng dụng System Settings: đổi là đổi ở cả menu,
+     Alt-Tab, thanh tiêu đề. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="28" height="28" fill="none">
+  <defs>
+    <linearGradient id="rim" x1="0" y1="0" x2="28" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.50"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="0.8" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+  <path d="M2 11C3.2438 6.64668 6.64668 3.2438 11 2L12 0.5H16L17 2C21.3533 3.2438 24.7562 6.64668 26 11L27.5 12V16L26 17C24.7562 21.3533 21.3533 24.7562 17 26L16 27.5H12L11 26C6.64668 24.7562 3.2438 21.3533 2 17L0.5 16V12L2 11Z" fill="#727272"/>
+  <path d="M3.40026 20.3755C1.19721 16.4201 1.19199 11.6077 3.38645 7.64759L3.03098 5.88021L5.85634 3.04872L7.62449 3.40035C11.5799 1.1973 16.3923 1.19208 20.3524 3.38655L22.1198 3.03108L24.9513 5.85643L24.5996 7.62458C26.8027 11.58 26.8079 16.3924 24.6135 20.3525L24.9689 22.1199L22.1436 24.9514L20.3754 24.5997C16.42 26.8028 11.6076 26.808 7.6475 24.6135L5.88012 24.969L3.04862 22.1437L3.40026 20.3755Z" fill="#727272" fill-opacity="0.6"/>
+  <path d="M2 11C3.2438 6.64668 6.64668 3.2438 11 2L12 0.5H16L17 2C21.3533 3.2438 24.7562 6.64668 26 11L27.5 12V16L26 17C24.7562 21.3533 21.3533 24.7562 17 26L16 27.5H12L11 26C6.64668 24.7562 3.2438 21.3533 2 17L0.5 16V12L2 11Z" transform="translate(14 14) scale(0.964) translate(-14 -14)" stroke="url(#rim)" stroke-width="1.04" stroke-linejoin="round"/>
+  <circle cx="14" cy="14" r="9.75" fill="#262626" stroke="#171717" stroke-width="1.5"/>
+  <circle cx="14" cy="14" r="7" fill="#E5E5E5" fill-opacity="0.2"/>
+  <circle cx="14" cy="14" r="6.5" stroke="url(#rim)" stroke-width="1"/>
+  <circle cx="14" cy="14" r="4" fill="#FAFAFA" fill-opacity="0.2" stroke="#171717" stroke-width="2"/>
+  <circle cx="14" cy="14" r="2.5" stroke="url(#rim)" stroke-width="1"/>
+</svg>

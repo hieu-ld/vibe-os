@@ -1,0 +1,20 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Nút cửa sổ (khôi phục — mũi tên chỉ VÀO, theo đường chéo dưới-trái/trên-phải. Figma lật dọc (-scale-y) hình gốc, ở đây lật bằng matrix(1 0 0 -1 0 10)) — user VẼ trong Figma, node 376:572 (vòng hai 2026-09-23:
+     nét 2px thay 1px vì user thấy mỏng khó nhìn;
+     vòng ba cùng ngày: 1.5px, 2px thì hơi dày).
+     CHỈ có ký hiệu. Ô bo góc, viền và nền màu khi hover trong bản Figma do
+     KLASSY vẽ (system/etc/xdg/klassy/klassyrc), không nằm trong file này:
+     Klassy tô cả icon thành một màu (ForceColorizeSystemIcons) — xám #a1a1a1
+     lúc thường, trắng #fafafa lúc rê chuột — vẽ nền màu vào đây là mất.
+     Toạ độ theo Figma (khung ký hiệu 10x10), dời vào 16x16. Hình chữ L của
+     Figma là mảng tô đặc dày 2px, ở đây đổi thành ĐƯỜNG GIỮA của nó vẽ bằng nét
+     để chỉnh độ dày chỉ bằng một số: stroke-width. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" width="16" height="16">
+  <defs><style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fafafa; }</style></defs>
+  <g transform="translate(3 3) matrix(1 0 0 -1 0 10)">
+    <path d="M1 4H4V1" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round" class="ColorScheme-Text"/>
+    <path d="M9 6H6V9" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round" class="ColorScheme-Text"/>
+    <path d="M3 3L1 1" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round" class="ColorScheme-Text"/>
+    <path d="M7 7L9 9" style="fill:none;stroke:currentColor;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round" class="ColorScheme-Text"/>
+  </g>
+</svg>

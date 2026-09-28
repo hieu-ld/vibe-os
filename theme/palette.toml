@@ -103,8 +103,10 @@ size = 10
 # tự tính, không có khoá viền riêng. Bản 1.0 đo: tối 0.1 -> #393939 (user chọn
 # 2026-09-13), sáng 0.14.
 frame-contrast = { dark = 0.1, light = 0.14 }
-# Bộ icon Samhie kế thừa breeze-dark; tới lúc mang bộ icon sang thì đổi thành "Samhie".
-icon-theme     = { dark = "breeze-dark", light = "breeze" }
+# Bộ icon Samhie (files/system/usr/share/icons/Samhie) chỉ chứa icon thay riêng,
+# còn lại kế thừa breeze-dark. Bản sáng tạm để Breeze: Samhie kế thừa
+# breeze-dark (icon nhiều màu vẽ cho nền tối) — xem lại khi làm bản sáng.
+icon-theme     = { dark = "Samhie", light = "breeze" }
 
 # 16 màu ANSI của Konsole (bản 1.0, theme/konsole/Samhie.colorscheme).
 # Thứ tự: đen, đỏ, lục, vàng, lam, tím, cyan, trắng — thường / sáng (intense).

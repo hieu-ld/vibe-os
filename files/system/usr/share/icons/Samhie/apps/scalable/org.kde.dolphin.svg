@@ -1,0 +1,57 @@
+<!-- Logo Dolphin của Samhie — user VẼ trong Figma, node 379:563 (bản 2026-09-23
+     chiều, file Frame183.svg: dải giấy trắng thành một mép bo phía trên).
+     Hình (thân sau, dải giấy, thân trước, gạch tay cầm) chép nguyên toạ độ
+     Figma; khung 44x40 của Figma dời (-8 -2) để hình 28x24 nằm giữa ô 28x28.
+
+     "KÍNH" (user thêm hiệu ứng Glass của Figma: ánh sáng -35°, 80%) — KHÔNG
+     chép được: kính của Figma là làm mờ thứ NẰM SAU hình, còn icon được vẽ
+     thành một ảnh riêng, không nhìn thấy gì sau nó. Mà sau icon trên dock chỉ
+     là nền phẳng, làm mờ nền phẳng thì vẫn là nền phẳng — nên cái làm nên chất
+     kính trong bản Figma thực ra là VIỀN BẮT SÁNG. Phần đó vẽ được, bằng nét
+     gradient chạy sát mép TRONG của từng lớp:
+       - rim: nét 1px lùi vào 0.5px, trắng sáng ở góc trên-trái (phía nguồn
+         sáng), mờ dần giữa, sáng lại nhẹ ở góc dưới-phải (ánh phản xạ);
+       - bevel: nét 1px lùi vào 1.5px, trắng rất nhạt, cho mép có độ dày.
+     Không dùng clipPath / filter (Qt SVG có hỗ trợ từ 6.7, nhưng không chắc
+     trình vẽ icon của KDE bật) — lùi nét vào trong là đủ để khỏi tràn ra ngoài.
+
+     Bỏ bóng đổ của Figma: dock giờ nền gần đen và không còn ô, bóng đen trên
+     nền đen không thấy; bóng lại thò ra ngoài khung 32px nên bị cắt.
+     Tên file = Icon=org.kde.dolphin của org.kde.dolphin.desktop. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 28" width="28" height="28" fill="none">
+  <defs>
+    <linearGradient id="back" x1="22" y1="4" x2="22" y2="19" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#006175"/>
+      <stop offset="1" stop-color="#00819C"/>
+    </linearGradient>
+    <linearGradient id="front" x1="22" y1="11" x2="22" y2="28" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#006175"/>
+      <stop offset="1" stop-color="#00819C"/>
+    </linearGradient>
+    <!-- ánh sáng -35°: từ trên-trái xuống dưới-phải -->
+    <linearGradient id="rim" x1="8" y1="4" x2="36" y2="28" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.50"/>
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="0.8" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.30"/>
+    </linearGradient>
+  </defs>
+  <g transform="translate(-8 -2)">
+    <!-- thân sau -->
+    <!-- Lớp LÓT ĐẶC #0a0a0a (= nền dock) dưới thân kính (thêm 2026-09-24). Thân
+         vẫn trong như user vẽ, nhưng giờ chồng lên một nền đặc: trên dock trông
+         gần như cũ, còn trong Overview — nơi icon đè lên ảnh thu nhỏ cửa sổ — thì
+         không còn lộ nội dung phía sau (user chụp ở phiên live, muốn "đặc 100%"). -->
+    <path d="M8 8C8 5.79086 9.79086 4 12 4H20.1972C21.3235 4 22.3753 4.56288 23 5.5C23.6247 6.43712 24.6765 7 25.8028 7H32C34.2091 7 36 8.79086 36 11V14.8011H8V8Z" fill="#0a0a0a"/>
+    <path d="M8 8C8 5.79086 9.79086 4 12 4H20.1972C21.3235 4 22.3753 4.56288 23 5.5C23.6247 6.43712 24.6765 7 25.8028 7H32C34.2091 7 36 8.79086 36 11V14.8011H8V8Z" fill="url(#back)" fill-opacity="0.8"/>
+    <path d="M8.5 14V8C8.5 6.067 10.067 4.5 12 4.5H20.1972C21.1564 4.5 22.052 4.979 22.584 5.777C23.3 6.854 24.51 7.5 25.8028 7.5H32C33.933 7.5 35.5 9.067 35.5 11V14" stroke="url(#rim)" stroke-width="1"/>
+    <!-- dải giấy -->
+    <path d="M9 12C9 10.3431 10.3431 9 12 9H32C33.6569 9 35 10.3431 35 12V12.3672H9V12Z" fill="#FAFAFA"/>
+    <!-- thân trước -->
+    <path d="M8 15C8 12.7909 9.79086 11 12 11H32C34.2091 11 36 12.7909 36 15V24C36 26.2091 34.2091 28 32 28H12C9.79086 28 8 26.2091 8 24V15Z" fill="#0a0a0a"/>
+    <path d="M8 15C8 12.7909 9.79086 11 12 11H32C34.2091 11 36 12.7909 36 15V24C36 26.2091 34.2091 28 32 28H12C9.79086 28 8 26.2091 8 24V15Z" fill="url(#front)" fill-opacity="0.8"/>
+    <rect x="8.5" y="11.5" width="27" height="16" rx="3.5" stroke="url(#rim)" stroke-width="1"/>
+    <rect x="9.5" y="12.5" width="25" height="14" rx="2.5" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="1"/>
+    <line x1="19.5" y1="15.5" x2="24.5" y2="15.5" stroke="#FAFAFA" stroke-linecap="round"/>
+  </g>
+</svg>

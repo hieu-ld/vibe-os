@@ -52,12 +52,15 @@ visited = "#a082c8"
 
 danger  = "#e26767"        # lỗi, xoá, sai mật khẩu. Bản 1.0 là #e05e5e: chỉ đạt
                            # 4,27:1 trên Secondary; sáng lên 1% là đạt 4,59:1
+                           # (user chốt 2026-09-28)
 warning = "#e8a048"        # cảnh báo — cũng là màu ấm chính
 success = "#54c48c"
 warm    = "#e8a048"        # điểm nhấn ấm (xem "CÁCH DÙNG MÀU" ở trên)
 
 [light]
-# Bản sáng giữ thanh trên + dock TỐI (bản 1.0 chốt vậy để giữ bộ icon nét sáng).
+# Bản sáng giữ thanh trên + dock TỐI như bản 1.0 — TẠM. User muốn thanh + dock
+# bản sáng cũng SÁNG (2026-09-28); đổi bar/bar-text/bar-accent ở giai đoạn 3,
+# cùng lúc dựng thanh Quickshell và xem lại bộ icon nét sáng.
 bar           = "#1a1a1a"
 bar-text      = "#e8e8e8"  # KHÔNG phải `text` của bản sáng: #1c1c1c trên #1a1a1a
 bar-accent    = "#00c0e8"  # là chữ biến mất mà không lỗi nào báo (bản 1.0 suýt dính)

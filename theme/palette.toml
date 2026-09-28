@@ -35,6 +35,7 @@ bar           = "#0a0a0a"  # thanh trên, dock                (Figma: Black)
 bar-text      = "#e8e8e8"  # chữ/icon trên thanh — tách riêng vì thanh luôn tối
 bar-accent    = "#00c0e8"  # vạch active, icon đang bật trên thanh
 card          = "#171717"  # vùng nội dung, popup, tooltip   (Figma: Card)
+card-alt      = "#171717"  # hàng xen kẽ trong danh sách — bản tối cố ý KHÔNG kẻ sọc
 secondary     = "#262626"  # khung cửa sổ, sidebar, thanh tab (Figma: Secondary)
 sub-secondary = "#3b3c3c"  # viền, mặt nút                   (Figma: Sub Secondary)
 
@@ -45,7 +46,9 @@ accent      = "#00c0e8"    # viền focus, vạch active, icon đang bật
 accent-text = "#00c0e8"    # cyan dùng làm CHỮ (link đang focus, dấu nhắc)
 on-accent   = "#0a0a0a"    # chữ đặt trên nền accent
 selection   = "#006a80"    # nền vùng chọn
+selection-alt = "#005365"  # nền chọn phụ (hàng xen kẽ đang chọn)
 on-selection = "#f6f6f6"   # chữ trong vùng chọn
+on-selection-muted = "#dcdcdc"  # bản 1.0 #cdcdcd chỉ 3,92:1 -> sáng lên cho đạt 4,54
 
 link    = "#5dc5d6"
 visited = "#a082c8"
@@ -65,6 +68,7 @@ bar           = "#1a1a1a"
 bar-text      = "#e8e8e8"  # KHÔNG phải `text` của bản sáng: #1c1c1c trên #1a1a1a
 bar-accent    = "#00c0e8"  # là chữ biến mất mà không lỗi nào báo (bản 1.0 suýt dính)
 card          = "#fafafa"
+card-alt      = "#f4f4f4"
 secondary     = "#ededed"
 sub-secondary = "#d0d0d0"
 
@@ -75,7 +79,9 @@ accent      = "#0d728f"    # cyan đậm — bản sáng cần sắc đậm mớ
 accent-text = "#0d728f"
 on-accent   = "#fafafa"
 selection   = "#0d728f"
+selection-alt = "#0a5c73"
 on-selection = "#fafafa"   # chữ trong vùng chọn TRẮNG — `text` (#1c1c1c) chỉ đạt 3,10:1
+on-selection-muted = "#e9e9e9"  # bản 1.0 #e1e1e1 chỉ 4,20:1 -> 4,53
 
 link    = "#0d728f"
 visited = "#6a4c93"
@@ -84,6 +90,21 @@ danger  = "#b3261e"
 warning = "#8f5a00"
 success = "#1b7a45"
 warm    = "#8f5a00"
+
+# Font giao diện — bản 1.0: UI để mặc định (Noto Sans 10), Konsole dùng Hack.
+[fonts]
+ui   = "Noto Sans"
+mono = "Hack"
+size = 10
+
+# Thông số riêng của KDE (kdeglobals), theo từng chế độ.
+[kde]
+# Màu viền cửa sổ/vạch ngăn = pha(nền cửa sổ, màu chữ, frame-contrast) — Breeze
+# tự tính, không có khoá viền riêng. Bản 1.0 đo: tối 0.1 -> #393939 (user chọn
+# 2026-09-13), sáng 0.14.
+frame-contrast = { dark = 0.1, light = 0.14 }
+# Bộ icon Samhie kế thừa breeze-dark; tới lúc mang bộ icon sang thì đổi thành "Samhie".
+icon-theme     = { dark = "breeze-dark", light = "breeze" }
 
 # 16 màu ANSI của Konsole (bản 1.0, theme/konsole/Samhie.colorscheme).
 # Thứ tự: đen, đỏ, lục, vàng, lam, tím, cyan, trắng — thường / sáng (intense).
@@ -108,6 +129,12 @@ min = 4.5
 
 [[contrast]]
 fg = ["on-selection"]
+bg = ["selection", "selection-alt"]
+min = 4.5
+
+[[contrast]]
+# Chữ phụ trong vùng chọn (vd cột ngày sửa của file đang chọn).
+fg = ["on-selection-muted"]
 bg = ["selection"]
 min = 4.5
 

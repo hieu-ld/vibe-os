@@ -141,6 +141,15 @@ modules:
       enabled:
         - sddm.service
         - firewalld.service
+    user:
+      masked:
+        # Autostart của gói nvidia-settings (chỉ có ở bản NVIDIA): nạp cấu hình
+        # cho X11, vô dụng dưới Hyprland. Lệnh `[ -e /dev/nvidia0 ] && …` của
+        # nó trả mã lỗi khi không có card → uwsm (fumon) báo "Failed unit"
+        # mỗi lần đăng nhập. Mask thay vì sửa file của gói.
+        # Hai dấu `\\`: module chạy `printf "$unit"`, một dấu `\` sẽ bị dịch
+        # `\x2d` → `-` thành tên unit sai.
+        - 'app-nvidia\\x2dsettings\\x2dload@autostart.service'
 
   - type: script
     snippets:

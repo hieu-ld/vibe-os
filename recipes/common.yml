@@ -167,6 +167,7 @@ modules:
       - systemctl set-default graphical.target
     scripts:
       - firewall.sh
+      - plymouth.sh
 
   # ── 6. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────
   # Edge cài bằng Flatpak chứ không đưa bản RPM vào image: image là công khai,
@@ -181,6 +182,12 @@ modules:
           - com.github.tchx84.Flatseal   # xem và thu hồi quyền của app Flatpak
           - org.kde.gwenview             # xem ảnh
           - org.kde.okular               # đọc PDF
+
+  # Dựng lại initramfs để theme Plymouth (plymouth.sh ở trên) có mặt lúc khởi
+  # động — màn hình boot hiện TRƯỚC khi ổ đĩa thật được mount, nên nó chỉ thấy
+  # những gì nằm trong initramfs. Chạy dracut của image với cấu hình dracut của
+  # image nền (không tải gì). Phải đứng SAU mọi module đụng tới boot.
+  - type: initramfs
 
   # Ký số image. Máy cài Samhie kiểm chữ ký trước khi nhận bản cập nhật, nên
   # không ai đánh tráo được image giữa đường.

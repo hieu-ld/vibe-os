@@ -271,12 +271,95 @@ def kdeglobals(pal):
     return "\n".join(head) + ini(sections)
 
 
+# ---------------------------------------------------------------- Plymouth
+
+def plymouth_theme(pal):
+    # Màn hình khởi động luôn TỐI, kể cả khi người dùng chọn bản sáng: nó hiện
+    # trước khi có tài khoản nào, và nối tiếp màn hình đen của firmware.
+    # Plymouth ghi màu dạng 0xrrggbb.
+    def c(hex_color):
+        return "0x" + hex_color[1:]
+    bg = c(pal["shared"]["black"])
+    d = pal["dark"]
+    modes = [("updates", "Installing Updates..."),
+             ("system-upgrade", "Upgrading System..."),
+             ("firmware-upgrade", "Upgrading Firmware..."),
+             ("system-reset", "Resetting System...")]
+    lines = [
+        f"# {HEADER}",
+        "#",
+        "# Màn hình khởi động của Samhie. Như bản 1.0: module \"two-step\" có sẵn",
+        "# của Plymouth (lo sẵn ô nhập mật khẩu ổ mã hoá, đèn Caps Lock, thông báo",
+        "# lỗi) — cố ý KHÔNG tự viết theme kiểu script, viết sai là máy mã hoá ổ",
+        "# không nhập được mật khẩu, tức không boot nổi.",
+        "#",
+        "# Ảnh trong thư mục này:",
+        f"#   throbber-*.png  5 chấm màu {d['text']} (dark.text) — sinh bằng",
+        "#                   tools/build-plymouth-throbber.py (cần Pillow), đổi",
+        "#                   dark.text thì chạy lại script đó",
+        "#   watermark.png   chữ Samhie, cao 64px — bản 1.0 (branding/watermark.png)",
+        "#   entry, bullet, lock, capslock, keyboard, keymap-render: ô mật khẩu,",
+        "#                   chép từ theme spinner của Fedora lúc build",
+        "#                   (files/scripts/plymouth.sh)",
+        "#",
+        "# Font: trong initramfs chỉ có plugin chữ label-freetype, nó dùng font",
+        "# MẶC ĐỊNH của hệ thống (fc-match không tham số = Noto Sans) và bỏ qua tên",
+        "# font ghi ở đây, chỉ lấy cỡ chữ. Ghi đúng Noto Sans để lúc tắt máy (có",
+        "# label-pango, đọc tên font) ra cùng một kiểu chữ.",
+        "",
+        "[Plymouth Theme]",
+        "Name=Samhie",
+        "Description=Samhie boot screen",
+        "ModuleName=two-step",
+        "",
+        "[two-step]",
+        "Font=Noto Sans 12",
+        "TitleFont=Noto Sans 30",
+        "ImageDir=/usr/share/plymouth/themes/samhie",
+        "DialogHorizontalAlignment=.5",
+        "DialogVerticalAlignment=.382",
+        "TitleHorizontalAlignment=.5",
+        "TitleVerticalAlignment=.382",
+        "HorizontalAlignment=.5",
+        "VerticalAlignment=.7",
+        "WatermarkHorizontalAlignment=.5",
+        "WatermarkVerticalAlignment=.96",
+        "Transition=none",
+        "TransitionDuration=0.0",
+        "# Nền phẳng Black (hai đầu gradient cùng một màu), như bản 1.0.",
+        f"BackgroundStartColor={bg}",
+        f"BackgroundEndColor={bg}",
+        "# Thanh tiến trình (chỉ hiện lúc cài cập nhật firmware…): rãnh",
+        "# sub-secondary, phần chạy accent.",
+        f"ProgressBarBackgroundColor={c(d['sub-secondary'])}",
+        f"ProgressBarForegroundColor={c(d['accent'])}",
+        "MessageBelowAnimation=true",
+        "",
+        "# Tắt end animation ở mọi chế độ nên không cần ảnh animation-*. Đừng bật:",
+        "# thiếu ảnh đó thì two-step lấy throbber-* làm end animation và BỎ vòng",
+        "# xoay (đọc plugin.c, Plymouth 24.004.60).",
+        "[boot-up]",
+        "UseEndAnimation=false",
+        "",
+        "[shutdown]",
+        "UseEndAnimation=false",
+        "",
+        "[reboot]",
+        "UseEndAnimation=false",
+    ]
+    for mode, title in modes:
+        lines += ["", f"[{mode}]", "SuppressMessages=true", "ProgressBarShowPercentComplete=true",
+                  "UseProgressBar=true", f"Title={title}", "SubTitle=Do not turn off your computer"]
+    return "\n".join(lines) + "\n"
+
+
 OUTPUTS = {
     "files/system/usr/share/samhie/hypr/colors.lua": hyprland_lua,
     "files/system/usr/share/samhie/hypr/hyprlock-colors.conf": hyprlock_conf,
     "files/system/etc/xdg/kdeglobals": kdeglobals,
     "files/system/usr/share/color-schemes/SamhieDark.colors": kde_colors_file("dark"),
     "files/system/usr/share/color-schemes/SamhieLight.colors": kde_colors_file("light"),
+    "files/system/usr/share/plymouth/themes/samhie/samhie.plymouth": plymouth_theme,
 }
 
 

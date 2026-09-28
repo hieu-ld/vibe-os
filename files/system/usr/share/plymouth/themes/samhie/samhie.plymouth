@@ -1,0 +1,88 @@
+# SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay.
+#
+# Màn hình khởi động của Samhie. Như bản 1.0: module "two-step" có sẵn
+# của Plymouth (lo sẵn ô nhập mật khẩu ổ mã hoá, đèn Caps Lock, thông báo
+# lỗi) — cố ý KHÔNG tự viết theme kiểu script, viết sai là máy mã hoá ổ
+# không nhập được mật khẩu, tức không boot nổi.
+#
+# Ảnh trong thư mục này:
+#   throbber-*.png  5 chấm màu #e8e8e8 (dark.text) — sinh bằng
+#                   tools/build-plymouth-throbber.py (cần Pillow), đổi
+#                   dark.text thì chạy lại script đó
+#   watermark.png   chữ Samhie, cao 64px — bản 1.0 (branding/watermark.png)
+#   entry, bullet, lock, capslock, keyboard, keymap-render: ô mật khẩu,
+#                   chép từ theme spinner của Fedora lúc build
+#                   (files/scripts/plymouth.sh)
+#
+# Font: trong initramfs chỉ có plugin chữ label-freetype, nó dùng font
+# MẶC ĐỊNH của hệ thống (fc-match không tham số = Noto Sans) và bỏ qua tên
+# font ghi ở đây, chỉ lấy cỡ chữ. Ghi đúng Noto Sans để lúc tắt máy (có
+# label-pango, đọc tên font) ra cùng một kiểu chữ.
+
+[Plymouth Theme]
+Name=Samhie
+Description=Samhie boot screen
+ModuleName=two-step
+
+[two-step]
+Font=Noto Sans 12
+TitleFont=Noto Sans 30
+ImageDir=/usr/share/plymouth/themes/samhie
+DialogHorizontalAlignment=.5
+DialogVerticalAlignment=.382
+TitleHorizontalAlignment=.5
+TitleVerticalAlignment=.382
+HorizontalAlignment=.5
+VerticalAlignment=.7
+WatermarkHorizontalAlignment=.5
+WatermarkVerticalAlignment=.96
+Transition=none
+TransitionDuration=0.0
+# Nền phẳng Black (hai đầu gradient cùng một màu), như bản 1.0.
+BackgroundStartColor=0x0a0a0a
+BackgroundEndColor=0x0a0a0a
+# Thanh tiến trình (chỉ hiện lúc cài cập nhật firmware…): rãnh
+# sub-secondary, phần chạy accent.
+ProgressBarBackgroundColor=0x3b3c3c
+ProgressBarForegroundColor=0x00c0e8
+MessageBelowAnimation=true
+
+# Tắt end animation ở mọi chế độ nên không cần ảnh animation-*. Đừng bật:
+# thiếu ảnh đó thì two-step lấy throbber-* làm end animation và BỎ vòng
+# xoay (đọc plugin.c, Plymouth 24.004.60).
+[boot-up]
+UseEndAnimation=false
+
+[shutdown]
+UseEndAnimation=false
+
+[reboot]
+UseEndAnimation=false
+
+[updates]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Installing Updates...
+SubTitle=Do not turn off your computer
+
+[system-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Upgrading System...
+SubTitle=Do not turn off your computer
+
+[firmware-upgrade]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Upgrading Firmware...
+SubTitle=Do not turn off your computer
+
+[system-reset]
+SuppressMessages=true
+ProgressBarShowPercentComplete=true
+UseProgressBar=true
+Title=Resetting System...
+SubTitle=Do not turn off your computer

@@ -3,15 +3,22 @@
 <!--
   Sidebar "Places" của Dolphin theo thiết kế Figma (mang từ Samhie 1.0).
 
-  @HOME_URL@, @STORAGE_URL@, @DESKTOP_URL@, @DOWNLOAD_URL@ được thay bằng URL
-  thật ở lần đăng nhập đầu, xem /usr/libexec/samhie/user-setup. Không ghi sẵn
-  được vì image không biết người dùng tên gì.
+  @HOME_URL@, @STORAGE_URL@, @DOWNLOAD_URL@ được thay bằng URL thật ở lần
+  đăng nhập đầu, xem /usr/libexec/samhie/user-setup. Không ghi sẵn được vì
+  image không biết người dùng tên gì, và Storage có thể là ổ riêng.
+
+  Mọi mục đều là isSystemItem: menu chuột phải không có "Remove from Places",
+  chỉ còn Hide/Edit — cố định như Home (đọc kfileplacesview.cpp, KIO 6.30).
+  Thư mục người dùng tự ghim (kéo thả / "Add to Places") thì xoá được.
 
   Lưu ý về thứ tự: Dolphin tự chia sidebar thành các mục (Places / Remote /
   Recent / Search For / Devices) dựa theo giao thức của URL, mình chỉ sắp được
   thứ tự BÊN TRONG mỗi mục. Nên "Recycle Bin" (trash:/) nằm cuối cụm Places chứ
-  không xuống chung với Network được, và "Starred" (tags:/) rơi vào mục
-  "Search For". Đây là giới hạn của Dolphin, không phải cấu hình sai.
+  không xuống chung với Network được. Đây là giới hạn của Dolphin (thứ tự
+  nhóm viết cứng trong KIO), không phải cấu hình sai.
+
+  Không có Desktop (Hyprland không vẽ icon lên màn hình nền) và Starred
+  (tags:/ cần trình đánh chỉ mục baloo, image không có) — user bỏ 2026-09-29.
 -->
 <xbel xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info" xmlns:kdepriv="http://www.kde.org/kdepriv">
  <!--
@@ -36,12 +43,20 @@
 
    withBaloo và withRecentlyUsed cũng là cờ ở gốc, cùng cơ chế: khai sẵn để KDE
    khỏi tưởng phải đi thêm mục Baloo và Recent vào hộ.
+
+   GroupState-Devices-IsHidden: ẩn cả nhóm "Devices" (chuột phải → Show
+   Section để hiện lại). Solid 6.30 CỐ Ý liệt kê overlay mount ở "/" —
+   trên Fedora Atomic đó là gốc composefs chỉ đọc, hiện thành ổ không tên,
+   luôn đầy 100% — cùng /boot và phân vùng btrfs hệ thống. Ẩn từng ổ thì
+   phải ghi UDI riêng của từng máy. USB vẫn hiện: KIO xếp ổ tháo rời vào
+   nhóm "Removable Devices" riêng; ổ Storage đã có mục trong Places.
  -->
  <info>
   <metadata owner="http://www.kde.org">
    <withBaloo>true</withBaloo>
    <withRecentlyUsed>true</withRecentlyUsed>
    <kde_places_version>99</kde_places_version>
+   <GroupState-Devices-IsHidden>true</GroupState-Devices-IsHidden>
   </metadata>
  </info>
  <bookmark href="@HOME_URL@">
@@ -64,17 +79,7 @@
    </metadata>
    <metadata owner="http://www.kde.org">
     <ID>samhie-storage</ID>
-   </metadata>
-  </info>
- </bookmark>
- <bookmark href="@DESKTOP_URL@">
-  <title>Desktop</title>
-  <info>
-   <metadata owner="http://freedesktop.org">
-    <bookmark:icon name="user-desktop"/>
-   </metadata>
-   <metadata owner="http://www.kde.org">
-    <ID>samhie-desktop</ID>
+    <isSystemItem>true</isSystemItem>
    </metadata>
   </info>
  </bookmark>
@@ -86,6 +91,7 @@
    </metadata>
    <metadata owner="http://www.kde.org">
     <ID>samhie-download</ID>
+    <isSystemItem>true</isSystemItem>
    </metadata>
   </info>
  </bookmark>
@@ -121,18 +127,6 @@
    </metadata>
    <metadata owner="http://www.kde.org">
     <ID>samhie-recent</ID>
-    <isSystemItem>true</isSystemItem>
-   </metadata>
-  </info>
- </bookmark>
- <bookmark href="tags:/">
-  <title>Starred</title>
-  <info>
-   <metadata owner="http://freedesktop.org">
-    <bookmark:icon name="tag"/>
-   </metadata>
-   <metadata owner="http://www.kde.org">
-    <ID>samhie-starred</ID>
     <isSystemItem>true</isSystemItem>
    </metadata>
   </info>

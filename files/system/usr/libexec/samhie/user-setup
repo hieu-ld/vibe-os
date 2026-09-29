@@ -1,8 +1,14 @@
 #!/usr/bin/env bash
 # Dựng phần riêng của Samhie cho MỘT tài khoản, ở lần đăng nhập đầu tiên:
-#   1. Cấu trúc thư mục: chỉ Desktop, Download, Storage nằm thẳng trong home;
-#      Documents/Music/Pictures/… gom vào Storage (thiết kế của bản 1.0).
+#   1. Cấu trúc thư mục (user chốt 2026-09-29): home để cho thứ cần nhanh
+#      (SSD) — chỉ còn Download cùng thư mục người dùng tự tạo (Projects…).
+#      Docs/Music/Pictures/Videos nằm trong Storage, nơi lưu trữ lâu dài.
+#      Không có Desktop: Hyprland không vẽ icon lên màn hình nền.
 #   2. Sidebar Places của Dolphin theo bản thiết kế.
+#
+# Storage là Ổ RIÊNG nếu máy có: phân vùng gán vào /mnt/storage lúc cài
+# (trình cài Fedora tự ghi fstab). Không có ổ đó, hoặc người dùng không ghi
+# được vào nó, thì Storage là thư mục ~/Storage.
 #
 # Chạy bởi samhie-user-setup.service (dịch vụ systemd của user) MỖI lần đăng
 # nhập, nhưng chỉ làm việc khi dấu ở ~/.local/state/samhie/user-setup còn cũ
@@ -38,17 +44,41 @@ if [ "$done_version" -ge "$version" ]; then
     exit 0
 fi
 
-# Tên XDG  | chỗ của Samhie        | chỗ mặc định khi chưa có user-dirs.dirs
+# /mnt là symlink sang /var/mnt trên Fedora Atomic; lấy đường dẫn thật để
+# sidebar và user-dirs.dirs hiện đúng chỗ mount.
+storage=$HOME/Storage
+if [ -e /mnt/storage ]; then
+    storage_mount=$(realpath -- /mnt/storage)
+    if ! mountpoint -q -- "$storage_mount"; then
+        echo "/mnt/storage is not a mount point, using $storage"
+    elif [ ! -w "$storage_mount" ]; then
+        echo "Cannot write to $storage_mount (fix with: sudo chown $(id -un): $storage_mount), using $storage"
+    else
+        storage=$storage_mount
+    fi
+fi
+
+# Tên XDG  | chỗ của Samhie | chỗ mặc định khi chưa có user-dirs.dirs
+#   @ = thư mục Storage, ~ = home, - = tắt (trỏ về chính home — quy ước của
+#   xdg-user-dirs cho "không dùng"; Templates/Public hiếm ai dùng)
 # (cột cuối là thứ Qt/GLib tự dùng khi file thiếu dòng đó — thư mục Fedora
 # hay tạo sẵn, cần nhận ra để dọn nếu rỗng)
-layout='DESKTOP     Desktop                Desktop
-DOWNLOAD    Download               Downloads
-DOCUMENTS   Storage/Docs           Documents
-TEMPLATES   Storage/Docs/Templates Templates
-MUSIC       Storage/Media/Music    Music
-PICTURES    Storage/Media/Pictures Pictures
-VIDEOS      Storage/Media/Videos   Videos
-PUBLICSHARE Storage/Public         Public'
+layout='DESKTOP     -          Desktop
+DOWNLOAD    ~/Download Downloads
+DOCUMENTS   @/Docs     Documents
+TEMPLATES   -          Templates
+MUSIC       @/Music    Music
+PICTURES    @/Pictures Pictures
+VIDEOS      @/Videos   Videos
+PUBLICSHARE -          Public'
+
+resolve() {
+    case $1 in
+        -) printf '%s' "$HOME" ;;
+        '~'/*) printf '%s/%s' "$HOME" "${1#'~'/}" ;;
+        @/*) printf '%s/%s' "$storage" "${1#@/}" ;;
+    esac
+}
 
 # ── 1. Thư mục ──────────────────────────────────────────────────────────────
 
@@ -59,7 +89,7 @@ if [ -r "$dirs_file" ]; then
     . "$dirs_file"
 fi
 
-targets=$(printf '%s\n' "$layout" | awk -v h="$HOME" '{ print h "/" $2 }')
+targets=$(while read -r _ rel _; do resolve "$rel"; echo; done <<< "$layout")
 
 is_target() {
     printf '%s\n' "$targets" | grep -qxF -- "$1"
@@ -90,13 +120,13 @@ to_dirs_value() {
 }
 
 # Storage luôn có, kể cả khi mọi thư mục cũ đều được giữ: sidebar trỏ vào nó.
-mkdir -p -- "$HOME/Storage"
+mkdir -p -- "$storage"
 
 lines=
 while read -r name rel stock; do
     var=XDG_${name}_DIR
     current=${!var:-$HOME/$stock}
-    target=$HOME/$rel
+    target=$(resolve "$rel")
 
     if [ "$current" = "$target" ]; then
         chosen=$target
@@ -124,7 +154,7 @@ fi
 
 mkdir -p -- "$config_home"
 {
-    echo '# Thư mục người dùng — cấu trúc Storage của Samhie.'
+    echo '# Thư mục người dùng — cấu trúc Storage của Samhie. "$HOME" = không dùng.'
     echo '# Ghi bởi /usr/libexec/samhie/user-setup ở lần đăng nhập đầu; từ đó file'
     echo '# là của bạn, Samhie không ghi lại nữa — sửa thẳng ở đây, rồi đăng nhập lại.'
     printf '%s' "$lines"
@@ -162,8 +192,7 @@ if [ -r "$places_template" ]; then
     # Phần thay thế để trong ngoặc kép: bash 5.2+ coi `&` không trích dẫn là
     # "chuỗi vừa khớp" (patsub_replacement).
     xbel=${xbel//@HOME_URL@/"$(file_url "$HOME")"}
-    xbel=${xbel//@STORAGE_URL@/"$(file_url "$HOME/Storage")"}
-    xbel=${xbel//@DESKTOP_URL@/"$(file_url "$XDG_DESKTOP_DIR")"}
+    xbel=${xbel//@STORAGE_URL@/"$(file_url "$storage")"}
     xbel=${xbel//@DOWNLOAD_URL@/"$(file_url "$XDG_DOWNLOAD_DIR")"}
 
     mkdir -p -- "$data_home"

@@ -222,7 +222,7 @@ hl.bind(mod .. " + T",         hl.dsp.exec_cmd(terminal))
 -- Win+V: lịch sử clipboard. Win+Shift+S: chụp một vùng màn hình vào clipboard.
 hl.bind(mod .. " + V",         hl.dsp.exec_cmd("cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"))
 hl.bind(mod .. " + SHIFT + S", hl.dsp.exec_cmd("grim -g \"$(slurp)\" - | wl-copy"))
-hl.bind("Print",               hl.dsp.exec_cmd("grim - | swappy -f -"))
+hl.bind("Print",               hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot"))  -- lưu vào Storage/Pictures/Screenshots
 
 hl.bind("ALT + F4",            hl.dsp.window.close())
 hl.bind(mod .. " + Q",         hl.dsp.window.close())

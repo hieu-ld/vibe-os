@@ -96,10 +96,16 @@ is_target() {
 }
 
 # Thư mục không tồn tại cũng tính là rỗng. $HOME thì không bao giờ rỗng.
+# Chỉ có ".directory" cũng là rỗng: Plasma/Dolphin tự ghi file đó (kiểu xem,
+# icon) — ~/Desktop của tài khoản Kinoite cũ có sẵn nó (đo trong máy ảo
+# 2026-09-29), trước đây làm script tưởng "có file" và giữ Desktop lại.
 is_empty_dir() {
+    local entries
     [ "$1" != "$HOME" ] || return 1
     [ -e "$1" ] || return 0
-    [ -d "$1" ] && [ -z "$(ls -A -- "$1")" ]
+    [ -d "$1" ] || return 1
+    entries=$(ls -A -- "$1")
+    [ -z "$entries" ] || [ "$entries" = .directory ]
 }
 
 # Ghi đường dẫn theo cú pháp của user-dirs.dirs: "$HOME/…" hoặc tuyệt đối.
@@ -132,6 +138,7 @@ while read -r name rel stock; do
         chosen=$target
     elif [ "$current" = "$HOME" ] || is_empty_dir "$current"; then
         if [ "$current" != "$HOME" ] && [ -d "$current" ] && ! is_target "$current"; then
+            rm -f -- "$current/.directory"
             rmdir -- "$current" && echo "Removed empty $current"
         fi
         chosen=$target
@@ -144,6 +151,10 @@ while read -r name rel stock; do
     lines+="XDG_${name}_DIR=\"$(to_dirs_value "$chosen")\""$'\n'
     printf -v "$var" '%s' "$chosen"
 done <<< "$layout"
+
+# Ảnh chụp màn hình (phím Print, /usr/libexec/samhie/screenshot) lưu ở đây.
+# Tạo sẵn, rỗng cũng để hiện — user chốt 2026-09-29.
+mkdir -p -- "$XDG_PICTURES_DIR/Screenshots"
 
 # Giữ nguyên dòng XDG_*_DIR không chuẩn người dùng tự thêm (vd PROJECTS).
 extra=

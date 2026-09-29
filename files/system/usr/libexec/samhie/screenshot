@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Phím Print: chụp cả màn hình rồi mở swappy để vẽ lên / lưu / copy.
+# Nút Save lưu vào <thư mục Pictures>/Screenshots — tức Storage/Pictures/
+# Screenshots theo cấu trúc của Samhie (user chốt 2026-09-29).
+#
+# swappy không đọc cấu hình hệ thống, chỉ ~/.config/swappy/config, nên chỗ lưu
+# truyền qua biến XDG_DESKTOP_DIR: đọc mã nguồn swappy 1.5.1 (config.c,
+# get_default_save_dir), nó thử biến này ĐẦU TIÊN, rồi mới ~/Desktop, rồi $HOME.
+# Người dùng tự đặt save_dir trong ~/.config/swappy/config thì cái đó thắng.
+# swappy tách biến bằng wordexp: đường dẫn có dấu cách thì nó bỏ qua và lưu
+# vào $HOME — không mất ảnh, chỉ sai chỗ.
+set -eu
+
+dirs_file=${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs
+XDG_PICTURES_DIR=$HOME
+if [ -r "$dirs_file" ]; then
+    # shellcheck disable=SC1090
+    . "$dirs_file"
+fi
+
+save_dir=$XDG_PICTURES_DIR/Screenshots
+mkdir -p -- "$save_dir"
+
+grim - | XDG_DESKTOP_DIR=$save_dir swappy -f -

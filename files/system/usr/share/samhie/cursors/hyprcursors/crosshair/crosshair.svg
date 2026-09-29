@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<!-- SINH TỰ ĐỘNG bởi tools/build-cursors.py từ theme/cursors/ + palette.toml — đừng sửa tay. -->
+<g transform="scale(1.5)" fill="none">
+  <rect x="7" y="1.5" width="2" height="5" rx="1" fill="#003845" stroke="#fafafa"/>
+  <rect x="6.5" y="7" width="2" height="5" rx="1" transform="rotate(90 6.5 7)" fill="#003845" stroke="#fafafa"/>
+  <rect x="7" y="9.5" width="2" height="5" rx="1" fill="#003845" stroke="#fafafa"/>
+  <rect x="14.5" y="7" width="2" height="5" rx="1" transform="rotate(90 14.5 7)" fill="#003845" stroke="#fafafa"/>
+</g>
+</svg>

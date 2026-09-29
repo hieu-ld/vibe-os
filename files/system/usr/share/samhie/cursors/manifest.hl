@@ -1,0 +1,5 @@
+# SINH TỰ ĐỘNG bởi tools/build-cursors.py — đừng sửa tay.
+name = Samhie-cursors
+description = Con trỏ Samhie (user vẽ trên Figma)
+version = 1
+cursors_directory = hyprcursors

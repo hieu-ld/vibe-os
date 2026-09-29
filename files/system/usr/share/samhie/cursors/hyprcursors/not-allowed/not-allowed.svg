@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<!-- SINH TỰ ĐỘNG bởi tools/build-cursors.py từ theme/cursors/ + palette.toml — đừng sửa tay. -->
+<g transform="scale(1.5) translate(-3.3137 -3.3137)" fill="none">
+  <circle cx="11.3137" cy="11.3137" r="6.5" transform="rotate(45 11.3137 11.3137)" stroke="#fafafa" stroke-width="3"/>
+  <path d="M15.5564 7.07104L7.07112 15.5563" stroke="#fafafa" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="11.3137" cy="11.3137" r="6.5" transform="rotate(45 11.3137 11.3137)" stroke="#e26767"/>
+  <path d="M15.5564 7.07104L7.07112 15.5563" stroke="#e26767" stroke-linecap="round"/>
+</g>
+</svg>

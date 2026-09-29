@@ -1,0 +1,9 @@
+# SINH TỰ ĐỘNG bởi tools/build-cursors.py — đừng sửa tay.
+resize_algorithm = bilinear
+hotspot_x = 0.5000
+hotspot_y = 0.5000
+define_override = move
+define_override = fleur
+define_override = size_all
+define_override = all-scroll
+define_size = 24, move.svg

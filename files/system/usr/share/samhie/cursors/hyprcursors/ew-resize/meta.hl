@@ -1,0 +1,15 @@
+# SINH TỰ ĐỘNG bởi tools/build-cursors.py — đừng sửa tay.
+resize_algorithm = bilinear
+hotspot_x = 0.5000
+hotspot_y = 0.5000
+define_override = ew-resize
+define_override = e-resize
+define_override = w-resize
+define_override = size_hor
+define_override = h_double_arrow
+define_override = sb_h_double_arrow
+define_override = col-resize
+define_override = split_h
+define_override = left_side
+define_override = right_side
+define_size = 24, ew-resize.svg

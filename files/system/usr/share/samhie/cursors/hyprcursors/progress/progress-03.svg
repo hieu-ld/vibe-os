@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<!-- SINH TỰ ĐỘNG bởi tools/build-cursors.py từ theme/cursors/ + palette.toml — đừng sửa tay. -->
+<g transform="translate(-9.94 0.42) rotate(-27.41 12 1)" fill="none">
+  <path d="M10.6684 1.81815C11.228 0.738781 12.772 0.738782 13.3316 1.81815L20.6429 15.9185C21.2828 17.1526 20.0449 18.518 18.7542 18.0017L17.0571 17.3228C16.0718 16.9287 15 17.6544 15 18.7155V21.75C15 22.5784 14.3284 23.25 13.5 23.25H12H10.5C9.67157 23.25 9 22.5784 9 21.75V18.7155C9 17.6544 7.92821 16.9287 6.94291 17.3228L5.2458 18.0017C3.95507 18.518 2.71717 17.1526 3.35708 15.9185L10.6684 1.81815Z" fill="#003845" stroke="#fafafa" stroke-width="1.5"/>
+</g>
+<circle cx="20.338" cy="15.492" r="1.15" fill="#003845" stroke="#fafafa" stroke-width="0.75"/>
+<circle cx="19.713" cy="15.402" r="1.15" fill="#003845" stroke="#fafafa" stroke-width="0.75"/>
+<circle cx="19.109" cy="15.440" r="1.15" fill="#003845" stroke="#fafafa" stroke-width="0.75"/>
+<circle cx="18.424" cy="15.640" r="1.15" fill="#003845" stroke="#fafafa" stroke-width="0.75"/>
+<circle cx="17.630" cy="16.137" r="1.15" fill="#003845" stroke="#fafafa" stroke-width="0.75"/>
+</svg>

@@ -55,6 +55,11 @@ hl.monitor({
 ---- BIẾN MÔI TRƯỜNG ----
 --------------------------
 
+-- Con trỏ Samhie (user vẽ; sinh bằng tools/build-cursors.py). Hyprland vẽ bằng
+-- bản hyprcursor, app XWayland và app tự nạp con trỏ dùng bản XCursor — cùng
+-- một theme ở /usr/share/icons/Samhie-cursors. 24 = cỡ khung user vẽ.
+hl.env("XCURSOR_THEME", "Samhie-cursors")
+hl.env("HYPRCURSOR_THEME", "Samhie-cursors")
 hl.env("XCURSOR_SIZE", "24")
 hl.env("HYPRCURSOR_SIZE", "24")
 

@@ -1,0 +1,11 @@
+# SINH TỰ ĐỘNG bởi tools/build-cursors.py — đừng sửa tay.
+resize_algorithm = bilinear
+hotspot_x = 0.2050
+hotspot_y = 0.0308
+define_override = pointer
+define_override = hand1
+define_override = hand2
+define_override = pointing_hand
+define_override = 9d800788f1b08800ae810202380a0822
+define_override = e29285e634086352946a0e7090d73106
+define_size = 24, pointer.svg

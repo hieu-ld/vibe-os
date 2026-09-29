@@ -1,0 +1,20 @@
+# SINH TỰ ĐỘNG bởi tools/build-cursors.py — đừng sửa tay.
+resize_algorithm = bilinear
+hotspot_x = 0.0858
+hotspot_y = 0.0596
+define_override = default
+define_override = arrow
+define_override = left_ptr
+define_override = top_left_arrow
+define_override = context-menu
+define_override = alias
+define_override = link
+define_override = copy
+define_override = dnd-copy
+define_override = 3085a0e285430894940527032f8b26df
+define_override = 640fb0e74195791501fd1ed57b41487f
+define_override = a2a266d0498c3104214a47bd64ab0fc8
+define_override = 1081e37283d90000800003c07f3ef6bf
+define_override = 6407b0e94181790501fd1e167b474872
+define_override = b66166c04f8c3109214a4fbd64a50fc8
+define_size = 24, default.svg

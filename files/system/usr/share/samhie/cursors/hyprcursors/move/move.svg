@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<!-- SINH TỰ ĐỘNG bởi tools/build-cursors.py từ theme/cursors/ + palette.toml — đừng sửa tay. -->
+<g transform="scale(1.5)" fill="none">
+  <path d="M8 6V10" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M6 8H10" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M8 1.5L9.5 3.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M8 1.5L6.5 3.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M6.5 3.5H9.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M8 14.5L9.5 12.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M8 14.5L6.5 12.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M6.5 12.5H9.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M14.5 8L12.5 9.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M14.5 8L12.5 6.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M12.5 6.5V9.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M1.5 8L3.5 9.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M1.5 8L3.5 6.5" stroke="#fafafa" stroke-linecap="round"/>
+  <path d="M3.5 6.5V9.5" stroke="#fafafa" stroke-linecap="round"/>
+  <circle cx="8" cy="8" r="2.5" stroke="#fafafa"/>
+  <circle cx="8" cy="8" r="2.5" stroke="#003845" stroke-width="0.3"/>
+  <path d="M8 10.5V5.5" stroke="#003845" stroke-width="0.3" stroke-linecap="round"/>
+  <path d="M5.5 8H10.5" stroke="#003845" stroke-width="0.3" stroke-linecap="round"/>
+  <path d="M7.76 1.82C7.88 1.66 8.12 1.66 8.24 1.82L9.14 3.02C9.28833 3.21777 9.14721 3.5 8.9 3.5H7.1C6.85279 3.5 6.71167 3.21777 6.86 3.02L7.76 1.82Z" fill="#003845"/>
+  <path d="M1.82 8.24C1.66 8.12 1.66 7.88 1.82 7.76L3.02 6.86C3.21777 6.71167 3.5 6.85279 3.5 7.1V8.9C3.5 9.14721 3.21777 9.28833 3.02 9.14L1.82 8.24Z" fill="#003845"/>
+  <path d="M7.76 14.18C7.88 14.34 8.12 14.34 8.24 14.18L9.14 12.98C9.28833 12.7822 9.14721 12.5 8.9 12.5H7.1C6.85279 12.5 6.71167 12.7822 6.86 12.98L7.76 14.18Z" fill="#003845"/>
+  <path d="M14.18 7.76C14.34 7.88 14.34 8.12 14.18 8.24L12.98 9.14C12.7822 9.28833 12.5 9.14721 12.5 8.9V7.1C12.5 6.85279 12.7822 6.71167 12.98 6.86L14.18 7.76Z" fill="#003845"/>
+</g>
+</svg>

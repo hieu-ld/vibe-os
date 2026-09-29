@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24">
+<!-- SINH TỰ ĐỘNG bởi tools/build-cursors.py từ theme/cursors/ + palette.toml — đừng sửa tay. -->
+<circle cx="17.373" cy="17.233" r="2.0" fill="#003845" stroke="#fafafa" stroke-width="1.0"/>
+<circle cx="19.409" cy="13.163" r="2.0" fill="#003845" stroke="#fafafa" stroke-width="1.0"/>
+<circle cx="18.980" cy="9.255" r="2.0" fill="#003845" stroke="#fafafa" stroke-width="1.0"/>
+<circle cx="17.214" cy="6.609" r="2.0" fill="#003845" stroke="#fafafa" stroke-width="1.0"/>
+<circle cx="15.211" cy="5.222" r="2.0" fill="#003845" stroke="#fafafa" stroke-width="1.0"/>
+</svg>

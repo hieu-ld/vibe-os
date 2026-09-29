@@ -28,6 +28,11 @@ black = "#0a0a0a"   # Figma: Black
 white = "#fafafa"   # Figma: White
 cyan  = "#00c0e8"   # Figma: Cyan — màu nhấn gốc. Trên nền SÁNG chỉ dùng làm
                     # nền (chữ đen đè lên), vì làm chữ thì chỉ đạt 2,2:1.
+# Con trỏ chuột (user vẽ 2026-09-29, theme/cursors/). MỘT bộ cho cả tối lẫn
+# sáng — như Adwaita/Breeze/Windows: viền trắng thấy được trên mọi nền (user
+# chốt). Dấu đỏ (help, not-allowed) dùng dark.danger, không thêm vai trò riêng.
+cursor         = "#003845"
+cursor-outline = "#fafafa"
 
 [dark]
 # Thang bề mặt 4 bậc — user chốt 2026-09-13 bằng ảnh chụp Dolphin (bản 1.0):

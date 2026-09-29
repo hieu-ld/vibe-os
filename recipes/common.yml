@@ -176,6 +176,7 @@ modules:
     scripts:
       - firewall.sh
       - plymouth.sh
+      - cursors.sh
 
   # ── 6. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────
   # Edge cài bằng Flatpak chứ không đưa bản RPM vào image: image là công khai,

@@ -1,0 +1,7 @@
+# SINH TỰ ĐỘNG bởi tools/build-cursors.py — đừng sửa tay.
+# nguồn: 3e511f8834b1fb75f023ba892165296282c16a67b59b26b29f378635ca56ca96
+# (--check so dòng trên để biết cursors/ đã cũ so với theme/cursors + palette)
+[Icon Theme]
+Name=Samhie
+Comment=Con trỏ Samhie
+Inherits=breeze_cursors

@@ -1,0 +1,8 @@
+# Mặc định toàn máy cho Dolphin. Đè riêng trong ~/.config/dolphinrc — Dolphin
+# tự ghi vào file đó khi người dùng đổi trong menu, file này không bị đụng tới.
+
+[PlacesPanel]
+# Icon sidebar Places 20px (menu chuột phải chỉ có 16/22/32/48, mặc định 22).
+# Khoá là số nguyên tuỳ ý — đọc mã nguồn dolphin_placespanelsettings.kcfg.
+# User chốt 2026-09-29 sau khi thử trong máy ảo.
+IconSize=20

@@ -22,7 +22,7 @@ local color = require("/usr/share/samhie/hypr/colors")
 
 -- Những thứ người dùng đổi bằng một dòng trong ~/.config/hypr/hyprland.lua:
 --     local samhie = require("/usr/share/samhie/hypr/samhie")
---     samhie.wallpaper = "~/Pictures/nui.jpg"
+--     samhie.wallpaper = "~/Storage/Media/Pictures/nui.jpg"
 -- Chúng được ĐỌC lúc Hyprland khởi động / nạp lại cấu hình (hl.on bên dưới),
 -- tức là sau khi cả file của người dùng đã chạy xong, nên gán ở đâu sau dòng
 -- require cũng được.

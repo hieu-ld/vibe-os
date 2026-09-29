@@ -158,6 +158,10 @@ modules:
         - sddm.service
         - firewalld.service
     user:
+      enabled:
+        # Lần đăng nhập đầu của mỗi tài khoản: thư mục Storage + sidebar
+        # Dolphin (files/system/usr/libexec/samhie/user-setup).
+        - samhie-user-setup.service
       masked:
         # Autostart của gói nvidia-settings (chỉ có ở bản NVIDIA): nạp cấu hình
         # cho X11, vô dụng dưới Hyprland. Lệnh `[ -e /dev/nvidia0 ] && …` của

@@ -1,0 +1,16 @@
+# Dựng thư mục Storage + sidebar Dolphin cho tài khoản ở lần đăng nhập đầu
+# (xem /usr/libexec/samhie/user-setup). Các lần sau script tự thoát ngay.
+#
+# Chạy bằng systemd của user thay vì exec-once trong Hyprland: không phụ thuộc
+# phiên đồ hoạ nào, và Before= bảo đảm xong TRƯỚC phiên Hyprland (uwsm kéo
+# graphical-session-pre.target) — Dolphin mở lần đầu đã thấy đúng sidebar.
+[Unit]
+Description=Samhie first-login setup (Storage folders, Dolphin places)
+Before=graphical-session-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/samhie/user-setup
+
+[Install]
+WantedBy=default.target

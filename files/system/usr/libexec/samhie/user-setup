@@ -1,0 +1,176 @@
+#!/usr/bin/env bash
+# Dựng phần riêng của Samhie cho MỘT tài khoản, ở lần đăng nhập đầu tiên:
+#   1. Cấu trúc thư mục: chỉ Desktop, Download, Storage nằm thẳng trong home;
+#      Documents/Music/Pictures/… gom vào Storage (thiết kế của bản 1.0).
+#   2. Sidebar Places của Dolphin theo bản thiết kế.
+#
+# Chạy bởi samhie-user-setup.service (dịch vụ systemd của user) MỖI lần đăng
+# nhập, nhưng chỉ làm việc khi dấu ở ~/.local/state/samhie/user-setup còn cũ
+# hơn $version. Sau đó thư mục và sidebar là của người dùng: đổi gì giữ nấy.
+#
+# Vì sao không dùng /etc/skel như bản 1.0: Samhie cài bằng cách cài Fedora
+# Atomic rồi rebase, nên tài khoản có TRƯỚC image và không bao giờ nhận skel.
+# Script này chạy được cho cả tài khoản cũ lẫn tài khoản tạo sau.
+#
+# KHÔNG BAO GIỜ di chuyển hay xoá dữ liệu. Thư mục cũ (Documents, Downloads…)
+# chỉ bị bỏ khi RỖNG — bằng rmdir, lệnh tự từ chối thư mục có file. Có file
+# bên trong thì giữ nguyên thư mục đó và tiếp tục trỏ vào nó.
+set -eu
+
+version=1
+
+state_dir=${XDG_STATE_HOME:-$HOME/.local/state}/samhie
+marker=$state_dir/user-setup
+config_home=${XDG_CONFIG_HOME:-$HOME/.config}
+data_home=${XDG_DATA_HOME:-$HOME/.local/share}
+dirs_file=$config_home/user-dirs.dirs
+places=$data_home/user-places.xbel
+places_template=/usr/share/samhie/user-places.xbel.in
+
+done_version=0
+if [ -r "$marker" ]; then
+    read -r done_version < "$marker" || true
+fi
+case $done_version in
+    ''|*[!0-9]*) done_version=0 ;;
+esac
+if [ "$done_version" -ge "$version" ]; then
+    exit 0
+fi
+
+# Tên XDG  | chỗ của Samhie        | chỗ mặc định khi chưa có user-dirs.dirs
+# (cột cuối là thứ Qt/GLib tự dùng khi file thiếu dòng đó — thư mục Fedora
+# hay tạo sẵn, cần nhận ra để dọn nếu rỗng)
+layout='DESKTOP     Desktop                Desktop
+DOWNLOAD    Download               Downloads
+DOCUMENTS   Storage/Docs           Documents
+TEMPLATES   Storage/Docs/Templates Templates
+MUSIC       Storage/Media/Music    Music
+PICTURES    Storage/Media/Pictures Pictures
+VIDEOS      Storage/Media/Videos   Videos
+PUBLICSHARE Storage/Public         Public'
+
+# ── 1. Thư mục ──────────────────────────────────────────────────────────────
+
+# File này sinh ra để `source` (xem đầu file do xdg-user-dirs ghi). Chỉ gán
+# biến XDG_*_DIR; biến của script viết thường nên không đụng nhau.
+if [ -r "$dirs_file" ]; then
+    # shellcheck disable=SC1090
+    . "$dirs_file"
+fi
+
+targets=$(printf '%s\n' "$layout" | awk -v h="$HOME" '{ print h "/" $2 }')
+
+is_target() {
+    printf '%s\n' "$targets" | grep -qxF -- "$1"
+}
+
+# Thư mục không tồn tại cũng tính là rỗng. $HOME thì không bao giờ rỗng.
+is_empty_dir() {
+    [ "$1" != "$HOME" ] || return 1
+    [ -e "$1" ] || return 0
+    [ -d "$1" ] && [ -z "$(ls -A -- "$1")" ]
+}
+
+# Ghi đường dẫn theo cú pháp của user-dirs.dirs: "$HOME/…" hoặc tuyệt đối.
+to_dirs_value() {
+    local path=$1 prefix=
+    if [ "$path" = "$HOME" ]; then
+        printf '$HOME'
+        return
+    fi
+    case $path in
+        "$HOME"/*) prefix='$HOME/'; path=${path#"$HOME"/} ;;
+    esac
+    path=${path//\\/\\\\}
+    path=${path//\"/\\\"}
+    path=${path//\$/\\\$}
+    path=${path//\`/\\\`}
+    printf '%s%s' "$prefix" "$path"
+}
+
+# Storage luôn có, kể cả khi mọi thư mục cũ đều được giữ: sidebar trỏ vào nó.
+mkdir -p -- "$HOME/Storage"
+
+lines=
+while read -r name rel stock; do
+    var=XDG_${name}_DIR
+    current=${!var:-$HOME/$stock}
+    target=$HOME/$rel
+
+    if [ "$current" = "$target" ]; then
+        chosen=$target
+    elif [ "$current" = "$HOME" ] || is_empty_dir "$current"; then
+        if [ "$current" != "$HOME" ] && [ -d "$current" ] && ! is_target "$current"; then
+            rmdir -- "$current" && echo "Removed empty $current"
+        fi
+        chosen=$target
+    else
+        echo "Kept $name at $current (has files)"
+        chosen=$current
+    fi
+
+    mkdir -p -- "$chosen"
+    lines+="XDG_${name}_DIR=\"$(to_dirs_value "$chosen")\""$'\n'
+    printf -v "$var" '%s' "$chosen"
+done <<< "$layout"
+
+# Giữ nguyên dòng XDG_*_DIR không chuẩn người dùng tự thêm (vd PROJECTS).
+extra=
+if [ -r "$dirs_file" ]; then
+    known=$(printf '%s\n' "$layout" | awk '{ printf "%sXDG_%s_DIR=", (NR > 1 ? "|" : ""), $1 }')
+    extra=$(grep -E '^XDG_[A-Z0-9_]+_DIR=' "$dirs_file" | grep -vE "^($known)" || true)
+fi
+
+mkdir -p -- "$config_home"
+{
+    echo '# Thư mục người dùng — cấu trúc Storage của Samhie.'
+    echo '# Ghi bởi /usr/libexec/samhie/user-setup ở lần đăng nhập đầu; từ đó file'
+    echo '# là của bạn, Samhie không ghi lại nữa — sửa thẳng ở đây, rồi đăng nhập lại.'
+    printf '%s' "$lines"
+    if [ -n "$extra" ]; then
+        printf '%s\n' "$extra"
+    fi
+} > "$dirs_file.tmp"
+mv -f -- "$dirs_file.tmp" "$dirs_file"
+
+# ── 2. Sidebar Places của Dolphin ───────────────────────────────────────────
+
+# file:// URL với mã hoá phần trăm từng byte (tên thư mục có dấu cách, chữ
+# Việt, & …). Kết quả chỉ còn ký tự an toàn nên chèn thẳng vào XML được.
+file_url() {
+    local LC_ALL=C path=$1 out= c i
+    for ((i = 0; i < ${#path}; i++)); do
+        c=${path:i:1}
+        case $c in
+            [A-Za-z0-9/._~-]) out+=$c ;;
+            *) printf -v c '%%%02X' "'$c"; out+=$c ;;
+        esac
+    done
+    printf 'file://%s' "$out"
+}
+
+if [ -r "$places_template" ]; then
+    # File cũ (vd Plasma của Kinoite tự tạo trước khi rebase) cất sang bên
+    # cạnh chứ không xoá. Không đè bản cất nếu đã có.
+    if [ -e "$places" ] && [ ! -e "$places.before-samhie" ]; then
+        mv -- "$places" "$places.before-samhie"
+        echo "Saved old Dolphin places as $places.before-samhie"
+    fi
+
+    xbel=$(< "$places_template")
+    # Phần thay thế để trong ngoặc kép: bash 5.2+ coi `&` không trích dẫn là
+    # "chuỗi vừa khớp" (patsub_replacement).
+    xbel=${xbel//@HOME_URL@/"$(file_url "$HOME")"}
+    xbel=${xbel//@STORAGE_URL@/"$(file_url "$HOME/Storage")"}
+    xbel=${xbel//@DESKTOP_URL@/"$(file_url "$XDG_DESKTOP_DIR")"}
+    xbel=${xbel//@DOWNLOAD_URL@/"$(file_url "$XDG_DOWNLOAD_DIR")"}
+
+    mkdir -p -- "$data_home"
+    printf '%s\n' "$xbel" > "$places.tmp"
+    mv -f -- "$places.tmp" "$places"
+    echo "Wrote Dolphin places to $places"
+fi
+
+mkdir -p -- "$state_dir"
+echo "$version" > "$marker"

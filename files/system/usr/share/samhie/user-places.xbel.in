@@ -1,0 +1,140 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE xbel>
+<!--
+  Sidebar "Places" của Dolphin theo thiết kế Figma (mang từ Samhie 1.0).
+
+  @HOME_URL@, @STORAGE_URL@, @DESKTOP_URL@, @DOWNLOAD_URL@ được thay bằng URL
+  thật ở lần đăng nhập đầu, xem /usr/libexec/samhie/user-setup. Không ghi sẵn
+  được vì image không biết người dùng tên gì.
+
+  Lưu ý về thứ tự: Dolphin tự chia sidebar thành các mục (Places / Remote /
+  Recent / Search For / Devices) dựa theo giao thức của URL, mình chỉ sắp được
+  thứ tự BÊN TRONG mỗi mục. Nên "Recycle Bin" (trash:/) nằm cuối cụm Places chứ
+  không xuống chung với Network được, và "Starred" (tags:/) rơi vào mục
+  "Search For". Đây là giới hạn của Dolphin, không phải cấu hình sai.
+-->
+<xbel xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info" xmlns:kdepriv="http://www.kde.org/kdepriv">
+ <!--
+   BẮT BUỘC phải có khối này, đừng bỏ đi.
+
+   KFilePlacesModel đọc kde_places_version ở gốc file. Thiếu nó thì coi như
+   version 0 — tức là file của một KDE đời cũ — rồi TỰ CHÈN toàn bộ mục mặc
+   định vào: Documents, Downloads, Music, Pictures, Videos, Recent Files...
+   Bản 1.0 dính đúng lỗi này 2026-09-04: file ghi ra vẫn đủ mục, nhưng mở
+   Dolphin lên thì sidebar ra bộ mặc định của KDE.
+
+   Để 99 chứ không phải số phiên bản thật (4). Bản 1.0 đã ĐỌC MÃ MÁY hàm dựng
+   KFilePlacesModel (libKF6KIOFileWidgets 6.24): các bước nâng cấp chạy theo
+   lối "version <= N", không phải "!=", nên số đủ lớn là mọi bước (kể cả bước
+   chèn mục mặc định) đều bị bỏ qua, và KDE không ghi đè số này xuống 4.
+   Đo lại trên KF6 6.30 của Samhie v2 (2026-09-29, Dolphin offscreen trong
+   container của image): file có 99 → mở Dolphin xong không đổi một byte;
+   đối chứng bỏ dòng version → KIO ghi lại thành 4 và tự chèn thêm mục Home.
+
+   Đánh đổi: sau này KDE thêm mục mặc định nào thì mình cũng không nhận —
+   đúng ý, vì sidebar này do bản thiết kế quyết định.
+
+   withBaloo và withRecentlyUsed cũng là cờ ở gốc, cùng cơ chế: khai sẵn để KDE
+   khỏi tưởng phải đi thêm mục Baloo và Recent vào hộ.
+ -->
+ <info>
+  <metadata owner="http://www.kde.org">
+   <withBaloo>true</withBaloo>
+   <withRecentlyUsed>true</withRecentlyUsed>
+   <kde_places_version>99</kde_places_version>
+  </metadata>
+ </info>
+ <bookmark href="@HOME_URL@">
+  <title>Home</title>
+  <info>
+   <metadata owner="http://freedesktop.org">
+    <bookmark:icon name="user-home"/>
+   </metadata>
+   <metadata owner="http://www.kde.org">
+    <ID>samhie-home</ID>
+    <isSystemItem>true</isSystemItem>
+   </metadata>
+  </info>
+ </bookmark>
+ <bookmark href="@STORAGE_URL@">
+  <title>Storage</title>
+  <info>
+   <metadata owner="http://freedesktop.org">
+    <bookmark:icon name="drive-harddisk"/>
+   </metadata>
+   <metadata owner="http://www.kde.org">
+    <ID>samhie-storage</ID>
+   </metadata>
+  </info>
+ </bookmark>
+ <bookmark href="@DESKTOP_URL@">
+  <title>Desktop</title>
+  <info>
+   <metadata owner="http://freedesktop.org">
+    <bookmark:icon name="user-desktop"/>
+   </metadata>
+   <metadata owner="http://www.kde.org">
+    <ID>samhie-desktop</ID>
+   </metadata>
+  </info>
+ </bookmark>
+ <bookmark href="@DOWNLOAD_URL@">
+  <title>Download</title>
+  <info>
+   <metadata owner="http://freedesktop.org">
+    <bookmark:icon name="folder-download"/>
+   </metadata>
+   <metadata owner="http://www.kde.org">
+    <ID>samhie-download</ID>
+   </metadata>
+  </info>
+ </bookmark>
+ <bookmark href="trash:/">
+  <title>Recycle Bin</title>
+  <info>
+   <metadata owner="http://freedesktop.org">
+    <bookmark:icon name="user-trash"/>
+   </metadata>
+   <metadata owner="http://www.kde.org">
+    <ID>samhie-trash</ID>
+    <isSystemItem>true</isSystemItem>
+   </metadata>
+  </info>
+ </bookmark>
+ <bookmark href="remote:/">
+  <title>Network</title>
+  <info>
+   <metadata owner="http://freedesktop.org">
+    <bookmark:icon name="folder-network"/>
+   </metadata>
+   <metadata owner="http://www.kde.org">
+    <ID>samhie-network</ID>
+    <isSystemItem>true</isSystemItem>
+   </metadata>
+  </info>
+ </bookmark>
+ <bookmark href="recentlyused:/files">
+  <title>Recent</title>
+  <info>
+   <metadata owner="http://freedesktop.org">
+    <bookmark:icon name="document-open-recent"/>
+   </metadata>
+   <metadata owner="http://www.kde.org">
+    <ID>samhie-recent</ID>
+    <isSystemItem>true</isSystemItem>
+   </metadata>
+  </info>
+ </bookmark>
+ <bookmark href="tags:/">
+  <title>Starred</title>
+  <info>
+   <metadata owner="http://freedesktop.org">
+    <bookmark:icon name="tag"/>
+   </metadata>
+   <metadata owner="http://www.kde.org">
+    <ID>samhie-starred</ID>
+    <isSystemItem>true</isSystemItem>
+   </metadata>
+  </info>
+ </bookmark>
+</xbel>

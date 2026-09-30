@@ -9,7 +9,9 @@ Vẽ hình nền mặc định của Samhie: núi đêm, tông lạnh — dựng
     python3 tools/build-wallpaper.py --check    # SVG trong repo còn khớp palette? (CI)
 
 SVG là NGUỒN, nằm ở theme/wallpaper/ (không vào image). PNG render từ nó mới
-vào image, ở /usr/share/backgrounds/samhie/. Commit cả hai. --check chỉ so
+vào image, ở /usr/share/backgrounds/samhie/. Commit cả hai. Cùng lúc sinh
+samhie-blur.png — bản LÀM MỜ SẴN cho màn hình đăng nhập (SDDM): làm mờ lúc
+dựng thay vì bằng shader lúc chạy, máy không có tăng tốc đồ hoạ vẫn hiện đúng. --check chỉ so
 SVG (chỉ cần thư viện chuẩn), nên sửa SVG thì nhớ chạy lại để ra PNG mới.
 
 MÀU: mọi màu là PHA giữa ba màu của theme/palette.toml — shared.black,
@@ -21,9 +23,11 @@ HÌNH: seed cố định nên chạy lại ra đúng hình cũ. Đường núi d
 và càng ngả màu trời (phối cảnh không khí). Trăng chiếu từ trái: sườn trái
 của đỉnh chính sáng, sườn phải chìm trong tối.
 
-Cần rsvg-convert (gói librsvg2-tools trên Fedora, librsvg2-bin trên Ubuntu).
+Cần rsvg-convert (gói librsvg2-tools trên Fedora, librsvg2-bin trên Ubuntu)
+và Pillow (bản làm mờ).
 """
 
+import io
 import math
 import random
 import subprocess
@@ -35,6 +39,11 @@ ROOT = Path(__file__).resolve().parent.parent
 PALETTE = ROOT / "theme" / "palette.toml"
 SVG_PATH = ROOT / "theme/wallpaper/samhie.svg"
 PNG_PATH = ROOT / "files/system/usr/share/backgrounds/samhie/samhie.png"
+BLUR_PATH = PNG_PATH.with_name("samhie-blur.png")
+# Bản mờ nhỏ 960x540 rồi để SDDM phóng lên: đã mờ thì độ phân giải không còn
+# thấy được, file ~85 KB thay vì hàng MB. Bán kính 16 ở cỡ này ≈ 64px ở 4K —
+# mạnh cỡ hyprlock (blur_passes 4, blur_size 8): còn thấy dáng núi, hết chi tiết.
+BLUR_W, BLUR_H, BLUR_RADIUS = 960, 540, 16
 W, H = 1920, 1080          # hệ toạ độ của SVG; PNG xuất gấp đôi (4K)
 SEED = 2026
 
@@ -302,6 +311,13 @@ def main():
     subprocess.run(["rsvg-convert", "-w", str(W * 2), "-h", str(H * 2),
                     "-o", str(PNG_PATH), str(SVG_PATH)], check=True)
     print(f"đã sinh {PNG_PATH.relative_to(ROOT)} ({W * 2}x{H * 2})", file=sys.stderr)
+
+    from PIL import Image, ImageFilter
+    small = subprocess.run(["rsvg-convert", "-w", str(BLUR_W), "-h", str(BLUR_H), str(SVG_PATH)],
+                           check=True, capture_output=True).stdout
+    with Image.open(io.BytesIO(small)) as im:
+        im.convert("RGB").filter(ImageFilter.GaussianBlur(BLUR_RADIUS)).save(BLUR_PATH, optimize=True)
+    print(f"đã sinh {BLUR_PATH.relative_to(ROOT)} ({BLUR_W}x{BLUR_H}, mờ {BLUR_RADIUS})", file=sys.stderr)
     return 0
 
 

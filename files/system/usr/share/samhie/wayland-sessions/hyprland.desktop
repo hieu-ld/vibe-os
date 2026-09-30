@@ -1,0 +1,9 @@
+# Che /usr/share/wayland-sessions/hyprland.desktop KHỎI MENU SDDM (xem
+# /usr/lib/sddm/sddm.conf.d/samhie.conf). File gốc vẫn phải còn: phiên
+# uwsm gọi `uwsm start … hyprland.desktop` và uwsm tìm nó theo XDG_DATA_DIRS,
+# không qua thư mục này. User chốt dùng phiên uwsm (2026-09-27).
+[Desktop Entry]
+Name=Hyprland
+Exec=/usr/bin/start-hyprland
+Type=Application
+Hidden=true

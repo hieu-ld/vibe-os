@@ -1,0 +1,12 @@
+[SddmGreeterTheme]
+Name=Samhie
+Description=Samhie login screen
+Author=Samhie
+License=Apache-2.0
+Type=sddm-theme
+Version=1.0
+MainScript=Main.qml
+ConfigFile=theme.conf
+Theme-Id=samhie
+Theme-API=2.0
+QtVersion=6

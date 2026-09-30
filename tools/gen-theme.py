@@ -638,6 +638,9 @@ OUTPUTS = {
     "files/system/usr/share/samhie/hypr/colors.lua": hyprland_lua,
     "files/system/usr/share/samhie/hypr/hyprlock-colors.conf": hyprlock_conf,
     "files/system/usr/share/samhie/quickshell/colors.js": quickshell_js,
+    # Theme SDDM chạy dưới tài khoản sddm, import JS bằng đường dẫn tương đối
+    # trong thư mục theme — một bản riêng, cùng nội dung với bản Quickshell.
+    "files/system/usr/share/sddm/themes/samhie/colors.js": quickshell_js,
     "files/system/usr/share/konsole/Samhie.colorscheme": konsole_colorscheme,
     "files/system/usr/share/konsole/Samhie.profile": konsole_profile,
     "files/system/etc/profile.d/samhie-prompt.sh": bash_prompt,

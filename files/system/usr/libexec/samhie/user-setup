@@ -54,6 +54,31 @@ if [ ! -e "$konsole_marker" ] && command -v kwriteconfig6 >/dev/null; then
     echo "Hid Konsole toolbars"
 fi
 
+# ── 0b. fcitx5: theme Samhie cho app Qt ─────────────────────────────────────
+# Ô "Unikey (Telex)"/"en" hiện lên khi Ctrl+Space trong app Qt (Konsole,
+# Dolphin) do fcitx5-qt vẽ phía app, và fcitx5-qt CHỈ đọc
+# ~/.config/fcitx5/conf/classicui.conf — không nhìn /etc/xdg (fcitxtheme.cpp
+# của fcitx5-qt 5.1.15, đo 2026-09-30: không có file này thì ô trắng, font
+# Sans). Chính fcitx5 thì có đọc /etc/xdg.
+# CHÉP chứ không symlink: fcitx5 5.1.22 lưu cấu hình bằng cách ĐI THEO
+# symlink (standardpaths_p.h: symlinkTarget) — symlink sang /etc/xdg thì
+# người dùng không ghi được, đổi gì trong fcitx5-configtool mất mà không báo
+# lỗi (đo trong container 2026-09-30). Cái giá: đổi font/tên theme ở bản sau
+# thì tài khoản cũ không nhận. Màu nằm trong /usr/share/fcitx5/themes/Samhie
+# nên vẫn tự cập nhật; file chép chỉ giữ tên theme + font.
+# Mốc riêng như bước 0; đã có file (người dùng tự chỉnh) thì để nguyên.
+fcitx_marker=$state_dir/fcitx5-classicui
+fcitx_conf=$config_home/fcitx5/conf/classicui.conf
+if [ ! -e "$fcitx_marker" ]; then
+    if [ ! -e "$fcitx_conf" ] && [ ! -L "$fcitx_conf" ]; then
+        mkdir -p -- "${fcitx_conf%/*}"
+        cp -- /etc/xdg/fcitx5/conf/classicui.conf "$fcitx_conf"
+        echo "Copied fcitx5 theme config"
+    fi
+    mkdir -p -- "$state_dir"
+    touch -- "$fcitx_marker"
+fi
+
 done_version=0
 if [ -r "$marker" ]; then
     read -r done_version < "$marker" || true

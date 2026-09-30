@@ -68,9 +68,11 @@ hl.env("HYPRCURSOR_SIZE", "24")
 -- ở /etc/xdg/kdeglobals, người dùng đè trong ~/.config/kdeglobals.
 hl.env("QT_QPA_PLATFORMTHEME", "kde")
 
--- Gõ tiếng Việt. Trên Wayland, app GTK và Qt đời mới nói chuyện với fcitx5 qua
--- giao thức text-input của Hyprland; hai biến này dành cho app Qt/XWayland đời
--- cũ. Cố ý KHÔNG đặt GTK_IM_MODULE — theo wiki fcitx5, đặt nó trên Wayland làm
+-- Gõ tiếng Việt. App GTK, Electron, Edge nói chuyện với fcitx5 qua giao thức
+-- text-input của Hyprland. App Qt (Konsole, Dolphin) thì vì QT_IM_MODULE=fcitx
+-- mà đi qua D-Bus, và ô báo kiểu gõ do fcitx5-qt vẽ phía app (đo 2026-09-30) —
+-- xem bước 0b trong /usr/libexec/samhie/user-setup. XMODIFIERS cho app X11.
+-- Cố ý KHÔNG đặt GTK_IM_MODULE — theo wiki fcitx5, đặt nó trên Wayland làm
 -- app GTK4 bỏ qua text-input và gõ lỗi.
 hl.env("XMODIFIERS", "@im=fcitx")
 hl.env("QT_IM_MODULE", "fcitx")

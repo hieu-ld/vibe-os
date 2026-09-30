@@ -485,6 +485,87 @@ def plymouth_theme(pal):
     return "\n".join(lines) + "\n"
 
 
+# ---------------------------------------------------------------- fcitx5
+
+# Theme của classicui — thứ vẽ ô "Unikey"/"English" hiện lên mỗi lần Ctrl+Space
+# (ShowInputMethodInformation, mặc định bật) và bảng chọn chữ của emoji,
+# quickphrase, clipboard (Ctrl+;). Khoá lấy từ src/ui/classic/theme.h của
+# fcitx5 5.1.22 (bản trong image); bố cục chép theo theme default-dark có sẵn.
+# fcitx5 KHÔNG có khoá bo góc — muốn bo thì nền phải là ảnh SVG (việc sau).
+FCITX_THEME_DIR = "files/system/usr/share/fcitx5/themes/Samhie"
+
+
+def fcitx_theme(pal):
+    d = pal["dark"]
+    margin = lambda n: dict(Left=n, Right=n, Top=n, Bottom=n)
+    # Màu viền sau cùng; BorderWidth phải nhỏ hơn Margin (theme.h ghi rõ).
+    panel = lambda: dict(Color=d["card"], BorderColor=d["sub-secondary"], BorderWidth="1")
+    head = [f"# {HEADER}",
+            "# Theme fcitx5 của Samhie (bản tối). /etc/xdg/fcitx5/conf/classicui.conf chọn nó.", ""]
+    sections = [
+        ("Metadata", dict(Name="Samhie", Version="1", Author="Samhie",
+                          Description="Samhie dark theme", ScaleWithDPI="True")),
+        ("InputPanel", dict(NormalColor=d["text"], HighlightCandidateColor=d["on-selection"],
+                            HighlightColor=d["on-selection"],
+                            HighlightBackgroundColor=d["selection"],
+                            FullWidthHighlight="True", PageButtonAlignment="Last Candidate")),
+        ("InputPanel/TextMargin", margin(5)),
+        ("InputPanel/ContentMargin", margin(2)),
+        ("InputPanel/Background", panel()),
+        ("InputPanel/Background/Margin", margin(2)),
+        ("InputPanel/Highlight", dict(Color=d["selection"])),
+        ("InputPanel/Highlight/Margin", margin(5)),
+        ("InputPanel/PrevPage", dict(Image="prev.svg")),
+        ("InputPanel/PrevPage/ClickMargin", dict(Left=5, Right=5, Top=4, Bottom=4)),
+        ("InputPanel/NextPage", dict(Image="next.svg")),
+        ("InputPanel/NextPage/ClickMargin", dict(Left=5, Right=5, Top=4, Bottom=4)),
+        # Menu chỉ hiện với khay XEmbed (X11); trên Hyprland menu khay do thanh
+        # trên vẽ. Vẫn khai cho đủ, khỏi lọt màu của theme default.
+        ("Menu", dict(NormalColor=d["text"], HighlightCandidateColor=d["on-selection"])),
+        ("Menu/Background", panel()),
+        ("Menu/Background/Margin", margin(2)),
+        ("Menu/ContentMargin", margin(2)),
+        ("Menu/CheckBox", dict(Image="radio.svg")),
+        ("Menu/SubMenu", dict(Image="arrow.svg")),
+        ("Menu/Highlight", dict(Color=d["selection"])),
+        ("Menu/Highlight/Margin", margin(5)),
+        ("Menu/Separator", dict(Color=d["sub-secondary"])),
+        ("Menu/TextMargin", margin(5)),
+    ]
+    return "\n".join(head) + ini(sections)
+
+
+def fcitx_svg(width, height, shape):
+    # Mũi tên/chấm của theme: cùng kích thước và hình như theme default-dark,
+    # chỉ đổi màu. Toạ độ tính bằng px.
+    def render(pal):
+        return (f'<!-- {HEADER} -->\n'
+                f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
+                f'viewBox="0 0 {width} {height}">\n'
+                f'  {shape.format(fill=pal["dark"]["text-muted"])}\n</svg>\n')
+    return render
+
+
+def fcitx_classicui(pal):
+    # Cấu hình classicui toàn máy. fcitx5 tìm conf/classicui.conf ở ~/.config/fcitx5
+    # rồi mới tới $XDG_CONFIG_DIRS/fcitx5 (như `profile` bên cạnh) — người dùng
+    # đổi trong fcitx5-configtool thì bản ~/.config của họ thắng file này.
+    # fcitx5-qt (app Qt) thì CHỈ đọc bản ~/.config → user-setup chép file này
+    # sang đó ở lần đăng nhập đầu (xem bước 0b trong user-setup).
+    # Định dạng: khoá nằm thẳng ở gốc, không có nhóm (classicui.h).
+    f = pal["fonts"]
+    # Chuỗi font kiểu Pango: "Họ Kiểu Cỡ". Dongle chỉ có tên kiểu Light/Regular/Bold.
+    weight = {300: "Light", 400: "", 700: "Bold"}[f["ui-weight"]]
+    font = " ".join(p for p in (f["ui"], weight, str(f["size"])) if p)
+    lines = [f"# {HEADER}",
+             "# Giao diện fcitx5 (addon classicui): theme Samhie + font giao diện.",
+             "# Bản trong ~/.config/fcitx5/conf là bản CHÉP của riêng bạn — sửa thoải mái.",
+             f'Font="{font}"', f'MenuFont="{font}"',
+             # Cùng một theme cho cả hai chế độ: Samhie chưa có bản sáng cho fcitx5.
+             "Theme=Samhie", "DarkTheme=Samhie"]
+    return "\n".join(lines) + "\n"
+
+
 OUTPUTS = {
     "files/system/usr/share/samhie/hypr/colors.lua": hyprland_lua,
     "files/system/usr/share/samhie/hypr/hyprlock-colors.conf": hyprlock_conf,
@@ -496,6 +577,12 @@ OUTPUTS = {
     "files/system/usr/share/color-schemes/SamhieDark.colors": kde_colors_file("dark"),
     "files/system/usr/share/color-schemes/SamhieLight.colors": kde_colors_file("light"),
     "files/system/usr/share/plymouth/themes/samhie/samhie.plymouth": plymouth_theme,
+    "files/system/etc/xdg/fcitx5/conf/classicui.conf": fcitx_classicui,
+    f"{FCITX_THEME_DIR}/theme.conf": fcitx_theme,
+    f"{FCITX_THEME_DIR}/prev.svg": fcitx_svg(16, 20, '<path fill="{fill}" d="M11 16 5 10l6-6z"/>'),
+    f"{FCITX_THEME_DIR}/next.svg": fcitx_svg(16, 20, '<path fill="{fill}" d="m5 4 6 6-6 6z"/>'),
+    f"{FCITX_THEME_DIR}/arrow.svg": fcitx_svg(6, 12, '<path fill="{fill}" d="m0 0 6 6-6 6z"/>'),
+    f"{FCITX_THEME_DIR}/radio.svg": fcitx_svg(24, 24, '<circle fill="{fill}" cx="12" cy="12" r="4"/>'),
 }
 
 

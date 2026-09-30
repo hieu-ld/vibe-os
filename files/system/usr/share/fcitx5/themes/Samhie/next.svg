@@ -1,0 +1,4 @@
+<!-- SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="16" height="20" viewBox="0 0 16 20">
+  <path fill="#8f8f8f" d="m5 4 6 6-6 6z"/>
+</svg>

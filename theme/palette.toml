@@ -125,11 +125,19 @@ icon-theme     = { dark = "Samhie", light = "breeze" }
 
 # 16 màu ANSI của Konsole (bản 1.0, theme/konsole/Samhie.colorscheme).
 # Thứ tự: đen, đỏ, lục, vàng, lam, tím, cyan, trắng — thường / sáng (intense).
+# Sinh ra /usr/share/konsole/Samhie.colorscheme. Dấu nhắc lệnh ($) dùng màu số
+# 6 (cyan) — files/system/etc/profile.d/samhie-prompt.sh.
 [terminal]
 background = "#171717"     # = dark.card: vùng dấu nhắc là Card (user chốt)
+background-intense = "#262626"
 foreground = "#e4e4e4"
+foreground-faint = "#989898"
+foreground-intense = "#f8f8f8"
+cursor = "#00c0e8"         # con trỏ khối nhấp nháy, màu nhấn
 normal = ["#3b3c3c", "#e05e5e", "#7acc8c", "#e2b262", "#60a0dc", "#b28cd6", "#00c0e8", "#d0d0d0"]
 bright = ["#5a5a5a", "#f07c7c", "#96dca5", "#f0c882", "#82b9eb", "#c8a8e6", "#52d6fa", "#f6f6f6"]
+# Chữ "mờ" (escape 2, vd gợi ý lệnh mờ của shell) — bản 1.0 tự chọn ~2/3 độ sáng.
+faint  = ["#2d2d2d", "#964040", "#528a5f", "#987842", "#406c94", "#785e90", "#00829d", "#8c8c8c"]
 
 # Lời hứa tương phản — gen-theme.py đo lại mỗi lần chạy, hụt là BÁO LỖI.
 # Chuẩn WCAG: 4,5:1 cho chữ thường, 3:1 cho thành phần giao diện (viền, icon).

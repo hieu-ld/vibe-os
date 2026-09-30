@@ -33,6 +33,27 @@ dirs_file=$config_home/user-dirs.dirs
 places=$data_home/user-places.xbel
 places_template=/usr/share/samhie/user-places.xbel.in
 
+# ── 0. Konsole: ẩn hai thanh công cụ ────────────────────────────────────────
+# Dáng "bảng đen + một dải tab" (user 2026-09-30). Thanh menu và dải tab chỉnh
+# được từ /etc/xdg/konsolerc, nhưng ẩn/hiện thanh công cụ thì KDE 6 chỉ lưu
+# trong khối State nhị phân của ~/.local/state/konsolestaterc — file trạng
+# thái KHÔNG có bản mặc định toàn máy, nên phải ghi cho từng tài khoản.
+# State dưới đây = QMainWindow::saveState() của Konsole 26.08 đo trong máy ảo,
+# lật cờ "đang hiện" (byte ngay sau tên) của mainToolBar và sessionToolbar từ
+# 01 sang 00; hai dock (Quick Commands, SSH) vốn đã ẩn.
+# Mốc RIÊNG, không dùng $version: tài khoản đã chạy bước 1-2 cũng nhận bước
+# này đúng một lần, mà bước 1-2 không chạy lại. Bật lại thanh công cụ: menu
+# chuột phải hoặc Ctrl+Shift+M (thanh menu) → Settings → Toolbars Shown.
+konsole_marker=$state_dir/konsole-toolbars
+if [ ! -e "$konsole_marker" ] && command -v kwriteconfig6 >/dev/null; then
+    kwriteconfig6 --file "${XDG_STATE_HOME:-$HOME/.local/state}/konsolestaterc" \
+        --group MainWindow --key State \
+        'AAAA/wAAAAD9AAAAAQAAAAAAAAAAAAAAAPwCAAAAAvsAAAAiAFEAdQBpAGMAawBDAG8AbQBtAGEAbgBkAHMARABvAGMAawAAAAAA/////wAAAdAA////+wAAABwAUwBTAEgATQBhAG4AYQBnAGUAcgBEAG8AYwBrAAAAAAD/////AAABdAD///8AAAOyAAAD/wAAAAQAAAAEAAAACAAAAAj8AAAAAQAAAAIAAAACAAAAFgBtAGEAaQBuAFQAbwBvAGwAQgBhAHIAAAAAAP////8AAAAAAAAAAAAAABwAcwBlAHMAcwBpAG8AbgBUAG8AbwBsAGIAYQByAAAAAQ3/////AAAAAAAAAAA='
+    mkdir -p -- "$state_dir"
+    touch -- "$konsole_marker"
+    echo "Hid Konsole toolbars"
+fi
+
 done_version=0
 if [ -r "$marker" ]; then
     read -r done_version < "$marker" || true

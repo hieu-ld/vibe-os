@@ -1,0 +1,23 @@
+# Mặc định toàn máy của Konsole. File này THAY file cùng tên của gói Fedora
+# konsole-part (26.08.1) trong image, nên hai nhóm [MainWindow] và
+# [FileLocation] chép nguyên của Fedora — lên Fedora mới thì so lại:
+#   rpm -qf /etc/xdg/konsolerc; rpm2cpio … | cpio -i --to-stdout ./etc/xdg/konsolerc
+# Người dùng đè trong ~/.config/konsolerc (Konsole tự ghi vào đó).
+
+[Desktop Entry]
+# /usr/share/konsole/Samhie.profile — sinh từ theme/palette.toml
+DefaultProfile=Samhie.profile
+
+# Dáng "bảng đen + một dải tab" như bản vẽ của user (2026-09-30): dải tab luôn
+# hiện, có nút +, bỏ nút tìm tab ở góc. Khoá lấy từ konsole.kcfg.
+[TabBar]
+TabBarVisibility=AlwaysShowTabBar
+NewTabButton=true
+SearchTabsButton=HideSearchTabsButton
+
+[MainWindow]
+MenuBar=Disabled
+
+[FileLocation]
+scrollbackUseCacheLocation=true
+scrollbackUseSystemLocation=false

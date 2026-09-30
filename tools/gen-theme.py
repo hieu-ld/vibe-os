@@ -25,6 +25,8 @@ MODES = ("dark", "light")
 HEX = re.compile(r"^#[0-9a-f]{6}$")
 
 HEADER = "SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay."
+TERMINAL_SINGLE = ("background", "background-intense", "foreground", "foreground-faint",
+                   "foreground-intense", "cursor")
 
 
 # ---------------------------------------------------------------- đọc & kiểm
@@ -38,10 +40,13 @@ def load():
         for name, value in pal[section].items():
             if not isinstance(value, str) or not HEX.match(value):
                 errors.append(f"[{section}] {name} = {value!r}: phải là mã '#rrggbb' chữ thường")
-    for kind in ("normal", "bright"):
-        colors = pal["terminal"][kind]
+    for kind in ("normal", "bright", "faint"):
+        colors = pal["terminal"].get(kind, [])
         if len(colors) != 8 or not all(HEX.match(c) for c in colors):
             errors.append(f"[terminal] {kind}: phải đúng 8 mã '#rrggbb'")
+    for key in TERMINAL_SINGLE:
+        if not HEX.match(str(pal["terminal"].get(key, ""))):
+            errors.append(f"[terminal] {key}: phải là mã '#rrggbb' chữ thường")
 
     fonts = pal.get("fonts", {})
     if not (isinstance(fonts.get("ui"), str) and isinstance(fonts.get("mono"), str)
@@ -284,6 +289,120 @@ def kdeglobals(pal):
     return "\n".join(head) + ini(sections)
 
 
+# ---------------------------------------------------------------- Konsole
+
+def konsole_colorscheme(pal):
+    # Konsole KHÔNG đọc màu KDE — nó có bảng riêng. Thanh tab, menu, viền là
+    # khung Qt, vẫn lấy màu từ kdeglobals; file này chỉ tô vùng chữ.
+    t = pal["terminal"]
+    head = [f"# {HEADER}",
+            "# Bảng màu vùng chữ của Konsole. Profile Samhie.profile chọn nó.", ""]
+    sections = [
+        ("Background", dict(Color=rgb(t["background"]))),
+        ("BackgroundFaint", dict(Color=rgb(t["background"]))),
+        ("BackgroundIntense", dict(Color=rgb(t["background-intense"]))),
+    ]
+    for i in range(8):
+        sections += [
+            (f"Color{i}", dict(Color=rgb(t["normal"][i]))),
+            (f"Color{i}Faint", dict(Color=rgb(t["faint"][i]))),
+            (f"Color{i}Intense", dict(Color=rgb(t["bright"][i]))),
+        ]
+    sections += [
+        ("Foreground", dict(Color=rgb(t["foreground"]))),
+        ("ForegroundFaint", dict(Color=rgb(t["foreground-faint"]))),
+        ("ForegroundIntense", dict(Color=rgb(t["foreground-intense"]))),
+        # Nền đục: nền hơi trong để ăn blur của Hyprland là việc giai đoạn 4.
+        ("General", dict(Blur="false", ColorRandomization="false", Description="Samhie",
+                         Opacity="1", Wallpaper="")),
+    ]
+    return "\n".join(head) + ini(sections)
+
+
+def konsole_profile(pal):
+    # Profile mặc định (chọn ở /etc/xdg/konsolerc). Người dùng sửa profile trong
+    # Konsole thì Konsole lưu bản riêng vào ~/.local/share/konsole — file này
+    # không bị đụng tới, bản vá sau của Samhie vẫn tới được người chưa sửa.
+    f, t = pal["fonts"], pal["terminal"]
+    head = [f"# {HEADER}",
+            "# Profile Konsole mặc định của Samhie (bản 1.0: theme/konsole/Samhie.profile).", ""]
+    sections = [
+        # BoldIntense = "vẽ chữ đậm bằng FONT đậm" (bản 1.0 hiểu ngược). false
+        # thì chữ đậm vẫn mảnh — dấu nhắc đậm ra đúng số pixel như nét thường
+        # (đo máy ảo 2026-09-30). Việc đổi màu 8-ô đậm sang Intense thì Konsole
+        # làm bất kể khoá này; dấu nhắc tránh bằng màu RGB (samhie-prompt.sh).
+        ("Appearance", dict(BoldIntense="true", ColorScheme="Samhie",
+                            Font=qt_font(f["mono"], f["mono-size"]), LineSpacing="2",
+                            UseFontLineChararacters="true")),
+        ("Cursor Options", dict(CursorShape="0", CustomCursorColor=rgb(t["cursor"]),
+                                UseCustomCursorColor="true")),
+        # %d = tên thư mục hiện tại: bù cho phần đường dẫn đã bỏ khỏi dấu nhắc
+        # (user chốt 2026-09-28).
+        ("General", dict(LocalTabTitleFormat="%d", Name="Samhie", Parent="FALLBACK/",
+                         TerminalMargin="10")),
+        ("Scrolling", dict(HighlightScrolledLines="false", HistorySize="10000",
+                           ScrollBarPosition="2")),
+        ("Terminal Features", dict(BlinkingCursorEnabled="true")),
+    ]
+    return "\n".join(head) + ini(sections)
+
+
+def bash_prompt(pal):
+    r, g, b = rgb(pal["terminal"]["normal"][6]).split(",")
+    return f"""# shellcheck shell=bash
+# {HEADER}
+# Dấu nhắc lệnh của Samhie: chỉ còn "$ " màu cyan (user chốt 2026-09-28: bỏ cả
+# user@host lẫn đường dẫn — tên tab Konsole hiện thư mục hiện tại thay, xem
+# LocalTabTitleFormat trong /usr/share/konsole/Samhie.profile).
+#
+# \\$ chứ không phải chữ $: bash in "$" cho người thường và "#" cho root. Đăng
+# nhập root mà vẫn thấy "$" là một cách hỏng nguy hiểm (bản 1.0).
+#
+# Màu = Color6 của [terminal] trong theme/palette.toml, IN ĐẬM (user thấy nét
+# thường mảnh quá, 2026-09-30). Đậm + màu 8-ô (01;36) thì Konsole 26.08 đổi sang
+# Color6Intense (đo pixel ra #52d6fa). Nên terminal nào báo có màu 24-bit
+# (COLORTERM=truecolor, Konsole có) thì ghi thẳng mã RGB: màu RGB không bị
+# đổi. Nét đậm cần BoldIntense=true trong Samhie.profile. Terminal khác
+# (tty…) dùng 36 thường, không đậm.
+#
+# Thứ tự: /etc/profile.d chạy theo tên file, nên file này chạy SAU
+# bash-color-prompt.sh (Fedora) và đè PS1 của nó; nhưng giữ tiền tố/hậu tố mà
+# 70-systemd-shell-extra.sh gắn vào (vd run0 báo đang là root). Người dùng muốn
+# dấu nhắc khác thì đặt PS1 trong ~/.bashrc — file đó chạy sau cùng.
+
+if [ -n "${{BASH_VERSION-}}" ] && [ -n "${{PS1-}}" ]; then
+    case ${{COLORTERM-}}:${{TERM:-dumb}} in
+        *:dumb)               PS1='\\$ ' ;;
+        truecolor:*|24bit:*)  PS1='\\[\\e[1;38;2;{r};{g};{b}m\\]\\$\\[\\e[0m\\] ' ;;
+        *)                    PS1='\\[\\e[36m\\]\\$\\[\\e[0m\\] ' ;;
+    esac
+    PS1="${{SHELL_PROMPT_PREFIX-}}$PS1${{SHELL_PROMPT_SUFFIX-}}"
+
+    # Một dòng trống giữa các lệnh (user 2026-09-30: nhìn thoáng; terminal là
+    # lưới ký tự nên "khoảng" nhỏ nhất là nguyên một dòng — lệnh và phần trả
+    # về của nó vẫn sát nhau). Chỉ khi VỪA chạy lệnh: PS0 hiện ra lúc bash bắt
+    # đầu chạy một lệnh (Enter trên dòng trống thì không); ${{ …; }} của bash 5.3
+    # chạy ngay trong shell mà không in gì, nên đặt cờ được. (\\# thì không
+    # dùng được: bash không tăng nó sau lệnh ĐẦU TIÊN — đo 2026-09-30.)
+    # clear/reset xoá cờ, khỏi mở màn hình mới bằng một dòng trống.
+    # Nối vào PS0 / PROMPT_COMMAND có sẵn: systemd (80-systemd-osc-context.sh)
+    # đã gắn vào hai chỗ này trước và đọc $? trước mình.
+    if (( BASH_VERSINFO[0] > 5 || (BASH_VERSINFO[0] == 5 && BASH_VERSINFO[1] >= 3) )); then
+        PS0="${{PS0-}}"'${{ __samhie_ran=1; }}'
+        __samhie_gap() {{
+            if [ -n "${{__samhie_ran-}}" ]; then
+                printf '\\n'
+                unset __samhie_ran
+            fi
+        }}
+        PROMPT_COMMAND+=(__samhie_gap)
+        clear() {{ command clear "$@"; unset __samhie_ran; }}
+        reset() {{ command reset "$@"; unset __samhie_ran; }}
+    fi
+fi
+"""
+
+
 # ---------------------------------------------------------------- Plymouth
 
 def plymouth_theme(pal):
@@ -370,6 +489,9 @@ OUTPUTS = {
     "files/system/usr/share/samhie/hypr/colors.lua": hyprland_lua,
     "files/system/usr/share/samhie/hypr/hyprlock-colors.conf": hyprlock_conf,
     "files/system/usr/share/samhie/quickshell/colors.js": quickshell_js,
+    "files/system/usr/share/konsole/Samhie.colorscheme": konsole_colorscheme,
+    "files/system/usr/share/konsole/Samhie.profile": konsole_profile,
+    "files/system/etc/profile.d/samhie-prompt.sh": bash_prompt,
     "files/system/etc/xdg/kdeglobals": kdeglobals,
     "files/system/usr/share/color-schemes/SamhieDark.colors": kde_colors_file("dark"),
     "files/system/usr/share/color-schemes/SamhieLight.colors": kde_colors_file("light"),

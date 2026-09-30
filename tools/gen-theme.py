@@ -348,7 +348,11 @@ def konsole_profile(pal):
                          TerminalMargin="10")),
         ("Scrolling", dict(HighlightScrolledLines="false", HistorySize="10000",
                            ScrollBarPosition="2")),
-        ("Terminal Features", dict(BlinkingCursorEnabled="true")),
+        # KHÔNG nhấp nháy — user chốt 2026-09-30. Lỗi của Konsole: mỗi nhịp
+        # nháy chỉ vẽ lại ô dưới con trỏ (TerminalDisplay::updateCursor), còn
+        # vạch dưới chữ đang gõ dở trải cả từ → nửa đầu nháy, nửa sau giữ hình
+        # cũ (máy ảo k23: "vi" nháy, "ệt" đứng yên). Tắt nháy thì vạch luôn đủ.
+        ("Terminal Features", dict(BlinkingCursorEnabled="false")),
     ]
     return "\n".join(head) + ini(sections)
 

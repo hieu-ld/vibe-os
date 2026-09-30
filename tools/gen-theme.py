@@ -15,6 +15,7 @@ Chỉ dùng thư viện chuẩn (Python 3.11+ vì cần tomllib).
 import argparse
 import json
 import re
+import struct
 import sys
 import tomllib
 from pathlib import Path
@@ -491,15 +492,25 @@ def plymouth_theme(pal):
 # (ShowInputMethodInformation, mặc định bật) và bảng chọn chữ của emoji,
 # quickphrase, clipboard (Ctrl+;). Khoá lấy từ src/ui/classic/theme.h của
 # fcitx5 5.1.22 (bản trong image); bố cục chép theo theme default-dark có sẵn.
-# fcitx5 KHÔNG có khoá bo góc — muốn bo thì nền phải là ảnh SVG (việc sau).
+# fcitx5 KHÔNG có khoá bo góc, nên nền là ảnh SVG vẽ kiểu 9 mảnh: [*/Margin]
+# là bề dày bốn mép KHÔNG co giãn (theme.cpp paintTile của classicui, và
+# BackgroundImage của fcitx5-qt). Margin của Background chỉ để cắt ảnh; bố cục
+# dùng ContentMargin, nên đổi bán kính không làm ô to ra. Margin của Highlight
+# thì CÒN là khoảng đệm quanh chữ — bán kính ô chọn phải ≤ nó.
 FCITX_THEME_DIR = "files/system/usr/share/fcitx5/themes/Samhie"
+FCITX_RADIUS = 6            # góc ô (cửa sổ Hyprland bo 12; ô cao ~53px nên nửa là vừa)
+FCITX_HIGHLIGHT_RADIUS = 4  # góc ô đang chọn trong bảng emoji/clipboard
+FCITX_HIGHLIGHT_MARGIN = 5  # đệm quanh chữ của ô chọn (như theme default)
 
 
 def fcitx_theme(pal):
     d = pal["dark"]
     margin = lambda n: dict(Left=n, Right=n, Top=n, Bottom=n)
-    # Màu viền sau cùng; BorderWidth phải nhỏ hơn Margin (theme.h ghi rõ).
-    panel = lambda: dict(Color=d["card"], BorderColor=d["sub-secondary"], BorderWidth="1")
+    # Có Image thì Color/BorderColor bị bỏ qua; vẫn ghi để lỡ không nạp được
+    # ảnh (vd thiếu plugin SVG của Qt) thì ô vẫn tối chứ không trắng.
+    panel = lambda: dict(Image="panel.svg", Color=d["card"], BorderColor=d["sub-secondary"],
+                         BorderWidth="1")
+    highlight = lambda: dict(Image="highlight.svg", Color=d["selection"])
     head = [f"# {HEADER}",
             "# Theme fcitx5 của Samhie (bản tối). /etc/xdg/fcitx5/conf/classicui.conf chọn nó.", ""]
     sections = [
@@ -509,12 +520,15 @@ def fcitx_theme(pal):
                             HighlightColor=d["on-selection"],
                             HighlightBackgroundColor=d["selection"],
                             FullWidthHighlight="True", PageButtonAlignment="Last Candidate")),
-        ("InputPanel/TextMargin", margin(5)),
+        # Ngang rộng hơn dọc: ô báo kiểu gõ chỉ có "vn"/"en" mà Dongle có dòng
+        # rất cao — lề 5 đều bốn phía ra ô dựng đứng 31×53 (đo container).
+        # Dọc giữ 5 = Margin của Highlight, kẻo ô chọn lấn ra ngoài.
+        ("InputPanel/TextMargin", dict(Left=10, Right=10, Top=5, Bottom=5)),
         ("InputPanel/ContentMargin", margin(2)),
         ("InputPanel/Background", panel()),
-        ("InputPanel/Background/Margin", margin(2)),
-        ("InputPanel/Highlight", dict(Color=d["selection"])),
-        ("InputPanel/Highlight/Margin", margin(5)),
+        ("InputPanel/Background/Margin", margin(FCITX_RADIUS)),
+        ("InputPanel/Highlight", highlight()),
+        ("InputPanel/Highlight/Margin", margin(FCITX_HIGHLIGHT_MARGIN)),
         ("InputPanel/PrevPage", dict(Image="prev.svg")),
         ("InputPanel/PrevPage/ClickMargin", dict(Left=5, Right=5, Top=4, Bottom=4)),
         ("InputPanel/NextPage", dict(Image="next.svg")),
@@ -523,12 +537,12 @@ def fcitx_theme(pal):
         # trên vẽ. Vẫn khai cho đủ, khỏi lọt màu của theme default.
         ("Menu", dict(NormalColor=d["text"], HighlightCandidateColor=d["on-selection"])),
         ("Menu/Background", panel()),
-        ("Menu/Background/Margin", margin(2)),
+        ("Menu/Background/Margin", margin(FCITX_RADIUS)),
         ("Menu/ContentMargin", margin(2)),
         ("Menu/CheckBox", dict(Image="radio.svg")),
         ("Menu/SubMenu", dict(Image="arrow.svg")),
-        ("Menu/Highlight", dict(Color=d["selection"])),
-        ("Menu/Highlight/Margin", margin(5)),
+        ("Menu/Highlight", highlight()),
+        ("Menu/Highlight/Margin", margin(FCITX_HIGHLIGHT_MARGIN)),
         ("Menu/Separator", dict(Color=d["sub-secondary"])),
         ("Menu/TextMargin", margin(5)),
     ]
@@ -536,14 +550,59 @@ def fcitx_theme(pal):
 
 
 def fcitx_svg(width, height, shape):
-    # Mũi tên/chấm của theme: cùng kích thước và hình như theme default-dark,
-    # chỉ đổi màu. Toạ độ tính bằng px.
+    # Ảnh của theme; `shape` ghi màu bằng tên vai trò bản tối ({card},
+    # {sub_secondary}…). Toạ độ tính bằng px.
     def render(pal):
+        roles = {k.replace("-", "_"): v for k, v in pal["dark"].items()}
         return (f'<!-- {HEADER} -->\n'
                 f'<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}" '
                 f'viewBox="0 0 {width} {height}">\n'
-                f'  {shape.format(fill=pal["dark"]["text-muted"])}\n</svg>\n')
+                f'  {shape.format_map(roles)}\n</svg>\n')
     return render
+
+
+def fcitx_rounded(radius, cut, fill, stroke=None):
+    # Hình vuông cạnh 2·cut+1 (cut = Margin của mục đó trong theme.conf): bốn
+    # góc cut×cut không co giãn, giữa còn đúng 1px để kéo dãn. Viền 1px vẽ lùi
+    # vào 0,5px cho nét rơi đúng hàng pixel.
+    assert radius <= cut
+    n = 2 * cut + 1
+    if stroke:
+        shape = (f'<rect x="0.5" y="0.5" width="{n - 1}" height="{n - 1}" rx="{radius - 0.5}" '
+                 f'fill="{{{fill}}}" stroke="{{{stroke}}}"/>')
+    else:
+        shape = f'<rect width="{n}" height="{n}" rx="{radius}" fill="{{{fill}}}"/>'
+    return fcitx_svg(n, n, shape)
+
+
+def mo_file(messages):
+    # File dịch gettext (.mo) nhị phân — image không có msgfmt. Định dạng:
+    # https://www.gnu.org/software/gettext/manual/html_node/MO-Files.html
+    # (magic, bản 0, số chuỗi, vị trí bảng gốc/bảng dịch, bảng băm rỗng).
+    messages = dict(sorted({"": "Content-Type: text/plain; charset=UTF-8\n", **messages}.items()))
+    ids = [k.encode() for k in messages]
+    strs = [v.encode() for v in messages.values()]
+    n = len(ids)
+    header = 7 * 4
+    data_start = header + 16 * n
+    orig, trans, blob = [], [], b""
+    for group, table in ((ids, orig), (strs, trans)):
+        for b in group:
+            table.append((len(b), data_start + len(blob)))
+            blob += b + b"\0"
+    out = struct.pack("<7I", 0x950412DE, 0, n, header, header + 8 * n, 0, data_start)
+    out += b"".join(struct.pack("<2I", *e) for e in orig + trans)
+    return out + blob
+
+
+def fcitx_mo(pal):
+    # Ô báo kiểu gõ = "{Label} ({chế độ con})" (instance.cpp của fcitx5 5.1.22,
+    # showInputMethodInformation). Unikey luôn có chế độ con "Telex" và không có
+    # nhãn gọn (subModeLabel) → chỉ đặt Label=vn thì ra "vn (Telex)". Mẫu
+    # "{0} ({1})" đi qua gettext và CHỈ dùng ở đúng chỗ đó (po/fcitx5.pot), nên
+    # dịch nó thành "{0}" cho tiếng Anh là ô ra "vn", khớp "en" của bàn phím.
+    # Máy chạy locale khác (vd vi_VN) dùng bản dịch của Fedora → "vn (Telex)".
+    return mo_file({"{0} ({1})": "{0}"})
 
 
 def fcitx_classicui(pal):
@@ -579,10 +638,15 @@ OUTPUTS = {
     "files/system/usr/share/plymouth/themes/samhie/samhie.plymouth": plymouth_theme,
     "files/system/etc/xdg/fcitx5/conf/classicui.conf": fcitx_classicui,
     f"{FCITX_THEME_DIR}/theme.conf": fcitx_theme,
-    f"{FCITX_THEME_DIR}/prev.svg": fcitx_svg(16, 20, '<path fill="{fill}" d="M11 16 5 10l6-6z"/>'),
-    f"{FCITX_THEME_DIR}/next.svg": fcitx_svg(16, 20, '<path fill="{fill}" d="m5 4 6 6-6 6z"/>'),
-    f"{FCITX_THEME_DIR}/arrow.svg": fcitx_svg(6, 12, '<path fill="{fill}" d="m0 0 6 6-6 6z"/>'),
-    f"{FCITX_THEME_DIR}/radio.svg": fcitx_svg(24, 24, '<circle fill="{fill}" cx="12" cy="12" r="4"/>'),
+    f"{FCITX_THEME_DIR}/prev.svg": fcitx_svg(16, 20, '<path fill="{text_muted}" d="M11 16 5 10l6-6z"/>'),
+    f"{FCITX_THEME_DIR}/next.svg": fcitx_svg(16, 20, '<path fill="{text_muted}" d="m5 4 6 6-6 6z"/>'),
+    f"{FCITX_THEME_DIR}/arrow.svg": fcitx_svg(6, 12, '<path fill="{text_muted}" d="m0 0 6 6-6 6z"/>'),
+    f"{FCITX_THEME_DIR}/radio.svg": fcitx_svg(24, 24, '<circle fill="{text_muted}" cx="12" cy="12" r="4"/>'),
+    f"{FCITX_THEME_DIR}/panel.svg": fcitx_rounded(FCITX_RADIUS, FCITX_RADIUS, "card",
+                                                            "sub_secondary"),
+    f"{FCITX_THEME_DIR}/highlight.svg": fcitx_rounded(FCITX_HIGHLIGHT_RADIUS,
+                                                                FCITX_HIGHLIGHT_MARGIN, "selection"),
+    "files/system/usr/share/locale/en/LC_MESSAGES/fcitx5.mo": fcitx_mo,
 }
 
 
@@ -618,13 +682,14 @@ def main():
     for rel, render in OUTPUTS.items():
         path = ROOT / rel
         content = render(pal)
-        if path.exists() and path.read_text() == content:
+        binary = isinstance(content, bytes)
+        if path.exists() and (path.read_bytes() if binary else path.read_text()) == content:
             continue
         if args.check:
             stale.append(rel)
         else:
             path.parent.mkdir(parents=True, exist_ok=True)
-            path.write_text(content)
+            path.write_bytes(content) if binary else path.write_text(content)
             print(f"đã sinh {rel}")
 
     if stale:

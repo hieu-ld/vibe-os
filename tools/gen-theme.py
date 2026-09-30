@@ -335,7 +335,12 @@ def konsole_profile(pal):
         ("Appearance", dict(BoldIntense="true", ColorScheme="Samhie",
                             Font=qt_font(f["mono"], f["mono-size"]), LineSpacing="2",
                             UseFontLineChararacters="true")),
-        ("Cursor Options", dict(CursorShape="0", CustomCursorColor=rgb(t["cursor"]),
+        # Con trỏ GẠCH DƯỚI (2), không phải khối (0) — user chốt 2026-09-30.
+        # Konsole vẽ con trỏ phủ lên CẢ chữ đang gõ dở của bộ gõ
+        # (TerminalPainter::drawInputMethodPreeditString gọi drawCursor với
+        # nguyên vùng chữ đó): khối thì tô kín "việt" màu cyan khi gõ Telex,
+        # gạch dưới thì thành một vạch cyan dưới cả từ — đúng dáng bộ gõ quen.
+        ("Cursor Options", dict(CursorShape="2", CustomCursorColor=rgb(t["cursor"]),
                                 UseCustomCursorColor="true")),
         # %d = tên thư mục hiện tại: bù cho phần đường dẫn đã bỏ khỏi dấu nhắc
         # (user chốt 2026-09-28).

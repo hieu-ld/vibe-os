@@ -8,7 +8,7 @@ LineSpacing=2
 UseFontLineChararacters=true
 
 [Cursor Options]
-CursorShape=0
+CursorShape=2
 CustomCursorColor=0,192,232
 UseCustomCursorColor=true
 

@@ -65,10 +65,11 @@ modules:
         - fcitx5-gtk
         - fcitx5-configtool
 
-        # Tiện ích: clipboard, chụp màn hình, âm lượng, độ sáng, mạng
+        # Tiện ích: clipboard, chụp màn hình, âm lượng, độ sáng, mạng.
+        # Chọn vùng chụp là giao diện Quickshell (usr/share/samhie/quickshell),
+        # không cần slurp; tiếng tách dùng pw-play có sẵn trong image nền.
         - cliphist
         - grim
-        - slurp
         - swappy
         - playerctl
         - brightnessctl

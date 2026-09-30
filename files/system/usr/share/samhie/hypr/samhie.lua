@@ -199,6 +199,11 @@ hl.animation({ leaf = "fade",       enabled = true, speed = 3.03, bezier = "quic
 hl.animation({ leaf = "layers",     enabled = true, speed = 3.81, bezier = "easeOutQuint" })
 hl.animation({ leaf = "workspaces", enabled = true, speed = 1.94, bezier = "almostLinear", style = "fade" })
 
+-- Lớp chụp màn hình (Quickshell, /usr/share/samhie/quickshell/screenshot-*.qml)
+-- hiện khung hình đã đông đè lên chính màn hình đó: có hiệu ứng mở là lộ ngay.
+-- Ảnh xem trước tự mờ dần trong QML.
+hl.layer_rule({ match = { namespace = "^samhie-screenshot$" }, no_anim = true })
+
 hl.gesture({
     fingers   = 3,
     direction = "horizontal",

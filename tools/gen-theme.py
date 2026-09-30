@@ -125,6 +125,19 @@ def hyprlock_conf(pal):
     return "\n".join(lines) + "\n"
 
 
+def quickshell_js(pal):
+    # Thư viện JS cho QML: `import "colors.js" as Colors` rồi Colors.dark.card,
+    # Colors.shared.captureFrame. .pragma library: nạp một lần, mọi file dùng chung.
+    lines = [f"// {HEADER}", ".pragma library", ""]
+    for section in ("shared", *MODES):
+        lines.append(f"var {section} = {{")
+        for name, value in pal[section].items():
+            lines.append(f'    {camel(name)}: "{value}",')
+        lines.append("};")
+        lines.append("")
+    return "\n".join(lines)
+
+
 # ---------------------------------------------------------------- KDE
 
 def rgb(hex_color):
@@ -356,6 +369,7 @@ def plymouth_theme(pal):
 OUTPUTS = {
     "files/system/usr/share/samhie/hypr/colors.lua": hyprland_lua,
     "files/system/usr/share/samhie/hypr/hyprlock-colors.conf": hyprlock_conf,
+    "files/system/usr/share/samhie/quickshell/colors.js": quickshell_js,
     "files/system/etc/xdg/kdeglobals": kdeglobals,
     "files/system/usr/share/color-schemes/SamhieDark.colors": kde_colors_file("dark"),
     "files/system/usr/share/color-schemes/SamhieLight.colors": kde_colors_file("light"),

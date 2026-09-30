@@ -33,6 +33,11 @@ cyan  = "#00c0e8"   # Figma: Cyan — màu nhấn gốc. Trên nền SÁNG chỉ
 # chốt). Dấu đỏ (help, not-allowed) dùng dark.danger, không thêm vai trò riêng.
 cursor         = "#003845"
 cursor-outline = "#fafafa"
+# Chụp màn hình (user chốt 2026-09-29): khung ảnh xem trước + khung vùng chọn
+# TRẮNG, lớp phủ tối ngoài vùng chọn (QML đặt độ mờ). Giống nhau cả tối lẫn
+# sáng vì chúng nằm đè lên ẢNH CHỤP, không phải lên giao diện Samhie.
+capture-frame = "#fafafa"
+capture-shade = "#0a0a0a"
 
 [dark]
 # Thang bề mặt 4 bậc — user chốt 2026-09-13 bằng ảnh chụp Dolphin (bản 1.0):

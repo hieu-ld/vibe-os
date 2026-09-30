@@ -6,6 +6,11 @@
 # Screenshots theo cấu trúc của Samhie), đồng thời copy vào clipboard, rồi hiện
 # thông báo. Bấm vào thông báo để mở swappy vẽ lên ảnh.
 #
+# Phần hình kiểu Ubuntu (user chốt 2026-09-29) là hai file Quickshell trong
+# /usr/share/samhie/quickshell: screenshot-region.qml (màn hình đứng hình, kéo
+# chọn, chỉnh khung, Enter chụp) và screenshot-preview.qml (ảnh thu nhỏ đóng
+# khung trắng ~1 s sau khi chụp cả màn hình). Chụp xong có tiếng tách.
+#
 # swappy không đọc cấu hình hệ thống, chỉ ~/.config/swappy/config, nên chỗ lưu
 # ảnh đã vẽ truyền qua biến XDG_DESKTOP_DIR: đọc mã nguồn swappy 1.5.1
 # (config.c, get_default_save_dir), nó thử biến này ĐẦU TIÊN. Người dùng tự đặt
@@ -14,6 +19,14 @@
 set -eu
 
 mode=${1:-full}
+
+# Mỗi lúc chỉ một lần chụp: bấm phím hai lần thật nhanh thì hai lớp chọn vùng
+# mở chồng lên nhau — lớp trên nhìn xuyên xuống lớp tối của lớp dưới (gặp
+# trong máy ảo 2026-09-29; `quickshell -n` không chặn kịp vì cả hai cùng mở
+# trong 1 ms). Khoá nhả trước khi chờ thông báo. Tiến trình sống lâu hơn
+# script (wl-copy chạy nền giữ clipboard) phải đóng fd 9, không thì giữ khoá.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/samhie-screenshot.lock"
+flock -n 9 || exit 0
 
 dirs_file=${XDG_CONFIG_HOME:-$HOME/.config}/user-dirs.dirs
 XDG_PICTURES_DIR=$HOME
@@ -33,14 +46,34 @@ while [ -e "$file" ]; do
     n=$((n + 1))
 done
 
+qml=/usr/share/samhie/quickshell
+shutter=/usr/share/sounds/freedesktop/stereo/camera-shutter.oga
+
+play_shutter() {
+    # Chạy nền: tiếng kêu không được làm chậm việc lưu ảnh.
+    if command -v pw-play >/dev/null; then
+        pw-play -- "$shutter" >/dev/null 2>&1 9>&- &
+    fi
+}
+
 case $mode in
     region)
-        # slurp trả mã lỗi khi người dùng bấm Esc: thoát êm, không báo gì.
-        geometry=$(slurp) || exit 0
-        grim -g "$geometry" -- "$file"
+        # Đông cứng màn hình: chụp nguyên màn hình NGAY, giao diện chọn vùng
+        # hiện ảnh này lên. PPM thay PNG: khỏi nén, nhanh hơn; Qt đọc sẵn.
+        # Để trong XDG_RUNTIME_DIR (tmpfs, chỉ chủ tài khoản đọc được).
+        frozen=$(mktemp --tmpdir="${XDG_RUNTIME_DIR:-/tmp}" samhie-shot.XXXXXX.ppm)
+        grim -t ppm -- "$frozen"
+        # Giao diện cắt vùng chọn từ ảnh đông, ghi thẳng vào $file. Esc thì
+        # không có file: thoát êm, không báo gì.
+        SAMHIE_SHOT_FROZEN=$frozen SAMHIE_SHOT_FILE=$file \
+            quickshell -p "$qml/screenshot-region.qml" || true
+        rm -f -- "$frozen"
+        [ -s "$file" ] || exit 0
+        play_shutter
         ;;
     full)
         grim -- "$file"
+        play_shutter
         ;;
     *)
         echo "usage: $0 [full|region]" >&2
@@ -48,7 +81,13 @@ case $mode in
         ;;
 esac
 
-wl-copy --type image/png < "$file"
+wl-copy --type image/png < "$file" 9>&-
+
+if [ "$mode" = full ]; then
+    # Đứng ~1,3 s rồi tự thoát; thông báo hiện SAU, khỏi đè lên ảnh xem trước.
+    SAMHIE_SHOT_FILE=$file quickshell -p "$qml/screenshot-preview.qml" || true
+fi
+exec 9>&-
 
 # -t: mako mặc định giữ thông báo mãi mãi; notify-send có --action thì chờ tới
 # khi thông báo đóng, nên phải cho nó tự tắt. Bấm chuột trái vào thông báo là

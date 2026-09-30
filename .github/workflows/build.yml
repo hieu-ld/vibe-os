@@ -2,9 +2,11 @@ name: build
 
 on:
   schedule:
-    # 06:00 UTC mỗi ngày (13:00 giờ Việt Nam) — sau khi Universal Blue build
-    # xong image nền, để bản vá bảo mật mới nhất của Fedora vào Samhie trong ngày.
-    - cron: "00 06 * * *"
+    # 06:00 UTC (13:00 giờ Việt Nam) — sau khi Universal Blue build xong image
+    # nền. TẠM mỗi thứ Hai: repo đang private (user chốt 2026-09-30) nên chỉ có
+    # 2000 phút Actions/tháng, build hằng ngày cả hai bản dễ vượt. Chuyển public
+    # thì về lại hằng ngày ("00 06 * * *") để bản vá bảo mật vào trong ngày.
+    - cron: "00 06 * * 1"
   push:
     paths-ignore:
       - "**.md"

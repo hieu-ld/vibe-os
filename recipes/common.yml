@@ -67,7 +67,9 @@ modules:
 
         # Tiện ích: clipboard, chụp màn hình, âm lượng, độ sáng, mạng.
         # Chọn vùng chụp là giao diện Quickshell (usr/share/samhie/quickshell),
-        # không cần slurp; tiếng tách dùng pw-play có sẵn trong image nền.
+        # không gọi slurp nữa — slurp vẫn có trong image vì
+        # xdg-desktop-portal-hyprland cần nó (chọn vùng khi chia sẻ màn hình).
+        # Tiếng tách dùng pw-play có sẵn trong image nền.
         - cliphist
         - grim
         - swappy

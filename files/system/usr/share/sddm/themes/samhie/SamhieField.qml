@@ -18,10 +18,14 @@ TextField {
     placeholderTextColor: Colors.dark.textMuted
     selectionColor: Colors.dark.selection
     selectedTextColor: Colors.dark.onSelection
-    font.family: "Dongle"
-    font.weight: Font.Light
-    font.pixelSize: 30
-    passwordCharacter: "•"
+    // Dấu chấm mật khẩu của Dongle chỉ cao 3px (đo trong máy ảo 2026-09-30)
+    // → ô mật khẩu ĐANG CÓ CHỮ dùng Noto Sans; chữ mờ "Password" vẫn Dongle.
+    readonly property bool dots: echoMode === TextInput.Password && text !== ""
+    font.family: dots ? "Noto Sans" : "Dongle"
+    font.weight: dots ? Font.Normal : Font.Light
+    font.pixelSize: dots ? 14 : 30
+    font.letterSpacing: dots ? 4 : 0
+    passwordCharacter: "●"
 
     background: Rectangle {
         radius: 12

@@ -7,7 +7,10 @@ on:
     # 2000 phút Actions/tháng, build hằng ngày cả hai bản dễ vượt. Chuyển public
     # thì về lại hằng ngày ("00 06 * * *") để bản vá bảo mật vào trong ngày.
     - cron: "00 06 * * 1"
+  # Chỉ main: không có dòng này thì mỗi PR (kể cả của Dependabot) chạy HAI lần
+  # — một cho push lên nhánh, một cho pull_request — tốn gấp đôi phút Actions.
   push:
+    branches: [main]
     paths-ignore:
       - "**.md"
   pull_request:
@@ -53,5 +56,8 @@ jobs:
           recipe: ${{ matrix.recipe }}
           cosign_private_key: ${{ secrets.SIGNING_SECRET }}
           registry_token: ${{ github.token }}
-          pr_event_number: ${{ github.event.number }}
+          # PR chỉ build để kiểm recipe, không đẩy lên ghcr và không ký. PR của
+          # Dependabot không đọc được secret nên SIGNING_SECRET rỗng; bluebuild
+          # chỉ đòi khoá khi đẩy (đo 2026-09-30: build.rs `if self.push && !no_sign`).
+          push: ${{ github.event_name != 'pull_request' }}
           maximize_build_space: true

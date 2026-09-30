@@ -3,4 +3,4 @@ updates:
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
+      interval: "weekly"   # khớp lịch build hằng tuần khi repo còn private

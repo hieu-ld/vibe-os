@@ -1,9 +1,15 @@
 <?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <defs><style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style></defs><path stroke="none" d="M0 0h24v24H0z" fill="none" />
-  <path d="M4 7l16 0" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M10 11l0 6" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M14 11l0 6" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M5 7l1 12a2 2 0 0 0 2 2h8a2 2 0 0 0 2 -2l1 -12" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M9 7v-3a1 1 0 0 1 1 -1h4a1 1 0 0 1 1 1v3" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/trash.svg.
+     Sinh bằng tools/build-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <path d="M1.875 4.375H18.125" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M15.3114 15.9849L17 4.38L3 4.37988L4.68861 15.9849C4.8674 17.2137 5.9209 18.125 7.16256 18.125H10H12.8374C14.0791 18.125 15.1326 17.2137 15.3114 15.9849Z" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M5 4.375L5.24627 3.38993C5.46885 2.49959 6.26882 1.875 7.18655 1.875H10H12.8134C13.7312 1.875 14.5311 2.49959 14.7537 3.38993L15 4.375" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M8.50024 10L9.5715 8.21458C9.7657 7.89091 10.2348 7.89091 10.429 8.21458L11.5002 10M7.90024 11L6.91705 12.7557C6.73041 13.089 6.97131 13.5 7.35331 13.5H9.50024M12.1002 11L13.0834 12.7557C13.2701 13.089 13.0292 13.5 12.6472 13.5H10.5002" stroke-width="1.25" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M10.0002 13.5002L10.6252 12.5002V14.5002L10.0002 13.5002Z" style="fill:currentColor" class="ColorScheme-Text" />
+  <path d="M11.842 10.4884L12.3773 9.43761L10.663 10.4677L11.842 10.4884Z" style="fill:currentColor" class="ColorScheme-Text" />
+  <path d="M8.17901 10.5L8.73254 11.5413L7.00049 10.5413L8.17901 10.5Z" style="fill:currentColor" class="ColorScheme-Text" />
 </svg>

@@ -1,7 +1,14 @@
 <?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <defs><style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style></defs><path stroke="none" d="M0 0h24v24H0z" fill="none" />
-  <path d="M9.346 5.353c.21 -.129 .428 -.246 .654 -.353a2 2 0 1 1 4 0a7 7 0 0 1 4 6v3m-1 3h-13a4 4 0 0 0 2 -3v-3a6.996 6.996 0 0 1 1.273 -3.707" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M9 17v1a3 3 0 0 0 6 0v-1" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M3 3l18 18" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/bell-off.svg.
+     Sinh bằng tools/build-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <g>
+    <path d="M3.85365 12.3964C4.59572 11.6543 5.06314 10.6818 5.17903 9.63873L5.43131 7.36818C5.55669 6.23976 6.06238 5.18762 6.8652 4.3848L7.01572 4.23428C7.33647 3.91353 7.70685 3.64658 8.11257 3.44371C9.30074 2.84963 10.6993 2.84963 11.8874 3.44371C12.2932 3.64658 12.6635 3.91353 12.9843 4.23428L13.1348 4.3848C13.9376 5.18762 14.4433 6.23976 14.5687 7.36818L14.821 9.63873C14.9369 10.6818 15.4043 11.6543 16.1464 12.3964L16.2986 12.5486C17.0678 13.3178 17.5 14.3612 17.5 15.4491C17.5 16.5818 16.5818 17.5 15.4491 17.5H4.55094C3.41824 17.5 2.5 16.5818 2.5 15.4491C2.5 14.3612 2.93216 13.3178 3.70141 12.5486L3.85365 12.3964Z" stroke-width="1.25" style="stroke:currentColor" class="ColorScheme-Text" />
+    <path d="M8.75 2.56851C8.75 2.52301 8.75558 2.47768 8.76662 2.43354L8.78732 2.35071C9.10293 1.08827 10.8971 1.08827 11.2127 2.35071L11.2334 2.43354C11.2444 2.47768 11.25 2.52301 11.25 2.56851C11.25 2.87585 11.0008 3.125 10.6935 3.125H9.30649C8.99915 3.125 8.75 2.87585 8.75 2.56851Z" style="fill:currentColor" class="ColorScheme-Text" />
+    <path d="M8.75 17.5C8.98531 18.9119 11.0147 18.9119 11.25 17.5" stroke-width="1.25" style="stroke:currentColor" class="ColorScheme-Text" />
+    <path d="M16.25 3.75L1.875 18.125" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  </g>
 </svg>

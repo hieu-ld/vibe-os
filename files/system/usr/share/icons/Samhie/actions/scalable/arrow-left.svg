@@ -1,5 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <defs><style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style></defs><path stroke="none" d="M0 0h24v24H0z" fill="none" />
-  <path d="M15 6l-6 6l6 6" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/ar-left.svg.
+     Sinh bằng tools/build-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <path d="M9 4.5L7.12276 7.12814C6.75022 7.64969 6.75022 8.35031 7.12276 8.87186L9 11.5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
 </svg>

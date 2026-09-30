@@ -1,7 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <defs><style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style></defs><path stroke="none" d="M0 0h24v24H0z" fill="none" />
-  <path d="M5 12l-2 0l9 -9l9 9l-2 0" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2 -2v-7" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M9 21v-6a2 2 0 0 1 2 -2h2a2 2 0 0 1 2 2v6" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/smart-home.svg.
+     Sinh bằng tools/build-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <path d="M2.22278 7.5C1.91951 7.5 1.7948 7.11086 2.04159 6.93458L8.37017 2.41417C9.34513 1.71776 10.6549 1.71776 11.6298 2.41417L17.9584 6.93458C18.2052 7.11086 18.0805 7.5 17.7772 7.5C17.6191 7.5 17.4861 7.61832 17.4676 7.77532L16.6656 14.5924C16.4286 16.6068 14.7213 18.125 12.693 18.125H10H7.307C5.27865 18.125 3.57139 16.6068 3.3344 14.5924L2.53239 7.77532C2.51392 7.61832 2.38086 7.5 2.22278 7.5Z" stroke-width="1.25" style="stroke:currentColor" class="ColorScheme-Text" />
+  <line x1="8.125" y1="15.625" x2="11.875" y2="15.625" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
 </svg>

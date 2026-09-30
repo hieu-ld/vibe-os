@@ -34,6 +34,7 @@ jobs:
       - run: python3 tools/gen-theme.py --check --report
       - run: python3 tools/build-wallpaper.py --check
       - run: python3 tools/build-cursors.py --check
+      - run: python3 tools/build-icons.py --check
 
   bluebuild:
     name: Build ${{ matrix.recipe }}

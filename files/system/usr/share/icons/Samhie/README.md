@@ -6,6 +6,12 @@ lấy của Breeze — thay được bao nhiêu dùng bấy nhiêu.
 
 ## Nguồn
 
+Hai nguồn:
+- **Icon user tự vẽ** (Figma) — nguồn ở `theme/icons/`, sinh bằng
+  `python3 tools/build-icons.py`. File sinh ra có dòng chú thích
+  "Sinh bằng tools/build-icons.py" ở đầu; sửa hình thì sửa ở `theme/icons/`.
+- **Tabler Icons** — những icon còn lại:
+
 | | |
 |---|---|
 | Bộ gốc | **Tabler Icons** — https://tabler.io/icons |

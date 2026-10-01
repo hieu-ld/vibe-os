@@ -26,6 +26,13 @@ cùng một cỡ là nét dày bằng nhau.
 Samhie là SVG co giãn — một file `folder` thay cho MỌI cỡ, kể cả thư mục to có
 màu trong Dolphin.
 
+**Sửa so với bản xuất Figma:**
+- `plus.svg` (2026-10-01): Konsole vẽ nút `+` ở đúng 16px. Bản gốc có vạch
+  dấu cộng ở toạ độ 8,0 — nằm trên ranh giới hai điểm ảnh, nên nét 1px thành
+  2 hàng mờ (user thấy nhoè trong máy ảo). Dời cả hình về tâm 7,5 (vạch rơi
+  đúng giữa điểm ảnh) và nới vòng tròn ra 15px cho to hơn (user thấy nhỏ):
+  vòng `x=0.5 w=14`, dấu cộng dài 6 từ 4,5 tới 10,5.
+
 **Màu:** vẽ bằng `#A1A1A1` (nét) trên nền `#0A0A0A`. Script đổi thành
 `currentColor` để KDE/SDDM tô theo màu chữ của bảng màu — nên trên máy icon ra
 **màu chữ** (sáng hơn xám Figma), giống icon Tabler trong bộ. Chỗ tô mờ thì vẽ

@@ -1,4 +1,4 @@
-// Ô nhập kiểu ô mật khẩu của hyprlock: 320x52, bo 12, nền Card, viền 1px.
+// Ô nhập giống ô mật khẩu của màn hình khoá (quickshell/lock.qml): 320x52, bo 12, nền Card, viền 1px.
 import QtQuick
 import QtQuick.Controls.Basic
 import "colors.js" as Colors

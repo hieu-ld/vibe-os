@@ -1,0 +1,4 @@
+#%PAM-1.0
+# Màn hình khoá Samhie (Quickshell, /usr/share/samhie/quickshell/lock.qml).
+# Chỉ kiểm mật khẩu (auth) — giống hệt /etc/pam.d/hyprlock của Fedora.
+auth        include     login

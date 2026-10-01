@@ -1,8 +1,8 @@
 // Màn hình đăng nhập Samhie (SDDM, Theme-API 2.0, Qt 6).
 //
-// Cùng họ với màn hình khoá (/etc/xdg/hypr/hyprlock.conf) — user chốt
+// Cùng họ với màn hình khoá (/usr/share/samhie/quickshell/lock.qml) — user chốt
 // 2026-09-30: giờ to + ngày tiếng Việt ở giữa, dưới là người dùng + ô mật
-// khẩu cùng kiểu ô của hyprlock, nền là hình nền làm mờ, MỘT nút nguồn ở góc
+// khẩu cùng kiểu ô của màn hình khoá, nền là hình nền làm mờ, MỘT nút nguồn ở góc
 // mở menu Sleep / Restart / Shut Down.
 //
 // Chỉ dùng module của Qt (QtQuick, QtQuick.Controls.Basic) — không Plasma,
@@ -88,7 +88,7 @@ Rectangle {
         smooth: true
         asynchronous: false
     }
-    // Tối đi một nửa như hyprlock (brightness = 0.5) để chữ trắng đọc được.
+    // Tối đi một nửa (như hyprlock cũ, brightness = 0.5) để chữ trắng đọc được.
     Rectangle {
         anchors.fill: parent
         color: root.c.bar
@@ -105,7 +105,7 @@ Rectangle {
     }
 
     // "Thứ 2, 28/09/2026" / "Chủ nhật, 04/10/2026" — giống
-    // /usr/libexec/samhie/lock-date. Tự ghép vì máy chạy locale en_US.
+    // màn hình khoá (quickshell/lock.qml). Tự ghép vì máy chạy locale en_US.
     function vietnameseDate(d) {
         const day = d.getDay() // 0 = Chủ nhật
         const name = day === 0 ? "Chủ nhật" : "Thứ " + (day + 1)
@@ -231,8 +231,7 @@ Rectangle {
             placeholderText: "Password"
             enabled: !root.busy
             focus: true
-            // Viền: cyan lúc đang kiểm, đỏ khi sai — như hyprlock
-            // (check_color = accent, fail_color = danger).
+            // Viền: cyan lúc đang kiểm, đỏ khi sai — như màn hình khoá.
             borderColor: root.busy ? root.c.accent : root.failed ? root.c.danger : root.c.subSecondary
             rightPadding: 48
             onAccepted: root.login()

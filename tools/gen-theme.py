@@ -121,16 +121,6 @@ def hyprland_lua(pal):
     return "\n".join(lines) + "\n"
 
 
-def hyprlock_conf(pal):
-    # hyprlang thay biến DÀI trước ($bar_text trước $bar) nên tên lồng nhau vẫn an toàn.
-    lines = [f"# {HEADER}",
-             "# Màu bản tối, hex không có '#': dùng rgb($card), hoặc ##$text_muted trong markup.",
-             ""]
-    for name, value in pal["dark"].items():
-        lines.append(f"${name.replace('-', '_')} = {value[1:]}")
-    return "\n".join(lines) + "\n"
-
-
 def quickshell_js(pal):
     # Thư viện JS cho QML: `import "colors.js" as Colors` rồi Colors.dark.card,
     # Colors.shared.captureFrame. .pragma library: nạp một lần, mọi file dùng chung.
@@ -642,7 +632,6 @@ def fcitx_classicui(pal):
 
 OUTPUTS = {
     "files/system/usr/share/samhie/hypr/colors.lua": hyprland_lua,
-    "files/system/usr/share/samhie/hypr/hyprlock-colors.conf": hyprlock_conf,
     "files/system/usr/share/samhie/quickshell/colors.js": quickshell_js,
     # Theme SDDM chạy dưới tài khoản sddm, import JS bằng đường dẫn tương đối
     # trong thư mục theme — một bản riêng, cùng nội dung với bản Quickshell.

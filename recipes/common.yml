@@ -115,8 +115,7 @@ modules:
         - hyprland
         - hyprland-guiutils       # hộp thoại của Hyprland (app treo, cảnh báo)
         - xdg-desktop-portal-hyprland  # chia sẻ màn hình, chụp màn hình
-        - hyprlock                # màn hình khoá
-        - hypridle                # tự khoá khi rời máy
+        - hypridle                # tự khoá khi rời máy (màn hình khoá là Quickshell)
       exclude:
         - kitty
         - qt6ct
@@ -141,8 +140,8 @@ modules:
         - code
 
   # ── 4. File cấu hình của Samhie ────────────────────────────────────────────
-  # files/system soi gương đường dẫn thật: files/system/etc/xdg/hypr/hyprlock.conf
-  # sẽ nằm ở /etc/xdg/hypr/hyprlock.conf trong image.
+  # files/system soi gương đường dẫn thật: files/system/etc/xdg/hypr/hypridle.conf
+  # sẽ nằm ở /etc/xdg/hypr/hypridle.conf trong image.
   - type: files
     files:
       - source: system

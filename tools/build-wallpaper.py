@@ -42,7 +42,7 @@ PNG_PATH = ROOT / "files/system/usr/share/backgrounds/samhie/samhie.png"
 BLUR_PATH = PNG_PATH.with_name("samhie-blur.png")
 # Bản mờ nhỏ 960x540 rồi để SDDM phóng lên: đã mờ thì độ phân giải không còn
 # thấy được, file ~85 KB thay vì hàng MB. Bán kính 16 ở cỡ này ≈ 64px ở 4K —
-# mạnh cỡ hyprlock (blur_passes 4, blur_size 8): còn thấy dáng núi, hết chi tiết.
+# mạnh cỡ hyprlock cũ (blur_passes 4, blur_size 8): còn thấy dáng núi, hết chi tiết.
 BLUR_W, BLUR_H, BLUR_RADIUS = 960, 540, 16
 W, H = 1920, 1080          # hệ toạ độ của SVG; PNG xuất gấp đôi (4K)
 SEED = 2026

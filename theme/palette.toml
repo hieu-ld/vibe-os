@@ -1,7 +1,7 @@
 # Bảng màu Samhie — NGUỒN MÀU DUY NHẤT.
 #
 # Mọi mã màu của Samhie nằm ở đây, và CHỈ ở đây. Cấu hình của từng app
-# (Hyprland, hyprlock, sau này Quickshell, Kvantum, kdeglobals, Konsole) được
+# (Hyprland, Quickshell, Kvantum, kdeglobals, Konsole) được
 # SINH ra từ file này bằng:
 #
 #     python3 tools/gen-theme.py          # sinh lại mọi file

@@ -185,6 +185,10 @@ hl.config({
         force_default_wallpaper = 0,
         disable_hyprland_logo   = true,
         background_color        = "rgb(" .. color.bar .. ")",
+        -- Màn hình khoá Quickshell chết giữa chừng thì phiên vẫn khoá; cho
+        -- /usr/libexec/samhie/lock chạy một bản mới nhận lại, khỏi phải
+        -- khởi động lại máy.
+        allow_session_lock_restore = true,
     },
 
     input = {

@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+# Khoá màn hình Samhie: chạy màn hình khoá Quickshell
+# (/usr/share/samhie/quickshell/lock.qml). hypridle gọi script này (lock_cmd
+# trong /etc/xdg/hypr/hypridle.conf) mỗi khi có `loginctl lock-session`: Win+L,
+# nút Lock trên thanh, 5 phút không dùng, trước khi máy ngủ.
+#
+# Quickshell chết khi đang khoá thì Hyprland vẫn giữ màn hình khoá (tô kín một
+# màu) — không lộ desktop, nhưng cũng không gõ mật khẩu được. Hyprland cho một
+# màn hình khoá MỚI nhận lại phiên đó (misc.allow_session_lock_restore trong
+# samhie.lua), nên ở đây chạy lại Quickshell, tối đa vài lần.
+set -u
+
+# Mỗi lúc chỉ một màn hình khoá: Win+L lúc đang khoá, hay hypridle gọi khoá
+# trước khi ngủ khi máy đã khoá sẵn, thì thôi.
+exec 9>"${XDG_RUNTIME_DIR:-/tmp}/samhie-lock.lock"
+flock -n 9 || exit 0
+
+# Không bộ gõ (QT_IM_MODULE=none): fcitx5 ở chế độ vn giữ chữ đang gõ làm
+# "chữ chờ ghép dấu" (preedit) và Qt vẽ nó RÕ RÀNG cả trong ô mật khẩu — lộ
+# mật khẩu (user gặp trong máy ảo 2026-10-01, đo lại trong container). Mật khẩu
+# nên là phím thô dù bộ gõ đang en hay vn, như ô mật khẩu của Windows.
+for _ in 1 2 3; do
+    # Thoát 0 = đã mở khoá xong (hoặc Hyprland từ chối vì có màn khoá khác).
+    QT_IM_MODULE=none quickshell -p /usr/share/samhie/quickshell/lock.qml && exit 0
+    sleep 1
+done
+
+# Không chạy nổi (vd file QML lỗi — quickshell thoát ngay, mã 255): có thể máy
+# CHƯA khoá. Báo to cho người dùng biết thay vì lặng lẽ bỏ qua.
+notify-send -u critical -a Samhie "The lock screen failed to start" \
+    "This session may not be locked. Log out instead if you need to leave."
+exit 1

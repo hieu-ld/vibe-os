@@ -8,8 +8,9 @@ IconImage {
     // Không đặt tên `name`: IconImage đã có `name` (tên trong bộ icon hệ thống).
     property string iconName
     property int size: 20
+    // Nhóm trong bộ icon: hầu hết ở actions/, chuông thông báo ở status/.
+    property string category: "actions"
 
-    // Mọi icon thanh trên dùng đều nằm trong actions/.
-    source: iconName !== "" ? "file:///usr/share/icons/Samhie/actions/scalable/" + iconName + ".svg" : ""
+    source: iconName !== "" ? "file:///usr/share/icons/Samhie/" + category + "/scalable/" + iconName + ".svg" : ""
     sourceSize: Qt.size(size, size)
 }

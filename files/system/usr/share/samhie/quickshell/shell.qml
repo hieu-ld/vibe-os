@@ -13,18 +13,27 @@
 //
 // Dock (dock/): trên desktop hiện khi không cửa sổ nào đè lên chỗ của nó
 // (DesktopDock.qml), trong tổng quan luôn có.
+//
+// Thông báo (notifications/): popup góc trên-phải, chuông trên thanh mở danh
+// sách — thay mako.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import "bar"
 import "dock"
+import "notifications"
 import "overview"
 
 ShellRoot {
     // Không đặt id `shell`: Bar/Overview có thuộc tính tên `shell`, viết
     // `shell: shell` thì vế phải trỏ vào chính thuộc tính đó (undefined).
     id: samhie
+
+    // Máy chủ thông báo (thay mako): popup góc trên-phải + danh sách của chuông.
+    readonly property alias notifs: notifications
+    Notifications { id: notifications }
+    NotificationPopups { notifs: notifications }
 
     // Tên màn hình (Hyprland) đang mở tổng quan; "" = đóng.
     property string overviewMonitor: ""

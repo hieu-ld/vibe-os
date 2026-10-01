@@ -61,6 +61,13 @@ PanelWindow {
     }
 
     // Mép phải thẳng lề phải của cụm nút trên thanh.
+    NotificationCenter {
+        bar: layer.bar
+        x: layer.width - width - 6
+        y: layer.gap
+    }
+
+    // Mép phải thẳng lề phải của cụm nút trên thanh.
     PowerMenu {
         bar: layer.bar
         x: layer.width - width - 6

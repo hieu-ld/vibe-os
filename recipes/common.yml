@@ -21,11 +21,11 @@ modules:
       packages:
         # Giao diện tự vẽ (thanh trên, dock, popup, màn hình khoá — giai đoạn 3)
         - quickshell
-        # TẠM: launcher và thông báo cho tới khi Quickshell làm thay (giai đoạn 3)
+        # TẠM: launcher cho Win+V (clipboard) tới khi Quickshell làm thay.
+        # Thông báo là Quickshell (quickshell/notifications), mako đã gỡ.
         - fuzzel
-        - mako
         - swaybg                  # hình nền
-        - libnotify
+        - libnotify               # notify-send (script chụp màn hình, màn khoá)
 
         # Màn hình đăng nhập, chạy trên Wayland (không cần X server). Compositor
         # cho greeter là KWin (sddm-wayland-plasma, như Fedora KDE), KHÔNG phải

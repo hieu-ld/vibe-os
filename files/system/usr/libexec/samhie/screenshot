@@ -89,9 +89,9 @@ if [ "$mode" = full ]; then
 fi
 exec 9>&-
 
-# -t: mako mặc định giữ thông báo mãi mãi; notify-send có --action thì chờ tới
-# khi thông báo đóng, nên phải cho nó tự tắt. Bấm chuột trái vào thông báo là
-# "default" action của mako.
+# notify-send có --action thì CHỜ tới khi thông báo đóng: -t cho nó tự tắt sau
+# 6 s (thông báo Quickshell báo "hết hạn" khi popup tắt, bản chép vẫn nằm trong
+# danh sách của chuông). Bấm vào thông báo = việc "default" → mở swappy.
 action=$(notify-send -a Screenshot -i "$file" -t 6000 -A default=Edit \
     "Screenshot saved" "Copied to clipboard. Click to edit." || true)
 if [ "$action" = default ]; then

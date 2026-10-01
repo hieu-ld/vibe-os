@@ -11,7 +11,7 @@ PanelWindow {
 
     required property var shell   // shell.qml — trạng thái chung (màn tổng quan)
 
-    // Popup đang mở: "", "calendar", "power" hoặc "tray". Mỗi lúc chỉ một cái;
+    // Popup đang mở: "", "calendar", "power", "tray" hoặc "notifications". Mỗi lúc chỉ một cái;
     // vẽ trong PopupLayer — bấm ra ngoài hoặc Esc là đóng.
     property string popup: ""
     function toggle(name) {
@@ -90,6 +90,8 @@ PanelWindow {
         spacing: 2
 
         Tray { bar: bar }
+
+        BellButton { bar: bar }
 
         PowerButton { bar: bar }
     }

@@ -115,7 +115,6 @@ hl.on("hyprland.start", function()
     if samhie.shell then hl.exec_cmd(shellCmd()) end
     hl.exec_cmd("/usr/libexec/kf6/polkit-kde-authentication-agent-1")
     hl.exec_cmd("fcitx5 -d --replace")
-    hl.exec_cmd("mako")
     hl.exec_cmd("wl-paste --watch cliphist store")
     hl.exec_cmd(idleCmd)
 end)
@@ -230,6 +229,8 @@ hl.layer_rule({ match = { namespace = "^samhie-popup$" }, no_anim = true })
 hl.layer_rule({ match = { namespace = "^samhie-overview$" }, animation = "fade" })
 -- Dock trên desktop tự trượt/mờ trong QML (quickshell/dock/DesktopDock.qml).
 hl.layer_rule({ match = { namespace = "^samhie-dock$" }, no_anim = true })
+-- Popup thông báo: từng thẻ tự trượt vào trong QML (quickshell/notifications).
+hl.layer_rule({ match = { namespace = "^samhie-notifications$" }, no_anim = true })
 
 hl.gesture({
     fingers   = 3,

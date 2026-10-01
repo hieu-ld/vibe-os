@@ -2,7 +2,7 @@
 // viên bo góc nền `bar`, viền 1px `sub-secondary`, dày 52 kể cả viền. Ô 40px
 // (rê chuột thì ô hiện nền `secondary`, bo 8), cách nhau 12, lề 12; icon 32px
 // giữa ô (hình 28 cách lề 2 — icon app của Samhie cắt khung đúng vậy, xem
-// tools/build-app-icons.py). 4 app = 232×52 (bản vẽ 5 app = 272×52).
+// tools/build-app-icons.py). 4 app = 220×52 (bản vẽ 5 app = 272×52).
 //
 // Dùng ở hai chỗ, cùng một vị trí (giữa, cách đáy 8): màn tổng quan
 // (overview/Overview.qml) và desktop (DesktopDock.qml). Bấm là mở app.
@@ -33,9 +33,10 @@ Rectangle {
     readonly property int gap: 12
     readonly property int iconSize: 32
     // Bản vẽ: icon Samhie hình 28 (khung 32), icon app khác hình 30. Icon của
-    // app khác tự có lề trong → cỡ vẽ riêng cho hình ra 30 (đo 2026-10-01:
-    // vscode.png vẽ 32 ra hình 28, nên 34). Edge (Flatpak) chưa đo.
-    readonly property var iconSizes: ({ "com.microsoft.VSCode": 34 })
+    // app khác lề trong mỗi cái một khác → cỡ vẽ riêng cho hình ra 30 (đo
+    // 2026-10-01: vscode.png vẽ 32 ra hình 28 → 34; Edge Flatpak vẽ 32 ra
+    // hình 32, không lề → 30).
+    readonly property var iconSizes: ({ "com.microsoft.VSCode": 34, "com.microsoft.Edge": 30 })
 
     width: apps.length * cell + Math.max(0, apps.length - 1) * gap + 2 * gap
     height: 52

@@ -42,3 +42,15 @@ tính ngược ra độ mờ (≈ 0,32) và thêm vào bảng `FIGMA`. Màu lạ
 **Vẽ thêm / sửa hình:** xuất SVG đè vào đây (tên viết thường), thêm tên vào
 `MAP` hoặc `UNUSED` trong script, chạy `python3 tools/build-icons.py` rồi
 `./tools/build-icon-theme.sh`, commit cả file sinh ra. CI chạy `--check`.
+
+## Icon app (`apps/`) — nhiều màu, KHÔNG qua build-icons.py
+
+User vẽ 2026-10-01 (Figma, khung 40, xuất tên `hover*.svg`), lắp thẳng vào
+`files/system/usr/share/icons/Samhie/apps/scalable/` với `viewBox` cắt về
+`5 5 30 30` (sát hình). Màu giữ nguyên như bản vẽ — icon app, không tô lại.
+
+| Hình | Tên icon |
+|---|---|
+| `apps/org.kde.dolphin.svg` (hover-1) | `org.kde.dolphin` |
+| `apps/utilities-terminal.svg` (hover-2) | `utilities-terminal` (Konsole) |
+| `apps/preferences-system.svg` (hover) | `preferences-system` — chưa app nào dùng |

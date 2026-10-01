@@ -60,3 +60,11 @@ var light = {
     success: "#1b7a45",
     warm: "#8f5a00",
 };
+
+var fonts = {
+    ui: "Dongle",
+    uiWeight: 300,
+    size: 20,
+    mono: "Hack",
+    monoSize: 11,
+};

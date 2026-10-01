@@ -30,6 +30,10 @@ local samhie = {
     -- Hình nền: file PNG/JPG. Mặc định là tranh núi đêm của Samhie
     -- (tools/build-wallpaper.py). Đường dẫn bắt đầu bằng ~/ được hiểu là $HOME.
     wallpaper = "/usr/share/backgrounds/samhie/samhie.png",
+    -- Giao diện Quickshell (thanh trên…): thư mục chứa shell.qml. Muốn tự sửa
+    -- thì chép cả thư mục này về, vd ~/.config/quickshell/samhie, rồi trỏ vào
+    -- đó. Đặt false là không chạy (không có thanh trên).
+    shell = "/usr/share/samhie/quickshell",
 }
 
 -------------------
@@ -38,7 +42,6 @@ local samhie = {
 
 local terminal    = "konsole"
 local fileManager = "dolphin"
-local launcher    = "fuzzel"   -- TẠM, giai đoạn 3 thay bằng launcher Quickshell
 
 -------------------
 ---- MÀN HÌNH ----
@@ -97,8 +100,19 @@ local function wallpaperCmd()
     return 'pkill -x swaybg; exec swaybg -m fill -i "' .. path .. '"'
 end
 
+-- -n: đang có một bản chạy rồi thì không mở thêm. SAMHIE_WALLPAPER: màn
+-- tổng quan vẽ hình nền trong ô màn ảo (đổi hình nền thì phải chạy lại
+-- Quickshell mới thấy trong tổng quan).
+local function quoted(path)
+    return '"' .. path:gsub('[\\"$`]', "\\%0"):gsub("^~/", "$HOME/") .. '"'
+end
+local function shellCmd()
+    return "SAMHIE_WALLPAPER=" .. quoted(samhie.wallpaper) .. " exec quickshell -n -p " .. quoted(samhie.shell)
+end
+
 hl.on("hyprland.start", function()
     hl.exec_cmd(wallpaperCmd())
+    if samhie.shell then hl.exec_cmd(shellCmd()) end
     hl.exec_cmd("/usr/libexec/kf6/polkit-kde-authentication-agent-1")
     hl.exec_cmd("fcitx5 -d --replace")
     hl.exec_cmd("mako")
@@ -205,6 +219,11 @@ hl.animation({ leaf = "workspaces", enabled = true, speed = 1.94, bezier = "almo
 -- hiện khung hình đã đông đè lên chính màn hình đó: có hiệu ứng mở là lộ ngay.
 -- Ảnh xem trước tự mờ dần trong QML.
 hl.layer_rule({ match = { namespace = "^samhie-screenshot$" }, no_anim = true })
+-- Lớp phủ của popup thanh trên (lịch, menu nguồn, menu khay) phủ cả màn
+-- hình: hiệu ứng mở layer sẽ trượt/phóng cả lớp — tắt, popup hiện ngay.
+hl.layer_rule({ match = { namespace = "^samhie-popup$" }, no_anim = true })
+-- Màn tổng quan hiện/ẩn bằng mờ dần (mặc định layer trượt vào từ mép).
+hl.layer_rule({ match = { namespace = "^samhie-overview$" }, animation = "fade" })
 
 hl.gesture({
     fingers   = 3,
@@ -220,8 +239,13 @@ hl.gesture({
 local mod = "SUPER"
 
 hl.bind(mod .. " + E",         hl.dsp.exec_cmd(fileManager))  -- Win+E: quản lý file
-hl.bind(mod .. " + R",         hl.dsp.exec_cmd(launcher))     -- Win+R: chạy app
-hl.bind(mod .. " + SPACE",     hl.dsp.exec_cmd(launcher))
+-- Màn tổng quan (Quickshell, /usr/share/samhie/quickshell/overview): ô tìm
+-- kiếm trong đó tìm app luôn. Nhấn rồi THẢ riêng phím Win là mở/đóng như
+-- Ubuntu; Win+phím khác không kích hoạt nó.
+local overview = hl.dsp.global("samhie:overview")
+hl.bind(mod .. " + SUPER_L",   overview, { release = true })
+hl.bind(mod .. " + R",         overview)                      -- Win+R: chạy app
+hl.bind(mod .. " + SPACE",     overview)
 hl.bind(mod .. " + L",         hl.dsp.exec_cmd("loginctl lock-session"))  -- Win+L: khoá máy
 hl.bind("CTRL + ALT + T",      hl.dsp.exec_cmd(terminal))     -- quen tay từ Ubuntu
 hl.bind(mod .. " + T",         hl.dsp.exec_cmd(terminal))

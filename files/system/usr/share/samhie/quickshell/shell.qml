@@ -1,0 +1,99 @@
+// Giao diện Quickshell của Samhie (giai đoạn 3) — Hyprland chạy lúc đăng nhập:
+//     quickshell -n -p /usr/share/samhie/quickshell
+// (xem samhie.shell trong /usr/share/samhie/hypr/samhie.lua). Mỗi phần một
+// thư mục con; screenshot-*.qml là hai giao diện chạy riêng theo lệnh chụp.
+//
+// Thanh trên: mỗi màn hình một thanh (bar/Bar.qml). Bố cục như bản 1.0 (user chốt
+// 2026-10-01): trái là cụm workspace, giữa là đồng hồ tiếng Việt (bấm ra
+// đồng hồ kim + lịch âm dương), phải là khay hệ thống (bộ gõ hiện chữ
+// en/vn) và nút nguồn.
+//
+// Màn tổng quan (overview/Overview.qml): nhấn-thả phím Win, Win+R/Win+Space,
+// hoặc bấm cụm workspace trên thanh. Mở trên màn hình đang focus.
+import QtQuick
+import Quickshell
+import Quickshell.Hyprland
+import Quickshell.Io
+import "bar"
+import "overview"
+
+ShellRoot {
+    // Không đặt id `shell`: Bar/Overview có thuộc tính tên `shell`, viết
+    // `shell: shell` thì vế phải trỏ vào chính thuộc tính đó (undefined).
+    id: samhie
+
+    // Tên màn hình (Hyprland) đang mở tổng quan; "" = đóng.
+    property string overviewMonitor: ""
+
+    function openOverview() {
+        const m = Hyprland.focusedMonitor
+        overviewMonitor = m ? m.name : ""
+    }
+    function closeOverview() {
+        overviewMonitor = ""
+    }
+    function toggleOverview() {
+        if (overviewMonitor !== "")
+            closeOverview()
+        else
+            openOverview()
+    }
+
+    // Các màn ảo của một màn hình, như Ubuntu (user chốt 2026-10-01): các
+    // workspace đang có + LUÔN một màn trống ở cuối, ít nhất 2. Chấm trên
+    // thanh (bar/Workspaces.qml) và cột trái màn tổng quan dùng CHUNG danh
+    // sách này. [{ id, active, workspace (null nếu là màn trống chưa có) }]
+    // — Hyprland tự tạo workspace khi nhảy tới và tự xoá cái trống khi rời đi.
+    function workspaceSlots(monitor) {
+        const existing = Hyprland.workspaces.values
+            .filter(w => w.id > 0 && w.monitor === monitor)
+            .sort((a, b) => a.id - b.id)
+        const list = existing.map(w => ({ id: w.id, active: w.active, workspace: w }))
+        const last = existing[existing.length - 1]
+        if (existing.length < 2 || last.toplevels.values.length > 0) {
+            // id nhỏ nhất lớn hơn màn cuối mà chưa màn hình nào dùng (id của
+            // workspace là chung cho mọi màn hình).
+            const used = Hyprland.workspaces.values.map(w => w.id)
+            let id = last ? last.id + 1 : 1
+            while (used.indexOf(id) >= 0)
+                id++
+            list.push({ id: id, active: false, workspace: null })
+        }
+        return list
+    }
+
+    // samhie.lua gắn phím vào đây: hl.dsp.global("samhie:overview").
+    GlobalShortcut {
+        appid: "samhie"
+        name: "overview"
+        description: "Open or close the overview"
+        onPressed: samhie.toggleOverview()
+    }
+
+    // Gọi từ dòng lệnh: qs -p /usr/share/samhie/quickshell ipc call overview toggle
+    IpcHandler {
+        target: "overview"
+        function toggle(): void { samhie.toggleOverview() }
+        function open(): void { samhie.openOverview() }
+        function close(): void { samhie.closeOverview() }
+    }
+
+    Variants {
+        model: Quickshell.screens
+
+        Scope {
+            id: perScreen
+            required property ShellScreen modelData
+
+            Bar {
+                shell: samhie
+                screen: perScreen.modelData
+            }
+
+            Overview {
+                shell: samhie
+                screen: perScreen.modelData
+            }
+        }
+    }
+}

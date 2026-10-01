@@ -141,6 +141,12 @@ def quickshell_js(pal):
             lines.append(f'    {camel(name)}: "{value}",')
         lines.append("};")
         lines.append("")
+    # Font giao diện ([fonts]): Colors.fonts.ui, Colors.fonts.size (point)…
+    lines.append("var fonts = {")
+    for name, value in pal["fonts"].items():
+        lines.append(f"    {camel(name)}: {json.dumps(value, ensure_ascii=False)},")
+    lines.append("};")
+    lines.append("")
     return "\n".join(lines)
 
 

@@ -35,6 +35,7 @@ jobs:
       - run: python3 tools/build-wallpaper.py --check
       - run: python3 tools/build-cursors.py --check
       - run: python3 tools/build-icons.py --check
+      - run: python3 tools/build-app-icons.py --check
       # Âm lịch của đồng hồ thanh trên (Node có sẵn trên ubuntu-latest).
       - run: node tools/test-lunar.js
 

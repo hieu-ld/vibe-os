@@ -1,11 +1,25 @@
-<!-- Icon thư mục — Dolphin (Icon=org.kde.dolphin).
-     User vẽ trên Figma, xuất SVG 2026-10-01 (bản gốc: theme/icons/apps/org.kde.dolphin.svg,
-     khung 40). Hình nằm trong 6..34 (nét 2px ra tới 5..35) nên khung cắt về
-     "5 5 30 30" cho icon to ngang icon app khác (VS Code, Edge) trên dock.
-     Thay bản 1.0 (khung 28, viền "kính"). -->
-<svg viewBox="5 5 30 30" fill="none" xmlns="http://www.w3.org/2000/svg">
-<path d="M6 11C6 8.79086 7.79086 7 10 7H18.1972C19.3235 7 20.3753 7.56288 21 8.5C21.6247 9.43712 22.6765 10 23.8028 10H30C32.2091 10 34 11.7909 34 14V29C34 31.2091 32.2091 33 30 33H10C7.79086 33 6 31.2091 6 29V11Z" fill="#003845" stroke="#00819C" stroke-width="2"/>
-<path d="M7 17C7 14.7909 8.79086 13 11 13H29C31.2091 13 33 14.7909 33 17H7Z" fill="#BDBEC1"/>
-<path d="M6 20C6 17.7909 7.79086 16 10 16H30C32.2091 16 34 17.7909 34 20V29C34 31.2091 32.2091 33 30 33H10C7.79086 33 6 31.2091 6 29V20Z" stroke="#00819C" stroke-width="2"/>
-<rect x="18" y="19" width="4" height="2" rx="1" fill="#BDBEC1"/>
+<!-- SINH TỰ ĐỘNG bởi tools/build-app-icons.py từ theme/icons/apps/org.kde.dolphin.svg
+     (Dolphin — thư mục) — đừng sửa tay: sửa bản Figma rồi chạy lại script.
+     Khung 4 4 32 32; viền ngoài vẽ vào trong + viền bắt sáng (xem script). -->
+<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="4 4 32 32" fill="none">
+  <defs>
+    <mask id="samhie-shape" maskUnits="userSpaceOnUse" x="0" y="0" width="40" height="40">
+      <path d="M6 11C6 8.79086 7.79086 7 10 7H18.1972C19.3235 7 20.3753 7.56288 21 8.5C21.6247 9.43712 22.6765 10 23.8028 10H30C32.2091 10 34 11.7909 34 14V29C34 31.2091 32.2091 33 30 33H10C7.79086 33 6 31.2091 6 29V11Z" fill="#FFFFFF" />
+    </mask>
+    <linearGradient id="samhie-rim" gradientUnits="userSpaceOnUse" x1="6" y1="6" x2="34" y2="34">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.5" />
+      <stop offset="0.45" stop-color="#FFFFFF" stop-opacity="0.08" />
+      <stop offset="0.8" stop-color="#FFFFFF" stop-opacity="0.08" />
+      <stop offset="1" stop-color="#FFFFFF" stop-opacity="0.3" />
+    </linearGradient>
+  </defs>
+  <g mask="url(#samhie-shape)">
+    <path d="M6 11C6 8.79086 7.79086 7 10 7H18.1972C19.3235 7 20.3753 7.56288 21 8.5C21.6247 9.43712 22.6765 10 23.8028 10H30C32.2091 10 34 11.7909 34 14V29C34 31.2091 32.2091 33 30 33H10C7.79086 33 6 31.2091 6 29V11Z" fill="#003845" />
+    <path d="M6 11C6 8.79086 7.79086 7 10 7H18.1972C19.3235 7 20.3753 7.56288 21 8.5C21.6247 9.43712 22.6765 10 23.8028 10H30C32.2091 10 34 11.7909 34 14V29C34 31.2091 32.2091 33 30 33H10C7.79086 33 6 31.2091 6 29V11Z" stroke="#00819C" stroke-width="2" />
+    <path d="M7 17C7 14.7909 8.79086 13 11 13H29C31.2091 13 33 14.7909 33 17L32.0667 16.3C31.3743 15.7807 30.5321 15.5 29.6667 15.5H20H10.3333C9.46785 15.5 8.62572 15.7807 7.93333 16.3L7 17Z" fill="#BDBEC1" />
+    <path d="M6 19.5C6 17.2909 7.79086 15.5 10 15.5H30C32.2091 15.5 34 17.2909 34 19.5V29C34 31.2091 32.2091 33 30 33H10C7.79086 33 6 31.2091 6 29V19.5Z" stroke="#00819C" />
+    <rect x="18" y="19" width="4" height="2" rx="1" fill="#BDBEC1" />
+    <path d="M6 11C6 8.79086 7.79086 7 10 7H18.1972C19.3235 7 20.3753 7.56288 21 8.5C21.6247 9.43712 22.6765 10 23.8028 10H30C32.2091 10 34 11.7909 34 14V29C34 31.2091 32.2091 33 30 33H10C7.79086 33 6 31.2091 6 29V11Z" stroke="url(#samhie-rim)" stroke-width="2" />
+    <path d="M6 11C6 8.79086 7.79086 7 10 7H18.1972C19.3235 7 20.3753 7.56288 21 8.5C21.6247 9.43712 22.6765 10 23.8028 10H30C32.2091 10 34 11.7909 34 14V29C34 31.2091 32.2091 33 30 33H10C7.79086 33 6 31.2091 6 29V11Z" stroke="#FFFFFF" stroke-opacity="0.06" stroke-width="4" />
+  </g>
 </svg>

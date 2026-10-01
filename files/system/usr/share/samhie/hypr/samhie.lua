@@ -228,6 +228,8 @@ hl.layer_rule({ match = { namespace = "^samhie-screenshot$" }, no_anim = true })
 hl.layer_rule({ match = { namespace = "^samhie-popup$" }, no_anim = true })
 -- Màn tổng quan hiện/ẩn bằng mờ dần (mặc định layer trượt vào từ mép).
 hl.layer_rule({ match = { namespace = "^samhie-overview$" }, animation = "fade" })
+-- Dock trên desktop tự trượt/mờ trong QML (quickshell/dock/DesktopDock.qml).
+hl.layer_rule({ match = { namespace = "^samhie-dock$" }, no_anim = true })
 
 hl.gesture({
     fingers   = 3,

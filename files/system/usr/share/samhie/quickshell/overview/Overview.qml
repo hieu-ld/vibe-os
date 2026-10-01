@@ -12,13 +12,14 @@
 //     trên thanh (workspaceSlots(): các màn đang có + một màn trống ở cuối);
 //     bấm là khung lớn đổi sang màn đó, vẫn ở trong tổng quan. Ô "+" của bản
 //     vẽ đã bỏ: màn trống ở cuối chính là chỗ mở màn mới (user chốt).
-//   - dock dưới đáy (Dock.qml).
+//   - dock dưới đáy (dock/Dock.qml — cùng dock với desktop).
 // Esc: xoá chữ đang gõ, gõ trống rồi thì đóng. Mở/đóng: shell.qml.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import "../bar"
+import "../dock"
 import "../colors.js" as Colors
 
 PanelWindow {

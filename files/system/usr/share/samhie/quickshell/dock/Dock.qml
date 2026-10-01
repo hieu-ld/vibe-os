@@ -1,10 +1,14 @@
-// Dock dưới đáy màn tổng quan (bản vẽ của user 2026-10-01): viên bo góc nền
-// `bar`, viền 1px `sub-secondary`, ô 40px cách nhau 12, lề 12 → 4 app =
-// 232×52 (bản vẽ 5 app = 272×52). Bấm là mở app và đóng tổng quan.
+// Dock — bản vẽ của user (Figma "Reminder" node 308-854, Dock.png 2026-10-01):
+// viên bo góc nền `bar`, viền 1px `sub-secondary`, dày 52 kể cả viền. Ô 40px
+// (rê chuột thì ô hiện nền `secondary`, bo 8), cách nhau 12, lề 12; icon 32px
+// giữa ô (hình 28 cách lề 2 — icon app của Samhie cắt khung đúng vậy, xem
+// tools/build-app-icons.py). 4 app = 232×52 (bản vẽ 5 app = 272×52).
 //
-// Đợt này dock CHỈ có trong tổng quan; dock luôn hiện trên desktop là mục
-// "Dock nổi" riêng của giai đoạn 3. Icon bánh răng (Settings) trong bản vẽ
-// chưa có: image chưa có app cài đặt nào để mở.
+// Dùng ở hai chỗ, cùng một vị trí (giữa, cách đáy 8): màn tổng quan
+// (overview/Overview.qml) và desktop (DesktopDock.qml). Bấm là mở app.
+//
+// Icon bánh răng (Settings) trong bản vẽ TẠM ẨN (user chốt 2026-10-01): image
+// chưa có app cài đặt. Có rồi thì thêm id vào `pinned`.
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
@@ -27,10 +31,15 @@ Rectangle {
 
     readonly property int cell: 40
     readonly property int gap: 12
+    readonly property int iconSize: 32
+    // Bản vẽ: icon Samhie hình 28 (khung 32), icon app khác hình 30. Icon của
+    // app khác tự có lề trong → cỡ vẽ riêng cho hình ra 30 (đo 2026-10-01:
+    // vscode.png vẽ 32 ra hình 28, nên 34). Edge (Flatpak) chưa đo.
+    readonly property var iconSizes: ({ "com.microsoft.VSCode": 34 })
 
     width: apps.length * cell + Math.max(0, apps.length - 1) * gap + 2 * gap
     height: 52
-    radius: 14
+    radius: 12  // đo góc bo trên Dock.png
     color: Colors.dark.bar
     border.width: 1
     border.color: Colors.dark.subSecondary
@@ -50,13 +59,12 @@ Rectangle {
 
                 Rectangle {
                     anchors.fill: parent
-                    anchors.margins: -2
                     radius: 8
                     color: slotArea.containsMouse ? Colors.dark.secondary : "transparent"
                 }
                 IconImage {
                     anchors.centerIn: parent
-                    implicitSize: 36
+                    implicitSize: root.iconSizes[slot.modelData.id] ?? root.iconSize
                     source: Quickshell.iconPath(slot.modelData.icon, "application-x-executable")
                 }
                 MouseArea {

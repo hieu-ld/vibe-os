@@ -10,11 +10,15 @@
 //
 // Màn tổng quan (overview/Overview.qml): nhấn-thả phím Win, Win+R/Win+Space,
 // hoặc bấm cụm workspace trên thanh. Mở trên màn hình đang focus.
+//
+// Dock (dock/): trên desktop hiện khi không cửa sổ nào đè lên chỗ của nó
+// (DesktopDock.qml), trong tổng quan luôn có.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import "bar"
+import "dock"
 import "overview"
 
 ShellRoot {
@@ -115,6 +119,11 @@ ShellRoot {
             }
 
             Overview {
+                shell: samhie
+                screen: perScreen.modelData
+            }
+
+            DesktopDock {
                 shell: samhie
                 screen: perScreen.modelData
             }

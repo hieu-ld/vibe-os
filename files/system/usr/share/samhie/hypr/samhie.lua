@@ -243,7 +243,7 @@ hl.bind(mod .. " + E",         hl.dsp.exec_cmd(fileManager))  -- Win+E: quản l
 -- kiếm trong đó tìm app luôn. Nhấn rồi THẢ riêng phím Win là mở/đóng như
 -- Ubuntu; Win+phím khác không kích hoạt nó.
 local overview = hl.dsp.global("samhie:overview")
-hl.bind(mod .. " + SUPER_L",   overview, { release = true })
+hl.bind(mod .. " + SUPER_L",   hl.dsp.global("samhie:overview-key"), { release = true })
 hl.bind(mod .. " + R",         overview)                      -- Win+R: chạy app
 hl.bind(mod .. " + SPACE",     overview)
 hl.bind(mod .. " + L",         hl.dsp.exec_cmd("loginctl lock-session"))  -- Win+L: khoá máy

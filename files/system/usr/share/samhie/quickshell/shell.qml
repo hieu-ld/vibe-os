@@ -62,12 +62,36 @@ ShellRoot {
         return list
     }
 
-    // samhie.lua gắn phím vào đây: hl.dsp.global("samhie:overview").
+    // samhie.lua gắn phím vào đây: hl.dsp.global("samhie:overview") cho
+    // Win+R / Win+Space (bấm thường: Hyprland gửi "nhấn" rồi "thả").
     GlobalShortcut {
         appid: "samhie"
         name: "overview"
         description: "Open or close the overview"
         onPressed: samhie.toggleOverview()
+    }
+
+    // Phím Win đứng riêng gắn KIỂU "KHI THẢ" (release = true). Win+Space chạy
+    // mà Win không (máy ảo 2026-10-01) — nghi Hyprland chỉ gửi "thả" cho bind
+    // kiểu này. Không kiểm được trong container (Hyprland bỏ phím tắt từ bàn
+    // phím ảo wtype), nên nghe CẢ HAI: cái nào tới trước thì mở/đóng, cái kia
+    // tới ngay sau (cùng một lần bấm) thì bỏ qua.
+    GlobalShortcut {
+        appid: "samhie"
+        name: "overview-key"
+        description: "Open or close the overview (Super key alone)"
+        onPressed: superKey.hit()
+        onReleased: superKey.hit()
+    }
+    QtObject {
+        id: superKey
+        property double last: 0
+        function hit() {
+            const now = Date.now()
+            if (now - last > 400)
+                samhie.toggleOverview()
+            last = now
+        }
     }
 
     // Gọi từ dòng lệnh: qs -p /usr/share/samhie/quickshell ipc call overview toggle

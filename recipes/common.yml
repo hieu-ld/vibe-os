@@ -27,10 +27,15 @@ modules:
         - swaybg                  # hình nền
         - libnotify
 
-        # Màn hình đăng nhập. sddm-wayland-generic cho SDDM chạy trên Weston
-        # thay vì X11 — không cần cài X server chỉ để hiện ô mật khẩu.
+        # Màn hình đăng nhập, chạy trên Wayland (không cần X server). Compositor
+        # cho greeter là KWin (sddm-wayland-plasma, như Fedora KDE), KHÔNG phải
+        # Weston (sddm-wayland-generic): Weston 15 chỉ bật chuột ở sự kiện chuột
+        # đầu tiên, lúc greeter đã mở, rồi gửi wl_pointer.enter với serial 0 —
+        # Qt bỏ qua serial 0 nên không bao giờ đặt con trỏ (đo 2026-10-01, xem
+        # PLAN). Thêm ~43 MiB (kwin, kscreenlocker, plasma-keyboard…), toàn kho
+        # Fedora. KWin chỉ chạy cho màn hình đăng nhập; phiên làm việc vẫn Hyprland.
         - sddm
-        - sddm-wayland-generic
+        - sddm-wayland-plasma
 
         # Ứng dụng Qt/KDE: quản lý file, terminal, giải nén, soạn thảo
         - dolphin

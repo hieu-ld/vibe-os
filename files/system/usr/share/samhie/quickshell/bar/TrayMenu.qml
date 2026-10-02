@@ -110,7 +110,7 @@ Item {
         }
     }
 
-    // Một dòng: [icon] chữ [mũi tên menu con]. Cao 40, chữ Dongle 28px, nền
+    // Một dòng: [icon] chữ [mũi tên menu con]. Cao 40, chữ Dongle 24px, nền
     // Secondary khi rê chuột — như dòng của menu nguồn.
     component MenuRow: Rectangle {
         id: menuRow
@@ -154,7 +154,7 @@ Item {
                 color: menuRow.checked ? Colors.dark.accentText : Colors.dark.text
                 font.family: Colors.fonts.ui
                 font.weight: Colors.fonts.uiWeight
-                font.pixelSize: 28
+                font.pixelSize: 24  // 28 thấy to (user 2026-10-02)
             }
         }
 

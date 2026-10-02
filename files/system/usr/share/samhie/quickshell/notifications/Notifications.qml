@@ -20,9 +20,13 @@ Scope {
     // Popup bị chặn trên màn hình đang mở danh sách của chuông (thông báo mới
     // đã nằm sẵn trong danh sách đó).
     property bool centerOpen: false
+    // Số thanh đang mở một popup (lịch, menu nguồn, khay, danh sách chuông):
+    // popup thông báo nằm tầng Overlay, sẽ đè lên chúng → tạm ẩn (vẫn đếm giờ).
+    property int barPopups: 0
 
     readonly property int historyLimit: 50
     readonly property int defaultTimeout: 5000   // ms, khi app để server tự chọn
+    readonly property int longTimeout: 10000     // ms, thông báo khẩn / app xin không tự tắt
 
     // Danh sách cho chuông, mới nhất ĐẦU — các Entry bên dưới.
     property var history: []
@@ -44,8 +48,11 @@ Scope {
         property bool critical
         property date time: new Date()
         property bool released: false
-        // Popup tự tắt sau bao lâu (ms); 0 = không tự tắt.
+        // Popup tự ẩn sau bao lâu (ms) — popup nào cũng tự ẩn (user 2026-10-02).
         property int timeout
+        // Ẩn popup nhưng KHÔNG báo app hết hạn: thông báo khẩn, hoặc app xin
+        // "không tự tắt" (thời hạn 0) — nó vẫn sống trong danh sách của chuông.
+        property bool keepAlive
 
         function copy() {
             if (!n)
@@ -112,11 +119,13 @@ Scope {
         release(entry)
     }
 
-    // Popup hết giờ: báo app "hết hạn", giữ bản chép trong danh sách.
+    // Popup hết giờ: báo app "hết hạn" (trừ keepAlive), giữ bản chép trong
+    // danh sách.
     function timeoutPopup(entry) {
         const n = entry.n
+        const keep = entry.keepAlive
         removePopup(entry)
-        if (n)
+        if (n && !keep)
             n.expire()
     }
 
@@ -191,10 +200,15 @@ Scope {
                 root.release(entry)
                 return
             }
-            // expireTimeout tính bằng GIÂY: > 0 là app chọn, 0 = không tự tắt,
-            // < 0 = server chọn. Thông báo khẩn không tự tắt (đặc tả).
+            // expireTimeout tính bằng MILI GIÂY (y như D-Bus gửi — tài liệu
+            // Quickshell ghi "giây" là sai: `-t 6000` ra 6000, đo 2026-10-02):
+            // > 0 là app chọn, 0 = không tự tắt, < 0 = server chọn. Popup NÀO cũng tự ẩn (user 2026-10-02: khẩn
+            // mà đứng mãi thì phiền); khẩn và "không tự tắt" ẩn sau 10 s và
+            // vẫn sống trong danh sách (đặc tả: khẩn không tự hết hạn).
             const t = n.expireTimeout
-            entry.timeout = critical || t === 0 ? 0 : t > 0 ? Math.round(t * 1000) : root.defaultTimeout
+            entry.keepAlive = critical || t === 0
+            entry.timeout = entry.keepAlive ? root.longTimeout
+                : t > 0 ? t : root.defaultTimeout
             root.popups = [entry].concat(root.popups)
         }
     }

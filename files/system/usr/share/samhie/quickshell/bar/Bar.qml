@@ -20,6 +20,9 @@ PanelWindow {
     // Popup của thanh và màn tổng quan cùng tầng layer — không cho mở cùng
     // lúc kẻo cái này đè mất cái kia.
     onPopupChanged: if (popup !== "") shell.closeOverview()
+    // Popup thông báo (tầng Overlay) tạm ẩn khi thanh nào đang mở popup.
+    readonly property bool hasPopup: popup !== ""
+    onHasPopupChanged: shell.notifs.barPopups += hasPopup ? 1 : -1
     Connections {
         target: bar.shell
         function onOverviewMonitorChanged() {

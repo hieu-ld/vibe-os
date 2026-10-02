@@ -92,8 +92,10 @@ exec 9>&-
 # notify-send có --action thì CHỜ tới khi thông báo đóng: -t cho nó tự tắt sau
 # 6 s (thông báo Quickshell báo "hết hạn" khi popup tắt, bản chép vẫn nằm trong
 # danh sách của chuông). Bấm vào thông báo = việc "default" → mở swappy.
+# Một dòng (user chốt 2026-10-02): dòng tên app đã ghi "Screenshot", ảnh xem
+# trước nằm ngay dưới — "Screenshot saved" là thừa.
 action=$(notify-send -a Screenshot -i "$file" -t 6000 -A default=Edit \
-    "Screenshot saved" "Copied to clipboard. Click to edit." || true)
+    "Copied · Click to edit" || true)
 if [ "$action" = default ]; then
     XDG_DESKTOP_DIR=$save_dir exec swappy -f "$file"
 fi

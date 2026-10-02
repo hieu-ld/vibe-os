@@ -78,8 +78,8 @@ Item {
             Repeater {
                 model: root.actions
 
-                // Dòng như SamhieMenuItem của SDDM: cao 40, icon 20, chữ
-                // Dongle 28px, nền Secondary khi rê chuột.
+                // Dòng như SamhieMenuItem của SDDM (cao 40, icon 20, nền
+                // Secondary khi rê chuột) nhưng chữ Dongle 24px thay vì 28.
                 delegate: Rectangle {
                     id: row
                     required property var modelData
@@ -108,7 +108,7 @@ Item {
                             color: row.isArmed ? Colors.dark.danger : Colors.dark.text
                             font.family: Colors.fonts.ui
                             font.weight: Colors.fonts.uiWeight
-                            font.pixelSize: 28
+                            font.pixelSize: 24  // 28 thấy to (user 2026-10-02)
                         }
                     }
 

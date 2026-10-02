@@ -21,8 +21,9 @@ PanelWindow {
         const m = Hyprland.focusedMonitor
         return Quickshell.screens.find(s => m && s.name === m.name) ?? Quickshell.screens[0]
     }
-    // Danh sách của chuông đang mở thì ẩn — popup nằm tầng trên, đè lên nó.
-    visible: notifs.popups.length > 0 && !notifs.centerOpen
+    // Thanh đang mở popup (danh sách chuông, menu nguồn…) thì ẩn — popup thông
+    // báo nằm tầng Overlay, sẽ đè lên chúng (đo 2026-10-02: che menu nguồn).
+    visible: notifs.popups.length > 0 && notifs.barPopups === 0
     color: "transparent"
 
     anchors { top: true; right: true }
@@ -63,7 +64,7 @@ PanelWindow {
                 onActionClicked: action => root.notifs.invokeAction(modelData, action)
 
                 Timer {
-                    running: card.modelData.timeout > 0 && !card.hovered
+                    running: !card.hovered
                     interval: card.modelData.timeout
                     onTriggered: root.notifs.timeoutPopup(card.modelData)
                 }

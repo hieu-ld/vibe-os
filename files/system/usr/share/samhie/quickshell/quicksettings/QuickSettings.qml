@@ -4,7 +4,8 @@
 // âm lượng, dưới là lưới 2 cột các ô bật/tắt:
 //   Wired · Wi-Fi · Bluetooth · Night light · Do not disturb · Dark mode
 // Ô nào máy không có phần cứng thì ẩn (lẻ hàng không sao — user chốt ở 1.0).
-// Wi-Fi đợt này chỉ bật/tắt; chọn mạng + gõ mật khẩu để sau (tạm dùng nmtui).
+// Ô Wi-Fi tách đôi kiểu Windows 11: phần trái bật/tắt sóng, mũi tên bên phải
+// mở trang chọn mạng (WifiPage.qml) thay chỗ cả bảng.
 //
 // Trạng thái mạng hỏi `nmcli` CHỈ KHI BẢNG ĐANG MỞ (mỗi 2 s) — bảng đóng gần
 // như suốt ngày, khỏi tốn (bài học bản 1.0). Bấm ô là đổi hình NGAY, 600 ms
@@ -23,6 +24,10 @@ Item {
     required property var bar
     readonly property var shell: bar.shell
     readonly property bool open: bar.popup === "quick"
+    // Trang đang xem: "" = bảng chính, "wifi" = chọn mạng. Đóng bảng thì về
+    // bảng chính.
+    property string page: ""
+    onOpenChanged: if (!open) page = ""
 
     visible: open
     width: card.width
@@ -93,7 +98,7 @@ Item {
         if (wl)
             list.push({
                 id: "wifi", label: "Wi-Fi", icon: "network-wireless-connected-100", category: "status",
-                active: wifiRadio,
+                active: wifiRadio, more: true,
                 sub: !wifiRadio ? "Off" : wl.state === "connected" ? wl.connection : "Not connected"
             })
         if (btAdapter) {
@@ -120,6 +125,11 @@ Item {
         return list
     }
 
+    function setWifi(on) {
+        wifiRadio = on
+        run(["nmcli", "radio", "wifi", on ? "on" : "off"])
+    }
+
     function toggle(id) {
         switch (id) {
         case "wired": {
@@ -132,8 +142,7 @@ Item {
             break
         }
         case "wifi":
-            wifiRadio = !wifiRadio
-            run(["nmcli", "radio", "wifi", wifiRadio ? "on" : "off"])
+            setWifi(!wifiRadio)
             break
         case "bluetooth":
             btAdapter.enabled = !btAdapter.enabled
@@ -172,11 +181,19 @@ Item {
             spacing: 12
 
             VolumeRow {
+                visible: root.page === ""
                 width: parent.width
+            }
+
+            WifiPage {
+                visible: root.page === "wifi"
+                width: parent.width
+                qs: root
             }
 
             Grid {
                 id: grid
+                visible: root.page === ""
                 columns: 2
                 spacing: 8
                 readonly property real cellWidth: (width - spacing) / 2
@@ -194,7 +211,9 @@ Item {
                         iconName: modelData.icon
                         iconCategory: modelData.category
                         active: modelData.active
+                        more: modelData.more ?? false
                         onClicked: root.toggle(modelData.id)
+                        onMoreClicked: root.page = modelData.id
                     }
                 }
             }

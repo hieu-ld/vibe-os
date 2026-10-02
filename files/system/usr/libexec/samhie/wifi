@@ -1,0 +1,258 @@
+#!/usr/bin/env python3
+"""Chọn mạng Wi-Fi — phần lệnh; giao diện là trang Wi-Fi của quick settings
+(quickshell/quicksettings/WifiPage.qml). Mọi việc đi qua nmcli.
+
+    wifi list              JSON: sóng bật/tắt, card Wi-Fi, danh sách mạng
+    wifi scan              xin NetworkManager quét lại (không chờ kết quả)
+    wifi connect <ssid>    kết nối; MẬT KHẨU ĐỌC TỪ STDIN (một dòng, có thể
+                           rỗng). Mã thoát: 0 được, 3 cần/sai mật khẩu,
+                           4 mật khẩu không đủ 8–63 ký tự, 1 lỗi khác (lý
+                           do in ra stderr)
+    wifi disconnect        ngắt card Wi-Fi
+    wifi forget <ssid>     xoá mọi cấu hình đã lưu của mạng này
+
+Mật khẩu KHÔNG BAO GIỜ nằm trên dòng lệnh: `nmcli … password X` để lộ nó
+trong /proc/<pid>/cmdline — tài khoản nào trên máy cũng đọc được. Ở đây
+mật khẩu đi qua stdin của `nmcli connection edit`.
+
+Mạng doanh nghiệp (802.1X — cần tên đăng nhập, chứng chỉ) và mạng ẩn: giao
+diện không làm, chỉ đưa sang nmtui ("More Wi-Fi settings").
+"""
+
+import json
+import subprocess
+import sys
+
+NMCLI = "nmcli"
+
+
+def nmcli(*args, stdin=None, timeout=60):
+    return subprocess.run(
+        [NMCLI, *args],
+        input=stdin,
+        capture_output=True,
+        text=True,
+        timeout=timeout,
+    )
+
+
+def split_terse(line):
+    """Tách một dòng `nmcli -t`: ':' ngăn cột, '\\:' và '\\\\' là ký tự thật."""
+    fields, cur, i = [], [], 0
+    while i < len(line):
+        ch = line[i]
+        if ch == "\\" and i + 1 < len(line):
+            cur.append(line[i + 1])
+            i += 2
+            continue
+        if ch == ":":
+            fields.append("".join(cur))
+            cur = []
+        else:
+            cur.append(ch)
+        i += 1
+    fields.append("".join(cur))
+    return fields
+
+
+def wifi_device():
+    """(tên card, trạng thái) của card Wi-Fi đầu tiên NetworkManager quản lý;
+    (None, None) nếu không có. Card "unmanaged" (đang làm trạm phát, hay bị
+    người dùng gạt ra) thì bỏ qua."""
+    r = nmcli("-t", "-f", "DEVICE,TYPE,STATE", "device")
+    for line in r.stdout.splitlines():
+        f = split_terse(line)
+        if len(f) >= 3 and f[1] == "wifi" and f[2] != "unmanaged":
+            return f[0], f[2]
+    return None, None
+
+
+def saved_profiles():
+    """{ssid: [uuid, …]} của mọi cấu hình Wi-Fi đã lưu."""
+    r = nmcli("-t", "-f", "UUID,TYPE", "connection", "show")
+    uuids = [
+        f[0]
+        for f in map(split_terse, r.stdout.splitlines())
+        if len(f) >= 2 and f[1] == "802-11-wireless"
+    ]
+    out = {}
+    for uuid in uuids:
+        s = nmcli("-g", "802-11-wireless.ssid", "connection", "show", "uuid", uuid)
+        # -g cũng thoát ':' thành '\:' (đo: SSID "A:b" ra "A\:b").
+        ssid = ":".join(split_terse(s.stdout.rstrip("\n")))
+        if s.returncode == 0 and ssid:
+            out.setdefault(ssid, []).append(uuid)
+    return out
+
+
+def cmd_list():
+    radio = nmcli("radio", "wifi").stdout.strip() == "enabled"
+    device, state = wifi_device()
+    networks = {}
+    if device and radio:
+        # --rescan no: chỉ đọc kết quả có sẵn, không đứng chờ quét (quét là
+        # việc của `wifi scan`, giao diện gọi riêng).
+        r = nmcli(
+            "-t", "-f", "IN-USE,SIGNAL,SECURITY,SSID",
+            "device", "wifi", "list", "ifname", device, "--rescan", "no",
+        )
+        for line in r.stdout.splitlines():
+            f = split_terse(line)
+            if len(f) < 4:
+                continue
+            in_use, signal, security, ssid = f[0] == "*", f[1], f[2], ":".join(f[3:])
+            if not ssid:
+                continue  # mạng ẩn — qua nmtui
+            try:
+                signal = int(signal)
+            except ValueError:
+                signal = 0
+            # Một mạng nhiều trạm phát (BSSID): gộp, lấy sóng mạnh nhất.
+            n = networks.get(ssid)
+            if n is None:
+                n = networks[ssid] = {
+                    "ssid": ssid,
+                    "signal": signal,
+                    "secure": security not in ("", "--"),
+                    # 802.1X, WEP: giao diện không làm, đưa sang nmtui.
+                    "enterprise": key_mgmt(security) is None,
+                    "active": in_use,
+                    "saved": False,
+                }
+            else:
+                n["signal"] = max(n["signal"], signal)
+                n["active"] = n["active"] or in_use
+    saved = saved_profiles() if networks else {}
+    for ssid, n in networks.items():
+        n["saved"] = ssid in saved
+    nets = sorted(networks.values(), key=lambda n: (not n["active"], not n["saved"], -n["signal"]))
+    json.dump({"radio": radio, "device": device, "state": state, "networks": nets}, sys.stdout)
+    print()
+
+
+def cmd_scan():
+    device, _ = wifi_device()
+    if device:
+        # Bị từ chối khi vừa quét xong (NetworkManager giới hạn nhịp) — không sao.
+        nmcli("device", "wifi", "rescan", "ifname", device)
+
+
+def fail(message, code=1):
+    print(message, file=sys.stderr)
+    sys.exit(code)
+
+
+def key_mgmt(security):
+    """Kiểu khoá cho cấu hình mới, từ cột SECURITY của `nmcli device wifi list`.
+    "" = mạng mở; None = giao diện không làm (802.1X, WEP) → nmtui."""
+    tokens = security.split()
+    if "802.1X" in tokens or "WEP" in tokens:
+        return None
+    if "WPA1" in tokens or "WPA2" in tokens:
+        return "wpa-psk"  # cả mạng WPA2/WPA3 "chuyển tiếp"
+    if "WPA3" in tokens:
+        return "sae"
+    if "OWE" in tokens:
+        return "owe"
+    return ""
+
+
+def activate(uuid, device):
+    """Bật cấu hình; mã thoát theo quy ước của `wifi connect`.
+
+    stdin rỗng, KHÔNG --ask: mật khẩu sai thì NetworkManager xin mật khẩu
+    mới, nmcli không hỏi được → hỏng ngay "Secrets were required, but not
+    provided" (~8 s, đo 2026-10-02). Với --ask, nmcli đưa lại đúng mật khẩu
+    cũ và NetworkManager thử mãi tới hết giờ (45 s)."""
+    r = nmcli("--wait", "45", "connection", "up", "uuid", uuid, "ifname", device, stdin="", timeout=60)
+    if r.returncode == 0:
+        return 0
+    err = (r.stderr or r.stdout).strip()
+    print(err, file=sys.stderr)
+    return 3 if "Secrets were required" in err else 1
+
+
+def cmd_connect(ssid):
+    password = sys.stdin.readline().rstrip("\n")
+    device, _ = wifi_device()
+    if not device:
+        fail("No Wi-Fi adapter")
+    saved = saved_profiles().get(ssid, [])
+
+    if saved and not password:
+        # Đã lưu: bật lại cấu hình cũ. Mật khẩu đã lưu sai/đổi → 3, giao
+        # diện hỏi mật khẩu mới.
+        sys.exit(activate(saved[0], device))
+
+    if saved:
+        uuid, created = saved[0], False
+        mgmt = nmcli("-g", "802-11-wireless-security.key-mgmt", "connection", "show", "uuid", uuid).stdout.strip()
+    else:
+        r = nmcli("-t", "-f", "SECURITY,SSID", "device", "wifi", "list", "ifname", device, "--rescan", "no")
+        security = None
+        for f in map(split_terse, r.stdout.splitlines()):
+            if len(f) >= 2 and ":".join(f[1:]) == ssid:
+                security = f[0] if f[0] != "--" else ""
+                break
+        if security is None:
+            fail("Network not found")
+        mgmt = key_mgmt(security)
+        if mgmt is None:
+            fail("Use More Wi-Fi settings for this network")
+        args = ["connection", "add", "type", "wifi", "ifname", device, "con-name", ssid, "ssid", ssid]
+        if mgmt:
+            args += ["wifi-sec.key-mgmt", mgmt]
+        r = nmcli(*args)
+        uuid = next((u for u in saved_profiles().get(ssid, [])), None)
+        if r.returncode != 0 or not uuid:
+            fail((r.stderr or r.stdout).strip())
+        created = True
+
+    if mgmt in ("wpa-psk", "sae"):
+        if mgmt == "wpa-psk" and not 8 <= len(password) <= 63:
+            if created:
+                nmcli("connection", "delete", "uuid", uuid)
+            fail("Password must be 8 to 63 characters", 4 if password else 3)
+        # Ghi mật khẩu qua STDIN của `nmcli connection edit` — không bao giờ
+        # nằm trên dòng lệnh (/proc/<pid>/cmdline ai cũng đọc được).
+        # Dấu cách, nháy, gạch chéo trong mật khẩu qua nguyên vẹn (đo).
+        nmcli("connection", "edit", "uuid", uuid,
+              stdin=f"set wifi-sec.psk {password}\nsave\nquit\n")
+
+    code = activate(uuid, device)
+    if code != 0 and created:
+        # Hỏng thì đừng để lại cấu hình mới tạo: mật khẩu sai nằm trong đó,
+        # lần sau tự kết nối lại hỏng tiếp.
+        nmcli("connection", "delete", "uuid", uuid)
+    sys.exit(code)
+
+
+def cmd_disconnect():
+    device, _ = wifi_device()
+    if device:
+        nmcli("device", "disconnect", device)
+
+
+def cmd_forget(ssid):
+    for uuid in saved_profiles().get(ssid, []):
+        nmcli("connection", "delete", "uuid", uuid)
+
+
+def main():
+    a = sys.argv[1:]
+    if a == ["list"]:
+        cmd_list()
+    elif a == ["scan"]:
+        cmd_scan()
+    elif len(a) == 2 and a[0] == "connect":
+        cmd_connect(a[1])
+    elif a == ["disconnect"]:
+        cmd_disconnect()
+    elif len(a) == 2 and a[0] == "forget":
+        cmd_forget(a[1])
+    else:
+        fail(__doc__.split("\n\n")[1])
+
+
+if __name__ == "__main__":
+    main()

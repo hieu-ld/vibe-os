@@ -40,3 +40,11 @@ Muốn thêm icon mới thì **chạy script, đừng chép tay**:
 ./tools/import-tabler-icon.sh <file.svg> <nhóm> <tên-freedesktop>
 ./tools/build-icon-theme.sh
 ```
+
+### Mức sóng Wi-Fi (`status/network-wireless-signal-*`)
+
+`network-wireless-signal-excellent` là Tabler `wifi` (v3.46.0) qua script trên.
+Bốn mức còn lại **suy ra từ file đó**: vòng ngoài không đạt mức thì thêm
+`opacity="0.3"` (như Windows 11) — `good` = đủ 3 vòng, `ok` mờ vòng ngoài
+cùng, `weak` mờ 2 vòng, `none` chỉ còn chấm. Dùng ở trang Wi-Fi của quick
+settings; app khác (khay hệ thống) cũng tìm đúng các tên này.

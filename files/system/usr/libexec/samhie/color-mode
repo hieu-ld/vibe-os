@@ -71,12 +71,21 @@ def main():
     tmp.replace(USER)
 
     # App KDE đang mở: đổi bảng màu (0 = PaletteChanged), như
-    # plasma-apply-colorscheme.
-    subprocess.run(["dbus-send", "--session", "--type=signal", "/KGlobalSettings",
-                    "org.kde.KGlobalSettings.notifyChange", "int32:0", "int32:0"],
-                   check=False)
-    subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme",
-                    "prefer-light" if mode == "light" else "prefer-dark"], check=False)
+    # plasma-apply-colorscheme. busctl (systemd), KHÔNG dbus-send: image không
+    # có gói dbus-tools — thiếu lệnh là Python dừng ở đây, gsettings phía sau
+    # không chạy (máy ảo 2026-10-02).
+    run(["busctl", "--user", "emit", "/KGlobalSettings", "org.kde.KGlobalSettings",
+         "notifyChange", "ii", "0", "0"])
+    run(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme",
+         "prefer-light" if mode == "light" else "prefer-dark"])
+
+
+def run(cmd):
+    """Chạy một lệnh phụ; hỏng/thiếu lệnh thì báo rồi làm tiếp lệnh sau."""
+    try:
+        subprocess.run(cmd, check=False)
+    except OSError as e:
+        print(f"color-mode: {cmd[0]}: {e}", file=sys.stderr)
 
 
 if __name__ == "__main__":

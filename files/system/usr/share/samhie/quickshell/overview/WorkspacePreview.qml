@@ -38,6 +38,13 @@ ClippingRectangle {
     // Cỡ nạp ảnh nền. Mặc định = cỡ đang vẽ (ô nhỏ nạp nhỏ cho nhẹ); khung đổi
     // cỡ liên tục (hiệu ứng mở) thì đặt cố định, không thì nạp lại mỗi khung.
     property size imageSize: Qt.size(width, height)
+    // Màu lót sau ảnh nền / sau hình chụp cửa sổ khi chúng CHƯA vẽ kịp. Khung
+    // lớn của màn tổng quan đặt trong suốt: lúc bắt đầu hiệu ứng nó trùng
+    // khít desktop thật bên dưới, chỗ chưa vẽ kịp thì nhìn xuyên xuống đúng
+    // hình đó. Máy ảo (user 2026-10-02, quay khung) lộ đúng MỘT khung màu lót
+    // tối phủ cả màn — ảnh nền chưa kịp vẽ lần đầu ra màn hình.
+    property color backdrop: Theme.c.bar
+    property color windowBackdrop: Theme.c.secondary
 
     signal windowClicked(var toplevel)
     signal backgroundClicked()
@@ -112,7 +119,7 @@ ClippingRectangle {
         return out
     }
 
-    color: Theme.c.bar
+    color: root.backdrop
 
     Image {
         id: wallpaperImage
@@ -179,7 +186,7 @@ ClippingRectangle {
             ClippingRectangle {
                 anchors.fill: parent
                 radius: root.spread ? 8 : 2
-                color: Theme.c.secondary   // chưa có hình (vừa mở / thu nhỏ)
+                color: root.windowBackdrop   // chưa có hình (vừa mở / thu nhỏ)
 
                 ScreencopyView {
                     id: capture

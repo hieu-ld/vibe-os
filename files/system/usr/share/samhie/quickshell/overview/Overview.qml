@@ -272,6 +272,8 @@ PanelWindow {
                 radius: page.mix(0, 20)
                 spreadAmount: page.p
                 imageSize: Qt.size(page.sw, page.sh)
+                backdrop: "transparent"
+                windowBackdrop: "transparent"
                 monitor: root.monitor
                 workspaceId: root.viewWs
                 screenWidth: page.sw

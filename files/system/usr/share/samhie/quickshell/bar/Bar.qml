@@ -74,10 +74,19 @@ PanelWindow {
     }
 
     Workspaces {
+        id: workspaces
         bar: bar
         shell: bar.shell
         anchors.left: parent.left
         anchors.leftMargin: 14
+        anchors.verticalCenter: parent.verticalCenter
+    }
+
+    // Cửa sổ đang focus: tên app + nút phóng to / đóng.
+    WindowControls {
+        bar: bar
+        anchors.left: workspaces.right
+        anchors.leftMargin: 16
         anchors.verticalCenter: parent.verticalCenter
     }
 

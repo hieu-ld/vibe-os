@@ -154,12 +154,14 @@ PanelWindow {
         Item {
             id: page
 
-            // Chưa chạy hiệu ứng (đang chờ hình chụp / dựng sẵn): gần như trong
-            // suốt. KHÔNG để 0: Qt bỏ hẳn phần độ mờ 0, ScreencopyView không
-            // bao giờ có hình (đo trong container: dựng sẵn rồi mở vẫn phải
-            // chờ hết 200 ms). Lúc này trang vẽ y như desktop bên dưới nên
-            // 1% cũng không thấy.
-            opacity: root.started ? 1 : 0.01
+            // Chưa chạy hiệu ứng (đang chờ hình chụp / dựng sẵn): đẩy cả trang
+            // ra NGOÀI màn hình. Qt vẫn vẽ nó nên ScreencopyView vẫn có hình;
+            // `visible: false` hay độ mờ 0 thì Qt bỏ vẽ, không có hình (đo
+            // trong container: dựng sẵn rồi mở vẫn chờ đủ 200 ms). Bản trước
+            // để độ mờ 0,01: container đúng, nhưng máy ảo vẽ trang ĐẬM HẲN —
+            // cửa sổ sát nhau, mất viền, nền màu bar — đúng lúc nhấn Win, cả
+            // desktop "chớp" (user 2026-10-02, quay khung `share/flicker.sh`).
+            transform: Translate { x: root.started ? 0 : -100000 }
             readonly property bool ready: preview.ready
             onReadyChanged: if (ready && !root.started && root.open) root.run()
             // Màn ảo không có cửa sổ: sẵn sàng ngay từ đầu, khỏi chờ.

@@ -55,6 +55,31 @@ ShellRoot {
     function openOverview() {
         const m = Hyprland.focusedMonitor
         overviewMonitor = m ? m.name : ""
+        overviewPrepare = ""
+    }
+
+    // Màn hình đang DỰNG SẴN tổng quan (đang giữ Win, chưa thả) — xem
+    // `preparing` trong Overview.qml. Win+phím khác thì không bao giờ có lệnh
+    // mở: bỏ sau 1,5 s.
+    property string overviewPrepare: ""
+    function prepareOverview() {
+        if (overviewMonitor !== "")
+            return
+        const m = Hyprland.focusedMonitor
+        overviewPrepare = m ? m.name : ""
+        prepareTimeout.restart()
+    }
+    Timer {
+        id: prepareTimeout
+        interval: 1500
+        onTriggered: samhie.overviewPrepare = ""
+    }
+    // samhie.lua gọi lúc NHẤN Win trái (hl.on input.keyboard.key).
+    GlobalShortcut {
+        appid: "samhie"
+        name: "overview-prepare"
+        description: "Prepare the overview while Super is held"
+        onPressed: samhie.prepareOverview()
     }
     function closeOverview() {
         overviewMonitor = ""
@@ -147,13 +172,17 @@ ShellRoot {
             }
 
             Overview {
+                id: overview
                 shell: samhie
                 screen: perScreen.modelData
+                desktopDock: desktopDock
             }
 
             DesktopDock {
+                id: desktopDock
                 shell: samhie
                 screen: perScreen.modelData
+                overview: overview
             }
         }
     }

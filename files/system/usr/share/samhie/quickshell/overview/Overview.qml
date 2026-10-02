@@ -35,8 +35,25 @@ PanelWindow {
     id: root
 
     required property var shell
+    // Dock desktop cùng màn hình (shell.qml) — xem dockFromDesktop.
+    property var desktopDock: null
     readonly property HyprlandMonitor monitor: Hyprland.monitorFor(screen)
     readonly property bool open: monitor !== null && shell.overviewMonitor === monitor.name
+    // NHẤN Win (chưa thả): dựng sẵn ở lớp vô hình — không nhận chuột/phím —
+    // để lúc thả hiệu ứng chạy ngay, khỏi chờ chụp hình cửa sổ (user
+    // 2026-10-02: nhịp mở trễ hơn nhịp đóng). Tổ hợp Win+phím thì không có
+    // lệnh mở; shell.qml bỏ phần dựng sẵn sau 1,5 s.
+    readonly property bool preparing: monitor !== null && shell.overviewPrepare === monitor.name && !open
+    // Tổng quan đang THẬT SỰ hiện (đã chạy hiệu ứng). Dock desktop tắt theo
+    // cái này chứ không theo `open`: tắt lúc còn chờ hình chụp thì dock chớp
+    // (user 2026-10-02).
+    // Chờ hiệu ứng chạy được một đoạn: dock desktop và dock tổng quan nằm
+    // trên hai lớp khác nhau, tắt cái này đúng lúc hiện cái kia thì lọt một
+    // khung không có dock (đo trong container).
+    readonly property bool covering: open && started && progress >= 0.2
+    // Lúc mở, dock desktop đang hiện → dock tổng quan hiện luôn, đậm hẳn
+    // (cùng chỗ, nhìn như một dock); không thì hiện dần theo hiệu ứng.
+    property bool dockFromDesktop: false
 
     // Hình nền: shell.qml được chạy với SAMHIE_WALLPAPER = samhie.wallpaper
     // (samhie.lua). Đổi hình nền lúc đang chạy thì phải chạy lại Quickshell.
@@ -53,15 +70,31 @@ PanelWindow {
         close()
     }
 
+    // Hỏi lại Hyprland (lastIpcObject — vị trí/cỡ cửa sổ — chỉ mới sau khi
+    // hỏi), chọn màn ảo cho khung lớn. Một lần cho mỗi lần dựng.
+    property bool prepared: false
+    function prepare() {
+        if (prepared)
+            return
+        prepared = true
+        Hyprland.refreshToplevels()
+        Hyprland.refreshWorkspaces()
+        viewWs = monitor.activeWorkspace ? monitor.activeWorkspace.id : 1
+    }
+    onPreparingChanged: if (preparing && progress === 0) prepare()
+    onVisibleChanged: if (!visible) prepared = false
+
     onOpenChanged: {
         if (open && progress === 0) {
-            // lastIpcObject (vị trí/cỡ cửa sổ) chỉ mới sau khi hỏi lại Hyprland.
-            Hyprland.refreshToplevels()
-            Hyprland.refreshWorkspaces()
-            viewWs = monitor.activeWorkspace ? monitor.activeWorkspace.id : 1
-            // Mở từ desktop: dựng trong suốt, chờ hình chụp cửa sổ (tối đa
-            // 200 ms) rồi mới chạy — xem `ready` của WorkspacePreview.
+            prepare()
+            // Mở từ desktop: lớp trong suốt cho tới khi hình chụp cửa sổ sẵn
+            // sàng (tối đa 200 ms) — xem `ready` của WorkspacePreview. Đã dựng
+            // sẵn từ lúc nhấn Win thì thường sẵn rồi: chạy ngay.
             started = false
+            if (loader.item && loader.item.ready) {
+                run()
+                return
+            }
             readyTimeout.restart()
             return
         }
@@ -69,6 +102,8 @@ PanelWindow {
     }
     function run() {
         readyTimeout.stop()
+        if (open && !started)
+            dockFromDesktop = desktopDock !== null && desktopDock.reveal > 0.5
         started = true
         anim.to = open ? 1 : 0
         anim.restart()
@@ -90,7 +125,7 @@ PanelWindow {
         easing.type: Easing.OutCubic
     }
 
-    visible: open || progress > 0
+    visible: open || progress > 0 || preparing
     color: Qt.rgba(Theme.c.card.r, Theme.c.card.g, Theme.c.card.b, progress)
     anchors { top: true; bottom: true; left: true; right: true }
     // Như PopupLayer: vùng dành riêng 0 → né thanh trên; bàn phím OnDemand
@@ -98,11 +133,16 @@ PanelWindow {
     exclusionMode: ExclusionMode.Normal
     exclusiveZone: 0
     WlrLayershell.namespace: "samhie-overview"
-    WlrLayershell.keyboardFocus: WlrKeyboardFocus.OnDemand
+    // Chỉ lúc mở thật mới nhận phím/chuột. Lúc dựng sẵn (đang giữ Win) mà
+    // nhận thì app đang dùng mất bàn phím, cú bấm chuột rơi vào lớp vô hình.
+    WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
+    mask: open ? null : noInput
+    Region { id: noInput }
 
     // Dựng lại toàn bộ mỗi lần mở: ô nhỏ bên trái chụp cửa sổ MỘT lần lúc
     // dựng, đóng đi là bỏ — không tốn gì khi tổng quan đang đóng.
     Loader {
+        id: loader
         anchors.fill: parent
         active: root.visible
         sourceComponent: content
@@ -114,8 +154,12 @@ PanelWindow {
         Item {
             id: page
 
-            // Chưa chạy hiệu ứng (đang chờ hình chụp): trong suốt hẳn.
-            opacity: root.started ? 1 : 0
+            // Chưa chạy hiệu ứng (đang chờ hình chụp / dựng sẵn): gần như trong
+            // suốt. KHÔNG để 0: Qt bỏ hẳn phần độ mờ 0, ScreencopyView không
+            // bao giờ có hình (đo trong container: dựng sẵn rồi mở vẫn phải
+            // chờ hết 200 ms). Lúc này trang vẽ y như desktop bên dưới nên
+            // 1% cũng không thấy.
+            opacity: root.started ? 1 : 0.01
             readonly property bool ready: preview.ready
             onReadyChanged: if (ready && !root.started && root.open) root.run()
             // Màn ảo không có cửa sổ: sẵn sàng ngay từ đầu, khỏi chờ.
@@ -305,7 +349,7 @@ PanelWindow {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 8
-                opacity: page.p
+                opacity: root.dockFromDesktop && root.open ? 1 : page.p
                 onLaunched: root.close()
             }
         }

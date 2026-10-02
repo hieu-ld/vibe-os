@@ -253,6 +253,16 @@ hl.bind(mod .. " + E",         hl.dsp.exec_cmd(fileManager))  -- Win+E: quản l
 -- Ubuntu; Win+phím khác không kích hoạt nó.
 local overview = hl.dsp.global("samhie:overview")
 hl.bind(mod .. " + SUPER_L",   hl.dsp.global("samhie:overview-key"), { release = true })
+-- NHẤN Win trái (chưa thả): bảo Quickshell dựng sẵn màn tổng quan ở lớp vô
+-- hình, để lúc thả là chạy hiệu ứng ngay (khỏi chờ chụp hình cửa sổ). Nghe sự
+-- kiện phím thay vì thêm bind: không đụng tới bind "khi thả" ở trên và mọi
+-- tổ hợp Win+phím. 133 = mã XKB của Super_L (đo trong máy ảo 2026-10-02),
+-- state 1 = nhấn (0 nhả, 2 lặp).
+hl.on("input.keyboard.key", function(code, _, state)
+    if code == 133 and state == 1 then
+        hl.dispatch(hl.dsp.global("samhie:overview-prepare"))
+    end
+end)
 hl.bind(mod .. " + R",         overview)                      -- Win+R: chạy app
 hl.bind(mod .. " + SPACE",     overview)
 hl.bind(mod .. " + L",         hl.dsp.exec_cmd("loginctl lock-session"))  -- Win+L: khoá máy

@@ -23,7 +23,11 @@ PanelWindow {
     required property var shell
     readonly property HyprlandMonitor monitor: Hyprland.monitorFor(screen)
     readonly property HyprlandWorkspace workspace: monitor ? monitor.activeWorkspace : null
-    readonly property bool overviewOpen: monitor !== null && shell.overviewMonitor === monitor.name
+    // Màn tổng quan cùng màn hình (shell.qml). Theo lúc tổng quan THẬT SỰ
+    // hiện (covering), không theo lúc được gọi mở — còn chờ hình chụp mà dock
+    // đã tắt thì chớp (user 2026-10-02).
+    property var overview: null
+    readonly property bool overviewOpen: overview !== null && overview.covering
 
     readonly property int bottomGap: 8
 

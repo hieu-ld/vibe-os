@@ -115,7 +115,8 @@ hl.on("hyprland.start", function()
     if samhie.shell then hl.exec_cmd(shellCmd()) end
     hl.exec_cmd("/usr/libexec/kf6/polkit-kde-authentication-agent-1")
     hl.exec_cmd("fcitx5 -d --replace")
-    hl.exec_cmd("wl-paste --watch cliphist store")
+    -- Lịch sử clipboard: xoá lịch sử cũ rồi ghi mọi lần copy (tối đa 50).
+    hl.exec_cmd("/usr/libexec/samhie/clipboard watch")
     hl.exec_cmd(idleCmd)
 end)
 
@@ -257,8 +258,8 @@ hl.bind(mod .. " + L",         hl.dsp.exec_cmd("loginctl lock-session"))  -- Win
 hl.bind("CTRL + ALT + T",      hl.dsp.exec_cmd(terminal))     -- quen tay từ Ubuntu
 hl.bind(mod .. " + T",         hl.dsp.exec_cmd(terminal))
 
--- Win+V: lịch sử clipboard.
-hl.bind(mod .. " + V",         hl.dsp.exec_cmd("cliphist list | fuzzel --dmenu | cliphist decode | wl-copy"))
+-- Win+V: lịch sử clipboard (Quickshell, quickshell/clipboard/).
+hl.bind(mod .. " + V",         hl.dsp.global("samhie:clipboard"))
 -- Chụp màn hình kiểu Windows: tự lưu vào Storage/Pictures/Screenshots + copy
 -- vào clipboard; bấm vào thông báo để vẽ lên ảnh (swappy).
 hl.bind(mod .. " + SHIFT + S", hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot region"))  -- chọn vùng

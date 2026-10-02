@@ -21,9 +21,8 @@ modules:
       packages:
         # Giao diện tự vẽ (thanh trên, dock, popup, màn hình khoá — giai đoạn 3)
         - quickshell
-        # TẠM: launcher cho Win+V (clipboard) tới khi Quickshell làm thay.
-        # Thông báo là Quickshell (quickshell/notifications), mako đã gỡ.
-        - fuzzel
+        # Thông báo (quickshell/notifications) và lịch sử clipboard Win+V
+        # (quickshell/clipboard + cliphist) đều là Quickshell — mako, fuzzel đã gỡ.
         - swaybg                  # hình nền
         - libnotify               # notify-send (script chụp màn hình, màn khoá)
         - gammastep               # Night light của quick settings (477 KiB, không kéo gói nào)

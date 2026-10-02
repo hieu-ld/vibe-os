@@ -16,11 +16,14 @@
 //
 // Thông báo (notifications/): popup góc trên-phải, chuông trên thanh mở danh
 // sách — thay mako.
+//
+// Lịch sử clipboard (clipboard/): Win+V, hiện cạnh con trỏ — thay fuzzel.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
 import "bar"
+import "clipboard"
 import "dock"
 import "notifications"
 import "quicksettings"
@@ -116,6 +119,22 @@ ShellRoot {
                 samhie.toggleOverview()
             last = now
         }
+    }
+
+    // Lịch sử clipboard: Win+V → hl.dsp.global("samhie:clipboard").
+    Clipboard { id: clipboard }
+    GlobalShortcut {
+        appid: "samhie"
+        name: "clipboard"
+        description: "Open or close the clipboard history"
+        onPressed: {
+            samhie.closeOverview()
+            clipboard.toggle()
+        }
+    }
+    IpcHandler {
+        target: "clipboard"
+        function toggle(): void { clipboard.toggle() }
     }
 
     // Gọi từ dòng lệnh: qs -p /usr/share/samhie/quickshell ipc call overview toggle

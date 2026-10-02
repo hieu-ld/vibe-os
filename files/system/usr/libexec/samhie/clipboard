@@ -1,0 +1,95 @@
+#!/usr/bin/env bash
+# Lịch sử clipboard của Samhie (Win+V) — phần lệnh; giao diện là Quickshell
+# (quickshell/clipboard/Clipboard.qml). Thay `cliphist list | fuzzel`.
+#
+# User chốt 2026-10-02, như Windows:
+#   * Lịch sử XOÁ mỗi lần đăng nhập, tối đa 50 mục — mật khẩu/token lỡ copy
+#     không nằm trên ổ mãi. (Trình quản lý mật khẩu đánh dấu "nhạy cảm" thì
+#     cliphist vốn không lưu: CLIPBOARD_STATE=sensitive, cliphist 0.7.)
+#   * Mục được GHIM thì giữ qua mọi lần đăng nhập: chép sang một kho cliphist
+#     riêng (pins_db), xoá lịch sử không đụng tới.
+#   * Chọn mục = chỉ copy, người dùng tự Ctrl+V (không gửi phím giả).
+#
+#     clipboard watch             chạy lúc đăng nhập (samhie.lua): xoá lịch sử
+#                                 rồi ghi mọi lần copy vào lịch sử
+#     clipboard list              mỗi dòng: kho<TAB>id<TAB>xem trước<TAB>ảnh
+#                                 (kho P = ghim, H = lịch sử; ảnh = đường dẫn
+#                                 hình thu nhỏ nếu mục là ảnh, không thì rỗng)
+#     clipboard copy P|H <id>     đưa mục vào clipboard
+#     clipboard pin <id>          ghim một mục của lịch sử
+#     clipboard unpin <id>        bỏ ghim
+#     clipboard delete <id>       xoá một mục của lịch sử
+#     clipboard clear             xoá cả lịch sử (giữ mục ghim)
+set -euo pipefail
+
+hist_db=${XDG_CACHE_HOME:-$HOME/.cache}/cliphist/db
+pins_db=${XDG_DATA_HOME:-$HOME/.local/share}/samhie/clipboard-pins.db
+# Ảnh của mục là hình: giải ra RAM (tmpfs), xoá cùng lịch sử.
+thumbs=${XDG_RUNTIME_DIR:?}/samhie-clipboard
+
+db_of() {
+    case $1 in
+        P) echo "$pins_db" ;;
+        H) echo "$hist_db" ;;
+        *) echo "unknown store: $1" >&2; exit 2 ;;
+    esac
+}
+
+# id đi thẳng vào lệnh — chỉ nhận số.
+need_id() {
+    [[ ${1-} =~ ^[0-9]+$ ]] || { echo "bad id: ${1-}" >&2; exit 2; }
+}
+
+list_store() {
+    local kind=$1 db=$2
+    [ -e "$db" ] || return 0
+    cliphist -db-path "$db" -preview-width 300 list | while IFS=$'\t' read -r id preview; do
+        local thumb=""
+        # Ảnh: cliphist ghi "[[ binary data 245 KiB png 1920x1080 ]]".
+        if [[ $preview =~ ^\[\[\ binary\ data\ .*\ (png|jpeg|gif|bmp|webp)\ [0-9]+x[0-9]+\ \]\]$ ]]; then
+            thumb=$thumbs/$kind-$id.${BASH_REMATCH[1]}
+            [ -e "$thumb" ] || cliphist -db-path "$db" decode "$id" > "$thumb"
+        fi
+        printf '%s\t%s\t%s\t%s\n' "$kind" "$id" "$preview" "$thumb"
+    done
+}
+
+case ${1-} in
+    watch)
+        cliphist -db-path "$hist_db" wipe 2>/dev/null || true
+        rm -rf -- "$thumbs"
+        exec wl-paste --watch cliphist -db-path "$hist_db" -max-items 50 store
+        ;;
+    list)
+        mkdir -p -- "$thumbs"
+        list_store P "$pins_db"
+        list_store H "$hist_db"
+        ;;
+    copy)
+        need_id "${3-}"
+        cliphist -db-path "$(db_of "${2-}")" decode "$3" | wl-copy
+        ;;
+    pin)
+        need_id "${2-}"
+        mkdir -p -- "${pins_db%/*}"
+        cliphist -db-path "$hist_db" decode "$2" | cliphist -db-path "$pins_db" store
+        ;;
+    unpin)
+        need_id "${2-}"
+        printf '%s\t\n' "$2" | cliphist -db-path "$pins_db" delete
+        rm -f -- "$thumbs"/P-"$2".*
+        ;;
+    delete)
+        need_id "${2-}"
+        printf '%s\t\n' "$2" | cliphist -db-path "$hist_db" delete
+        rm -f -- "$thumbs"/H-"$2".*
+        ;;
+    clear)
+        cliphist -db-path "$hist_db" wipe
+        rm -f -- "$thumbs"/H-*
+        ;;
+    *)
+        sed -n '2,23p' "$0" | sed 's/^# \{0,1\}//' >&2
+        exit 2
+        ;;
+esac

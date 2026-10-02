@@ -5,7 +5,15 @@
 // tools/build-app-icons.py). 4 app = 220×52 (bản vẽ 5 app = 272×52).
 //
 // Dùng ở hai chỗ, cùng một vị trí (giữa, cách đáy 8): màn tổng quan
-// (overview/Overview.qml) và desktop (DesktopDock.qml). Bấm là mở app.
+// (overview/Overview.qml) và desktop (DesktopDock.qml).
+//
+// Bấm như dock Ubuntu (user chốt 2026-10-02):
+//   * app chưa chạy → mở app;
+//   * app đang chạy, không phải cửa sổ đang focus → đưa cửa sổ dùng gần nhất
+//     của nó ra (đang thu nhỏ thì hiện lại, ở màn ảo khác thì nhảy sang);
+//   * app ĐANG focus: một cửa sổ → thu nhỏ; nhiều cửa sổ → sang cửa sổ kế;
+//   * chuột giữa → luôn mở cửa sổ mới.
+// Chấm dưới icon: mỗi cửa sổ một chấm (tối đa 3), màu nhấn khi app đang focus.
 //
 // Icon bánh răng (Settings) trong bản vẽ TẠM ẨN (user chốt 2026-10-01): image
 // chưa có app cài đặt. Có rồi thì thêm id vào `pinned`.
@@ -29,6 +37,22 @@ Rectangle {
     }
 
     signal launched()
+
+    function click(entry, button) {
+        const wins = Windows.windowsOf(entry)
+        if (button === Qt.MiddleButton || wins.length === 0) {
+            entry.execute()
+        } else {
+            const at = wins.indexOf(Windows.focused)
+            if (at < 0)
+                Windows.activate(wins[0])
+            else if (wins.length === 1)
+                Windows.minimize(wins[0])
+            else
+                Windows.activate(wins[(at + 1) % wins.length])
+        }
+        launched()
+    }
 
     readonly property int cell: 40
     readonly property int gap: 12
@@ -56,6 +80,9 @@ Rectangle {
             delegate: Item {
                 id: slot
                 required property var modelData
+                // Cửa sổ của app, dùng gần nhất trước.
+                readonly property var windows: Windows.windowsOf(modelData)
+                readonly property bool focused: windows.indexOf(Windows.focused) >= 0
                 width: root.cell
                 height: root.cell
 
@@ -69,14 +96,28 @@ Rectangle {
                     implicitSize: root.iconSizes[slot.modelData.id] ?? root.iconSize
                     source: Quickshell.iconPath(slot.modelData.icon, "application-x-executable")
                 }
+                // Mỗi cửa sổ một chấm, giữa mép dưới ô (icon hình 28 kết thúc
+                // ở y 34, chấm ở 36–39).
+                Row {
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    y: 36
+                    spacing: 3
+                    Repeater {
+                        model: Math.min(slot.windows.length, 3)
+                        delegate: Rectangle {
+                            width: 4
+                            height: 4
+                            radius: 2
+                            color: slot.focused ? Theme.c.barAccent : Theme.c.barText
+                        }
+                    }
+                }
                 MouseArea {
                     id: slotArea
                     anchors.fill: parent
                     hoverEnabled: true
-                    onClicked: {
-                        slot.modelData.execute()
-                        root.launched()
-                    }
+                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+                    onClicked: mouse => root.click(slot.modelData, mouse.button)
                 }
             }
         }

@@ -12,7 +12,8 @@ PanelWindow {
 
     required property var shell   // shell.qml — trạng thái chung (màn tổng quan)
 
-    // Popup đang mở: "", "calendar", "power", "tray", "quick" hoặc "notifications". Mỗi lúc chỉ một cái;
+    // Popup đang mở: "", "calendar", "power", "tray", "quick", "notifications"
+    // hoặc "windows". Mỗi lúc chỉ một cái;
     // vẽ trong PopupLayer — bấm ra ngoài hoặc Esc là đóng.
     property string popup: ""
     function toggle(name) {
@@ -31,6 +32,9 @@ PanelWindow {
                 bar.popup = ""
         }
     }
+
+    // Mép trái ô tên app (WindowControls) — danh sách cửa sổ xổ ngay dưới.
+    property real windowListX: 0
 
     // Menu khay đang mở cho app nào, và tâm ngang của icon app đó trên thanh.
     property var trayItem: null
@@ -82,7 +86,8 @@ PanelWindow {
         anchors.verticalCenter: parent.verticalCenter
     }
 
-    // Cửa sổ đang focus: tên app + nút phóng to / đóng.
+    // Cửa sổ đang focus: tên app (bấm ra danh sách cửa sổ) + nút thu nhỏ,
+    // phóng to, đóng.
     WindowControls {
         bar: bar
         anchors.left: workspaces.right

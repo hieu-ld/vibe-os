@@ -1,23 +1,27 @@
-// Cửa sổ đang focus, bên phải cụm workspace: icon + tên app, nút phóng to /
-// thu về và nút đóng. Hyprland không vẽ thanh tiêu đề, nên app KDE (Dolphin,
-// Konsole) không có nút đóng nào; Edge/VS Code tự vẽ nút của chúng (user gặp
-// trong máy ảo 2026-09-28, chọn thử trên thanh trên 2026-10-02).
+// Cửa sổ đang focus, bên phải cụm workspace:
+//     [icon Konsole        ˅]  ⊖ ⤢ ⊗
+// Ô tên như combobox: bấm xổ danh sách mọi cửa sổ (WindowList.qml); nút thu
+// nhỏ, phóng to / thu về, đóng. Hyprland không vẽ thanh tiêu đề, nên app KDE
+// (Dolphin, Konsole) không có nút đóng nào; Edge/VS Code tự vẽ nút của chúng
+// (user gặp trong máy ảo 2026-09-28, chọn làm trên thanh trên 2026-10-02).
 //
-// Không có nút thu nhỏ: Hyprland không có trạng thái "thu nhỏ xuống thanh
-// tác vụ" (icon `minus` user vẽ còn để dành).
+// Ô tên RỘNG CỐ ĐỊNH (vừa "Microsoft Edge") để tên dài/ngắn không làm ba nút
+// nhảy chỗ (user 2026-10-02); tên dài hơn thì cắt "…".
 //
-// Chỉ hiện trên thanh của màn hình chứa cửa sổ đó, và chỉ khi cửa sổ nằm ở
-// màn ảo đang xem: sang màn ảo trống thì Hyprland có thể vẫn giữ cửa sổ cũ
-// là "đang focus".
+// Chỉ coi là "đang focus" khi cửa sổ nằm ở màn ảo đang xem của màn hình này:
+// sang màn ảo trống thì Hyprland có thể vẫn giữ cửa sổ cũ là active. Không có
+// cửa sổ nào đang focus (màn trống, hoặc thu nhỏ hết) → ô ghi "Desktop", ẩn
+// ba nút, vẫn bấm xổ danh sách được (cách lấy lại cửa sổ đã thu nhỏ). Không
+// còn cửa sổ nào cả → ẩn hết.
 //
-// Phóng to = fullscreen kiểu "maximized" của Hyprland: kín vùng làm việc,
-// thanh trên vẫn thấy. Trạng thái đọc từ lastIpcObject.fullscreen (1 =
-// maximized) — chỉ mới sau khi hỏi lại Hyprland, nên hỏi lại mỗi lần có sự
-// kiện "fullscreen" hoặc đổi cửa sổ.
+// Trạng thái phóng to đọc từ lastIpcObject.fullscreen (1 = maximized) — chỉ
+// mới sau khi hỏi lại Hyprland, nên hỏi lại mỗi lần có sự kiện "fullscreen"
+// hoặc đổi cửa sổ.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Widgets
+import ".."
 import "../colors.js" as Colors
 
 Item {
@@ -37,14 +41,12 @@ Item {
     readonly property bool maximized: window !== null && window.lastIpcObject
         && (window.lastIpcObject.fullscreen ?? 0) === 1
 
-    function dispatch(cmd) {
-        if (!window)
-            return
+    readonly property int iconSize: 18
+    readonly property int pad: 8
+
+    function act(fn) {
         bar.popup = ""
-        Hyprland.dispatch("hl.dsp.window." + cmd.replace("%w", "address:0x" + window.address))
-    }
-    function toggleMaximize() {
-        dispatch('fullscreen({ window = "%w", mode = "maximized", action = "toggle" })')
+        fn(window)
     }
 
     Timer {
@@ -60,7 +62,14 @@ Item {
         }
     }
 
-    visible: window !== null
+    // Bề rộng ô tên: đo chữ "Microsoft Edge" bằng đúng font của thanh.
+    TextMetrics {
+        id: widest
+        text: "Microsoft Edge"
+        font: title.font
+    }
+
+    visible: Windows.windows.length > 0
     implicitWidth: row.implicitWidth
     implicitHeight: bar.height
 
@@ -69,15 +78,21 @@ Item {
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2
 
-        // Icon + tên: bấm đúp phóng to / thu về như thanh tiêu đề Windows.
-        Item {
-            width: title.x + title.width + 8
-            height: root.height
+        Rectangle {
+            id: picker
+            readonly property bool lit: pickHover.hovered || root.bar.popup === "windows"
+
+            width: root.pad + root.iconSize + 8 + Math.ceil(widest.width) + 8 + 16 + root.pad
+            height: 26
+            radius: 6
+            color: lit ? root.bar.hoverFill : "transparent"
 
             IconImage {
                 id: appIcon
+                visible: root.window !== null
                 anchors.verticalCenter: parent.verticalCenter
-                implicitSize: 18
+                x: root.pad
+                implicitSize: root.iconSize
                 source: Quickshell.iconPath(root.entry ? root.entry.icon : root.appId,
                                             "application-x-executable")
             }
@@ -85,32 +100,51 @@ Item {
             Text {
                 id: title
                 anchors.verticalCenter: parent.verticalCenter
-                x: appIcon.width + 8
-                width: Math.min(implicitWidth, 280)
+                x: root.window ? appIcon.x + root.iconSize + 8 : root.pad
+                width: arrow.x - 8 - x
                 elide: Text.ElideRight
                 // Tên app như thanh trên Ubuntu; app không có file .desktop
                 // thì lấy tiêu đề cửa sổ.
-                text: root.entry && root.entry.name !== "" ? root.entry.name
-                    : (root.window ? root.window.title : "")
-                color: root.bar.textColor
+                text: !root.window ? "Desktop"
+                    : root.entry && root.entry.name !== "" ? root.entry.name
+                    : root.window.title
+                color: picker.lit ? root.bar.hoverColor : root.bar.textColor
                 font.family: Colors.fonts.ui
                 font.weight: Colors.fonts.uiWeight
                 font.pointSize: Colors.fonts.size
             }
 
+            SamhieIcon {
+                id: arrow
+                anchors.verticalCenter: parent.verticalCenter
+                x: parent.width - root.pad - width
+                iconName: "arrow-down"
+                size: 16
+                color: picker.lit ? root.bar.hoverColor : root.bar.textColor
+            }
+
+            HoverHandler { id: pickHover }
             TapHandler {
-                onDoubleTapped: root.toggleMaximize()
+                onTapped: {
+                    root.bar.windowListX = picker.mapToItem(null, 0, 0).x
+                    root.bar.toggle("windows")
+                }
             }
         }
 
         WindowButton {
+            iconName: "window-minimize-symbolic"
+            onClicked: root.act(t => Windows.minimize(t))
+        }
+
+        WindowButton {
             iconName: root.maximized ? "window-restore-symbolic" : "window-maximize-symbolic"
-            onClicked: root.toggleMaximize()
+            onClicked: root.act(t => Windows.toggleMaximize(t))
         }
 
         WindowButton {
             iconName: "window-close-symbolic"
-            onClicked: root.dispatch('close({ window = "%w" })')
+            onClicked: root.act(t => Windows.close(t))
         }
     }
 
@@ -120,6 +154,7 @@ Item {
         property string iconName
         signal clicked()
 
+        visible: root.window !== null
         width: 30
         height: 26
         radius: 6

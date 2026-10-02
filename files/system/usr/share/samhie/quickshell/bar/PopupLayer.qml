@@ -82,6 +82,13 @@ PanelWindow {
         y: layer.gap
     }
 
+    // Mép trái thẳng ô tên app trên thanh.
+    WindowList {
+        bar: layer.bar
+        x: layer.bar.windowListX
+        y: layer.gap
+    }
+
     // Giữa icon vừa bấm, không tràn khỏi màn hình.
     TrayMenu {
         bar: layer.bar

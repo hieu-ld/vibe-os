@@ -20,6 +20,7 @@ import Quickshell.Hyprland
 import Quickshell.Wayland
 import "../bar"
 import "../dock"
+import ".."
 import "../colors.js" as Colors
 
 PanelWindow {
@@ -52,7 +53,7 @@ PanelWindow {
     }
 
     visible: open
-    color: Colors.dark.card
+    color: Theme.c.card
     anchors { top: true; bottom: true; left: true; right: true }
     // Như PopupLayer: vùng dành riêng 0 → né thanh trên; bàn phím OnDemand
     // (Exclusive làm Hyprland chặn cả cú bấm vào thanh — đo 2026-10-01).
@@ -99,7 +100,7 @@ PanelWindow {
                 width: 320
                 height: 40
                 radius: 20
-                color: Colors.dark.subSecondary
+                color: Theme.c.subSecondary
 
                 MouseArea {
                     anchors.fill: parent
@@ -111,7 +112,7 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     iconName: "system-search"
                     size: 18
-                    color: Colors.dark.textMuted
+                    color: Theme.c.textMuted
                 }
 
                 TextInput {
@@ -121,9 +122,9 @@ PanelWindow {
                     anchors.verticalCenter: parent.verticalCenter
                     focus: true
                     clip: true
-                    color: Colors.dark.text
-                    selectionColor: Colors.dark.selection
-                    selectedTextColor: Colors.dark.onSelection
+                    color: Theme.c.text
+                    selectionColor: Theme.c.selection
+                    selectedTextColor: Theme.c.onSelection
                     font.family: Colors.fonts.ui
                     font.weight: Colors.fonts.uiWeight
                     font.pointSize: Colors.fonts.size
@@ -134,7 +135,7 @@ PanelWindow {
                         anchors.verticalCenter: parent.verticalCenter
                         visible: search.text === ""
                         text: "Type to search"
-                        color: Colors.dark.textMuted
+                        color: Theme.c.textMuted
                         font: search.font
                     }
 
@@ -232,7 +233,7 @@ PanelWindow {
                             radius: 10
                             color: "transparent"
                             border.width: 2
-                            border.color: thumb.viewed ? Colors.dark.accent : Colors.dark.subSecondary
+                            border.color: thumb.viewed ? Theme.c.accent : Theme.c.subSecondary
                             visible: thumb.viewed || thumbHover.hovered
                         }
                         HoverHandler { id: thumbHover }

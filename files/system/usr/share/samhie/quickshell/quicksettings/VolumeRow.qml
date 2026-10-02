@@ -10,6 +10,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Services.Pipewire
 import "../bar"
+import ".."
 import "../colors.js" as Colors
 
 Column {
@@ -49,12 +50,12 @@ Column {
             height: 32
             radius: 8
             anchors.verticalCenter: parent.verticalCenter
-            color: speakerMouse.containsMouse ? Colors.dark.secondary : "transparent"
+            color: speakerMouse.containsMouse ? Theme.c.secondary : "transparent"
             SamhieIcon {
                 anchors.centerIn: parent
                 category: "status"
                 size: 20
-                color: Colors.dark.text
+                color: Theme.c.text
                 iconName: root.muted || root.volume <= 0 ? "audio-volume-muted"
                     : root.volume < 0.34 ? "audio-volume-low"
                     : root.volume < 0.67 ? "audio-volume-medium" : "audio-volume-high"
@@ -84,14 +85,14 @@ Column {
                 width: parent.width
                 height: 4
                 radius: 2
-                color: Colors.dark.subSecondary
+                color: Theme.c.subSecondary
             }
             Rectangle {
                 anchors.verticalCenter: parent.verticalCenter
                 width: Math.max(4, parent.width * track.shown)
                 height: 4
                 radius: 2
-                color: Colors.dark.accent
+                color: Theme.c.accent
             }
             Rectangle {
                 width: 14
@@ -99,7 +100,7 @@ Column {
                 radius: 7
                 anchors.verticalCenter: parent.verticalCenter
                 x: Math.round(track.shown * (parent.width - width))
-                color: Colors.dark.text
+                color: Theme.c.text
             }
             MouseArea {
                 anchors.fill: parent
@@ -118,7 +119,7 @@ Column {
             width: 40
             horizontalAlignment: Text.AlignRight
             text: Math.round(root.volume * 100) + "%"
-            color: root.muted ? Colors.dark.textMuted : Colors.dark.text
+            color: root.muted ? Theme.c.textMuted : Theme.c.text
             font.family: Colors.fonts.ui
             font.weight: Colors.fonts.uiWeight
             font.pixelSize: 24
@@ -132,12 +133,12 @@ Column {
             width: 28
             height: 28
             radius: 6
-            color: chooserMouse.containsMouse || root.choosing ? Colors.dark.secondary : "transparent"
+            color: chooserMouse.containsMouse || root.choosing ? Theme.c.secondary : "transparent"
             SamhieIcon {
                 anchors.centerIn: parent
                 iconName: root.choosing ? "arrow-up" : "arrow-down"
                 size: 14
-                color: Colors.dark.text
+                color: Theme.c.text
             }
             MouseArea {
                 id: chooserMouse
@@ -161,14 +162,14 @@ Column {
                 width: parent.width
                 height: 34
                 radius: 6
-                color: sinkMouse.containsMouse ? Colors.dark.secondary : "transparent"
+                color: sinkMouse.containsMouse ? Theme.c.secondary : "transparent"
                 Text {
                     x: 40
                     width: parent.width - x - 8
                     anchors.verticalCenter: parent.verticalCenter
                     elide: Text.ElideRight
                     text: sinkRow.modelData.description || sinkRow.modelData.nickname || sinkRow.modelData.name
-                    color: sinkRow.current ? Colors.dark.accentText : Colors.dark.text
+                    color: sinkRow.current ? Theme.c.accentText : Theme.c.text
                     font.family: Colors.fonts.ui
                     font.weight: Colors.fonts.uiWeight
                     font.pixelSize: 24

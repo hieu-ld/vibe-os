@@ -37,9 +37,9 @@ var dark = {
 };
 
 var light = {
-    bar: "#1a1a1a",
-    barText: "#e8e8e8",
-    barAccent: "#00c0e8",
+    bar: "#f3f3f3",
+    barText: "#1c1c1c",
+    barAccent: "#0d728f",
     card: "#fafafa",
     cardAlt: "#f4f4f4",
     secondary: "#ededed",

@@ -8,6 +8,7 @@ import QtQuick
 import QtQuick.Controls.Basic
 import Quickshell
 import "../notifications"
+import ".."
 import "../colors.js" as Colors
 
 Item {
@@ -28,9 +29,9 @@ Item {
         width: 384
         height: header.height + body.height + 24
         radius: 12
-        color: Colors.dark.card
+        color: Theme.c.card
         border.width: 1
-        border.color: Colors.dark.subSecondary
+        border.color: Theme.c.subSecondary
 
         // Hút cú bấm vào chỗ trống trong thẻ — không thì nó lọt xuống lớp
         // phủ (PopupLayer) và đóng popup.
@@ -48,7 +49,7 @@ Item {
                 anchors.left: parent.left
                 anchors.verticalCenter: parent.verticalCenter
                 text: "Notifications"
-                color: Colors.dark.text
+                color: Theme.c.text
                 font.family: Colors.fonts.ui
                 font.weight: Font.Normal
                 font.pixelSize: 30
@@ -72,23 +73,23 @@ Item {
                             width: 32
                             height: 18
                             radius: 9
-                            color: root.notifs.doNotDisturb ? Colors.dark.accent : Colors.dark.secondary
+                            color: root.notifs.doNotDisturb ? Theme.c.accent : Theme.c.secondary
                             border.width: 1
-                            border.color: root.notifs.doNotDisturb ? Colors.dark.accent : Colors.dark.subSecondary
+                            border.color: root.notifs.doNotDisturb ? Theme.c.accent : Theme.c.subSecondary
                             Rectangle {
                                 width: 12
                                 height: 12
                                 radius: 6
                                 anchors.verticalCenter: parent.verticalCenter
                                 x: root.notifs.doNotDisturb ? parent.width - width - 3 : 3
-                                color: root.notifs.doNotDisturb ? Colors.dark.onAccent : Colors.dark.textMuted
+                                color: root.notifs.doNotDisturb ? Theme.c.onAccent : Theme.c.textMuted
                                 Behavior on x { NumberAnimation { duration: 120 } }
                             }
                         }
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: "Do not disturb"
-                            color: Colors.dark.textMuted
+                            color: Theme.c.textMuted
                             font.family: Colors.fonts.ui
                             font.weight: Colors.fonts.uiWeight
                             font.pixelSize: 24
@@ -106,12 +107,12 @@ Item {
                     width: clearText.implicitWidth + 16
                     height: 28
                     radius: 6
-                    color: clearHover.hovered ? Colors.dark.secondary : "transparent"
+                    color: clearHover.hovered ? Theme.c.secondary : "transparent"
                     Text {
                         id: clearText
                         anchors.centerIn: parent
                         text: "Clear all"
-                        color: Colors.dark.text
+                        color: Theme.c.text
                         font.family: Colors.fonts.ui
                         font.weight: Colors.fonts.uiWeight
                         font.pixelSize: 24
@@ -138,7 +139,7 @@ Item {
                 visible: root.notifs.history.length === 0
                 anchors.centerIn: parent
                 text: "No notifications"
-                color: Colors.dark.textMuted
+                color: Theme.c.textMuted
                 font.family: Colors.fonts.ui
                 font.weight: Colors.fonts.uiWeight
                 font.pixelSize: 26

@@ -4,6 +4,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import ".."
 import "../colors.js" as Colors
 
 PanelWindow {
@@ -47,19 +48,19 @@ PanelWindow {
     // Rê chuột lên chữ/icon trên thanh thì SÁNG NHẸ — phép tính KDE làm với
     // icon khay (shader icon.frag của Kirigami, highlight 0.7), bản 1.0 chép
     // y hệt cho đồng hồ và cụm workspace: mỗi kênh mũ 1 / (2·0,7 + 0,5).
-    // #e8e8e8 lên ~#f2f2f2.
+    // #e8e8e8 lên ~#f2f2f2. Thanh sáng (chữ tối): mũ nghịch đảo — ĐẬM thêm.
     function lift(c) {
-        const g = 1 / (2 * 0.7 + 0.5)
+        const g = Theme.light ? 2 * 0.7 + 0.5 : 1 / (2 * 0.7 + 0.5)
         return Qt.rgba(Math.pow(c.r, g), Math.pow(c.g, g), Math.pow(c.b, g), c.a)
     }
-    readonly property color textColor: Colors.dark.barText
+    readonly property color textColor: Theme.c.barText
     readonly property color hoverColor: lift(textColor)
     // Nền bo góc mờ khi rê chuột lên nút (nút nguồn, icon khay) — như bản 1.0.
     readonly property color hoverFill: Qt.rgba(textColor.r, textColor.g, textColor.b, 0.12)
 
     anchors { top: true; left: true; right: true }
     implicitHeight: 30
-    color: Colors.dark.bar
+    color: Theme.c.bar
     WlrLayershell.namespace: "samhie-bar"
 
     // Bấm vào chỗ trống trên thanh thì đóng popup và màn tổng quan. Nằm DƯỚI

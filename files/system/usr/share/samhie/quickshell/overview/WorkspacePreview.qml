@@ -18,6 +18,7 @@ import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
 import Quickshell.Widgets
+import ".."
 import "../colors.js" as Colors
 
 ClippingRectangle {
@@ -105,7 +106,7 @@ ClippingRectangle {
         return out
     }
 
-    color: Colors.dark.bar
+    color: Theme.c.bar
 
     Image {
         anchors.fill: parent
@@ -146,7 +147,7 @@ ClippingRectangle {
             ClippingRectangle {
                 anchors.fill: parent
                 radius: root.spread ? 8 : 2
-                color: Colors.dark.secondary   // chưa có hình (vừa mở / thu nhỏ)
+                color: Theme.c.secondary   // chưa có hình (vừa mở / thu nhỏ)
 
                 ScreencopyView {
                     anchors.fill: parent
@@ -180,7 +181,7 @@ ClippingRectangle {
                 width: Math.min(titleText.implicitWidth + 24, Math.max(parent.width, 200))
                 height: 30
                 radius: 15
-                color: Colors.dark.secondary
+                color: Theme.c.secondary
 
                 Text {
                     id: titleText
@@ -188,7 +189,7 @@ ClippingRectangle {
                     width: Math.min(implicitWidth, parent.width - 24)
                     elide: Text.ElideRight
                     text: win.modelData.title
-                    color: Colors.dark.text
+                    color: Theme.c.text
                     font.family: Colors.fonts.ui
                     font.weight: Colors.fonts.uiWeight
                     font.pointSize: Colors.fonts.size * 0.9
@@ -214,7 +215,7 @@ ClippingRectangle {
         width: 36
         height: 36
         radius: 18
-        color: hovered ? Colors.dark.secondary : Colors.dark.subSecondary
+        color: hovered ? Theme.c.secondary : Theme.c.subSecondary
 
         // Dấu X vẽ bằng hai nét: icon window-close của bộ Samhie đã có vòng
         // tròn riêng, đặt trong nút tròn thành hai vòng.
@@ -228,7 +229,7 @@ ClippingRectangle {
                 radius: 1
                 rotation: modelData
                 antialiasing: true
-                color: Colors.dark.text
+                color: Theme.c.text
             }
         }
         MouseArea {

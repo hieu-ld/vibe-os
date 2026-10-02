@@ -16,6 +16,7 @@
 import QtQuick
 import QtQuick.Layouts
 import Quickshell
+import ".."
 import "../colors.js" as Colors
 import "lunar.js" as Lunar
 
@@ -32,8 +33,8 @@ Item {
     readonly property int clockWidth: 264
     readonly property int pad: 16
 
-    readonly property color text: Colors.dark.text
-    readonly property color muted: Colors.dark.textMuted
+    readonly property color text: Theme.c.text
+    readonly property color muted: Theme.c.textMuted
 
     // Ngày giờ tới GIÂY cho kim giây — chỉ chạy khi cửa sổ đang mở.
     SystemClock {
@@ -104,9 +105,9 @@ Item {
         width: body.implicitWidth + 2 * root.pad
         height: body.implicitHeight + 2 * root.pad
         radius: 12
-        color: Colors.dark.card
+        color: Theme.c.card
         border.width: 1
-        border.color: Colors.dark.subSecondary
+        border.color: Theme.c.subSecondary
 
         // Hút cú bấm vào chỗ trống trong thẻ — không thì nó lọt xuống lớp
         // phủ (PopupLayer) và đóng popup.
@@ -136,7 +137,7 @@ Item {
                     faceColor: Qt.rgba(root.text.r, root.text.g, root.text.b, 0.06)
                     tickColor: Qt.rgba(root.text.r, root.text.g, root.text.b, 0.45)
                     handColor: root.text
-                    secondColor: Colors.dark.accent
+                    secondColor: Theme.c.accent
                 }
 
                 Text {
@@ -181,7 +182,7 @@ Item {
             Rectangle {
                 Layout.fillHeight: true
                 Layout.preferredWidth: 1
-                color: Colors.dark.subSecondary
+                color: Theme.c.subSecondary
             }
 
             // ── Phần 2: lịch ─────────────────────────────────────────────
@@ -268,8 +269,8 @@ Item {
                                 anchors.fill: parent
                                 anchors.margins: 2
                                 radius: 8
-                                color: cell.modelData.isToday ? Colors.dark.accent
-                                    : dayHover.hovered ? Colors.dark.secondary : "transparent"
+                                color: cell.modelData.isToday ? Theme.c.accent
+                                    : dayHover.hovered ? Theme.c.secondary : "transparent"
                                 Behavior on color {
                                     ColorAnimation { duration: 100 }
                                 }
@@ -290,7 +291,7 @@ Item {
                                     height: 26
                                     verticalAlignment: Text.AlignVCenter
                                     text: cell.modelData.dayText
-                                    color: cell.modelData.isToday ? Colors.dark.onAccent : root.text
+                                    color: cell.modelData.isToday ? Theme.c.onAccent : root.text
                                     // Ngày của tháng khác mờ đi, vẫn đọc được.
                                     opacity: cell.modelData.inMonth ? 1 : 0.35
                                     font.family: Colors.fonts.ui
@@ -303,8 +304,8 @@ Item {
                                     height: 18
                                     verticalAlignment: Text.AlignVCenter
                                     text: cell.modelData.lunarText
-                                    color: cell.modelData.isToday ? Colors.dark.onAccent
-                                        : cell.modelData.newLunarMonth ? Colors.dark.danger : root.muted
+                                    color: cell.modelData.isToday ? Theme.c.onAccent
+                                        : cell.modelData.newLunarMonth ? Theme.c.danger : root.muted
                                     opacity: cell.modelData.inMonth ? 1 : 0.45
                                     font.family: Colors.fonts.ui
                                     font.weight: Colors.fonts.uiWeight
@@ -330,7 +331,7 @@ Item {
         width: 36
         height: 36
         radius: 8
-        color: navHover.hovered ? Colors.dark.secondary : "transparent"
+        color: navHover.hovered ? Theme.c.secondary : "transparent"
 
         SamhieIcon {
             id: navIcon

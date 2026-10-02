@@ -13,6 +13,8 @@
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
+import ".."
+import "../bar"
 import "../colors.js" as Colors
 
 Rectangle {
@@ -28,27 +30,27 @@ Rectangle {
     readonly property var actions: entry && entry.n
         ? entry.n.actions.filter(a => a.identifier !== "default" && a.text !== "")
         : []
-    // Icon: tên icon, đường dẫn file hoặc url (Notifications.qml chọn). Không
-    // có gì thì là chuông của Samhie.
-    readonly property string bell: "file:///usr/share/icons/Samhie/status/scalable/notification-inactive.svg"
+    // Icon: tên icon, đường dẫn file hoặc url (Notifications.qml chọn). ""
+    // = không có / không tìm thấy → chuông nét của Samhie, tô theo màu chữ
+    // (file SVG để màu sáng cứng, nền sáng là biến mất).
     readonly property string iconSource: {
         const i = entry ? entry.icon : ""
         if (i === "")
-            return bell
+            return ""
         if (i.startsWith("/"))
             return "file://" + i
         if (i.indexOf("://") > 0)
             return i
-        return Quickshell.iconPath(i, true) || bell
+        return Quickshell.iconPath(i, true)
     }
     readonly property bool hovered: hover.hovered
 
     width: 360
     height: content.height + 2 * pad
     radius: 12
-    color: Colors.dark.card
+    color: Theme.c.card
     border.width: 1
-    border.color: entry && entry.critical ? Colors.dark.danger : Colors.dark.subSecondary
+    border.color: entry && entry.critical ? Theme.c.danger : Theme.c.subSecondary
 
     readonly property int pad: 12
     readonly property int iconSize: 32
@@ -62,10 +64,20 @@ Rectangle {
     }
 
     IconImage {
+        visible: root.iconSource !== ""
         x: root.pad
         y: root.pad + 2
         implicitSize: root.iconSize
         source: root.iconSource
+    }
+    SamhieIcon {
+        visible: root.iconSource === ""
+        x: root.pad
+        y: root.pad + 2
+        category: "status"
+        iconName: "notification-inactive"
+        size: root.iconSize
+        color: Theme.c.text
     }
 
     Column {
@@ -84,7 +96,7 @@ Rectangle {
             text: (root.entry ? root.entry.appName : "")
                 + (root.showTime && root.entry ? " · " + Qt.formatTime(root.entry.time, "HH:mm") : "")
             elide: Text.ElideRight
-            color: Colors.dark.textMuted
+            color: Theme.c.textMuted
             font.family: Colors.fonts.ui
             font.weight: Colors.fonts.uiWeight
             font.pixelSize: 22
@@ -99,7 +111,7 @@ Rectangle {
             elide: Text.ElideRight
             lineHeightMode: Text.FixedHeight
             lineHeight: 22
-            color: Colors.dark.text
+            color: Theme.c.text
             font.family: Colors.fonts.ui
             font.weight: Font.Normal
             font.pixelSize: 30
@@ -114,7 +126,7 @@ Rectangle {
             elide: Text.ElideRight
             lineHeightMode: Text.FixedHeight
             lineHeight: 19
-            color: Colors.dark.textMuted
+            color: Theme.c.textMuted
             font.family: Colors.fonts.ui
             font.weight: Colors.fonts.uiWeight
             font.pixelSize: 26
@@ -159,12 +171,12 @@ Rectangle {
                         width: label.implicitWidth + 20
                         height: 28
                         radius: 6
-                        color: buttonHover.hovered ? Colors.dark.subSecondary : Colors.dark.secondary
+                        color: buttonHover.hovered ? Theme.c.subSecondary : Theme.c.secondary
                         Text {
                             id: label
                             anchors.centerIn: parent
                             text: button.modelData.text
-                            color: Colors.dark.text
+                            color: Theme.c.text
                             font.family: Colors.fonts.ui
                             font.weight: Colors.fonts.uiWeight
                             font.pixelSize: 24
@@ -189,11 +201,12 @@ Rectangle {
         height: 24
         radius: 6
         visible: root.hovered
-        color: closeHover.hovered ? Colors.dark.secondary : "transparent"
-        IconImage {
+        color: closeHover.hovered ? Theme.c.secondary : "transparent"
+        SamhieIcon {
             anchors.centerIn: parent
-            implicitSize: 14
-            source: "file:///usr/share/icons/Samhie/actions/scalable/window-close-symbolic.svg"
+            iconName: "window-close-symbolic"
+            size: 14
+            color: Theme.c.text
         }
         HoverHandler { id: closeHover }
         MouseArea {

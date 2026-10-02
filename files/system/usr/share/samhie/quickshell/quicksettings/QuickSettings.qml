@@ -14,6 +14,7 @@ import QtQuick
 import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Io
+import ".."
 import "../colors.js" as Colors
 
 Item {
@@ -155,9 +156,9 @@ Item {
         width: 360
         height: content.height + 24
         radius: 12
-        color: Colors.dark.card
+        color: Theme.c.card
         border.width: 1
-        border.color: Colors.dark.subSecondary
+        border.color: Theme.c.subSecondary
 
         // Hút cú bấm vào chỗ trống trong thẻ — không thì nó lọt xuống lớp
         // phủ (PopupLayer) và đóng popup.

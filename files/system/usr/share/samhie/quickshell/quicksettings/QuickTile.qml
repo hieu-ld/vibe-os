@@ -7,6 +7,7 @@
 //           dòng phụ (tên mạng, thiết bị…)
 import QtQuick
 import "../bar"
+import ".."
 import "../colors.js" as Colors
 
 Item {
@@ -25,7 +26,7 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: 8
-        color: root.active ? Colors.dark.selection : Colors.dark.text
+        color: root.active ? Theme.c.selection : Theme.c.text
         opacity: root.active ? 1 : mouse.pressed ? 0.18 : mouse.containsMouse ? 0.12 : 0.07
         Behavior on opacity { NumberAnimation { duration: 100 } }
     }
@@ -35,7 +36,7 @@ Item {
         anchors.fill: parent
         radius: 8
         visible: root.active
-        color: Colors.dark.onSelection
+        color: Theme.c.onSelection
         opacity: mouse.pressed ? 0.16 : mouse.containsMouse ? 0.09 : 0
     }
 
@@ -45,7 +46,7 @@ Item {
         category: root.iconCategory
         iconName: root.iconName
         size: 20
-        color: root.active ? Colors.dark.onSelection : Colors.dark.text
+        color: root.active ? Theme.c.onSelection : Theme.c.text
     }
 
     // Dongle: dòng cao gần gấp đôi phần mực — đặt chiều cao cố định + căn giữa.
@@ -61,7 +62,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             text: root.label
             elide: Text.ElideRight
-            color: root.active ? Colors.dark.onSelection : Colors.dark.text
+            color: root.active ? Theme.c.onSelection : Theme.c.text
             font.family: Colors.fonts.ui
             font.weight: Colors.fonts.uiWeight
             font.pixelSize: 26
@@ -74,7 +75,7 @@ Item {
             verticalAlignment: Text.AlignVCenter
             text: root.sub
             elide: Text.ElideRight
-            color: root.active ? Colors.dark.onSelectionMuted : Colors.dark.textMuted
+            color: root.active ? Theme.c.onSelectionMuted : Theme.c.textMuted
             font.family: Colors.fonts.ui
             font.weight: Colors.fonts.uiWeight
             font.pixelSize: 22

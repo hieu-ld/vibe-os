@@ -8,6 +8,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
+import ".."
 import "../colors.js" as Colors
 
 Item {
@@ -42,9 +43,9 @@ Item {
         width: 280
         height: list.implicitHeight + 12
         radius: 8
-        color: Colors.dark.card
+        color: Theme.c.card
         border.width: 1
-        border.color: Colors.dark.subSecondary
+        border.color: Theme.c.subSecondary
 
         // Hút cú bấm vào chỗ trống trong thẻ — không thì nó lọt xuống lớp
         // phủ (PopupLayer) và đóng popup.
@@ -82,7 +83,7 @@ Item {
                                 anchors.verticalCenter: parent.verticalCenter
                                 width: parent.width
                                 height: 1
-                                color: Colors.dark.subSecondary
+                                color: Theme.c.subSecondary
                             }
                         }
                     }
@@ -123,7 +124,7 @@ Item {
 
         height: 40
         radius: 6
-        color: enabled && rowHover.hovered ? Colors.dark.secondary : "transparent"
+        color: enabled && rowHover.hovered ? Theme.c.secondary : "transparent"
         opacity: enabled ? 1 : 0.4
 
         Row {
@@ -138,7 +139,7 @@ Item {
                 visible: menuRow.leadIcon !== ""
                 anchors.verticalCenter: parent.verticalCenter
                 iconName: menuRow.leadIcon
-                color: Colors.dark.text
+                color: Theme.c.text
             }
             IconImage {
                 visible: menuRow.appIcon !== ""
@@ -151,7 +152,7 @@ Item {
                 width: parent.width - x
                 elide: Text.ElideRight
                 text: menuRow.label
-                color: menuRow.checked ? Colors.dark.accentText : Colors.dark.text
+                color: menuRow.checked ? Theme.c.accentText : Theme.c.text
                 font.family: Colors.fonts.ui
                 font.weight: Colors.fonts.uiWeight
                 font.pixelSize: 24  // 28 thấy to (user 2026-10-02)
@@ -164,7 +165,7 @@ Item {
             anchors.rightMargin: 10
             anchors.verticalCenter: parent.verticalCenter
             iconName: "go-next"
-            color: Colors.dark.textMuted
+            color: Theme.c.textMuted
         }
 
         HoverHandler { id: rowHover }

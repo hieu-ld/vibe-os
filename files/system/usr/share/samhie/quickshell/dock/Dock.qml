@@ -12,6 +12,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
+import ".."
 import "../colors.js" as Colors
 
 Rectangle {
@@ -41,9 +42,9 @@ Rectangle {
     width: apps.length * cell + Math.max(0, apps.length - 1) * gap + 2 * gap
     height: 52
     radius: 12  // đo góc bo trên Dock.png
-    color: Colors.dark.bar
+    color: Theme.c.bar
     border.width: 1
-    border.color: Colors.dark.subSecondary
+    border.color: Theme.c.subSecondary
 
     Row {
         anchors.centerIn: parent
@@ -61,7 +62,7 @@ Rectangle {
                 Rectangle {
                     anchors.fill: parent
                     radius: 8
-                    color: slotArea.containsMouse ? Colors.dark.secondary : "transparent"
+                    color: slotArea.containsMouse ? Theme.c.secondary : "transparent"
                 }
                 IconImage {
                     anchors.centerIn: parent

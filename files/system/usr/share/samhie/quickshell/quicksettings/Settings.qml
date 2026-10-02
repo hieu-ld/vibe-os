@@ -11,6 +11,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Io
+import ".."
 
 Scope {
     id: root
@@ -39,6 +40,9 @@ Scope {
     FileView {
         id: store
         path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/samhie/settings.json"
+        // Đọc chặn (file vài chục byte): giao diện dựng lên là đúng sáng/tối
+        // luôn, không chớp tối rồi mới sáng lúc đăng nhập.
+        blockLoading: true
 
         onLoaded: {
             root.notifs.doNotDisturb = adapter.doNotDisturb
@@ -58,6 +62,13 @@ Scope {
             property bool nightLight: false
             property bool lightMode: false
         }
+    }
+
+    // Giao diện Quickshell (thanh, dock, popup…) theo chế độ sáng/tối.
+    Binding {
+        target: Theme
+        property: "light"
+        value: root.lightMode
     }
 
     Connections {

@@ -11,6 +11,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import ".."
 import "../colors.js" as Colors
 
 Item {
@@ -60,9 +61,9 @@ Item {
         width: 250
         height: list.implicitHeight + 12
         radius: 8
-        color: Colors.dark.card
+        color: Theme.c.card
         border.width: 1
-        border.color: Colors.dark.subSecondary
+        border.color: Theme.c.subSecondary
 
         // Hút cú bấm vào chỗ trống trong thẻ — không thì nó lọt xuống lớp
         // phủ (PopupLayer) và đóng popup.
@@ -89,7 +90,7 @@ Item {
                     width: list.width
                     height: 40
                     radius: 6
-                    color: rowHover.hovered ? Colors.dark.secondary : "transparent"
+                    color: rowHover.hovered ? Theme.c.secondary : "transparent"
 
                     Row {
                         anchors.left: parent.left
@@ -100,12 +101,12 @@ Item {
                         SamhieIcon {
                             anchors.verticalCenter: parent.verticalCenter
                             iconName: row.modelData.icon
-                            color: row.isArmed ? Colors.dark.danger : Colors.dark.text
+                            color: row.isArmed ? Theme.c.danger : Theme.c.text
                         }
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
                             text: row.isArmed ? row.modelData.confirm : row.modelData.label
-                            color: row.isArmed ? Colors.dark.danger : Colors.dark.text
+                            color: row.isArmed ? Theme.c.danger : Theme.c.text
                             font.family: Colors.fonts.ui
                             font.weight: Colors.fonts.uiWeight
                             font.pixelSize: 24  // 28 thấy to (user 2026-10-02)

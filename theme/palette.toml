@@ -71,12 +71,13 @@ success = "#54c48c"
 warm    = "#e8a048"        # điểm nhấn ấm (xem "CÁCH DÙNG MÀU" ở trên)
 
 [light]
-# Bản sáng giữ thanh trên + dock TỐI như bản 1.0 — TẠM. User muốn thanh + dock
-# bản sáng cũng SÁNG (2026-09-28); đổi bar/bar-text/bar-accent ở giai đoạn 3,
-# cùng lúc dựng thanh Quickshell và xem lại bộ icon nét sáng.
-bar           = "#1a1a1a"
-bar-text      = "#e8e8e8"  # KHÔNG phải `text` của bản sáng: #1c1c1c trên #1a1a1a
-bar-accent    = "#00c0e8"  # là chữ biến mất mà không lỗi nào báo (bản 1.0 suýt dính)
+# Thanh trên + dock bản sáng cũng SÁNG (user muốn 2026-09-28, chốt màu
+# 2026-10-02: #f3f3f3 như thanh tác vụ Windows 11 bản sáng — tách nhẹ khỏi
+# cửa sổ/popup #fafafa). Thanh vẫn dùng vai trò bar-* riêng: đổi màu thanh
+# không kéo theo màu cửa sổ và ngược lại.
+bar           = "#f3f3f3"
+bar-text      = "#1c1c1c"
+bar-accent    = "#0d728f"  # cyan đậm như `accent` bản sáng — #00c0e8 trên nền sáng không đọc được
 card          = "#fafafa"
 card-alt      = "#f4f4f4"
 secondary     = "#ededed"

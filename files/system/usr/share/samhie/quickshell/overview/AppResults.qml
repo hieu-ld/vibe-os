@@ -8,6 +8,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
+import ".."
 import "../colors.js" as Colors
 
 Item {
@@ -67,7 +68,7 @@ Item {
         anchors.centerIn: parent
         visible: root.query.trim() !== "" && root.results.length === 0
         text: "No results"
-        color: Colors.dark.textMuted
+        color: Theme.c.textMuted
         font.family: Colors.fonts.ui
         font.weight: Colors.fonts.uiWeight
         font.pointSize: Colors.fonts.size * 1.2
@@ -90,9 +91,9 @@ Item {
                 width: root.cell
                 height: root.cell
                 radius: 12
-                color: isSelected || tileArea.containsMouse ? Colors.dark.secondary : "transparent"
+                color: isSelected || tileArea.containsMouse ? Theme.c.secondary : "transparent"
                 border.width: isSelected ? 2 : 0
-                border.color: Colors.dark.accent
+                border.color: Theme.c.accent
 
                 IconImage {
                     anchors.horizontalCenter: parent.horizontalCenter
@@ -109,7 +110,7 @@ Item {
                     horizontalAlignment: Text.AlignHCenter
                     elide: Text.ElideRight
                     text: tile.modelData.name
-                    color: Colors.dark.text
+                    color: Theme.c.text
                     font.family: Colors.fonts.ui
                     font.weight: Colors.fonts.uiWeight
                     font.pointSize: Colors.fonts.size

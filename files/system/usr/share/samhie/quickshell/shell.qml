@@ -98,27 +98,16 @@ ShellRoot {
         onPressed: samhie.toggleOverview()
     }
 
-    // Phím Win đứng riêng gắn KIỂU "KHI THẢ" (release = true). Win+Space chạy
-    // mà Win không (máy ảo 2026-10-01) — nghi Hyprland chỉ gửi "thả" cho bind
-    // kiểu này. Không kiểm được trong container (Hyprland bỏ phím tắt từ bàn
-    // phím ảo wtype), nên nghe CẢ HAI: cái nào tới trước thì mở/đóng, cái kia
-    // tới ngay sau (cùng một lần bấm) thì bỏ qua.
+    // Phím Win đứng riêng gắn KIỂU "KHI THẢ" (release = true). Đo trong máy
+    // ảo 2026-10-02 (45 lần bấm, chậm lẫn spam): mỗi lần bấm Hyprland gửi
+    // ĐÚNG MỘT sự kiện "released", không bao giờ "pressed". Bản trước nghe
+    // cả hai và bỏ qua mọi sự kiện trong 400 ms sau đó — spam Win (cách nhau
+    // 250–350 ms) thì mất nhịp (user: bấm 5 lần, lần 3 và 5 không ăn).
     GlobalShortcut {
         appid: "samhie"
         name: "overview-key"
         description: "Open or close the overview (Super key alone)"
-        onPressed: superKey.hit()
-        onReleased: superKey.hit()
-    }
-    QtObject {
-        id: superKey
-        property double last: 0
-        function hit() {
-            const now = Date.now()
-            if (now - last > 400)
-                samhie.toggleOverview()
-            last = now
-        }
+        onReleased: samhie.toggleOverview()
     }
 
     // Lịch sử clipboard: Win+V → hl.dsp.global("samhie:clipboard").

@@ -14,6 +14,14 @@
 //     vẽ đã bỏ: màn trống ở cuối chính là chỗ mở màn mới (user chốt).
 //   - dock dưới đáy (dock/Dock.qml — cùng dock với desktop).
 // Esc: xoá chữ đang gõ, gõ trống rồi thì đóng. Mở/đóng: shell.qml.
+//
+// Hiệu ứng mở/đóng kiểu Ubuntu (user 2026-10-02: bản fade của Hyprland "hiện
+// ra đột ngột"): `progress` 0 → 1. Khung lớn đi từ ĐÚNG chỗ màn hình thật
+// (toàn màn, cửa sổ ở vị trí thật — nhìn y như desktop) thu về khung giữa,
+// cửa sổ dàn ra hàng; nền, ô tìm kiếm, cột trái, dock hiện dần. Đóng thì
+// chạy ngược rồi mới tắt lớp. Bấm Win liên tục: hiệu ứng đảo chiều từ chỗ
+// đang chạy — không mất nhịp. Hyprland KHÔNG làm hiệu ứng cho lớp này nữa
+// (layer rule no_anim trong samhie.lua).
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -45,15 +53,45 @@ PanelWindow {
         close()
     }
 
-    onOpenChanged: if (open) {
-        // lastIpcObject (vị trí/cỡ cửa sổ) chỉ mới sau khi hỏi lại Hyprland.
-        Hyprland.refreshToplevels()
-        Hyprland.refreshWorkspaces()
-        viewWs = monitor.activeWorkspace ? monitor.activeWorkspace.id : 1
+    onOpenChanged: {
+        if (open && progress === 0) {
+            // lastIpcObject (vị trí/cỡ cửa sổ) chỉ mới sau khi hỏi lại Hyprland.
+            Hyprland.refreshToplevels()
+            Hyprland.refreshWorkspaces()
+            viewWs = monitor.activeWorkspace ? monitor.activeWorkspace.id : 1
+            // Mở từ desktop: dựng trong suốt, chờ hình chụp cửa sổ (tối đa
+            // 200 ms) rồi mới chạy — xem `ready` của WorkspacePreview.
+            started = false
+            readyTimeout.restart()
+            return
+        }
+        run()
+    }
+    function run() {
+        readyTimeout.stop()
+        started = true
+        anim.to = open ? 1 : 0
+        anim.restart()
+    }
+    property bool started: false
+    Timer {
+        id: readyTimeout
+        interval: 200
+        onTriggered: root.run()
     }
 
-    visible: open
-    color: Theme.c.card
+    // 0 = desktop, 1 = tổng quan mở hẳn.
+    property real progress: 0
+    NumberAnimation {
+        id: anim
+        target: root
+        property: "progress"
+        duration: 250
+        easing.type: Easing.OutCubic
+    }
+
+    visible: open || progress > 0
+    color: Qt.rgba(Theme.c.card.r, Theme.c.card.g, Theme.c.card.b, progress)
     anchors { top: true; bottom: true; left: true; right: true }
     // Như PopupLayer: vùng dành riêng 0 → né thanh trên; bàn phím OnDemand
     // (Exclusive làm Hyprland chặn cả cú bấm vào thanh — đo 2026-10-01).
@@ -66,7 +104,7 @@ PanelWindow {
     // dựng, đóng đi là bỏ — không tốn gì khi tổng quan đang đóng.
     Loader {
         anchors.fill: parent
-        active: root.open
+        active: root.visible
         sourceComponent: content
     }
 
@@ -75,6 +113,13 @@ PanelWindow {
 
         Item {
             id: page
+
+            // Chưa chạy hiệu ứng (đang chờ hình chụp): trong suốt hẳn.
+            opacity: root.started ? 1 : 0
+            readonly property bool ready: preview.ready
+            onReadyChanged: if (ready && !root.started && root.open) root.run()
+            // Màn ảo không có cửa sổ: sẵn sàng ngay từ đầu, khỏi chờ.
+            Component.onCompleted: if (ready && !root.started && root.open) root.run()
 
             // Cỡ logic của màn hình (cả phần thanh trên) — bản vẽ tính theo nó.
             readonly property real sw: root.screen.width
@@ -85,6 +130,8 @@ PanelWindow {
             // 0,75 như Ubuntu; màn thấp/hẹp thì co cho vừa.
             readonly property real k: Math.min(0.75, (height - previewTop - dockSpace) / sh, (width - 2 * side) / sw)
             readonly property bool searching: search.text.trim() !== ""
+            readonly property real p: root.progress
+            function mix(a, b) { return a + (b - a) * p }
 
             // Bấm vào nền trống: đóng.
             MouseArea {
@@ -97,6 +144,7 @@ PanelWindow {
                 id: searchBox
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: 24
+                opacity: page.p
                 width: 320
                 height: 40
                 radius: 20
@@ -161,21 +209,30 @@ PanelWindow {
             }
 
             // ── Khung lớn: màn ảo đang xem ─────────────────────────────────
+            // Chỗ cuối của khung (lúc mở hẳn); lúc progress 0 khung phủ đúng
+            // màn hình thật — lớp này nằm DƯỚI thanh trên, nên lùi lên một
+            // khoảng bằng thanh.
+            readonly property real finalW: Math.round(sw * k)
+            readonly property real finalH: Math.round(sh * k)
+            readonly property real finalX: Math.round((width - finalW) / 2)
+
             WorkspacePreview {
                 id: preview
                 visible: !page.searching
-                anchors.horizontalCenter: parent.horizontalCenter
-                y: page.previewTop
-                width: Math.round(page.sw * page.k)
-                height: Math.round(page.sh * page.k)
-                radius: 20
+                x: Math.round(page.mix(0, page.finalX))
+                y: Math.round(page.mix(page.height - page.sh, page.previewTop))
+                width: Math.round(page.mix(page.sw, page.finalW))
+                height: Math.round(page.mix(page.sh, page.finalH))
+                radius: page.mix(0, 20)
+                spreadAmount: page.p
+                imageSize: Qt.size(page.sw, page.sh)
                 monitor: root.monitor
                 workspaceId: root.viewWs
                 screenWidth: page.sw
                 wallpaper: root.wallpaper
                 live: true
                 spread: true
-                interactive: true
+                interactive: page.p === 1
                 onBackgroundClicked: root.goWorkspace(root.viewWs)
                 onWindowClicked: toplevel => {
                     toplevel.wayland.activate()
@@ -186,10 +243,10 @@ PanelWindow {
             AppResults {
                 id: results
                 visible: page.searching
-                x: preview.x
-                y: preview.y
-                width: preview.width
-                height: preview.height
+                x: page.finalX
+                y: page.previewTop
+                width: page.finalW
+                height: page.finalH
                 query: search.text
                 onLaunched: root.close()
             }
@@ -197,9 +254,11 @@ PanelWindow {
             // ── Cột trái: các màn ảo ───────────────────────────────────────
             Column {
                 id: column
-                x: 12
+                // Trượt vào từ mép trái.
+                x: Math.round(page.mix(-width, 12))
+                opacity: page.p
                 // Tâm cột thẳng tâm khung lớn (bản vẽ).
-                y: Math.round(preview.y + preview.height / 2 - height / 2)
+                y: Math.round(page.previewTop + page.finalH / 2 - height / 2)
                 spacing: 13
 
                 readonly property int tw: Math.round(page.sw * 0.076)
@@ -246,6 +305,7 @@ PanelWindow {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 8
+                opacity: page.p
                 onLaunched: root.close()
             }
         }

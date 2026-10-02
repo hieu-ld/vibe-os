@@ -226,8 +226,9 @@ hl.layer_rule({ match = { namespace = "^samhie-screenshot$" }, no_anim = true })
 -- Lớp phủ của popup thanh trên (lịch, menu nguồn, menu khay) phủ cả màn
 -- hình: hiệu ứng mở layer sẽ trượt/phóng cả lớp — tắt, popup hiện ngay.
 hl.layer_rule({ match = { namespace = "^samhie-popup$" }, no_anim = true })
--- Màn tổng quan hiện/ẩn bằng mờ dần (mặc định layer trượt vào từ mép).
-hl.layer_rule({ match = { namespace = "^samhie-overview$" }, animation = "fade" })
+-- Màn tổng quan tự làm hiệu ứng thu nhỏ kiểu Ubuntu trong QML
+-- (quickshell/overview/Overview.qml) — Hyprland mà mờ/trượt thêm là chồng hai lớp.
+hl.layer_rule({ match = { namespace = "^samhie-overview$" }, no_anim = true })
 -- Dock trên desktop tự trượt/mờ trong QML (quickshell/dock/DesktopDock.qml).
 hl.layer_rule({ match = { namespace = "^samhie-dock$" }, no_anim = true })
 -- Popup thông báo: từng thẻ tự trượt vào trong QML (quickshell/notifications).

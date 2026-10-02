@@ -31,7 +31,13 @@ ClippingRectangle {
     required property string wallpaper
     property bool live: false
     property bool spread: false
+    // 0 = cửa sổ đúng vị trí thật, 1 = dàn hàng (spread). Màn tổng quan chạy
+    // nó 0 → 1 lúc mở: cửa sổ đi từ chỗ thật ra hàng, như Ubuntu.
+    property real spreadAmount: 1
     property bool interactive: false
+    // Cỡ nạp ảnh nền. Mặc định = cỡ đang vẽ (ô nhỏ nạp nhỏ cho nhẹ); khung đổi
+    // cỡ liên tục (hiệu ứng mở) thì đặt cố định, không thì nạp lại mỗi khung.
+    property size imageSize: Qt.size(width, height)
 
     signal windowClicked(var toplevel)
     signal backgroundClicked()
@@ -109,12 +115,13 @@ ClippingRectangle {
     color: Theme.c.bar
 
     Image {
+        id: wallpaperImage
         anchors.fill: parent
         source: root.wallpaper
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
-        // Ảnh nền gốc to (4K); nạp ở cỡ đang vẽ cho nhẹ.
-        sourceSize: Qt.size(root.width, root.height)
+        // Ảnh nền gốc to (4K); nạp ở cỡ cần vẽ cho nhẹ.
+        sourceSize: root.imageSize
     }
 
     // Bấm chỗ trống (hình nền). Cửa sổ nằm trên và có MouseArea riêng, nên
@@ -124,11 +131,30 @@ ClippingRectangle {
         onClicked: root.backgroundClicked()
     }
 
+    // Mọi cửa sổ đã có hình chụp (ScreencopyView cần vài chục ms sau khi
+    // dựng). Màn tổng quan chờ cái này rồi mới chạy hiệu ứng mở — không thì
+    // khung đầu lộ ô xám trống (đo trong container 2026-10-02).
+    // Đếm đủ: lúc vừa dựng Repeater chưa tạo cửa sổ nào (count 0) — không
+    // so với toplevels thì "không có cửa sổ = sẵn sàng" chạy hiệu ứng quá sớm
+    // (đo: khung xám). Hình nền nạp bất đồng bộ nên cũng phải chờ.
+    readonly property bool ready: {
+        if (wallpaperImage.status !== Image.Ready || windowsRepeater.count !== toplevels.length)
+            return false
+        for (let i = 0; i < windowsRepeater.count; i++) {
+            const it = windowsRepeater.itemAt(i)
+            if (!it || !it.captured)
+                return false
+        }
+        return true
+    }
+
     Repeater {
+        id: windowsRepeater
         model: root.toplevels
 
         delegate: Item {
             id: win
+            readonly property bool captured: capture.hasContent
             required property HyprlandToplevel modelData
             required property int index
             readonly property var ipc: modelData.lastIpcObject
@@ -139,10 +165,16 @@ ClippingRectangle {
 
             // Đang rê chuột thì nổi lên trên cửa sổ bên cạnh (nút X, tên).
             z: hovered ? 1 : 0
-            x: slot ? slot.x : Math.round((ipc.at[0] - root.monitor.x) * root.k)
-            y: slot ? slot.y : Math.round((ipc.at[1] - root.monitor.y) * root.k)
-            width: slot ? slot.w : Math.round(ipc.size[0] * root.k)
-            height: slot ? slot.h : Math.round(ipc.size[1] * root.k)
+            // Vị trí thật (thu theo khung) và ô dàn hàng; trộn theo spreadAmount.
+            readonly property real realX: (ipc.at[0] - root.monitor.x) * root.k
+            readonly property real realY: (ipc.at[1] - root.monitor.y) * root.k
+            readonly property real realW: ipc.size[0] * root.k
+            readonly property real realH: ipc.size[1] * root.k
+            function mix(a, b) { return Math.round(a + (b - a) * root.spreadAmount) }
+            x: slot ? mix(realX, slot.x) : Math.round(realX)
+            y: slot ? mix(realY, slot.y) : Math.round(realY)
+            width: slot ? mix(realW, slot.w) : Math.round(realW)
+            height: slot ? mix(realH, slot.h) : Math.round(realH)
 
             ClippingRectangle {
                 anchors.fill: parent
@@ -150,6 +182,7 @@ ClippingRectangle {
                 color: Theme.c.secondary   // chưa có hình (vừa mở / thu nhỏ)
 
                 ScreencopyView {
+                    id: capture
                     anchors.fill: parent
                     captureSource: win.modelData.wayland
                     live: root.live
@@ -167,6 +200,7 @@ ClippingRectangle {
             // Icon app đè giữa mép dưới (như Ubuntu) — biết cửa sổ nào là gì.
             IconImage {
                 visible: root.spread
+                opacity: root.spreadAmount
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.verticalCenter: parent.bottom
                 implicitSize: root.iconSize

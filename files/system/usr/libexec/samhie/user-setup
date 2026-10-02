@@ -79,6 +79,50 @@ if [ ! -e "$fcitx_marker" ]; then
     touch -- "$fcitx_marker"
 fi
 
+# ── 0c. VS Code: ẩn ba nút cửa sổ tự vẽ ─────────────────────────────────────
+# VS Code tự vẽ nút thu nhỏ/phóng to/đóng, nhưng trên Hyprland chỉ nút đóng
+# ăn (user 2026-10-02): Hyprland 0.56 bỏ qua yêu cầu thu nhỏ của app
+# (CWindow::onUpdateState không đọc requestsMinimize), còn yêu cầu phóng to
+# bị luật suppress-maximize-events của samhie.lua chặn. Nút của Samhie nằm
+# trên thanh trên → ẩn bộ nút của VS Code (`window.controlsStyle`, có trong
+# VS Code 1.140 của image; thanh tiêu đề tự vẽ vẫn giữ: ô tìm kiếm, nút bố cục).
+# VS Code không có file mặc định toàn máy, nên CHỈ tạo settings.json khi
+# chưa có. Đã có (người dùng đã mở VS Code) thì để nguyên — settings.json
+# là JSON có chú thích, sửa bằng máy dễ làm hỏng. Mốc riêng như bước 0.
+vscode_marker=$state_dir/vscode-controls
+vscode_settings=$config_home/Code/User/settings.json
+if [ ! -e "$vscode_marker" ]; then
+    if [ ! -e "$vscode_settings" ] && [ ! -L "$vscode_settings" ]; then
+        mkdir -p -- "${vscode_settings%/*}"
+        printf '{\n    "window.controlsStyle": "hidden"\n}\n' > "$vscode_settings"
+        echo "Hid VS Code window controls"
+    fi
+    mkdir -p -- "$state_dir"
+    touch -- "$vscode_marker"
+fi
+
+# ── 0d. Edge: bỏ ba nút cửa sổ tự vẽ ────────────────────────────────────────
+# Cùng lý do với VS Code ở bước 0c. Edge giấu công tắc "Use system title
+# bar" của Chromium khỏi Settings, nhưng vẫn đọc khoá browser.custom_chrome_frame
+# trong Preferences: false → Edge nhờ compositor vẽ khung, Hyprland không vẽ
+# gì → hết ba nút, dải tab giữ nguyên. Đo trong máy ảo 2026-10-02 (Edge
+# Flatpak 154): sửa hồ sơ có sẵn → hết nút; hồ sơ MỚI với Preferences chỉ
+# có khoá này → màn chào lần đầu vẫn chạy, không có nút.
+# Chỉ tạo khi Edge CHƯA có hồ sơ (chưa mở lần nào) — Preferences do Edge
+# tự ghi lại liên tục, sửa file đang có thì có thể bị Edge ghi đè hoặc hỏng.
+# Flatpak giữ nguyên thư mục ~/.var/app/<id> có sẵn khi cài/chạy lần đầu.
+edge_marker=$state_dir/edge-frame
+edge_profile=$HOME/.var/app/com.microsoft.Edge/config/microsoft-edge
+if [ ! -e "$edge_marker" ]; then
+    if [ ! -e "$edge_profile" ] && [ ! -L "$edge_profile" ]; then
+        mkdir -p -- "$edge_profile/Default"
+        printf '{"browser":{"custom_chrome_frame":false}}\n' > "$edge_profile/Default/Preferences"
+        echo "Hid Edge window controls"
+    fi
+    mkdir -p -- "$state_dir"
+    touch -- "$edge_marker"
+fi
+
 done_version=0
 if [ -r "$marker" ]; then
     read -r done_version < "$marker" || true

@@ -20,6 +20,9 @@ Scope {
     property bool nightLight: false
     property bool lightMode: false
     readonly property int nightTemperature: 4500   // K — ấm vừa, chữ vẫn đọc rõ
+    // Màn hình không cho đổi gamma (máy ảo: "1/1 output(s) do not support
+    // gamma adjustment" — đo 2026-10-02) → ô Night light ghi "Not supported".
+    property bool nightUnsupported: false
 
     // Đã đọc xong file (hoặc biết là chưa có) — trước đó đừng ghi đè.
     property bool loaded: false
@@ -78,6 +81,14 @@ Scope {
         // container 2026-10-02).
         command: ["setpriv", "--pdeathsig", "TERM", "--",
             "gammastep", "-P", "-O", String(root.nightTemperature)]
+        onStarted: root.nightUnsupported = false
+        // Cảnh báo có thể ra stderr hay stdout — nghe cả hai.
+        function check(line) {
+            if (line.indexOf("support gamma adjustment") >= 0)
+                root.nightUnsupported = true
+        }
+        stdout: SplitParser { onRead: line => gammastep.check(line) }
+        stderr: SplitParser { onRead: line => gammastep.check(line) }
     }
 
     Process {

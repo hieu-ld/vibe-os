@@ -105,7 +105,8 @@ Item {
         }
         list.push({
             id: "night", label: "Night light", icon: "redshift-status-on", category: "status",
-            active: shell.prefs.nightLight, sub: ""
+            active: shell.prefs.nightLight,
+            sub: shell.prefs.nightLight && shell.prefs.nightUnsupported ? "Not supported" : ""
         })
         list.push({
             id: "dnd", label: "Do not disturb", icon: "samhie-do-not-disturb", category: "actions",

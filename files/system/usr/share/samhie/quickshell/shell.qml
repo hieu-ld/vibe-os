@@ -23,6 +23,7 @@ import Quickshell.Io
 import "bar"
 import "dock"
 import "notifications"
+import "quicksettings"
 import "overview"
 
 ShellRoot {
@@ -34,6 +35,16 @@ ShellRoot {
     readonly property alias notifs: notifications
     Notifications { id: notifications }
     NotificationPopups { notifs: notifications }
+
+    // Thiết lập người dùng đổi trong quick settings (nhớ qua lần đăng nhập):
+    // Night light, sáng/tối, Đừng làm phiền.
+    // Không đặt tên `settings`: ShellRoot đã có thuộc tính đó (thiết lập của
+    // chính Quickshell).
+    readonly property alias prefs: userSettings
+    Settings {
+        id: userSettings
+        notifs: notifications
+    }
 
     // Tên màn hình (Hyprland) đang mở tổng quan; "" = đóng.
     property string overviewMonitor: ""

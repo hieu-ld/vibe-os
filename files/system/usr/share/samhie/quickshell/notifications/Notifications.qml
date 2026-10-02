@@ -15,7 +15,7 @@ Scope {
     id: root
 
     // Đừng làm phiền: không hiện popup (trừ thông báo khẩn), vẫn vào danh sách.
-    // Chưa nhớ qua lần đăng nhập sau.
+    // Nhớ qua lần đăng nhập sau: quicksettings/Settings.qml đọc/ghi.
     property bool doNotDisturb: false
     // Popup bị chặn trên màn hình đang mở danh sách của chuông (thông báo mới
     // đã nằm sẵn trong danh sách đó).

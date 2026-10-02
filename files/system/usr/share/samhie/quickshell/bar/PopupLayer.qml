@@ -12,6 +12,7 @@
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
+import "../quicksettings"
 
 PanelWindow {
     id: layer
@@ -57,6 +58,13 @@ PanelWindow {
         id: calendar
         bar: layer.bar
         x: Math.round((layer.width - width) / 2)
+        y: layer.gap
+    }
+
+    // Mép phải thẳng lề phải của cụm nút trên thanh.
+    QuickSettings {
+        bar: layer.bar
+        x: layer.width - width - 6
         y: layer.gap
     }
 

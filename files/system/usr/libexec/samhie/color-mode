@@ -1,0 +1,83 @@
+#!/usr/bin/env python3
+"""Đổi chế độ sáng/tối cho app — ô "Dark style" của quick settings gọi.
+
+    color-mode light | dark
+
+App KDE/Qt (Dolphin, Konsole để riêng — xem dưới): đọc màu từ kdeglobals.
+  * light: chép mọi khoá của /usr/share/color-schemes/SamhieLight.colors vào
+    ~/.config/kdeglobals của người dùng (đè lên mặc định tối ở /etc/xdg).
+  * dark: XOÁ đúng những khoá đó khỏi file người dùng → mặc định tối của image
+    (/etc/xdg/kdeglobals) có hiệu lực lại. Giữ mô hình "mặc định của Samhie +
+    phần riêng của người dùng": bản tối luôn là bản mới nhất của image.
+  Rồi phát tín hiệu KGlobalSettings.notifyChange (cách plasma-apply-colorscheme
+  làm) để app đang mở đổi màu ngay.
+App GTK / Flatpak / Electron (Edge, VS Code): gsettings color-scheme — portal
+GTK (hyprland;gtk trong hyprland-portals.conf) đọc khoá này cho app.
+
+KHÔNG đổi: Konsole (profile Samhie riêng, terminal tối như Windows Terminal),
+màn hình khoá, SDDM. Giao diện Quickshell tự đổi theo cùng thiết lập.
+"""
+
+import configparser
+import os
+import subprocess
+import sys
+from pathlib import Path
+
+LIGHT = Path("/usr/share/color-schemes/SamhieLight.colors")
+USER = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "kdeglobals"
+
+
+def ini():
+    # Khoá giữ nguyên chữ hoa/thường, không nội suy %, nhóm lồng
+    # "[Colors:Header][Inactive]" vẫn đọc/ghi đúng như một tên nhóm.
+    p = configparser.RawConfigParser(strict=False, delimiters=("=",))
+    p.optionxform = str
+    return p
+
+
+def main():
+    if len(sys.argv) != 2 or sys.argv[1] not in ("light", "dark"):
+        sys.exit("usage: color-mode light|dark")
+    mode = sys.argv[1]
+
+    scheme = ini()
+    scheme.read(LIGHT, encoding="utf-8")
+    user = ini()
+    if USER.exists():
+        user.read(USER, encoding="utf-8")
+
+    for group in scheme.sections():
+        for key, value in scheme.items(group):
+            if mode == "light":
+                if not user.has_section(group):
+                    user.add_section(group)
+                user.set(group, key, value)
+            elif user.has_section(group):
+                user.remove_option(group, key)
+        if mode == "dark" and user.has_section(group) and not user.items(group):
+            user.remove_section(group)
+    # Dòng ColorScheme cho app nào hỏi "đang dùng bảng nào" (menu chọn màu của
+    # Dolphin). Bản tối: bỏ để rơi về SamhieDark của /etc/xdg.
+    if mode == "light":
+        user.set("General", "ColorScheme", "SamhieLight")
+    elif user.has_section("General"):
+        user.remove_option("General", "ColorScheme")
+
+    USER.parent.mkdir(parents=True, exist_ok=True)
+    tmp = USER.with_suffix(".samhie-tmp")
+    with open(tmp, "w", encoding="utf-8") as f:
+        user.write(f, space_around_delimiters=False)
+    tmp.replace(USER)
+
+    # App KDE đang mở: đổi bảng màu (0 = PaletteChanged), như
+    # plasma-apply-colorscheme.
+    subprocess.run(["dbus-send", "--session", "--type=signal", "/KGlobalSettings",
+                    "org.kde.KGlobalSettings.notifyChange", "int32:0", "int32:0"],
+                   check=False)
+    subprocess.run(["gsettings", "set", "org.gnome.desktop.interface", "color-scheme",
+                    "prefer-light" if mode == "light" else "prefer-dark"], check=False)
+
+
+if __name__ == "__main__":
+    main()

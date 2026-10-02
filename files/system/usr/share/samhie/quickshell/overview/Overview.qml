@@ -51,8 +51,8 @@ PanelWindow {
     // trên hai lớp khác nhau, tắt cái này đúng lúc hiện cái kia thì lọt một
     // khung không có dock (đo trong container).
     readonly property bool covering: open && started && progress >= 0.2
-    // Lúc mở, dock desktop đang hiện → dock tổng quan hiện luôn, đậm hẳn
-    // (cùng chỗ, nhìn như một dock); không thì hiện dần theo hiệu ứng.
+    // Lúc mở, dock desktop đang hiện → nó ở yên, tổng quan không vẽ dock
+    // riêng; không thì dock của tổng quan hiện dần theo hiệu ứng.
     property bool dockFromDesktop: false
 
     // Hình nền: shell.qml được chạy với SAMHIE_WALLPAPER = samhie.wallpaper
@@ -353,7 +353,10 @@ PanelWindow {
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 8
-                opacity: root.dockFromDesktop && root.open ? 1 : page.p
+                // Dock desktop đang hiện thì nó ở yên trên tổng quan
+                // (DesktopDock.overviewOpen) — không vẽ dock thứ hai.
+                visible: !root.dockFromDesktop
+                opacity: page.p
                 onLaunched: root.close()
             }
         }

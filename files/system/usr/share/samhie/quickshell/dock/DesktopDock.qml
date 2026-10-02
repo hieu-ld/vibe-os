@@ -23,11 +23,14 @@ PanelWindow {
     required property var shell
     readonly property HyprlandMonitor monitor: Hyprland.monitorFor(screen)
     readonly property HyprlandWorkspace workspace: monitor ? monitor.activeWorkspace : null
-    // Màn tổng quan cùng màn hình (shell.qml). Theo lúc tổng quan THẬT SỰ
-    // hiện (covering), không theo lúc được gọi mở — còn chờ hình chụp mà dock
-    // đã tắt thì chớp (user 2026-10-02).
+    // Màn tổng quan cùng màn hình (shell.qml). Lúc mở mà dock này đang hiện
+    // (overview.dockFromDesktop) thì dock này Ở YÊN suốt lúc tổng quan mở —
+    // tổng quan không vẽ dock riêng. Đổi dock (tắt cái này, hiện cái kia)
+    // thì máy ảo lọt một khung không có dock nào (user 2026-10-02, quay
+    // khung): hai lớp khác nhau, cái mới vẽ chậm hơn một nhịp. Dock đang ẩn
+    // (cửa sổ che) thì tổng quan tự hiện dock của nó, dock này giữ ẩn.
     property var overview: null
-    readonly property bool overviewOpen: overview !== null && overview.covering
+    readonly property bool overviewOpen: overview !== null && overview.covering && !overview.dockFromDesktop
 
     readonly property int bottomGap: 8
 
@@ -111,12 +114,18 @@ PanelWindow {
     color: "transparent"
     exclusiveZone: 0
     WlrLayershell.namespace: "samhie-dock"
-    WlrLayershell.layer: WlrLayer.Top
+    // Overlay: phải nằm TRÊN lớp màn tổng quan (Top, mở sau dock nên đè lên
+    // nếu cùng tầng). Lớp tạo sau cùng tầng Overlay (chụp màn hình,
+    // clipboard) vẫn đè lên dock.
+    WlrLayershell.layer: WlrLayer.Overlay
     visible: reveal > 0
 
     Dock {
         id: dock
         y: (1 - root.reveal) * (root.bottomGap + height)
         opacity: root.reveal
+        // Đang ở trong tổng quan (dock ở yên — xem overviewOpen): bấm app
+        // thì đóng tổng quan như dock riêng của nó.
+        onLaunched: root.shell.closeOverview()
     }
 }

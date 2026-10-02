@@ -399,9 +399,13 @@ PanelWindow {
             color: btn.tint
         }
         HoverHandler { id: btnHover }
-        TapHandler {
+        // MouseArea, KHÔNG TapHandler: TapHandler của thẻ bên dưới cũng nhận
+        // cú bấm (bấm ghim/xoá → thẻ copy rồi đóng bảng — user gặp 2026-10-02).
+        // MouseArea nhận rồi thì cú bấm dừng ở đây.
+        MouseArea {
+            anchors.fill: parent
             enabled: btn.revealed
-            onTapped: btn.clicked()
+            onClicked: btn.clicked()
         }
     }
 }

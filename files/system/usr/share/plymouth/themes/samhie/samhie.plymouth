@@ -6,7 +6,7 @@
 # không nhập được mật khẩu, tức không boot nổi.
 #
 # Ảnh trong thư mục này:
-#   throbber-*.png  5 chấm màu #e8e8e8 (dark.text) — sinh bằng
+#   throbber-*.png  5 chấm màu #bdbec1 (dark.text) — sinh bằng
 #                   tools/build-plymouth-throbber.py (cần Pillow), đổi
 #                   dark.text thì chạy lại script đó
 #   watermark.png   chữ Samhie, cao 64px — bản 1.0 (branding/watermark.png)

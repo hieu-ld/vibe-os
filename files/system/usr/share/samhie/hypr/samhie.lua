@@ -161,11 +161,12 @@ hl.config({
             color        = 0x66000000,
         },
 
-        -- Blur chỉ hiện ra sau những cửa sổ có nền trong suốt. Giai đoạn 4 theme
-        -- Kvantum sẽ cho Dolphin/Konsole nền hơi trong để ăn hiệu ứng này.
+        -- Blur chỉ hiện ra sau những cửa sổ có nền trong suốt: Dolphin/Konsole
+        -- nền đục 90% (palette.toml [window] opacity, theme Kvantum). User chọn
+        -- 2026-10-03 "trong 90%, blur nhẹ" (bản vẽ không blur) → size 6 → 4.
         blur = {
             enabled  = true,
-            size     = 6,
+            size     = 4,
             passes   = 2,
             vibrancy = 0.17,
         },

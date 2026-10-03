@@ -1,0 +1,7 @@
+# Theme Kvantum mặc định toàn máy (theme nằm ở /usr/share/Kvantum/). Kvantum
+# 1.1.6 CHỈ đọc file này khi người dùng chưa có ~/.config/Kvantum/kvantum.kvconfig
+# (Kvantum.cpp: thử XDG_CONFIG_HOME trước, rồi mới tới các thư mục cấu hình
+# chung) — người dùng chọn theme khác bằng kvantummanager là file của họ thắng.
+[General]
+theme=Samhie
+

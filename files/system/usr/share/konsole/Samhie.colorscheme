@@ -82,7 +82,7 @@ Color=140,140,140
 Color=246,246,246
 
 [Foreground]
-Color=228,228,228
+Color=189,190,193
 
 [ForegroundFaint]
 Color=152,152,152
@@ -94,5 +94,5 @@ Color=248,248,248
 Blur=false
 ColorRandomization=false
 Description=Samhie
-Opacity=1
+Opacity=0.9
 Wallpaper=

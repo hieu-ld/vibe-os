@@ -48,8 +48,11 @@ card          = "#171717"  # vùng nội dung, popup, tooltip   (Figma: Card)
 card-alt      = "#171717"  # hàng xen kẽ trong danh sách — bản tối cố ý KHÔNG kẻ sọc
 secondary     = "#262626"  # khung cửa sổ, sidebar, thanh tab (Figma: Secondary)
 sub-secondary = "#3b3c3c"  # viền, mặt nút                   (Figma: Sub Secondary)
+hover         = "#363d3f"  # nền ô đang trỏ chuột (ô file Dolphin) — user vẽ 2026-10-03:
+                           # xám pha chút cyan. Nhóm xám trung tính.
 
-text       = "#e8e8e8"
+text       = "#bdbec1"     # user đổi 2026-10-03 (bản vẽ Konsole/Dolphin): dịu mắt khi nhìn lâu.
+                           # 8,1:1 trên secondary, 5,9:1 trên sub-secondary
 text-muted = "#8f8f8f"     # chữ phụ, chữ bị vô hiệu hoá
 
 accent      = "#00c0e8"    # viền focus, vạch active, icon đang bật
@@ -82,6 +85,7 @@ card          = "#fafafa"
 card-alt      = "#f4f4f4"
 secondary     = "#ededed"
 sub-secondary = "#d0d0d0"
+hover         = "#e3e8e9"  # tạm: cùng ý bản tối (xám pha chút cyan) — duyệt ở đợt bản sáng
 
 text       = "#1c1c1c"
 text-muted = "#6b6b6b"
@@ -124,6 +128,12 @@ frame-contrast = { dark = 0.1, light = 0.14 }
 # breeze-dark (icon nhiều màu vẽ cho nền tối) — xem lại khi làm bản sáng.
 icon-theme     = { dark = "Samhie", light = "breeze" }
 
+# Nền cửa sổ app (Dolphin, Konsole…) — user vẽ 2026-10-03: độ đục 90%, Hyprland
+# làm mờ (blur) phần nhìn xuyên qua. Một số dùng chung: Kvantum
+# (reduce_window_opacity) và Konsole (Opacity của bảng màu) cùng đọc ở đây.
+[window]
+opacity = 0.90
+
 # 16 màu ANSI của Konsole (bản 1.0, theme/konsole/Samhie.colorscheme).
 # Thứ tự: đen, đỏ, lục, vàng, lam, tím, cyan, trắng — thường / sáng (intense).
 # Sinh ra /usr/share/konsole/Samhie.colorscheme. Dấu nhắc lệnh ($) dùng màu số
@@ -131,7 +141,7 @@ icon-theme     = { dark = "Samhie", light = "breeze" }
 [terminal]
 background = "#171717"     # = dark.card: vùng dấu nhắc là Card (user chốt)
 background-intense = "#262626"
-foreground = "#e4e4e4"
+foreground = "#bdbec1"     # = dark.text — user đổi 2026-10-03 (cũ #e4e4e4)
 foreground-faint = "#989898"
 foreground-intense = "#f8f8f8"
 cursor = "#00c0e8"         # con trỏ khối nhấp nháy, màu nhấn

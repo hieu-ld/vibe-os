@@ -1,0 +1,312 @@
+// Widget style "samhie": bọc theme Kvantum (QProxyStyle) để vẽ thêm vài chỗ
+// mà theme Kvantum KHÔNG vẽ được bằng SVG/kvconfig — đã đọc mã Kvantum 1.1.6,
+// xem docs/PLAN.md giai đoạn 4. Mọi thứ còn lại chuyển nguyên cho Kvantum.
+//
+//   1. Khung thanh đường dẫn Dolphin. KUrlNavigator vẽ khung bằng
+//      PE_FrameLineEdit, Kvantum bỏ qua lệnh này (chỉ vẽ cho LibreOffice).
+//      → vẽ bằng PE_PanelLineEdit của Kvantum: y hệt ô nhập chữ.
+//   2. Sidebar Places (KFilePlacesView): trỏ chuột / đang chọn CHỈ đổi màu chữ,
+//      không tô nền; lùi vào thêm SIDEBAR_INDENT px (lề vùng hiển thị).
+//      Màu chữ: KFilePlacesViewDelegate::paint (KIO 6.30) chép option ra một
+//      bản CỤC BỘ, gọi style vẽ nền mục (PE_PanelItemViewItem) bằng bản đó,
+//      RỒI mới lấy màu chữ/icon từ chính bản đó — nên lúc vẽ nền ta sửa màu
+//      trong bản sao. KHÔNG bọc delegate: KIO tìm delegate bằng
+//      qobject_cast<KFilePlacesViewDelegate*>(itemDelegate()) và có chỗ không
+//      kiểm rỗng → Dolphin crash khi bấm sidebar (máy ảo 2026-10-03, gdb:
+//      KFilePlacesViewDelegate::pointIsHeaderArea).
+//   3. Vùng nội dung của khung tab kiểu "document" (vùng file Dolphin, vùng
+//      chữ Konsole) nền card, trên nền cửa sổ secondary — bản vẽ user. Nền
+//      cửa sổ do Kvantum tô (window.color); vùng nội dung tô ở đây, ĐÈ hẳn
+//      (CompositionMode_Source) để giữ đúng độ trong thay vì chồng hai lớp.
+//      Kvantum chừa khe 2px giữa dải tab và nội dung (SE_TabWidgetTabContents)
+//      — khe nằm trong vùng tô nên cùng màu nội dung.
+//   4. Dolphin: vùng file có viền trên + trái, bo góc trên-trái (bản vẽ: 12px
+//      như góc cửa sổ) — thay vạch tay nắm dock của Kvantum. Thanh trạng thái
+//      Dolphin tự tô ô nền bằng màu cửa sổ → đổi sang màu vùng file.
+//   5. Nút ở góc dải tab (+ của Konsole) cao bằng dải tab — thấp hơn thì Qt
+//      dồn nó xuống đáy (đo container 2026-10-03).
+//   6. Nút chỉ-có-icon trên thanh công cụ VUÔNG, icon giữa (Kvantum cho ô
+//      hover 32×22 lệch tâm — máy ảo 2026-10-03).
+//   7. Thanh tìm Dolphin (Search::Bar) trông như một popup: thẻ bo góc có
+//      viền, cách mép vùng file (bản vẽ user). Nó vẫn nằm TRONG bố cục, trượt
+//      xuống và đẩy file xuống như cũ — Dolphin dựng nó vậy, style không đổi
+//      được chỗ đặt.
+//
+// Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
+// setSurfaceFormat: "qt5ct uses QProxyStyle").
+
+#include <QAbstractScrollArea>
+#include <QEvent>
+#include <QPainter>
+#include <QPainterPath>
+#include <QLayout>
+#include <QProxyStyle>
+#include <QScrollArea>
+#include <QStyleFactory>
+#include <QStyleOption>
+#include <QStylePlugin>
+#include <QTabBar>
+#include <QTabWidget>
+#include <QToolBar>
+#include <QToolButton>
+
+#include "colors.h"  // sinh từ theme/palette.toml (tools/gen-theme.py)
+
+namespace {
+
+constexpr int SIDEBAR_INDENT = 8;  // bản vẽ: icon sidebar cách mép ~16px (KIO tự chừa 4)
+constexpr int PANE_RADIUS = 12;    // góc viền vùng file Dolphin (bản vẽ ~12) = góc cửa sổ
+constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6px mỗi phía
+constexpr int POPUP_MARGIN = 8;    // thẻ tìm cách mép vùng file
+constexpr int POPUP_PADDING = 10;  // nội dung cách mép thẻ
+constexpr int POPUP_RADIUS = 12;
+
+// setViewportMargins là protected — gọi qua lớp con chỉ để mở quyền truy cập.
+class ScrollAreaAccess : public QAbstractScrollArea
+{
+public:
+    using QAbstractScrollArea::setViewportMargins;
+};
+
+bool isPlacesView(const QWidget *w)
+{
+    return w && w->inherits("KFilePlacesView");
+}
+
+// Khung nội dung của thanh tìm Dolphin: Search::Bar (AnimatedHeightWidget)
+// → QScrollArea → viewport → khung nội dung (widget của QScrollArea).
+bool isSearchContents(const QWidget *w)
+{
+    const QWidget *vp = w ? w->parentWidget() : nullptr;
+    auto *area = vp ? qobject_cast<const QScrollArea *>(vp->parentWidget()) : nullptr;
+    return area && area->widget() == w && area->parentWidget()
+        && area->parentWidget()->inherits("Search::Bar");
+}
+
+QColor paneColor()
+{
+    QColor c(samhie::PANE);
+    c.setAlphaF(samhie::WINDOW_OPACITY);
+    return c;
+}
+
+// Tô vùng nội dung của QTabWidget kiểu document (+ viền ở Dolphin) TRƯỚC khi
+// QTabWidget và con của nó tự vẽ — con có nền trong suốt nên thấy lớp này.
+class PanePainter : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() == QEvent::Paint)
+            paint(static_cast<QTabWidget *>(obj));
+        return false;
+    }
+
+private:
+    static void paint(QTabWidget *tw)
+    {
+        const bool dolphin = tw->inherits("DolphinTabWidget");
+        const QRect all = tw->rect();
+        // Vùng tô: dưới dải tab (nếu dải đang hiện) tới đáy.
+        QRect pane = all;
+        const QTabBar *bar = tw->tabBar();
+        if (bar && bar->isVisible() && tw->tabPosition() == QTabWidget::North)
+            pane.setTop(bar->geometry().bottom() + 1);
+
+        QPainter p(tw);
+        p.setRenderHint(QPainter::Antialiasing);
+        // Dolphin: góc bo ở ĐỈNH khung. Có dải tab thì dải nằm trong khung,
+        // giữ nền cửa sổ — vùng file khi đó vuông góc.
+        const QPainterPath fill = dolphin && pane.top() == all.top()
+            ? topLeftRounded(QRectF(pane), true)
+            : rectPath(QRectF(pane));
+        p.setCompositionMode(QPainter::CompositionMode_Source);
+        p.fillPath(fill, paneColor());
+        p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+
+        if (dolphin) {
+            // Viền trên + trái, nét 1px rơi đúng giữa hàng điểm ảnh. Không
+            // khép đáy/phải: đó là mép cửa sổ.
+            p.setPen(QPen(QColor(samhie::FRAME_LINE), 1));
+            p.setBrush(Qt::NoBrush);
+            p.drawPath(topLeftRounded(QRectF(all).adjusted(0.5, 0.5, 0, 0), false));
+        }
+    }
+
+    static QPainterPath rectPath(const QRectF &r)
+    {
+        QPainterPath path;
+        path.addRect(r);
+        return path;
+    }
+
+    // Cạnh trái + góc bo + cạnh trên; closed = khép thành vùng tô.
+    static QPainterPath topLeftRounded(const QRectF &r, bool closed)
+    {
+        const qreal rad = PANE_RADIUS, d = 2 * rad;
+        QPainterPath path;
+        path.moveTo(r.left(), r.bottom() + 1);
+        path.lineTo(r.left(), r.top() + rad);
+        path.arcTo(QRectF(r.left(), r.top(), d, d), 180, -90);
+        path.lineTo(r.right() + 1, r.top());
+        if (closed) {
+            path.lineTo(r.right() + 1, r.bottom() + 1);
+            path.closeSubpath();
+        }
+        return path;
+    }
+};
+
+// Thẻ popup sau nội dung thanh tìm (vẽ trước các con của khung nội dung).
+class PopupPainter : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        auto *w = static_cast<QWidget *>(obj);
+        if (event->type() == QEvent::Paint) {
+            QPainter p(w);
+            p.setRenderHint(QPainter::Antialiasing);
+            // Mép dưới thẻ = mép dưới thanh: Dolphin tính chiều cao thanh với
+            // đúng 4px dưới dòng nút thứ hai (Bar::preferredHeight), nên
+            // không nới lề dưới được.
+            const QRectF card = QRectF(w->rect()).adjusted(POPUP_MARGIN + 0.5, POPUP_MARGIN + 0.5,
+                                                           -POPUP_MARGIN - 0.5, -0.5);
+            p.setPen(QPen(QColor(samhie::POPUP_BORDER), 1));
+            p.setBrush(QColor(samhie::POPUP));
+            p.drawRoundedRect(card, POPUP_RADIUS, POPUP_RADIUS);
+        }
+        return false;
+    }
+};
+
+class SamhieStyle : public QProxyStyle
+{
+public:
+    SamhieStyle() : QProxyStyle(QStyleFactory::create(QStringLiteral("kvantum"))) {}
+
+    void polish(QWidget *w) override
+    {
+        QProxyStyle::polish(w);
+        // Lề vùng hiển thị dời cả mục lẫn tiêu đề nhóm (KIO/Dolphin không đặt
+        // lề này). KHÔNG dùng setContentsMargins: KFilePlacesView là QFrame,
+        // QFrame tự đặt lại contentsMargins theo độ dày khung (đo: mất lề).
+        if (isPlacesView(w)) {
+            const bool rtl = w->layoutDirection() == Qt::RightToLeft;
+            static_cast<ScrollAreaAccess *>(static_cast<QAbstractScrollArea *>(w))
+                ->setViewportMargins(rtl ? 0 : SIDEBAR_INDENT, 0, rtl ? SIDEBAR_INDENT : 0, 0);
+        }
+        auto *tw = qobject_cast<QTabWidget *>(w);
+        if (tw && tw->documentMode())
+            w->installEventFilter(&m_pane);  // cài lại cùng bộ lọc: Qt bỏ bản cũ
+        if (isSearchContents(w)) {
+            // Lề trong của thẻ = lề của CHÍNH khung nội dung (QWidget), cộng
+            // thêm lề bố cục Dolphin (4px). Đặt được ngay lúc này, trước khi
+            // Dolphin gắn bố cục — nên chiều cao thanh (Bar::preferredHeight,
+            // tính từ toạ độ dòng nút thứ hai) có tính lề ngay lần mở đầu. Lề
+            // bố cục thì không: đặt lúc Show là muộn (máy thử: dòng 2 bị cắt).
+            // Đáy 0: Dolphin chỉ chừa đúng 4px dưới dòng thứ hai.
+            const int m = POPUP_MARGIN + POPUP_PADDING - 4;
+            w->setContentsMargins(m, m, m, 0);
+            w->parentWidget()->setAutoFillBackground(false);  // viewport: để thấy vùng file trong
+            w->installEventFilter(&m_popup);
+        }
+        // DolphinStatusBar::paintEvent: drawRoundedRect(palette().window()).
+        if (w->inherits("DolphinStatusBar")) {
+            QPalette pal = w->palette();
+            pal.setColor(QPalette::Window, QColor(samhie::PANE));
+            w->setPalette(pal);
+        }
+    }
+    using QProxyStyle::polish;
+
+    void unpolish(QWidget *w) override
+    {
+        w->removeEventFilter(&m_pane);
+        w->removeEventFilter(&m_popup);
+        QProxyStyle::unpolish(w);
+    }
+    using QProxyStyle::unpolish;
+
+    void drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
+    {
+        if (pe == PE_FrameLineEdit && w && w->inherits("KUrlNavigator")) {
+            baseStyle()->drawPrimitive(PE_PanelLineEdit, opt, p, w);
+            return;
+        }
+        if (pe == PE_PanelItemViewItem) {
+            // KIO gọi không kèm widget — lấy từ option.
+            // Delegate gọi KHÔNG kèm widget; KFilePlacesView::paintEvent gọi KÈM
+            // widget để vẽ dấu thả khi kéo file vào sidebar — cái đó giữ nguyên.
+            auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt);
+            if (vopt && !w && isPlacesView(vopt->widget)) {
+                // Bản sao cục bộ (không const) của KIO — xem chú thích đầu file.
+                // Text cũng cyan khi đang chọn: cửa sổ KHÔNG active thì KIO tô
+                // chữ bằng Text. KHÔNG đổi WindowText: tiêu đề nhóm ("Places",
+                // "Remote") lấy màu đó và vẽ chung khung với mục đầu nhóm.
+                QPalette &pal = const_cast<QStyleOptionViewItem *>(vopt)->palette;
+                pal.setColor(QPalette::HighlightedText, QColor(samhie::ACTIVE_TEXT));
+                if (vopt->state & State_Selected)
+                    pal.setColor(QPalette::Text, QColor(samhie::ACTIVE_TEXT));
+                else if (vopt->state & State_MouseOver)
+                    pal.setColor(QPalette::Text, QColor(samhie::HOVER_TEXT));
+                return;  // không tô nền
+            }
+        }
+        // Vạch giữa sidebar và vùng file: viền của vùng file (PanePainter) thay.
+        if (pe == PE_IndicatorDockWidgetResizeHandle)
+            return;
+        QProxyStyle::drawPrimitive(pe, opt, p, w);
+    }
+
+    QRect subElementRect(SubElement se, const QStyleOption *opt, const QWidget *w) const override
+    {
+        QRect r = QProxyStyle::subElementRect(se, opt, w);
+        // Ô góc (nút + của Konsole) cao bằng dải tab, nút tự căn icon giữa.
+        auto *twf = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt);
+        auto *tw = qobject_cast<const QTabWidget *>(w);
+        if ((se == SE_TabWidgetLeftCorner || se == SE_TabWidgetRightCorner) && twf && tw
+            && tw->documentMode() && tw->tabPosition() == QTabWidget::North && r.isValid()) {
+            r.setTop(0);
+            r.setHeight(qMax(r.height(), twf->tabBarSize.height()));
+        }
+        return r;
+    }
+
+    QSize sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &size, const QWidget *w) const override
+    {
+        QSize s = QProxyStyle::sizeFromContents(ct, opt, size, w);
+        auto *bopt = qstyleoption_cast<const QStyleOptionToolButton *>(opt);
+        if (ct == CT_ToolButton && bopt && w && qobject_cast<QToolBar *>(w->parentWidget())
+            && bopt->toolButtonStyle == Qt::ToolButtonIconOnly
+            && !(bopt->features & QStyleOptionToolButton::MenuButtonPopup)) {
+            const int side = qMax(bopt->iconSize.width(), bopt->iconSize.height()) + 2 * TOOL_PADDING;
+            s = QSize(side, side);
+        }
+        return s;
+    }
+
+private:
+    PanePainter m_pane;
+    PopupPainter m_popup;
+};
+
+}  // namespace
+
+class SamhieStylePlugin : public QStylePlugin
+{
+    Q_OBJECT
+    Q_PLUGIN_METADATA(IID QStyleFactoryInterface_iid FILE "samhie-style.json")
+
+public:
+    QStyle *create(const QString &key) override
+    {
+        return key.compare(QLatin1String("samhie"), Qt::CaseInsensitive) == 0 ? new SamhieStyle : nullptr;
+    }
+};
+
+#include "samhie-style.moc"

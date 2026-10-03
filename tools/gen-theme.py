@@ -20,6 +20,8 @@ import sys
 import tomllib
 from pathlib import Path
 
+import kvantum
+
 ROOT = Path(__file__).resolve().parent.parent
 PALETTE = ROOT / "theme" / "palette.toml"
 MODES = ("dark", "light")
@@ -53,6 +55,9 @@ def load():
     if not (isinstance(fonts.get("ui"), str) and isinstance(fonts.get("mono"), str)
             and all(isinstance(fonts.get(k), int) for k in ("size", "mono-size", "ui-weight"))):
         errors.append("[fonts] cần ui, mono (chuỗi) và size, mono-size, ui-weight (số nguyên)")
+    opacity = pal.get("window", {}).get("opacity")
+    if not (isinstance(opacity, float) and 0.5 <= opacity <= 1.0):
+        errors.append(f"[window] opacity = {opacity!r}: phải là số thực 0.5–1.0")
     for key in ("frame-contrast", "icon-theme"):
         if set(pal.get("kde", {}).get(key, {})) != set(MODES):
             errors.append(f"[kde] {key} cần đủ hai khoá dark và light")
@@ -280,8 +285,10 @@ def kdeglobals(pal):
             shadeSortColumn="true",
         )),
         ("Icons", dict(Theme=pal["kde"]["icon-theme"]["dark"])),
+        # widgetStyle "samhie" = theme Kvantum Samhie + vài chỗ vẽ thêm
+        # (style/samhie-style.cpp, giai đoạn 4).
         ("KDE", dict(contrast="4", frameContrast=str(pal["kde"]["frame-contrast"]["dark"]),
-                     SingleClick="false")),
+                     SingleClick="false", widgetStyle="samhie")),
     ] + kde_color_sections(pal, "dark")
     return "\n".join(head) + ini(sections)
 
@@ -309,9 +316,10 @@ def konsole_colorscheme(pal):
         ("Foreground", dict(Color=rgb(t["foreground"]))),
         ("ForegroundFaint", dict(Color=rgb(t["foreground-faint"]))),
         ("ForegroundIntense", dict(Color=rgb(t["foreground-intense"]))),
-        # Nền đục: nền hơi trong để ăn blur của Hyprland là việc giai đoạn 4.
+        # Nền hơi trong (palette [window] opacity); Blur= chỉ có tác dụng trên
+        # KWin — dưới Hyprland, blur của Hyprland tự làm mờ mọi nền trong.
         ("General", dict(Blur="false", ColorRandomization="false", Description="Samhie",
-                         Opacity="1", Wallpaper="")),
+                         Opacity=f'{pal["window"]["opacity"]:g}', Wallpaper="")),
     ]
     return "\n".join(head) + ini(sections)
 
@@ -351,6 +359,25 @@ def konsole_profile(pal):
         ("Terminal Features", dict(BlinkingCursorEnabled="false")),
     ]
     return "\n".join(head) + ini(sections)
+
+
+def style_colors_h(pal):
+    # Màu cho widget style "samhie" (style/samhie-style.cpp) — chỉ vài chỗ mà
+    # theme Kvantum không vẽ được. Bản tối, như theme Kvantum.
+    d, s = pal["dark"], pal["shared"]
+    rows = [
+        ("ACTIVE_TEXT", d["accent-text"], "sidebar: mục đang chọn — chữ + icon cyan, không nền"),
+        ("HOVER_TEXT", s["white"], "sidebar: mục đang trỏ chuột — chữ sáng lên, không nền"),
+        ("PANE", d["card"], "vùng nội dung (file Dolphin, chữ Konsole) trên nền cửa sổ secondary"),
+        ("FRAME_LINE", d["sub-secondary"], "viền trên + trái vùng file Dolphin"),
+        ("POPUP", d["secondary"], "thẻ thanh tìm Dolphin (dạng popup, đục)"),
+        ("POPUP_BORDER", d["sub-secondary"], "viền thẻ thanh tìm"),
+    ]
+    out = [f"// {HEADER}", "#pragma once", "", "namespace samhie {"]
+    out += [f'constexpr const char *{n} = "{c}";  // {why}' for n, c, why in rows]
+    out += [f'constexpr double WINDOW_OPACITY = {pal["window"]["opacity"]};  // [window] opacity']
+    out += ["}", ""]
+    return "\n".join(out)
 
 
 def bash_prompt(pal):
@@ -638,6 +665,7 @@ OUTPUTS = {
     "files/system/usr/share/sddm/themes/samhie/colors.js": quickshell_js,
     "files/system/usr/share/konsole/Samhie.colorscheme": konsole_colorscheme,
     "files/system/usr/share/konsole/Samhie.profile": konsole_profile,
+    "style/colors.h": style_colors_h,
     "files/system/etc/profile.d/samhie-prompt.sh": bash_prompt,
     "files/system/etc/xdg/kdeglobals": kdeglobals,
     "files/system/usr/share/color-schemes/SamhieDark.colors": kde_colors_file("dark"),
@@ -654,6 +682,8 @@ OUTPUTS = {
     f"{FCITX_THEME_DIR}/highlight.svg": fcitx_rounded(FCITX_HIGHLIGHT_RADIUS,
                                                                 FCITX_HIGHLIGHT_MARGIN, "selection"),
     "files/system/usr/share/locale/en/LC_MESSAGES/fcitx5.mo": fcitx_mo,
+    "files/system/usr/share/Kvantum/Samhie/Samhie.kvconfig": kvantum.kvconfig,
+    "files/system/usr/share/Kvantum/Samhie/Samhie.svg": kvantum.svg,
 }
 
 

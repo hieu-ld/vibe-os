@@ -98,6 +98,19 @@ MAP = {
     "trash-full": [("places", "user-trash-full")],
     "hdd":        [("devices", "drive-harddisk")],
     "recent":     [("actions", "document-open-recent")],
+    # Thanh công cụ Dolphin (2026-10-03). Tên đo bằng chuỗi trong dolphin,
+    # libdolphinprivate và KIO/KF6 của image: Copy Location = edit-copy-path,
+    # nút sửa đường dẫn của KUrlNavigator = edit-entry, nút ☰ = application-menu.
+    "copy":       [("actions", "edit-copy"), ("actions", "edit-copy-path")],
+    "edit":       [("actions", "document-edit"), ("actions", "edit-entry")],
+    "filter":     [("actions", "view-filter")],
+    "list":       [("actions", "view-list-icons")],
+    "menu":       [("actions", "application-menu")],
+    # Nút lùi/tiến hình tròn của Dolphin (user vẽ 2026-10-03). Tên RIÊNG, không
+    # đè go-previous/go-next: hai tên đó còn dùng ở menu khay, lịch, nút đăng
+    # nhập SDDM. dolphin-ui.sh gán tên này cho go_back/go_forward.
+    "prev-circle": [("actions", "samhie-go-back")],
+    "next-circle": [("actions", "samhie-go-forward")],
     # Chuông, loa — cho thanh trên (giai đoạn 3). Bản -symbolic của ba tên
     # chuông là symlink có sẵn trong repo, trỏ về đây.
     "bell":       [("status", "notification-inactive")],

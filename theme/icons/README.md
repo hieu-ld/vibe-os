@@ -18,6 +18,9 @@ cùng một cỡ là nét dày bằng nhau.
 | `smart-home` | `user-home`, `go-home` |
 | `download` `network` `hdd` `recent` | `folder-download` `folder-network` `drive-harddisk` `document-open-recent` |
 | `trash` `trash-full` | `user-trash` `user-trash-full` |
+| `copy` `edit` | `edit-copy` + `edit-copy-path`, `document-edit` + `edit-entry` (2026-10-03) |
+| `filter` `list` `menu` | `view-filter`, `view-list-icons`, `application-menu` (nút ☰ Dolphin) |
+| `prev-circle` `next-circle` | `samhie-go-back` `samhie-go-forward` — chỉ nút lùi/tiến Dolphin (khung 30, nét 1,875) |
 | `bell` `bell-ring` `bell-off` | `notification-inactive` `notification-active` `notifications-disabled` |
 | `volume` `volume-mute` | `audio-volume-high/medium/low` `audio-volume-muted` |
 

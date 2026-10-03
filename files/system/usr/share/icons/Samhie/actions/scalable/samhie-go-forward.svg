@@ -1,0 +1,11 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/next-circle.svg.
+     Sinh bằng tools/build-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" fill="none">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <rect x="2.8125" y="2.8125" width="24.375" height="24.375" rx="12.1875" stroke-width="1.875" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M10.3125 15H18.75" stroke-width="1.875" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M16.875 18.75L19.2992 16.3258C20.0314 15.5936 20.0314 14.4064 19.2992 13.6742L16.875 11.25" stroke-width="1.875" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+</svg>

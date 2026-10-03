@@ -18,6 +18,18 @@
 #                  XOAY VÒNG icons → compact → details (viết cứng trong
 #                  DolphinViewActionHandler), ẩn Compact thôi là chưa đủ.
 #
+# Thanh công cụ theo bản vẽ của user (2026-10-03):
+#   ← → | ▦  [đường dẫn ✎]  ⧉  🔍  ☰
+# = go_back go_forward | view_settings url_navigators copy_location
+#   toggle_search hamburger_menu. Không có nút lọc ⧩ riêng: thanh tìm của
+#   Dolphin đã có nút Filter (user bỏ 2026-10-03). Nút ✎ (sửa đường dẫn) là nút
+# CÓ SẴN ở cuối thanh đường dẫn (KUrlNavigator, icon edit-entry) — thêm hành
+# động editable_location nữa là hai cây bút (máy ảo 2026-10-03).
+# Lùi/tiến dùng icon tròn riêng samhie-go-back/forward (theme/icons).
+# Bỏ split_view/split_stash khỏi thanh (vẫn còn F3 và menu ☰). Thanh gốc khác
+# với danh sách DOLPHIN_TOOLBAR bên dưới thì build dừng — Dolphin đổi thanh
+# công cụ thì xem lại bản vẽ trước khi chép đè.
+#
 # Không tìm thấy bản nhúng hoặc thiếu hành động nào ở trên thì build DỪNG —
 # thà biết ngay còn hơn Dolphin lặng lẽ quay về mặc định.
 set -oue pipefail
@@ -58,13 +70,42 @@ for name, attrs in props.items():
     assert n == 1, f'action "{name}": {n} matches in <ActionProperties>'
 ui = head + sep + tail
 
+DOLPHIN_TOOLBAR = ["go_back", "go_forward", "view_settings", "url_navigators",
+                   "split_view", "split_stash", "toggle_search", "hamburger_menu"]
+SAMHIE_TOOLBAR = ["go_back", "go_forward", None, "view_settings", "url_navigators",
+                  "copy_location", "toggle_search", "hamburger_menu"]   # None = vạch ngăn
+bar = re.search(r'(<ToolBar\b[^>]*name="mainToolBar"[^>]*>\s*<text[^<]*</text>)(.*?)(\s*</ToolBar>)',
+                ui, re.S)
+assert bar, "no mainToolBar in dolphinui.rc"
+found = re.findall(r'<Action name="([^"]+)"', bar.group(2))
+assert found == DOLPHIN_TOOLBAR, f"Dolphin's toolbar changed: {found}"
+# Tên mới thêm phải là hành động có thật của Dolphin: có trong menu của file.
+rest = ui[:bar.start()] + ui[bar.end():]
+for a in set(filter(None, SAMHIE_TOOLBAR)) - set(DOLPHIN_TOOLBAR):
+    assert f'name="{a}"' in rest, f'unknown action "{a}"'
+items = "".join("\n        <Separator/>" if a is None else f'\n        <Action name="{a}" />'
+                for a in SAMHIE_TOOLBAR)
+ui = ui[:bar.start(2)] + items + ui[bar.end(2):]
+# Nút mới chỉ hiện icon (priority 0, như go_back…) — thanh để "chữ cạnh icon".
+head, sep, tail = ui.partition("<ActionProperties")
+for a in ("copy_location",):
+    assert f'name="{a}"' not in tail.split("</ActionProperties>")[0], a
+    tail = tail.replace(">", f'>\n        <Action priority="0" name="{a}"/>', 1)
+# Icon tròn cho lùi/tiến: thuộc tính icon= trong ActionProperties (KXmlGui gán
+# QIcon::fromTheme — đo container: nút hiện đúng icon).
+for a, icon in (("go_back", "samhie-go-back"), ("go_forward", "samhie-go-forward")):
+    tail, n = re.subn(rf'(<Action priority="0" name="{a}")', rf'\1 icon="{icon}"', tail, count=1)
+    assert n == 1, f'no ActionProperties entry for "{a}"'
+
+ui = head + sep + tail
+
 note = ("<!-- Samhie: Dolphin's own dolphinui.rc with three properties changed\n"
-        "     in <ActionProperties> (files/scripts/dolphin-ui.sh). -->\n")
+        "     in <ActionProperties> and a new mainToolBar (files/scripts/dolphin-ui.sh). -->\n")
 ui = ui.replace("<gui ", note + "<gui ", 1)
 
 version = re.search(r'<gui name="dolphin" version="(\d+)"', ui).group(1)
 os.makedirs("/usr/share/kxmlgui5/dolphin", exist_ok=True)
 with open("/usr/share/kxmlgui5/dolphin/dolphinui.rc", "w") as f:
     f.write(ui)
-print(f"dolphinui.rc version {version}: patched compact, details, view_settings")
+print(f"dolphinui.rc version {version}: patched compact, details, view_settings, toolbar")
 EOF

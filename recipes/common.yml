@@ -178,6 +178,14 @@ modules:
         # `\x2d` → `-` thành tên unit sai.
         - 'app-nvidia\\x2dsettings\\x2dload@autostart.service'
 
+  # Mã nguồn widget style "samhie" (style/, C++) cho script samhie-style.sh
+  # bên dưới. Build NGAY TRONG image, sau mọi module dnf: plugin Qt chỉ nạp
+  # được khi Qt lúc build không mới hơn Qt lúc chạy — build ở stage riêng thì
+  # dnf có thể kéo Qt mới hơn image (Fedora lên Qt 6.x giữa chu kỳ).
+  - type: containerfile
+    snippets:
+      - COPY style /tmp/samhie-style
+
   - type: script
     snippets:
       - systemctl set-default graphical.target
@@ -189,6 +197,7 @@ modules:
       - plymouth.sh
       - cursors.sh
       - dolphin-ui.sh
+      - samhie-style.sh
 
   # ── 6. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────
   # Edge cài bằng Flatpak chứ không đưa bản RPM vào image: image là công khai,

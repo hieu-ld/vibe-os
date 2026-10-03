@@ -1,5 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <defs><style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style></defs><path stroke="none" d="M0 0h24v24H0z" fill="none" />
-  <path d="M4 4h16v2.172a2 2 0 0 1 -.586 1.414l-4.414 4.414v7l-6 2v-8.5l-4.48 -4.928a2 2 0 0 1 -.52 -1.345v-2.227" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/filter.svg.
+     Sinh bằng tools/build-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <path d="M2.16306 2.64142C2.077 2.03899 2.54446 1.5 3.15301 1.5H12.847C13.4555 1.5 13.923 2.03899 13.8369 2.64142L13.5376 4.7371C13.5129 4.90938 13.4438 5.07226 13.337 5.20962L10.1688 9.28295C10.0583 9.42501 9.98822 9.59427 9.96589 9.77285L9.56638 12.9689C9.52491 13.3007 9.32037 13.5898 9.02132 13.7393L7.81046 14.3448C7.18055 14.6597 6.43111 14.2422 6.36735 13.5409L6.02654 9.79198C6.00921 9.60134 5.93753 9.41968 5.82 9.26857L2.66304 5.20962C2.5562 5.07226 2.48705 4.90938 2.46244 4.7371L2.16306 2.64142Z" style="stroke:currentColor" class="ColorScheme-Text" />
 </svg>

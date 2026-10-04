@@ -14,11 +14,13 @@
   Lưu ý về thứ tự: Dolphin tự chia sidebar thành các mục (Places / Remote /
   Recent / Search For / Devices) dựa theo giao thức của URL, mình chỉ sắp được
   thứ tự BÊN TRONG mỗi mục. Nên "Recycle Bin" (trash:/) nằm cuối cụm Places chứ
-  không xuống chung với Network được. Đây là giới hạn của Dolphin (thứ tự
+  không tách xuống một nhóm riêng được. Đây là giới hạn của Dolphin (thứ tự
   nhóm viết cứng trong KIO), không phải cấu hình sai.
 
   Không có Desktop (Hyprland không vẽ icon lên màn hình nền) và Starred
   (tags:/ cần trình đánh chỉ mục baloo, image không có) — user bỏ 2026-09-29.
+  Không có Network (remote:/) và Recent (recentlyused:/) — user không dùng,
+  bỏ 2026-10-04; Recent cũng chỉ ghi file mở bằng app KDE.
 -->
 <xbel xmlns:bookmark="http://www.freedesktop.org/standards/desktop-bookmarks" xmlns:mime="http://www.freedesktop.org/standards/shared-mime-info" xmlns:kdepriv="http://www.kde.org/kdepriv">
  <!--
@@ -103,30 +105,6 @@
    </metadata>
    <metadata owner="http://www.kde.org">
     <ID>samhie-trash</ID>
-    <isSystemItem>true</isSystemItem>
-   </metadata>
-  </info>
- </bookmark>
- <bookmark href="remote:/">
-  <title>Network</title>
-  <info>
-   <metadata owner="http://freedesktop.org">
-    <bookmark:icon name="folder-network"/>
-   </metadata>
-   <metadata owner="http://www.kde.org">
-    <ID>samhie-network</ID>
-    <isSystemItem>true</isSystemItem>
-   </metadata>
-  </info>
- </bookmark>
- <bookmark href="recentlyused:/files">
-  <title>Recent</title>
-  <info>
-   <metadata owner="http://freedesktop.org">
-    <bookmark:icon name="document-open-recent"/>
-   </metadata>
-   <metadata owner="http://www.kde.org">
-    <ID>samhie-recent</ID>
     <isSystemItem>true</isSystemItem>
    </metadata>
   </info>

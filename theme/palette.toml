@@ -47,17 +47,18 @@ bar-accent    = "#00c0e8"  # vạch active, icon đang bật trên thanh
 card          = "#171717"  # vùng nội dung, popup, tooltip   (Figma: Card)
 card-alt      = "#171717"  # hàng xen kẽ trong danh sách — bản tối cố ý KHÔNG kẻ sọc
 secondary     = "#262626"  # khung cửa sổ, sidebar, thanh tab (Figma: Secondary)
-sub-secondary = "#3b3c3c"  # viền, mặt nút                   (Figma: Sub Secondary)
+sub-secondary = "#393939"  # viền, mặt nút. Figma: Sub Secondary #3b3c3c; user đổi 2026-10-04
+                           # thành #393939 (viền cửa sổ bản 1.0) cho MỌI viền trong distro
 window-border = "#363636"  # viền cửa sổ (Hyprland), đang dùng = không dùng. MUỐN thấy #393939
-                           # như bản 1.0 (KDE frameContrast 0.1), tối hơn viền dock #3b3c3c một
-                           # chút (user 2026-10-04). Khai #363636 vì Hyprland (render:cm_enabled)
+                           # = sub-secondary, như bản 1.0 (KDE frameContrast 0.1) — user 2026-10-04
+                           # chọn màu này cho mọi viền. Khai #363636 vì Hyprland (render:cm_enabled)
                            # vẽ màu viền lệch: 393939→3c3c3c, 363636→393939, 808080→7f7f7f (đo
                            # container); mặt app/dock thì KHÔNG lệch (thanh trên đúng #0a0a0a).
 hover         = "#363d3f"  # nền ô đang trỏ chuột (ô file Dolphin) — user vẽ 2026-10-03:
                            # xám pha chút cyan. Nhóm xám trung tính.
 
 text       = "#bdbec1"     # user đổi 2026-10-03 (bản vẽ Konsole/Dolphin): dịu mắt khi nhìn lâu.
-                           # 8,1:1 trên secondary, 5,9:1 trên sub-secondary
+                           # 8,1:1 trên secondary, 6,2:1 trên sub-secondary
 text-muted = "#8f8f8f"     # chữ phụ, chữ bị vô hiệu hoá
 
 accent      = "#00c0e8"    # viền focus, vạch active, icon đang bật

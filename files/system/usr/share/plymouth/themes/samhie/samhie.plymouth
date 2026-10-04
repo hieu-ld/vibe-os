@@ -43,7 +43,7 @@ BackgroundStartColor=0x0a0a0a
 BackgroundEndColor=0x0a0a0a
 # Thanh tiến trình (chỉ hiện lúc cài cập nhật firmware…): rãnh
 # sub-secondary, phần chạy accent.
-ProgressBarBackgroundColor=0x3b3c3c
+ProgressBarBackgroundColor=0x393939
 ProgressBarForegroundColor=0x00c0e8
 MessageBelowAnimation=true
 

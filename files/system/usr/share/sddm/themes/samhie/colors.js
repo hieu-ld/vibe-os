@@ -18,7 +18,7 @@ var dark = {
     card: "#171717",
     cardAlt: "#171717",
     secondary: "#262626",
-    subSecondary: "#3b3c3c",
+    subSecondary: "#393939",
     windowBorder: "#363636",
     hover: "#363d3f",
     text: "#bdbec1",

@@ -17,6 +17,10 @@
 #   view_settings  popupMode="InstantPopup"      mặc định nút đôi: bấm icon thì
 #                  XOAY VÒNG icons → compact → details (viết cứng trong
 #                  DolphinViewActionHandler), ẩn Compact thôi là chưa đủ.
+#   toggle_selection_mode  visible="false" shortcut=""   (thêm mới vào
+#                  ActionProperties) bỏ Selection Mode khỏi menu ☰ và phím
+#                  Space: hai thanh xanh lá, chọn bằng bấm từng ô — trùng với
+#                  Ctrl/Shift+bấm, Ctrl+A (user 2026-10-04).
 #
 # Thanh công cụ theo bản vẽ của user (2026-10-03):
 #   ← → | ▦  [đường dẫn ✎]  🔍  ☰
@@ -92,6 +96,13 @@ ui = ui[:bar.start(2)] + items + ui[bar.end(2):]
 # Nút thêm mới (nếu có) phải hiện chỉ icon: <Action priority="0" name=…> trong
 # ActionProperties như go_back… — thanh để "chữ cạnh icon". Hiện không có nút mới.
 head, sep, tail = ui.partition("<ActionProperties")
+# Hành động CHƯA có mục trong ActionProperties: thêm mục mới (phải là hành
+# động có thật — có trong menu của file).
+hidden = {"toggle_selection_mode": ' shortcut="" visible="false"'}
+for a, attrs in hidden.items():
+    assert f'name="{a}"' in head, f'unknown action "{a}"'
+    assert f'name="{a}"' not in tail.split("</ActionProperties>")[0], a
+    tail = tail.replace(">", f'>\n        <Action name="{a}"{attrs}/>', 1)
 # Icon tròn cho lùi/tiến: thuộc tính icon= trong ActionProperties (KXmlGui gán
 # QIcon::fromTheme — đo container: nút hiện đúng icon).
 for a, icon in (("go_back", "samhie-go-back"), ("go_forward", "samhie-go-forward")):

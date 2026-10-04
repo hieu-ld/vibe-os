@@ -145,25 +145,24 @@ icon-theme     = { dark = "Samhie", light = "breeze" }
 # "CÁCH DÙNG MÀU" ở trên dành cyan cho thứ đang chọn.
 #   default: lấy đúng ảnh mẫu user gửi (đo điểm ảnh). Trong OKLCH thân là
 #            L 0,558 C 0,098 — nắp tối hơn: L × 0,816, C × 0,814.
-#   Ký hiệu: ảnh mẫu vẽ bằng màu nắp, nhưng ở 64px trong máy ảo thì lem (user
-#            2026-10-04: chỉ 1,56:1 với thân, nét 1,5 lệch lưới điểm ảnh).
-#            User chọn bản đậm hơn (phương án C): L × 0,55, C × 0,6 của thân
-#            → 2,88:1. Cùng công thức cho mọi màu.
+#   Ký hiệu: = màu nắp, như ảnh mẫu (1,56:1 với thân — mờ mờ, user thích
+#            vậy). Đã thử bản đậm L × 0,55, C × 0,6 của thân (2,88:1) trong máy
+#            ảo 2026-10-04 — user chọn giữ bản mờ. Tách riêng để chỉnh sau.
 #   8 màu kia: cùng độ đậm, chỉ đổi sắc (H); vàng/cam sáng hơn chút (L 0,66 /
 #            0,60) vì cùng L thì vàng ra màu bùn; nâu L 0,50 C 0,065; xám C 0,012.
 # Thanh "màu thư mục" của Dolphin: Default = inode-directory (= default),
 # cyan trùng default (như Breeze: folder-blue trùng thư mục mặc định).
 [folders]
-default = ["#0b819a", "#076174", "#003642"]
-red     = ["#ac5853", "#82413d", "#4c211e"]   # H 25
-orange  = ["#b26d3a", "#87512a", "#4f2b10"]   # H 55
-yellow  = ["#ab8f3e", "#826c2e", "#4b3c10"]   # H 90
-green   = ["#4b8759", "#376642", "#1a3921"]   # H 150
-cyan    = ["#0b819a", "#076174", "#003642"]   # = default
-blue    = ["#4773ab", "#345681", "#182f4c"]   # H 255
-violet  = ["#7b63a3", "#5c4a7b", "#332748"]   # H 300
-brown   = ["#80593f", "#60422e", "#362215"]   # H 55
-grey    = ["#6e767b", "#53585c", "#2c3133"]   # H 240
+default = ["#0b819a", "#076174", "#076174"]
+red     = ["#ac5853", "#82413d", "#82413d"]   # H 25
+orange  = ["#b26d3a", "#87512a", "#87512a"]   # H 55
+yellow  = ["#ab8f3e", "#826c2e", "#826c2e"]   # H 90
+green   = ["#4b8759", "#376642", "#376642"]   # H 150
+cyan    = ["#0b819a", "#076174", "#076174"]   # = default
+blue    = ["#4773ab", "#345681", "#345681"]   # H 255
+violet  = ["#7b63a3", "#5c4a7b", "#5c4a7b"]   # H 300
+brown   = ["#80593f", "#60422e", "#60422e"]   # H 55
+grey    = ["#6e767b", "#53585c", "#53585c"]   # H 240
 
 [window]
 opacity = 0.90

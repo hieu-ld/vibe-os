@@ -70,6 +70,11 @@ chạy `python3 tools/build-folder-icons.py` → `Samhie/places/scalable/`. Scri
 tô kín nắp/thân, ký hiệu một màu tối hơn nắp; màu ở `theme/palette.toml` `[folders]`.
 Thư mục trơn (`folder`, 9 màu) sinh từ vỏ thư mục, không cần file riêng.
 
+**Sửa so với bản xuất Figma:** `music.svg` (2026-10-04) — bản xuất mất hai
+nét chân nốt nhạc (có trong ảnh Figma user chụp). Thêm lại hai nét dọc dày
+1,5 ở x = 25,25 (40,5 → 46) và 31,25 (39,5 → 45,25), đo trên ảnh Figma: nối
+cạnh thanh ngang xuống tới đầu nốt.
+
 | Hình | Bản xuất của user | Tên icon |
 |---|---|---|
 | `documents` `download` `music` `pictures` `videos` | `folder-1` `-0` `-2` `-3` `-4` | `folder-<tên>` (thư mục XDG) |

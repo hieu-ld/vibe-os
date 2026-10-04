@@ -4,13 +4,13 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <path d="M4 14C4 9.58172 7.58172 6 12 6H28.3944C30.647 6 32.7505 7.12577 34 9C35.2495 10.8742 37.353 12 39.6056 12H52C56.4183 12 60 15.5817 60 20V26H4V14Z" stroke="#076174" stroke-width="2" fill="#076174" />
   <path d="M4 25C4 20.5817 7.58172 17 12 17H32H52C56.4183 17 60 20.5817 60 25V50C60 54.4183 56.4183 58 52 58H12C7.58172 58 4 54.4183 4 50V25Z" stroke="#0b819a" stroke-width="2" fill="#0b819a" />
-  <path d="M33.8002 33.25L32.7544 30.6357C32.2988 29.4968 31.1957 28.75 29.969 28.75H25.25C23.5931 28.75 22.25 30.0931 22.25 31.75L22.25 37L22.25 42.25C22.25 43.9069 23.5931 45.25 25.25 45.25H38.75C40.4069 45.25 41.75 43.9069 41.75 42.25V38.5V34.75C41.75 33.5074 40.7426 32.5 39.5 32.5H36.5H35.1501H33.8002" stroke="#003642" stroke-width="1.5" stroke-linecap="round" />
-  <path d="M33.7999 32.5V44.5" stroke="#003642" stroke-width="1.5" stroke-linecap="round" />
-  <line x1="33.875" y1="34.375" x2="36.125" y2="34.375" stroke="#003642" stroke-width="0.75" stroke-linecap="round" />
-  <line x1="31.625" y1="35.875" x2="33.875" y2="35.875" stroke="#003642" stroke-width="0.75" stroke-linecap="round" />
-  <line x1="33.875" y1="37.375" x2="36.125" y2="37.375" stroke="#003642" stroke-width="0.75" stroke-linecap="round" />
-  <line x1="33.875" y1="40.375" x2="36.125" y2="40.375" stroke="#003642" stroke-width="0.75" stroke-linecap="round" />
-  <line x1="33.875" y1="43.375" x2="36.125" y2="43.375" stroke="#003642" stroke-width="0.75" stroke-linecap="round" />
-  <line x1="31.625" y1="38.875" x2="33.875" y2="38.875" stroke="#003642" stroke-width="0.75" stroke-linecap="round" />
-  <line x1="31.625" y1="41.875" x2="33.875" y2="41.875" stroke="#003642" stroke-width="0.75" stroke-linecap="round" />
+  <path d="M33.8002 33.25L32.7544 30.6357C32.2988 29.4968 31.1957 28.75 29.969 28.75H25.25C23.5931 28.75 22.25 30.0931 22.25 31.75L22.25 37L22.25 42.25C22.25 43.9069 23.5931 45.25 25.25 45.25H38.75C40.4069 45.25 41.75 43.9069 41.75 42.25V38.5V34.75C41.75 33.5074 40.7426 32.5 39.5 32.5H36.5H35.1501H33.8002" stroke="#076174" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M33.7999 32.5V44.5" stroke="#076174" stroke-width="1.5" stroke-linecap="round" />
+  <line x1="33.875" y1="34.375" x2="36.125" y2="34.375" stroke="#076174" stroke-width="0.75" stroke-linecap="round" />
+  <line x1="31.625" y1="35.875" x2="33.875" y2="35.875" stroke="#076174" stroke-width="0.75" stroke-linecap="round" />
+  <line x1="33.875" y1="37.375" x2="36.125" y2="37.375" stroke="#076174" stroke-width="0.75" stroke-linecap="round" />
+  <line x1="33.875" y1="40.375" x2="36.125" y2="40.375" stroke="#076174" stroke-width="0.75" stroke-linecap="round" />
+  <line x1="33.875" y1="43.375" x2="36.125" y2="43.375" stroke="#076174" stroke-width="0.75" stroke-linecap="round" />
+  <line x1="31.625" y1="38.875" x2="33.875" y2="38.875" stroke="#076174" stroke-width="0.75" stroke-linecap="round" />
+  <line x1="31.625" y1="41.875" x2="33.875" y2="41.875" stroke="#076174" stroke-width="0.75" stroke-linecap="round" />
 </svg>

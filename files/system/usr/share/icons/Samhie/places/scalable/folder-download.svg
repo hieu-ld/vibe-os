@@ -1,12 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/download.svg.
-     Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
-  <defs>
-    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
-  </defs>
-  <rect x="1.875" y="1.875" width="16.25" height="16.25" rx="5" stroke-width="1.25" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M10 5.625V11.25" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M7.5 10L9.11612 11.6161C9.60427 12.1043 10.3957 12.1043 10.8839 11.6161L12.5 10" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M6.25 14.375H13.75" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+<!-- Samhie — thư mục user vẽ, theme/icons/folders/download.svg, màu [folders].default của
+     theme/palette.toml. Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <path d="M4 14C4 9.58172 7.58172 6 12 6H28.3944C30.647 6 32.7505 7.12577 34 9C35.2495 10.8742 37.353 12 39.6056 12H52C56.4183 12 60 15.5817 60 20V26H4V14Z" stroke="#076174" stroke-width="2" fill="#076174" />
+  <path d="M4 25C4 20.5817 7.58172 17 12 17H32H52C56.4183 17 60 20.5817 60 25V50C60 54.4183 56.4183 58 52 58H12C7.58172 58 4 54.4183 4 50V25Z" stroke="#0b819a" stroke-width="2" fill="#0b819a" />
+  <rect x="22.25" y="28.25" width="19.5" height="19.5" rx="6" stroke="#076174" stroke-width="1.5" />
+  <path d="M32 32.75V39.5" stroke="#076174" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M29 38L30.9393 39.9393C31.5251 40.5251 32.4749 40.5251 33.0607 39.9393L35 38" stroke="#076174" stroke-width="1.5" stroke-linecap="round" />
+  <path d="M27.5 43.25H36.5" stroke="#076174" stroke-width="1.5" stroke-linecap="round" />
 </svg>

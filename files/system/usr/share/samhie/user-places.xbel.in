@@ -65,7 +65,7 @@
   <title>Home</title>
   <info>
    <metadata owner="http://freedesktop.org">
-    <bookmark:icon name="user-home"/>
+    <bookmark:icon name="samhie-user-home"/>
    </metadata>
    <metadata owner="http://www.kde.org">
     <ID>samhie-home</ID>
@@ -89,7 +89,7 @@
   <title>Download</title>
   <info>
    <metadata owner="http://freedesktop.org">
-    <bookmark:icon name="folder-download"/>
+    <bookmark:icon name="samhie-folder-download"/>
    </metadata>
    <metadata owner="http://www.kde.org">
     <ID>samhie-download</ID>

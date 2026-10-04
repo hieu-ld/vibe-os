@@ -10,7 +10,7 @@ nhóm mới, kiểm từng SVG).
 
 NGUỒN (theme/icons/, xem README ở đó): xuất thẳng từ Figma, tên file = tên
 layer viết thường. Bảng MAP bên dưới nói mỗi hình thành những tên freedesktop
-nào — một hình có thể mang nhiều tên (nhà → user-home và go-home). Hình nằm trong UNUSED là user vẽ sẵn, chưa có chỗ dùng. File không
+nào — một hình có thể mang nhiều tên (nhà → samhie-user-home và go-home). Hình nằm trong UNUSED là user vẽ sẵn, chưa có chỗ dùng. File không
 nằm trong bảng nào là báo lỗi, để hình mới xuất không nằm im mà không ai biết.
 
 ĐỔI GÌ so với bản Figma:
@@ -90,9 +90,11 @@ MAP = {
     # Nút "+" trên thanh tab Konsole — cũng là "New Tab" trong menu (tên đo
     # trong libkonsoleprivate/libkonsoleapp của image, 2026-09-30)
     "plus":       [("actions", "tab-new")],
-    # Sidebar Dolphin (tên lấy từ usr/share/samhie/user-places.xbel.in)
-    "smart-home": [("places", "user-home"), ("actions", "go-home")],
-    "download":   [("places", "folder-download")],
+    # Sidebar Dolphin (tên lấy từ usr/share/samhie/user-places.xbel.in). Nhà
+    # và tải về mang tên RIÊNG: user-home/folder-download là thư mục TO
+    # (tools/build-folder-icons.py) — bộ scalable chỉ có một file cho mọi cỡ.
+    "smart-home": [("places", "samhie-user-home"), ("actions", "go-home")],
+    "download":   [("places", "samhie-folder-download")],
     "network":    [("places", "folder-network")],
     "trash":      [("places", "user-trash")],
     "trash-full": [("places", "user-trash-full")],
@@ -121,9 +123,9 @@ MAP = {
     "volume-mute": [("status", "audio-volume-muted")],
 }
 
-# Vẽ sẵn, chưa lắp. `folder`: thay "folder" của Breeze thì thay luôn thư mục
-# TO có màu trong Dolphin (bộ scalable dùng một file cho mọi cỡ) — đợi user vẽ
-# bộ thư mục to. Còn lại chưa có chỗ dùng.
+# Vẽ sẵn, chưa lắp. `folder` (nét mảnh): tên "folder" đã là thư mục TO tô màu
+# (tools/build-folder-icons.py, bộ scalable dùng một file cho mọi cỡ). Còn lại
+# chưa có chỗ dùng.
 UNUSED = {"folder", "document", "desktop", "next", "prev", "up", "down"}
 
 # Cắt khung: tên → viewBox mới. min/max: khung 20x20 xoay 45° quanh tâm

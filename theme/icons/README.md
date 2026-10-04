@@ -15,8 +15,8 @@ cùng một cỡ là nét dày bằng nhau.
 | `ar-right` `ar-left` `ar-top` `ar-bottom` | `arrow-right` `arrow-left` `arrow-up` `arrow-down` |
 | `close` `minus` `max` `min` | `window-close/minimize/maximize/restore-symbolic` |
 | `plus` | `tab-new` (nút `+` và "New Tab" của Konsole) |
-| `smart-home` | `user-home`, `go-home` |
-| `download` `network` `hdd` `recent` | `folder-download` `folder-network` `drive-harddisk` `document-open-recent` |
+| `smart-home` | `samhie-user-home` (sidebar), `go-home` |
+| `download` `network` `hdd` `recent` | `samhie-folder-download` (sidebar) `folder-network` `drive-harddisk` `document-open-recent` |
 | `trash` `trash-full` | `user-trash` `user-trash-full` |
 | `copy` `edit` | `edit-copy` + `edit-copy-path`, `document-edit` + `edit-entry` (2026-10-03) |
 | `filter` `list` `menu` | `view-filter`, `view-list-icons`, `application-menu` (nút ☰ Dolphin) |
@@ -25,9 +25,10 @@ cùng một cỡ là nét dày bằng nhau.
 | `volume` `volume-mute` | `audio-volume-high/medium/low` `audio-volume-muted` |
 
 **Vẽ sẵn, chưa lắp** (`UNUSED` trong script): `folder`, `document`, `desktop`,
-`next`, `prev`, `up`, `down` (bốn ô vuông có mũi tên). `folder` chưa lắp vì bộ
-Samhie là SVG co giãn — một file `folder` thay cho MỌI cỡ, kể cả thư mục to có
-màu trong Dolphin.
+`next`, `prev`, `up`, `down` (bốn ô vuông có mũi tên). `folder` nét mảnh không
+lắp được: bộ Samhie là SVG co giãn — một file cho MỌI cỡ — và tên `folder` là
+thư mục to tô màu (`folders/` bên dưới). Cùng lý do, nhà và tải về của sidebar
+mang tên riêng `samhie-*`.
 
 **Sửa so với bản xuất Figma:**
 - `plus.svg` (2026-10-01): Konsole vẽ nút `+` ở đúng 16px. Bản gốc có vạch
@@ -60,3 +61,17 @@ sáng kiểu bản 1.0 — giải thích đủ ở đầu script. CI chạy `--c
 | `apps/org.kde.dolphin.svg` (hover-1) | `org.kde.dolphin` |
 | `apps/utilities-terminal.svg` (hover-2) | `utilities-terminal` (Konsole) |
 | `apps/preferences-system.svg` (hover) | `preferences-system` — chưa app nào dùng, dock tạm ẩn |
+
+## Bộ thư mục Dolphin (`folders/`) — tô màu, KHÔNG qua build-icons.py
+
+User vẽ 2026-10-04 (khung 64, chỉ viền `#A1A1A1`: nắp + thân thư mục giống
+nhau ở mọi hình, ký hiệu ở giữa). Lưu ở đây theo tên icon bỏ `folder-`, rồi
+chạy `python3 tools/build-folder-icons.py` → `Samhie/places/scalable/`. Script
+tô kín nắp/thân, ký hiệu theo màu nắp; màu ở `theme/palette.toml` `[folders]`.
+Thư mục trơn (`folder`, 9 màu) sinh từ vỏ thư mục, không cần file riêng.
+
+| Hình | Bản xuất của user | Tên icon |
+|---|---|---|
+| `documents` `download` `music` `pictures` `videos` | `folder-1` `-0` `-2` `-3` `-4` | `folder-<tên>` (thư mục XDG) |
+| `bookmark` `cloud` `development` `games` `mail` | `folder-13` `-5` `-12` `-11` `-10` | `folder-<tên>` (menu màu → Other) |
+| `print` `tar` `temp` `important` | `folder-9` `-8` `-6` `-7` | `folder-<tên>` (`tar` = nén, `temp` = tạm) |

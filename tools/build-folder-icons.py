@@ -8,7 +8,7 @@ Lắp bộ thư mục Dolphin user vẽ (theme/icons/folders/) vào bộ icon Sa
 NGUỒN: user vẽ trên Figma 2026-10-04, khung 64, CHỈ CÓ VIỀN #A1A1A1 — hai
 nét vỏ thư mục (nắp phía sau, thân phía trước) giống hệt nhau ở mọi hình, cộng
 một ký hiệu ở giữa. Tên file = tên icon bỏ "folder-" (download.svg →
-folder-download). Màu ở theme/palette.toml, bảng [folders].
+folder-download), trừ các hình trong RENAME (home.svg → user-home). Màu ở theme/palette.toml, bảng [folders].
 
 ĐỔI GÌ (user muốn: tô màu đè lên viền, như thư mục Dolphin — ảnh mẫu 2026-10-04):
   * Nắp và thân tô kín (fill + stroke cùng màu, nên hình to đúng bằng mép
@@ -53,9 +53,10 @@ BACK_CUT = BACK.replace("V50C60 54.4183 56.4183 58 52 58H12C7.58172 58 4 54.4183
 
 # Thư mục không ký hiệu, màu default. folder-open: Dolphin dùng (chuỗi trong
 # libdolphinprivate) — để Breeze thì lúc đó hiện thư mục xanh của Breeze.
-# user-home: KIO dùng cho thư mục home khi xem dạng thư mục to (vd /var/home);
-# user chưa vẽ ký hiệu nhà nên tạm là thư mục trơn.
-PLAIN = ["folder", "inode-directory", "folder-open", "user-home"]
+PLAIN = ["folder", "inode-directory", "folder-open"]
+# Hình mà tên icon KHÔNG phải folder-<tên hình>. user-home: KIO dùng cho thư
+# mục home khi xem dạng thư mục to (vd /var/home).
+RENAME = {"home": "user-home"}
 # Màu trong menu "màu thư mục" của Dolphin (setfoldericonitemaction).
 COLORS = ["red", "yellow", "orange", "green", "cyan", "blue", "violet", "brown", "grey"]
 
@@ -129,7 +130,8 @@ def outputs():
     for color in COLORS:
         out[OUT / f"folder-{color}.svg"] = build("vỏ thư mục", plain, folders[color], color)
     for src in sorted(SRC.glob("*.svg")):
-        out[OUT / f"folder-{src.stem}.svg"] = build(
+        icon = RENAME.get(src.stem, f"folder-{src.stem}")
+        out[OUT / f"{icon}.svg"] = build(
             f"theme/icons/folders/{src.name}", src.read_text(), folders["default"], "default")
 
     # build-icons.py ghi chung thư mục places/ — trùng tên là hai script ghi đè

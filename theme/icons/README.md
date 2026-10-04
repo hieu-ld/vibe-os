@@ -75,3 +75,4 @@ Thư mục trơn (`folder`, 9 màu) sinh từ vỏ thư mục, không cần file
 | `documents` `download` `music` `pictures` `videos` | `folder-1` `-0` `-2` `-3` `-4` | `folder-<tên>` (thư mục XDG) |
 | `bookmark` `cloud` `development` `games` `mail` | `folder-13` `-5` `-12` `-11` `-10` | `folder-<tên>` (menu màu → Other) |
 | `print` `tar` `temp` `important` | `folder-9` `-8` `-6` `-7` | `folder-<tên>` (`tar` = nén, `temp` = tạm) |
+| `home` | `folder-14` | `user-home` (thư mục home, xem dạng to) |

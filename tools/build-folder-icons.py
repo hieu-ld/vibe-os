@@ -13,7 +13,8 @@ folder-download), trừ các hình trong RENAME (home.svg → user-home). Màu �
 ĐỔI GÌ (user muốn: tô màu đè lên viền, như thư mục Dolphin — ảnh mẫu 2026-10-04):
   * Nắp và thân tô kín (fill + stroke cùng màu, nên hình to đúng bằng mép
     ngoài nét vẽ). Thân màu [0], nắp màu [1] tối hơn.
-  * Ký hiệu đổi #A1A1A1 → màu nắp.
+  * Ký hiệu đổi #A1A1A1 → màu [2], tối hơn nữa (màu nắp như ảnh mẫu thì lem
+    ở 64px — xem chú thích [folders] trong palette.toml).
   * Nắp bị CẮT, chỉ còn phần phía trên y=26. Nắp gốc kéo xuống tận đáy, trùng
     mép trái/phải/dưới với thân; hai mép trùng nhau khử răng cưa thì lộ một
     viền tối mảnh quanh thân (đo bằng rsvg ở 64px). Cắt bằng hình học chứ
@@ -77,15 +78,15 @@ def palette():
     if set(folders) != want:
         sys.exit(f"[folders] trong palette.toml phải có đúng: {', '.join(sorted(want))}")
     for name, pair in folders.items():
-        if not (isinstance(pair, list) and len(pair) == 2
+        if not (isinstance(pair, list) and len(pair) == 3
                 and all(isinstance(c, str) and len(c) == 7 and c.startswith("#")
                         and c == c.lower() for c in pair)):
-            sys.exit(f"[folders] {name}: phải là [\"#thân\", \"#nắp\"] chữ thường")
+            sys.exit(f"[folders] {name}: phải là [\"#thân\", \"#nắp\", \"#ký hiệu\"] chữ thường")
     return folders
 
 
 def build(src_name, text, colors, color_name):
-    body, lid = colors
+    body, lid, symbol = colors
     root = ET.fromstring(text)
     if root.get("viewBox") != "0 0 64 64":
         sys.exit(f"{src_name}: khung phải là 0 0 64 64")
@@ -108,7 +109,7 @@ def build(src_name, text, colors, color_name):
                     continue
                 if v.lower() != INK:
                     sys.exit(f"{src_name}: màu lạ {v} — ký hiệu chỉ vẽ bằng {INK}")
-                sub.set(prop, lid)
+                sub.set(prop, symbol)
 
     ET.indent(root, space="  ")
     return HEADER.format(src=src_name, color=color_name) + ET.tostring(root, encoding="unicode") + "\n"

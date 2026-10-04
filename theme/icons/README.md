@@ -67,7 +67,7 @@ sáng kiểu bản 1.0 — giải thích đủ ở đầu script. CI chạy `--c
 User vẽ 2026-10-04 (khung 64, chỉ viền `#A1A1A1`: nắp + thân thư mục giống
 nhau ở mọi hình, ký hiệu ở giữa). Lưu ở đây theo tên icon bỏ `folder-`, rồi
 chạy `python3 tools/build-folder-icons.py` → `Samhie/places/scalable/`. Script
-tô kín nắp/thân, ký hiệu theo màu nắp; màu ở `theme/palette.toml` `[folders]`.
+tô kín nắp/thân, ký hiệu một màu tối hơn nắp; màu ở `theme/palette.toml` `[folders]`.
 Thư mục trơn (`folder`, 9 màu) sinh từ vỏ thư mục, không cần file riêng.
 
 | Hình | Bản xuất của user | Tên icon |

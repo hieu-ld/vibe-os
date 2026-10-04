@@ -3,7 +3,7 @@ Name=Samhie
 Comment=Icon overrides for Samhie, everything else falls back to Breeze Dark
 Inherits=breeze-dark,breeze,hicolor
 FollowsColorScheme=true
-Directories=actions/scalable,apps/scalable,devices/scalable,places/scalable,status/scalable
+Directories=actions/scalable,apps/scalable,devices/scalable,places/16,places/scalable,status/scalable
 
 [actions/scalable]
 Size=22
@@ -25,6 +25,11 @@ Type=Scalable
 MinSize=8
 MaxSize=512
 Context=Devices
+
+[places/16]
+Size=16
+Type=Fixed
+Context=Places
 
 [places/scalable]
 Size=22

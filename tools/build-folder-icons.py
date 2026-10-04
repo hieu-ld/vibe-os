@@ -23,6 +23,16 @@ folder-download), trừ các hình trong RENAME (home.svg → user-home). Màu �
   * Bỏ width/height, giữ viewBox — co giãn theo chỗ dùng.
 
 Thư mục không ký hiệu (folder, các màu, …) sinh từ hai nét vỏ thư mục.
+
+BẢN 16px CHỈ CÓ KÝ HIỆU (places/16/, user muốn 2026-10-04): menu chuột phải →
+màu thư mục → Other vẽ icon 16px, thư mục nhỏ xíu có ký hiệu thì không đọc
+được. Bộ icon được có bản vẽ riêng theo cỡ (Breeze cũng vậy): places/16 khai
+Type=Fixed Size=16, đứng TRƯỚC places/scalable trong Directories — KIconLoader
+chọn nó ở đúng 16px, cỡ khác vẫn lấy thư mục tô màu (đo, xem docs/PLAN.md).
+Cái giá: chỗ nào vẽ ĐÚNG 16px (Details cỡ nhỏ nhất, hộp thoại mở file) cũng ra
+ký hiệu trơn — nên chỉ làm cho tên có trong menu Other (SYMBOL16), không làm
+cho Docs/Download/Pictures/Videos/Home. Ký hiệu tô currentColor theo màu chữ
+(như icon nét khác của bộ), khung cắt chung CROP16 để mọi ký hiệu to bằng nhau.
 Tên icon đo trong image 2026-10-04 (chuỗi trong libKF6KIOCore,
 libdolphinprivate, setfoldericonitemaction — xem docs/PLAN.md).
 """
@@ -36,6 +46,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "theme" / "icons" / "folders"
 OUT = ROOT / "files/system/usr/share/icons/Samhie/places/scalable"
+OUT16 = ROOT / "files/system/usr/share/icons/Samhie/places/16"
 PALETTE = ROOT / "theme" / "palette.toml"
 
 SVG_NS = "http://www.w3.org/2000/svg"
@@ -60,6 +71,13 @@ PLAIN = ["folder", "inode-directory", "folder-open"]
 RENAME = {"home": "user-home"}
 # Màu trong menu "màu thư mục" của Dolphin (setfoldericonitemaction).
 COLORS = ["red", "yellow", "orange", "green", "cyan", "blue", "violet", "brown", "grey"]
+# Ký hiệu trong menu Other (setfoldericonitemaction) — có bản 16px trơn.
+SYMBOL16 = ["bookmark", "cloud", "development", "games", "mail", "music", "print",
+            "tar", "temp", "important"]
+# Ký hiệu nằm trong x 21,5..42,5, y 26,5..47,5 (đo bằng rsvg; cloud lấn
+# 0,3) — cắt ô 22 quanh đó.
+CROP16 = "21 26 22 22"
+FALLBACK = "#fcfcfc"  # như build-icons.py: KDE thay bằng màu chữ của bảng màu
 
 HEADER = """<?xml version='1.0' encoding='utf-8'?>
 <!-- Samhie — thư mục user vẽ, {src}, màu [folders].{color} của
@@ -115,6 +133,45 @@ def build(src_name, text, colors, color_name):
     return HEADER.format(src=src_name, color=color_name) + ET.tostring(root, encoding="unicode") + "\n"
 
 
+def symbol16(src_name, text):
+    """Chỉ ký hiệu, tô currentColor (class ColorScheme-Text), khung CROP16."""
+    root = ET.fromstring(text)
+    for a in ("width", "height"):
+        root.attrib.pop(a, None)
+    shapes = list(root)
+    if [s.get("d") for s in shapes[:2]] != [BACK, FRONT]:
+        sys.exit(f"{src_name}: hai phần tử đầu phải là nắp + thân thư mục")
+    for el in shapes[:2]:
+        root.remove(el)
+    for el in root.iter():
+        if el is root:
+            continue
+        decls = []
+        for prop in ("stroke", "fill"):
+            v = el.attrib.pop(prop, None)
+            if v is None:
+                continue
+            if v == "none":
+                decls.append(f"{prop}:none")
+            elif v.lower() == INK:
+                decls.append(f"{prop}:currentColor")
+            else:
+                sys.exit(f"{src_name}: màu lạ {v} — ký hiệu chỉ vẽ bằng {INK}")
+        if decls:
+            el.set("style", ";".join(decls))
+            el.set("class", "ColorScheme-Text")
+    root.set("viewBox", CROP16)
+    defs = ET.Element(q("defs"))
+    style = ET.SubElement(defs, q("style"), {"id": "current-color-scheme", "type": "text/css"})
+    style.text = f".ColorScheme-Text {{ color: {FALLBACK}; }}"
+    root.insert(0, defs)
+    ET.indent(root, space="  ")
+    return ("<?xml version='1.0' encoding='utf-8'?>\n"
+            f"<!-- Samhie — ký hiệu thư mục cỡ 16 (menu màu thư mục), {src_name}.\n"
+            "     Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->\n"
+            + ET.tostring(root, encoding="unicode") + "\n")
+
+
 def plain_source():
     """Hình chỉ có vỏ thư mục (lấy từ một hình bất kỳ, bỏ ký hiệu)."""
     return (f'<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="{SVG_NS}">'
@@ -134,6 +191,10 @@ def outputs():
         icon = RENAME.get(src.stem, f"folder-{src.stem}")
         out[OUT / f"{icon}.svg"] = build(
             f"theme/icons/folders/{src.name}", src.read_text(), folders["default"], "default")
+
+    for name in SYMBOL16:
+        src = SRC / f"{name}.svg"
+        out[OUT16 / f"folder-{name}.svg"] = symbol16(f"theme/icons/folders/{src.name}", src.read_text())
 
     # build-icons.py ghi chung thư mục places/ — trùng tên là hai script ghi đè
     # nhau (vd sidebar dùng user-home nét mảnh, thư mục to cũng user-home).
@@ -157,8 +218,8 @@ def main():
             sys.exit("Thư mục sinh ra không khớp nguồn — chạy python3 tools/build-folder-icons.py rồi commit.")
         print(f"thư mục: {len(out)} file khớp nguồn")
         return
-    OUT.mkdir(parents=True, exist_ok=True)
     for p, s in out.items():
+        p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(s)
         print(f"  {p.relative_to(ROOT)}")
     print(f"\n{len(out)} file.")

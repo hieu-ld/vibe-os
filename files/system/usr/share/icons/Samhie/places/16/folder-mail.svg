@@ -1,0 +1,10 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Samhie — ký hiệu thư mục cỡ 16 (menu màu thư mục), theme/icons/folders/mail.svg.
+     Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="21 26 22 22" fill="none">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <rect x="22.25" y="28.75" width="19.5" height="16.5" rx="3" stroke-width="1.5" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M22.25 32.5L31.1177 35.2285C31.6926 35.4054 32.3074 35.4054 32.8823 35.2285L41.75 32.5" stroke-width="1.5" style="stroke:currentColor" class="ColorScheme-Text" />
+</svg>

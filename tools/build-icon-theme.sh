@@ -31,7 +31,18 @@ declare -A CONTEXT_MAP=(
 dir_list=()
 total=0
 
-for group_dir in "$THEME_DIR"/*/scalable; do
+# Thư mục cỡ cố định (vd places/16: bản vẽ riêng cho 16px) đứng TRƯỚC
+# scalable của cùng nhóm: ở đúng cỡ đó, cả hai đều khớp và KIconLoader lấy thư
+# mục khai trước (đo 2026-10-04, xem tools/build-folder-icons.py).
+group_dirs=()
+for g in "$THEME_DIR"/*/; do
+    g=${g%/}
+    while IFS= read -r d; do group_dirs+=( "$g/$d" ); done < <(
+        find "$g" -mindepth 1 -maxdepth 1 -type d -regex '.*/[0-9]+' -printf '%f\n' | sort -n)
+    group_dirs+=( "$g/scalable" )
+done
+
+for group_dir in "${group_dirs[@]}"; do
     [[ -d $group_dir ]] || continue
     group=$(basename "$(dirname "$group_dir")")
     count=$(find "$group_dir" -maxdepth 1 -name '*.svg' | wc -l)
@@ -41,9 +52,9 @@ for group_dir in "$THEME_DIR"/*/scalable; do
         echo "BỎ QUA nhóm lạ '$group' — không có trong chuẩn freedesktop." >&2
         continue
     fi
-    dir_list+=( "$group/scalable" )
+    dir_list+=( "$group/$(basename "$group_dir")" )
     total=$(( total + count ))
-    printf '  %-12s %2d icon\n' "$group" "$count"
+    printf '  %-12s %2d icon\n' "$group/$(basename "$group_dir")" "$count"
 done
 
 # Giấy phép của bộ icon gốc PHẢI đi kèm. Tabler là MIT — cho dùng và sửa thoải
@@ -156,12 +167,17 @@ done < <(find "$THEME_DIR" -name '*.svg')
         group=${d%%/*}
         echo
         echo "[$d]"
-        # Size chỉ là gợi ý cho bộ chọn; Type=Scalable + Min/Max mới là thứ cho
-        # phép dùng một file SVG ở mọi cỡ.
-        echo "Size=22"
-        echo "Type=Scalable"
-        echo "MinSize=8"
-        echo "MaxSize=512"
+        if [[ ${d#*/} == scalable ]]; then
+            # Size chỉ là gợi ý cho bộ chọn; Type=Scalable + Min/Max mới là thứ
+            # cho phép dùng một file SVG ở mọi cỡ.
+            echo "Size=22"
+            echo "Type=Scalable"
+            echo "MinSize=8"
+            echo "MaxSize=512"
+        else
+            echo "Size=${d#*/}"
+            echo "Type=Fixed"
+        fi
         echo "Context=${CONTEXT_MAP[$group]}"
     done
 } > "$THEME_DIR/index.theme"

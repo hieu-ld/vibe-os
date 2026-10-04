@@ -1,0 +1,9 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Samhie — ký hiệu thư mục cỡ 16 (menu màu thư mục), theme/icons/folders/bookmark.svg.
+     Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="21 26 22 22" fill="none">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <path d="M32 30.25H23.75C22.9216 30.25 22.25 29.5784 22.25 28.75C22.25 27.9216 22.9216 27.25 23.75 27.25H40.25C41.0784 27.25 41.75 27.9216 41.75 28.75C41.75 29.5784 41.0784 30.25 40.25 30.25H32ZM32 30.25H24.5V45.1291C24.5 46.3868 25.9549 47.0861 26.937 46.3004L31.063 42.9996C31.6108 42.5614 32.3892 42.5614 32.937 42.9996L37.063 46.3004C38.0451 47.0861 39.5 46.3868 39.5 45.1291V30.25H32Z" stroke-width="1.5" style="stroke:currentColor" class="ColorScheme-Text" />
+</svg>

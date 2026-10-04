@@ -143,8 +143,9 @@ icon-theme     = { dark = "Samhie", light = "breeze" }
 # thân. Giống nhau ở cả tối lẫn sáng (như Breeze).
 # Đây là màu NỘI DUNG (icon), không phải giao diện — nên mặc định là cyan dù
 # "CÁCH DÙNG MÀU" ở trên dành cyan cho thứ đang chọn.
-#   default: lấy đúng ảnh mẫu user gửi (đo điểm ảnh). Trong OKLCH thân là
-#            L 0,558 C 0,098 — nắp tối hơn: L × 0,816, C × 0,814.
+#   default: từ ảnh mẫu user gửi (đo điểm ảnh: thân #0b819a, nắp #076174 —
+#            OKLCH thân L 0,558 C 0,098, nắp L × 0,816, C × 0,814). User thấy
+#            vẫn chói khi nhìn lâu (2026-10-04) → L và C cả hai × 0,92.
 #   Ký hiệu: = màu nắp, như ảnh mẫu (1,56:1 với thân — mờ mờ, user thích
 #            vậy). Đã thử bản đậm L × 0,55, C × 0,6 của thân (2,88:1) trong máy
 #            ảo 2026-10-04 — user chọn giữ bản mờ. Tách riêng để chỉnh sau.
@@ -153,12 +154,12 @@ icon-theme     = { dark = "Samhie", light = "breeze" }
 # Thanh "màu thư mục" của Dolphin: Default = inode-directory (= default),
 # cyan trùng default (như Breeze: folder-blue trùng thư mục mặc định).
 [folders]
-default = ["#0b819a", "#076174", "#076174"]
+default = ["#097389", "#055667", "#055667"]
 red     = ["#ac5853", "#82413d", "#82413d"]   # H 25
 orange  = ["#b26d3a", "#87512a", "#87512a"]   # H 55
 yellow  = ["#ab8f3e", "#826c2e", "#826c2e"]   # H 90
 green   = ["#4b8759", "#376642", "#376642"]   # H 150
-cyan    = ["#0b819a", "#076174", "#076174"]   # = default
+cyan    = ["#097389", "#055667", "#055667"]   # = default
 blue    = ["#4773ab", "#345681", "#345681"]   # H 255
 violet  = ["#7b63a3", "#5c4a7b", "#5c4a7b"]   # H 300
 brown   = ["#80593f", "#60422e", "#60422e"]   # H 55

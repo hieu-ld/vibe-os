@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Samhie — ký hiệu thư mục cỡ 16 (menu màu thư mục), theme/icons/folders/games.svg.
+     Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="21 26 22 22" fill="none">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <path d="M35.0576 30.9062C38.4113 29.9481 41.7498 32.4663 41.75 35.9541V36.832C41.75 37.4047 41.7062 37.9769 41.6191 38.543L40.7471 44.21C40.5223 45.6711 39.2654 46.7498 37.7871 46.75C36.4643 46.75 35.2981 45.8822 34.918 44.6152L33.4688 39.7842L33.3076 39.25H30.6924L30.5312 39.7842L29.082 44.6152C28.7019 45.8822 27.5357 46.75 26.2129 46.75C24.7346 46.7498 23.4777 45.6711 23.2529 44.21L22.3809 38.543C22.2938 37.9769 22.25 37.4047 22.25 36.832V35.9541C22.2502 32.4663 25.5887 29.9481 28.9424 30.9062L30.1455 31.25C31.3575 31.5963 32.6425 31.5963 33.8545 31.25L35.0576 30.9062Z" stroke-width="1.5" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M37.25 34C37.25 34.8284 37.9216 35.5 38.75 35.5C37.9216 35.5 37.25 36.1716 37.25 37C37.25 36.1716 36.5784 35.5 35.75 35.5C36.5784 35.5 37.25 34.8284 37.25 34Z" stroke-width="1.5" style="stroke:currentColor;fill:currentColor" class="ColorScheme-Text" />
+  <circle cx="26.75" cy="34" r="0.75" style="fill:currentColor" class="ColorScheme-Text" />
+  <circle cx="25.25" cy="35.5" r="0.75" style="fill:currentColor" class="ColorScheme-Text" />
+  <circle cx="26.75" cy="37" r="0.75" style="fill:currentColor" class="ColorScheme-Text" />
+  <circle cx="28.25" cy="35.5" r="0.75" style="fill:currentColor" class="ColorScheme-Text" />
+  <line x1="26.75" y1="28.75" x2="26.75" y2="30.25" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <line x1="37.25" y1="28.75" x2="37.25" y2="30.25" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+</svg>

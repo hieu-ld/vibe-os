@@ -190,12 +190,15 @@ FRAMES = [
     ("tabframe", {"normal": (None, "sub-secondary")}, False),
     # Khung chung (QFrame, ô cuộn có khung, groupbox).
     ("common", {"normal": (None, "sub-secondary")}, False),
-    # Mục trong danh sách/lưới (file trong Dolphin, Places).
+    # Mục trong danh sách/lưới (file trong Dolphin; Places do style "samhie" vẽ).
+    # Đang chọn = nền ô trỏ + viền cyan, KHÔNG tô `selection`: thân thư mục
+    # Breeze ăn màu chọn (#006a80) → chọn thư mục là thư mục chìm vào nền
+    # (máy ảo 2026-10-04, user chọn cách này).
     ("itemview", {
         "normal":   (None, None),
         "focused":  ("hover", None),
-        "pressed":  ("selection", None),
-        "toggled":  ("selection", None),
+        "pressed":  ("hover", "accent"),
+        "toggled":  ("hover", "accent"),
         "disabled": (None, None),
     }, False),
     ("menu", {"normal": ("card", "sub-secondary")}, False),

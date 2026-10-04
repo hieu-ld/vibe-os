@@ -19,9 +19,12 @@
 #                  DolphinViewActionHandler), ẩn Compact thôi là chưa đủ.
 #
 # Thanh công cụ theo bản vẽ của user (2026-10-03):
-#   ← → | ▦  [đường dẫn ✎]  ⧉  🔍  ☰
-# = go_back go_forward | view_settings url_navigators copy_location
-#   toggle_search hamburger_menu. Không có nút lọc ⧩ riêng: thanh tìm của
+#   ← → | ▦  [đường dẫn ✎]  🔍  ☰
+# = go_back go_forward | view_settings url_navigators toggle_search
+#   hamburger_menu. Bỏ nút ⧉ copy_location (máy ảo 2026-10-04): nó chỉ chép
+#   đường dẫn MỤC ĐANG CHỌN, chưa chọn gì thì bật Selection Mode — không phải
+#   "chép đường dẫn thư mục đang mở" như bản vẽ, mà Dolphin không có hành động
+#   đó; vẫn còn ở menu chuột phải + Ctrl+Alt+C. Không có nút lọc ⧩ riêng: thanh tìm của
 #   Dolphin đã có nút Filter (user bỏ 2026-10-03). Nút ✎ (sửa đường dẫn) là nút
 # CÓ SẴN ở cuối thanh đường dẫn (KUrlNavigator, icon edit-entry) — thêm hành
 # động editable_location nữa là hai cây bút (máy ảo 2026-10-03).
@@ -73,7 +76,7 @@ ui = head + sep + tail
 DOLPHIN_TOOLBAR = ["go_back", "go_forward", "view_settings", "url_navigators",
                    "split_view", "split_stash", "toggle_search", "hamburger_menu"]
 SAMHIE_TOOLBAR = ["go_back", "go_forward", None, "view_settings", "url_navigators",
-                  "copy_location", "toggle_search", "hamburger_menu"]   # None = vạch ngăn
+                  "toggle_search", "hamburger_menu"]   # None = vạch ngăn
 bar = re.search(r'(<ToolBar\b[^>]*name="mainToolBar"[^>]*>\s*<text[^<]*</text>)(.*?)(\s*</ToolBar>)',
                 ui, re.S)
 assert bar, "no mainToolBar in dolphinui.rc"
@@ -86,11 +89,9 @@ for a in set(filter(None, SAMHIE_TOOLBAR)) - set(DOLPHIN_TOOLBAR):
 items = "".join("\n        <Separator/>" if a is None else f'\n        <Action name="{a}" />'
                 for a in SAMHIE_TOOLBAR)
 ui = ui[:bar.start(2)] + items + ui[bar.end(2):]
-# Nút mới chỉ hiện icon (priority 0, như go_back…) — thanh để "chữ cạnh icon".
+# Nút thêm mới (nếu có) phải hiện chỉ icon: <Action priority="0" name=…> trong
+# ActionProperties như go_back… — thanh để "chữ cạnh icon". Hiện không có nút mới.
 head, sep, tail = ui.partition("<ActionProperties")
-for a in ("copy_location",):
-    assert f'name="{a}"' not in tail.split("</ActionProperties>")[0], a
-    tail = tail.replace(">", f'>\n        <Action priority="0" name="{a}"/>', 1)
 # Icon tròn cho lùi/tiến: thuộc tính icon= trong ActionProperties (KXmlGui gán
 # QIcon::fromTheme — đo container: nút hiện đúng icon).
 for a, icon in (("go_back", "samhie-go-back"), ("go_forward", "samhie-go-forward")):

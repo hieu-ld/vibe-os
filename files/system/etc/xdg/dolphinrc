@@ -11,3 +11,6 @@ IconSize=20
 # Bỏ nút +/− chọn nhanh ở góc ô khi trỏ chuột — Ctrl+bấm làm được việc đó
 # (user chốt 2026-10-04). Khoá: dolphin_generalsettings.kcfg.
 ShowSelectionToggle=false
+# Dải tab luôn hiện (bản vẽ user), kể cả khi chỉ có 1 tab — mặc định Dolphin
+# chỉ hiện khi có từ 2 tab. Nút + ở góc trái dải do style "samhie" thêm.
+AlwaysShowTabBar=true

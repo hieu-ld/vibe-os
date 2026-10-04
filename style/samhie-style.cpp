@@ -31,6 +31,11 @@
 //      viền, cách mép vùng file (bản vẽ user). Nó vẫn nằm TRONG bố cục, trượt
 //      xuống và đẩy file xuống như cũ — Dolphin dựng nó vậy, style không đổi
 //      được chỗ đặt.
+//   9. Dolphin: nút + (tab mới) ở góc trái dải tab, như Konsole — Dolphin không
+//      có nút này. Dải tab + nút lùi vào DOLPHIN_TAB_INSET px: viền trái vùng
+//      file nằm ở cột 0 và góc khung bo 12, tab bo 8 — không lùi thì tab đè
+//      lên viền, góc tab lòi ra ngoài đường cong khung (máy ảo 2026-10-04).
+//      Tab Dolphin không icon (bản vẽ, như Konsole).
 //   8. Khung focus của ô file Dolphin / mục danh sách bo cùng góc với ô (khung
 //      của Kvantum bo 2px vẽ đè thành góc vuông); ô đang chọn thì không vẽ.
 //
@@ -38,6 +43,7 @@
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
 
 #include <QAbstractItemView>
+#include <QAction>
 #include <QAbstractScrollArea>
 #include <QEvent>
 #include <QPainter>
@@ -63,6 +69,9 @@ constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6
 constexpr int POPUP_MARGIN = 8;    // thẻ tìm cách mép vùng file
 constexpr int POPUP_PADDING = 10;  // nội dung cách mép thẻ
 constexpr int POPUP_RADIUS = 12;
+// = PANE_RADIUS − góc tab (8, tools/kvantum.py) → góc tab/nút + đồng tâm với
+// góc khung; cũng bằng khe trên của tab (TAB_INSET) nên lùi đều hai phía.
+constexpr int DOLPHIN_TAB_INSET = 4;
 
 // setViewportMargins là protected — gọi qua lớp con chỉ để mở quyền truy cập.
 class ScrollAreaAccess : public QAbstractScrollArea
@@ -204,6 +213,33 @@ class SamhieStyle : public QProxyStyle
 public:
     SamhieStyle() : QProxyStyle(QStyleFactory::create(QStringLiteral("kvantum"))) {}
 
+    // Nút + ở góc trái dải tab Dolphin: bấm = hành động "new_tab" của cửa sổ
+    // (Ctrl+T; KActionCollection đặt objectName = tên hành động). Hành động
+    // KHÔNG là con QObject của cửa sổ (findChild không thấy — container), mà
+    // được gắn vào cửa sổ (addAssociatedWidget → QWidget::actions()) để phím
+    // tắt chạy. Tìm lúc bấm, không lúc polish: lúc đó có thể chưa được tạo.
+    static void addNewTabButton(QTabWidget *tw)
+    {
+        if (tw->cornerWidget(Qt::TopLeftCorner))
+            return;  // polish lại (đổi style…) — đã có nút
+        auto *button = new QToolButton(tw);
+        button->setObjectName(QStringLiteral("samhie-new-tab"));
+        button->setAutoRaise(true);
+        button->setIcon(QIcon::fromTheme(QStringLiteral("tab-new")));
+        button->setToolTip(QStringLiteral("New Tab (Ctrl+T)"));
+        button->setFocusPolicy(Qt::NoFocus);
+        QObject::connect(button, &QToolButton::clicked, tw, [tw] {
+            const auto actions = tw->window()->actions();
+            for (QAction *action : actions) {
+                if (action->objectName() == QLatin1String("new_tab")) {
+                    action->trigger();
+                    return;
+                }
+            }
+        });
+        tw->setCornerWidget(button, Qt::TopLeftCorner);
+    }
+
     void polish(QWidget *w) override
     {
         QProxyStyle::polish(w);
@@ -230,6 +266,13 @@ public:
             w->parentWidget()->setAutoFillBackground(false);  // viewport: để thấy vùng file trong
             w->installEventFilter(&m_popup);
         }
+        if (w->inherits("DolphinTabWidget"))
+            addNewTabButton(static_cast<QTabWidget *>(w));
+        // Tab Dolphin không icon, như bản vẽ và tab Konsole. Dolphin chỉ gán
+        // icon khi dải tab ĐANG hiện → tab đầu lúc mở cửa sổ không có, mở
+        // thêm tab mới có (container 2026-10-04). Icon cỡ 0 = không vẽ.
+        if (w->inherits("DolphinTabBar"))
+            static_cast<QTabBar *>(w)->setIconSize(QSize(0, 0));
         // DolphinStatusBar::paintEvent: drawRoundedRect(palette().window()).
         if (w->inherits("DolphinStatusBar")) {
             QPalette pal = w->palette();
@@ -312,6 +355,15 @@ public:
             && tw->documentMode() && tw->tabPosition() == QTabWidget::North && r.isValid()) {
             r.setTop(0);
             r.setHeight(qMax(r.height(), twf->tabBarSize.height()));
+        }
+        // Dolphin: dải tab + nút + lùi vào trong viền khung (mục 9 đầu file).
+        if ((se == SE_TabWidgetLeftCorner || se == SE_TabWidgetTabBar) && tw
+            && tw->inherits("DolphinTabWidget") && tw->tabPosition() == QTabWidget::North
+            && r.isValid()) {
+            r.translate(DOLPHIN_TAB_INSET, 0);
+            if (se == SE_TabWidgetLeftCorner)
+                r.setTop(DOLPHIN_TAB_INSET);  // nền khi trỏ ngang đỉnh tab
+            r.setRight(qMin(r.right(), tw->width() - 1));
         }
         return r;
     }

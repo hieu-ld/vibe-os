@@ -134,11 +134,15 @@ hl.config({
     general = {
         gaps_in     = 4,
         gaps_out    = 8,
-        -- Không viền (user 2026-10-04): cửa sổ đang dùng phân biệt bằng cách
-        -- làm tối cửa sổ KHÔNG dùng (decoration.dim_inactive bên dưới), thay
-        -- cho viền cyan. Kéo mép để đổi cỡ vẫn được (resize_on_border dùng
-        -- vùng bắt mép mở rộng, không cần viền).
-        border_size = 0,
+        -- Viền tối như bản 1.0, CÙNG màu cho cửa sổ đang dùng và không dùng
+        -- (user 2026-10-04): cửa sổ đang dùng phân biệt bằng cách làm tối cửa
+        -- sổ KHÔNG dùng (decoration.dim_inactive bên dưới), thay viền cyan.
+        border_size = 1,
+
+        col = {
+            active_border   = "rgb(" .. color.windowBorder .. ")",
+            inactive_border = "rgb(" .. color.windowBorder .. ")",
+        },
 
         resize_on_border = true,
         allow_tearing    = false,

@@ -379,6 +379,8 @@ def style_colors_h(pal):
     out += [f'constexpr const char *{n} = "{c}";  // {why}' for n, c, why in rows]
     out += [f'constexpr double WINDOW_OPACITY = {pal["window"]["opacity"]};  // [window] opacity']
     out += [f'constexpr int ITEM_RADIUS = {kvantum.RADIUS["itemview"]};  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)']
+    out += [f'constexpr int TAB_RADIUS = {kvantum.RADIUS["tab"]};  // góc trên tab = RADIUS["tab"] (tools/kvantum.py)']
+    out += [f'constexpr int TAB_INSET = {kvantum.TAB_INSET};  // khe trên tab = TAB_INSET (tools/kvantum.py)']
     out += ["}", ""]
     return "\n".join(out)
 

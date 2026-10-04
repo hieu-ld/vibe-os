@@ -8,6 +8,7 @@ return {
     cardAlt       = "171717",
     secondary     = "262626",
     subSecondary  = "3b3c3c",
+    windowBorder  = "363636",
     hover         = "363d3f",
     text          = "bdbec1",
     textMuted     = "8f8f8f",

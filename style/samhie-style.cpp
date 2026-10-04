@@ -37,7 +37,9 @@
 //      file nằm ở cột 0 và góc khung bo 12, tab bo 8 — không lùi thì tab đè
 //      lên viền, góc tab lòi ra ngoài đường cong khung (máy ảo 2026-10-04).
 //      Tab Dolphin không icon (bản vẽ, như Konsole).
-//  10. Dòng menu cao bằng dòng sidebar (bỏ khoản "font + 8" của Kvantum).
+//  11. Tab đang mở trong như vùng nội dung (tô đè, không chồng lớp).
+//  10. Dòng menu cao bằng dòng sidebar (bỏ khoản "font + 8" của Kvantum);
+//      dòng widget trong menu (Zoom của Dolphin) cũng cao bằng.
 //   8. Ô file Dolphin / mục danh sách không có khung focus (khung của Kvantum
 //      bo 2px vẽ đè thành góc vuông; ô đầu thư mục luôn có viền lơ lửng).
 //
@@ -52,6 +54,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QLayout>
+#include <QMenu>
 #include <QProxyStyle>
 #include <QScrollArea>
 #include <QStyleFactory>
@@ -324,6 +327,15 @@ public:
         // thêm tab mới có (container 2026-10-04). Icon cỡ 0 = không vẽ.
         if (w->inherits("DolphinTabBar"))
             static_cast<QTabBar *>(w)->setIconSize(QSize(0, 0));
+        // Dòng widget trong menu (QWidgetAction — vd dòng Zoom ⊖ ⟲ ⊕ trong menu
+        // ▦ của Dolphin) cao bằng dòng menu thường: Dolphin cho nó cao bằng nút
+        // + 4px → ~31px giữa các dòng 41px (container 2026-10-04). ZoomWidget
+        // không có Q_OBJECT nên nhận ra theo chỗ đứng: nút → widget → QMenu.
+        if (qobject_cast<QToolButton *>(w) && w->parentWidget()
+            && qobject_cast<QMenu *>(w->parentWidget()->parentWidget())) {
+            QWidget *row = w->parentWidget();
+            row->setMinimumHeight(row->fontMetrics().height() + 2 * MENUITEM_FRAME);
+        }
         // DolphinStatusBar::paintEvent: drawRoundedRect(palette().window()).
         if (w->inherits("DolphinStatusBar")) {
             QPalette pal = w->palette();
@@ -385,6 +397,37 @@ public:
         if (pe == PE_IndicatorDockWidgetResizeHandle)
             return;
         QProxyStyle::drawPrimitive(pe, opt, p, w);
+    }
+
+    void drawControl(ControlElement ce, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
+    {
+        // Tab đang mở (dải tab kiểu document: Konsole, Dolphin) trong như vùng
+        // nội dung bên dưới: card với độ đục cửa sổ, tô ĐÈ (Source) lên nền
+        // cửa sổ — Kvantum tô chồng (SourceOver) thì thành ~99% đục (máy ảo
+        // 2026-10-04: tab #171717 đục, vùng nội dung thấy hình nền). Cùng dáng
+        // phần tử "tab" của Kvantum: khe trên TAB_INSET, bo trên TAB_RADIUS.
+        auto *tab = qstyleoption_cast<const QStyleOptionTab *>(opt);
+        auto *bar = qobject_cast<const QTabBar *>(w);
+        if (ce == CE_TabBarTabShape && tab && bar && bar->documentMode()
+            && tab->shape == QTabBar::RoundedNorth && (tab->state & State_Selected)) {
+            const QRectF r = QRectF(tab->rect).adjusted(0, samhie::TAB_INSET, 0, 0);
+            const qreal rad = samhie::TAB_RADIUS, d = 2 * rad;
+            QPainterPath path;
+            path.moveTo(r.left(), r.bottom() + 1);
+            path.lineTo(r.left(), r.top() + rad);
+            path.arcTo(QRectF(r.left(), r.top(), d, d), 180, -90);
+            path.lineTo(r.right() + 1 - rad, r.top());
+            path.arcTo(QRectF(r.right() + 1 - d, r.top(), d, d), 90, -90);
+            path.lineTo(r.right() + 1, r.bottom() + 1);
+            path.closeSubpath();
+            p->save();
+            p->setRenderHint(QPainter::Antialiasing);
+            p->setCompositionMode(QPainter::CompositionMode_Source);
+            p->fillPath(path, paneColor());
+            p->restore();
+            return;
+        }
+        QProxyStyle::drawControl(ce, opt, p, w);
     }
 
     QRect subElementRect(SubElement se, const QStyleOption *opt, const QWidget *w) const override

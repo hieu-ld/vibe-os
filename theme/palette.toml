@@ -48,6 +48,11 @@ card          = "#171717"  # vùng nội dung, popup, tooltip   (Figma: Card)
 card-alt      = "#171717"  # hàng xen kẽ trong danh sách — bản tối cố ý KHÔNG kẻ sọc
 secondary     = "#262626"  # khung cửa sổ, sidebar, thanh tab (Figma: Secondary)
 sub-secondary = "#3b3c3c"  # viền, mặt nút                   (Figma: Sub Secondary)
+window-border = "#363636"  # viền cửa sổ (Hyprland), đang dùng = không dùng. MUỐN thấy #393939
+                           # như bản 1.0 (KDE frameContrast 0.1), tối hơn viền dock #3b3c3c một
+                           # chút (user 2026-10-04). Khai #363636 vì Hyprland (render:cm_enabled)
+                           # vẽ màu viền lệch: 393939→3c3c3c, 363636→393939, 808080→7f7f7f (đo
+                           # container); mặt app/dock thì KHÔNG lệch (thanh trên đúng #0a0a0a).
 hover         = "#363d3f"  # nền ô đang trỏ chuột (ô file Dolphin) — user vẽ 2026-10-03:
                            # xám pha chút cyan. Nhóm xám trung tính.
 
@@ -85,6 +90,7 @@ card          = "#fafafa"
 card-alt      = "#f4f4f4"
 secondary     = "#ededed"
 sub-secondary = "#d0d0d0"
+window-border = "#c9c9c9"  # tạm — Hyprland chỉ dùng bản tối (colors.lua); duyệt ở đợt bản sáng
 hover         = "#e3e8e9"  # tạm: cùng ý bản tối (xám pha chút cyan) — duyệt ở đợt bản sáng
 
 text       = "#1c1c1c"

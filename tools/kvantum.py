@@ -28,7 +28,7 @@ RADIUS = {
     "tab": 8,           # bản vẽ: góc trên tab ~8px
     "tabframe": 8,
     "common": 8,
-    "itemview": 6,
+    "itemview": 10,     # ô file Dolphin: bản vẽ ô hover bo ~10 (khung focus của style "samhie" theo số này)
     "menu": 10,
     "menuitem": 6,
     "tooltip": 6,

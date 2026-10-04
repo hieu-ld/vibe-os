@@ -8,5 +8,7 @@ constexpr const char *PANE = "#171717";  // vùng nội dung (file Dolphin, ch�
 constexpr const char *FRAME_LINE = "#3b3c3c";  // viền trên + trái vùng file Dolphin
 constexpr const char *POPUP = "#262626";  // thẻ thanh tìm Dolphin (dạng popup, đục)
 constexpr const char *POPUP_BORDER = "#3b3c3c";  // viền thẻ thanh tìm
+constexpr const char *FOCUS_RING = "#b300c0e8";  // khung focus của ô file (accent 70%)
 constexpr double WINDOW_OPACITY = 0.9;  // [window] opacity
+constexpr int ITEM_RADIUS = 10;  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)
 }

@@ -372,10 +372,13 @@ def style_colors_h(pal):
         ("FRAME_LINE", d["sub-secondary"], "viền trên + trái vùng file Dolphin"),
         ("POPUP", d["secondary"], "thẻ thanh tìm Dolphin (dạng popup, đục)"),
         ("POPUP_BORDER", d["sub-secondary"], "viền thẻ thanh tìm"),
+        # #AARRGGBB — QColor đọc được; cùng màu khung focus của theme Kvantum.
+        ("FOCUS_RING", "#b3" + d["accent"].lstrip("#"), "khung focus của ô file (accent 70%)"),
     ]
     out = [f"// {HEADER}", "#pragma once", "", "namespace samhie {"]
     out += [f'constexpr const char *{n} = "{c}";  // {why}' for n, c, why in rows]
     out += [f'constexpr double WINDOW_OPACITY = {pal["window"]["opacity"]};  // [window] opacity']
+    out += [f'constexpr int ITEM_RADIUS = {kvantum.RADIUS["itemview"]};  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)']
     out += ["}", ""]
     return "\n".join(out)
 

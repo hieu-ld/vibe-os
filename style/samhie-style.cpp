@@ -31,10 +31,13 @@
 //      viền, cách mép vùng file (bản vẽ user). Nó vẫn nằm TRONG bố cục, trượt
 //      xuống và đẩy file xuống như cũ — Dolphin dựng nó vậy, style không đổi
 //      được chỗ đặt.
+//   8. Khung focus của ô file Dolphin / mục danh sách bo cùng góc với ô (khung
+//      của Kvantum bo 2px vẽ đè thành góc vuông); ô đang chọn thì không vẽ.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
 
+#include <QAbstractItemView>
 #include <QAbstractScrollArea>
 #include <QEvent>
 #include <QPainter>
@@ -71,6 +74,18 @@ public:
 bool isPlacesView(const QWidget *w)
 {
     return w && w->inherits("KFilePlacesView");
+}
+
+// Vùng file của Dolphin: KItemListWidget vẽ với widget = viewport của
+// KItemListContainerViewport (QGraphicsView) nằm trong KItemListContainer.
+// Danh sách Qt thường: delegate đưa chính QAbstractItemView.
+bool isItemView(const QWidget *w)
+{
+    for (int i = 0; w && i < 3; ++i, w = w->parentWidget()) {
+        if (qobject_cast<const QAbstractItemView *>(w) || w->inherits("KItemListContainer"))
+            return true;
+    }
+    return false;
 }
 
 // Khung nội dung của thanh tìm Dolphin: Search::Bar (AnimatedHeightWidget)
@@ -264,6 +279,22 @@ public:
                 }
                 return;  // không tô nền
             }
+        }
+        // Khung focus của ô file/mục danh sách: khung "focus" của Kvantum bo 2px
+        // (Kvantum ép mép ≤ 2px) — vẽ đè lên ô bo ITEM_RADIUS thành góc gần
+        // vuông (máy ảo 2026-10-04). Ô đang chọn đã có viền cyan → bỏ khung;
+        // ô chưa chọn (vd sau Ctrl+bấm bỏ chọn) → vẽ khung bo cùng góc với ô.
+        if (pe == PE_FrameFocusRect && isItemView(w)) {
+            if (opt->state & State_Selected)
+                return;
+            p->save();
+            p->setRenderHint(QPainter::Antialiasing);
+            p->setPen(QPen(QColor(samhie::FOCUS_RING), 1));
+            p->setBrush(Qt::NoBrush);
+            p->drawRoundedRect(QRectF(opt->rect).adjusted(0.5, 0.5, -0.5, -0.5),
+                               samhie::ITEM_RADIUS - 0.5, samhie::ITEM_RADIUS - 0.5);
+            p->restore();
+            return;
         }
         // Vạch giữa sidebar và vùng file: viền của vùng file (PanePainter) thay.
         if (pe == PE_IndicatorDockWidgetResizeHandle)

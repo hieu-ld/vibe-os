@@ -6,3 +6,8 @@
 # Khoá là số nguyên tuỳ ý — đọc mã nguồn dolphin_placespanelsettings.kcfg.
 # User chốt 2026-09-29 sau khi thử trong máy ảo.
 IconSize=20
+
+[General]
+# Bỏ nút +/− chọn nhanh ở góc ô khi trỏ chuột — Ctrl+bấm làm được việc đó
+# (user chốt 2026-10-04). Khoá: dolphin_generalsettings.kcfg.
+ShowSelectionToggle=false

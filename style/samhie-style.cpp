@@ -10,7 +10,7 @@
 //      Màu chữ: KFilePlacesViewDelegate::paint (KIO 6.30) chép option ra một
 //      bản CỤC BỘ, gọi style vẽ nền mục (PE_PanelItemViewItem) bằng bản đó,
 //      RỒI mới lấy màu chữ/icon từ chính bản đó — nên lúc vẽ nền ta sửa màu
-//      trong bản sao. KHÔNG bọc delegate: KIO tìm delegate bằng
+//      trong bản sao (icon: KIconLoader đọc WindowText/HighlightedText). KHÔNG bọc delegate: KIO tìm delegate bằng
 //      qobject_cast<KFilePlacesViewDelegate*>(itemDelegate()) và có chỗ không
 //      kiểm rỗng → Dolphin crash khi bấm sidebar (máy ảo 2026-10-03, gdb:
 //      KFilePlacesViewDelegate::pointIsHeaderArea).
@@ -245,15 +245,23 @@ public:
             auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt);
             if (vopt && !w && isPlacesView(vopt->widget)) {
                 // Bản sao cục bộ (không const) của KIO — xem chú thích đầu file.
-                // Text cũng cyan khi đang chọn: cửa sổ KHÔNG active thì KIO tô
-                // chữ bằng Text. KHÔNG đổi WindowText: tiêu đề nhóm ("Places",
-                // "Remote") lấy màu đó và vẽ chung khung với mục đầu nhóm.
+                // Chữ: đang chọn + cửa sổ active → HighlightedText, còn lại →
+                // Text. Icon: KIconLoader tô theo palette này (setCustomPalette),
+                // chế độ Selected → HighlightedText, chế độ thường → WINDOWTEXT
+                // (KIconColors(QPalette), kiconthemes 6.30) — nên đổi cả hai.
+                // Tiêu đề nhóm ("Places") cũng lấy WindowText nhưng KIO vẽ nó
+                // TRƯỚC lệnh này, bằng chính bản sao này → không bị ảnh hưởng.
                 QPalette &pal = const_cast<QStyleOptionViewItem *>(vopt)->palette;
                 pal.setColor(QPalette::HighlightedText, QColor(samhie::ACTIVE_TEXT));
+                QColor fg;
                 if (vopt->state & State_Selected)
-                    pal.setColor(QPalette::Text, QColor(samhie::ACTIVE_TEXT));
+                    fg = QColor(samhie::ACTIVE_TEXT);
                 else if (vopt->state & State_MouseOver)
-                    pal.setColor(QPalette::Text, QColor(samhie::HOVER_TEXT));
+                    fg = QColor(samhie::HOVER_TEXT);
+                if (fg.isValid()) {
+                    pal.setColor(QPalette::Text, fg);
+                    pal.setColor(QPalette::WindowText, fg);
+                }
                 return;  // không tô nền
             }
         }

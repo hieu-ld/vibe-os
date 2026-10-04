@@ -42,6 +42,12 @@
 //      dòng widget trong menu (Zoom của Dolphin) cũng cao bằng.
 //   8. Ô file Dolphin / mục danh sách không có khung focus (khung của Kvantum
 //      bo 2px vẽ đè thành góc vuông; ô đầu thư mục luôn có viền lơ lửng).
+//  12. Menu con đóng sau SUBMENU_SLOPPY_MS khi chuột rời sang mục khác, thay
+//      vì 1000ms của Kvantum. Trong lúc menu con còn mở, nó giữ chuột: bấm
+//      nút trong dòng widget của menu cha (nút "Other" màu thư mục) thì cú
+//      bấm không tới nút mà cả menu đóng — user đi từ "Compress" lên "Other"
+//      (máy ảo 2026-10-04; container: hỏng với 1000ms, đi từ trên xuống thì
+//      không sao).
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -80,6 +86,9 @@ constexpr int POPUP_RADIUS = 12;
 // góc khung; cũng bằng khe trên của tab (TAB_INSET) nên lùi đều hai phía.
 constexpr int DOLPHIN_TAB_INSET = 4;
 constexpr int MENUITEM_FRAME = 1;  // khung trên/dưới của MenuItem (tools/kvantum.py frame top=1)
+// Mục 12. Kvantum: SH_Menu_SubMenuSloppyCloseTimeout 1000 (đo bằng chương
+// trình nhỏ trong image), mở menu con sau 250. Vẫn đủ để rê chéo vào menu con.
+constexpr int SUBMENU_SLOPPY_MS = 300;
 
 // setViewportMargins là protected — gọi qua lớp con chỉ để mở quyền truy cập.
 class ScrollAreaAccess : public QAbstractScrollArea
@@ -352,6 +361,13 @@ public:
         QProxyStyle::unpolish(w);
     }
     using QProxyStyle::unpolish;
+
+    int styleHint(StyleHint hint, const QStyleOption *opt, const QWidget *w, QStyleHintReturn *ret) const override
+    {
+        if (hint == SH_Menu_SubMenuSloppyCloseTimeout)
+            return SUBMENU_SLOPPY_MS;
+        return QProxyStyle::styleHint(hint, opt, w, ret);
+    }
 
     void drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
     {

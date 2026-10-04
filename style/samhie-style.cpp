@@ -36,6 +36,7 @@
 //      file nằm ở cột 0 và góc khung bo 12, tab bo 8 — không lùi thì tab đè
 //      lên viền, góc tab lòi ra ngoài đường cong khung (máy ảo 2026-10-04).
 //      Tab Dolphin không icon (bản vẽ, như Konsole).
+//  10. Dòng menu cao bằng dòng sidebar (bỏ khoản "font + 8" của Kvantum).
 //   8. Khung focus của ô file Dolphin / mục danh sách bo cùng góc với ô (khung
 //      của Kvantum bo 2px vẽ đè thành góc vuông); ô đang chọn thì không vẽ.
 //
@@ -72,6 +73,7 @@ constexpr int POPUP_RADIUS = 12;
 // = PANE_RADIUS − góc tab (8, tools/kvantum.py) → góc tab/nút + đồng tâm với
 // góc khung; cũng bằng khe trên của tab (TAB_INSET) nên lùi đều hai phía.
 constexpr int DOLPHIN_TAB_INSET = 4;
+constexpr int MENUITEM_FRAME = 1;  // khung trên/dưới của MenuItem (tools/kvantum.py frame top=1)
 
 // setViewportMargins là protected — gọi qua lớp con chỉ để mở quyền truy cập.
 class ScrollAreaAccess : public QAbstractScrollArea
@@ -378,6 +380,14 @@ public:
             const int side = qMax(bopt->iconSize.width(), bopt->iconSize.height()) + 2 * TOOL_PADDING;
             s = QSize(side, side);
         }
+        // Dòng menu cao bằng nhịp sidebar Places (41px với Dongle): Kvantum lấy
+        // max(chữ + khung, chiều cao font + 8 "như qcommonstyle") — với hộp
+        // dòng cao của Dongle, khoản +8 thắng → 47px (máy ảo 2026-10-04, user
+        // muốn gọn lại bằng sidebar). Bỏ khoản +8: chữ + khung MenuItem trên +
+        // dưới (MENUITEM_FRAME, kvconfig frame.top/bottom). Vạch ngăn giữ nguyên.
+        auto *mopt = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
+        if (ct == CT_MenuItem && mopt && mopt->menuItemType != QStyleOptionMenuItem::Separator)
+            s.setHeight(qMin(s.height(), mopt->fontMetrics.height() + 2 * MENUITEM_FRAME));
         return s;
     }
 

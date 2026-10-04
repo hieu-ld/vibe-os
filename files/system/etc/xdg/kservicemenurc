@@ -1,0 +1,10 @@
+# Mặc định toàn máy: mục nào trong menu chuột phải của Dolphin hiện/ẩn. Người
+# dùng bật lại ở Dolphin → Configure → Context Menu (ghi vào ~/.config/kservicemenurc,
+# file này không bị đụng tới). Khoá = id plugin (tên file .so trong
+# /usr/lib64/qt6/plugins/kf6/kfileitemaction/), đọc ở KFileItemActions (KIO).
+[Show]
+# "Activities": gắn file vào Activity của Plasma — Hyprland không có Activity.
+kactivitymanagerd_fileitem_linking_plugin=false
+# "Assign Tags": nhãn cần Baloo (image không cài kf6-baloo) để duyệt lại
+# (tags:/) — gắn được mà không tìm lại được, vô dụng.
+tagsfileitemaction=false

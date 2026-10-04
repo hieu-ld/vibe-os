@@ -134,12 +134,11 @@ hl.config({
     general = {
         gaps_in     = 4,
         gaps_out    = 8,
-        border_size = 1,
-
-        col = {
-            active_border   = "rgba(" .. color.accent .. "aa)",
-            inactive_border = "rgba(" .. color.subSecondary .. "ff)",
-        },
+        -- Không viền (user 2026-10-04): cửa sổ đang dùng phân biệt bằng cách
+        -- làm tối cửa sổ KHÔNG dùng (decoration.dim_inactive bên dưới), thay
+        -- cho viền cyan. Kéo mép để đổi cỡ vẫn được (resize_on_border dùng
+        -- vùng bắt mép mở rộng, không cần viền).
+        border_size = 0,
 
         resize_on_border = true,
         allow_tearing    = false,
@@ -153,6 +152,12 @@ hl.config({
 
         active_opacity   = 1.0,
         inactive_opacity = 1.0,
+
+        -- Cửa sổ không dùng tối đi một chút: phủ đen với độ đục dim_strength.
+        -- Ubuntu/Samhie 1.0 phân biệt bằng thanh tiêu đề + bóng (KDE/GNOME
+        -- không làm tối nội dung) — Samhie 2 không có thanh tiêu đề.
+        dim_inactive = true,
+        dim_strength = 0.15,
 
         shadow = {
             enabled      = true,

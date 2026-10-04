@@ -32,19 +32,21 @@
 //      xuống và đẩy file xuống như cũ — Dolphin dựng nó vậy, style không đổi
 //      được chỗ đặt.
 //   9. Dolphin: nút + (tab mới) ở góc trái dải tab, như Konsole — Dolphin không
-//      có nút này. Dải tab + nút lùi vào DOLPHIN_TAB_INSET px: viền trái vùng
+//      có nút này. Tab mới (nút +, Ctrl+T, menu) mở thư mục Home thay vì thư
+//      mục đang xem (user 2026-10-04); "Open in New Tab" vẫn mở thư mục đó. Dải tab + nút lùi vào DOLPHIN_TAB_INSET px: viền trái vùng
 //      file nằm ở cột 0 và góc khung bo 12, tab bo 8 — không lùi thì tab đè
 //      lên viền, góc tab lòi ra ngoài đường cong khung (máy ảo 2026-10-04).
 //      Tab Dolphin không icon (bản vẽ, như Konsole).
 //  10. Dòng menu cao bằng dòng sidebar (bỏ khoản "font + 8" của Kvantum).
-//   8. Khung focus của ô file Dolphin / mục danh sách bo cùng góc với ô (khung
-//      của Kvantum bo 2px vẽ đè thành góc vuông); ô đang chọn thì không vẽ.
+//   8. Ô file Dolphin / mục danh sách không có khung focus (khung của Kvantum
+//      bo 2px vẽ đè thành góc vuông; ô đầu thư mục luôn có viền lơ lửng).
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
 
 #include <QAbstractItemView>
 #include <QAction>
+#include <QDir>
 #include <QAbstractScrollArea>
 #include <QEvent>
 #include <QPainter>
@@ -59,6 +61,7 @@
 #include <QTabWidget>
 #include <QToolBar>
 #include <QToolButton>
+#include <QUrl>
 
 #include "colors.h"  // sinh từ theme/palette.toml (tools/gen-theme.py)
 
@@ -108,6 +111,62 @@ bool isSearchContents(const QWidget *w)
     return area && area->widget() == w && area->parentWidget()
         && area->parentWidget()->inherits("Search::Bar");
 }
+
+// Tab mới ở thư mục Home, cuối dải (như trình duyệt và như Ctrl+T gốc
+// của Dolphin), focus vào vùng file của tab mới. Gọi slot công khai
+// DolphinTabWidget::openNewActivatedTab(QUrl, QUrl) qua meta-object.
+void openHomeTab(QTabWidget *tw)
+{
+    const QUrl home = QUrl::fromLocalFile(QDir::homePath());
+    if (!QMetaObject::invokeMethod(tw, "openNewActivatedTab", Q_ARG(QUrl, home), Q_ARG(QUrl, QUrl())))
+        return;
+    tw->tabBar()->moveTab(tw->currentIndex(), tw->count() - 1);
+    const auto views = tw->currentWidget()->findChildren<QWidget *>();
+    for (QWidget *v : views) {
+        if (v->inherits("KItemListContainer")) {
+            v->setFocus();
+            break;
+        }
+    }
+}
+
+// Hành động "new_tab" của cửa sổ Dolphin (KActionCollection đặt
+// objectName = tên hành động). Nó KHÔNG là con QObject của cửa sổ
+// (findChild không thấy — container) mà được gắn vào cửa sổ
+// (addAssociatedWidget → QWidget::actions()) để phím tắt chạy.
+QAction *newTabAction(QWidget *window)
+{
+    const auto actions = window->actions();
+    for (QAction *action : actions) {
+        if (action->objectName() == QLatin1String("new_tab"))
+            return action;
+    }
+    return nullptr;
+}
+
+// Lần đầu tab widget Dolphin hiện (cửa sổ đã dựng xong, hành động chắc chắn
+// có): bỏ kết nối new_tab.triggered → cửa sổ (DolphinMainWindow::
+// openNewActivatedTab = mở thư mục đang xem), nối sang openHomeTab. Tự huỷ.
+class NewTabRewire : public QObject
+{
+public:
+    explicit NewTabRewire(QTabWidget *tw) : QObject(tw) {}
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() != QEvent::Show)
+            return false;
+        auto *tw = static_cast<QTabWidget *>(obj);
+        QWidget *window = tw->window();
+        if (QAction *action = newTabAction(window)) {
+            QObject::disconnect(action, &QAction::triggered, window, nullptr);
+            QObject::connect(action, &QAction::triggered, tw, [tw] { openHomeTab(tw); });
+        }
+        obj->removeEventFilter(this);
+        deleteLater();
+        return false;
+    }
+};
 
 QColor paneColor()
 {
@@ -215,11 +274,8 @@ class SamhieStyle : public QProxyStyle
 public:
     SamhieStyle() : QProxyStyle(QStyleFactory::create(QStringLiteral("kvantum"))) {}
 
-    // Nút + ở góc trái dải tab Dolphin: bấm = hành động "new_tab" của cửa sổ
-    // (Ctrl+T; KActionCollection đặt objectName = tên hành động). Hành động
-    // KHÔNG là con QObject của cửa sổ (findChild không thấy — container), mà
-    // được gắn vào cửa sổ (addAssociatedWidget → QWidget::actions()) để phím
-    // tắt chạy. Tìm lúc bấm, không lúc polish: lúc đó có thể chưa được tạo.
+    // Nút + ở góc trái dải tab Dolphin; hành động new_tab (Ctrl+T, menu ☰)
+    // nối lại sang openHomeTab khi dải hiện lần đầu (NewTabRewire).
     static void addNewTabButton(QTabWidget *tw)
     {
         if (tw->cornerWidget(Qt::TopLeftCorner))
@@ -230,16 +286,9 @@ public:
         button->setIcon(QIcon::fromTheme(QStringLiteral("tab-new")));
         button->setToolTip(QStringLiteral("New Tab (Ctrl+T)"));
         button->setFocusPolicy(Qt::NoFocus);
-        QObject::connect(button, &QToolButton::clicked, tw, [tw] {
-            const auto actions = tw->window()->actions();
-            for (QAction *action : actions) {
-                if (action->objectName() == QLatin1String("new_tab")) {
-                    action->trigger();
-                    return;
-                }
-            }
-        });
+        QObject::connect(button, &QToolButton::clicked, tw, [tw] { openHomeTab(tw); });
         tw->setCornerWidget(button, Qt::TopLeftCorner);
+        tw->installEventFilter(new NewTabRewire(tw));
     }
 
     void polish(QWidget *w) override
@@ -325,22 +374,13 @@ public:
                 return;  // không tô nền
             }
         }
-        // Khung focus của ô file/mục danh sách: khung "focus" của Kvantum bo 2px
-        // (Kvantum ép mép ≤ 2px) — vẽ đè lên ô bo ITEM_RADIUS thành góc gần
-        // vuông (máy ảo 2026-10-04). Ô đang chọn đã có viền cyan → bỏ khung;
-        // ô chưa chọn (vd sau Ctrl+bấm bỏ chọn) → vẽ khung bo cùng góc với ô.
-        if (pe == PE_FrameFocusRect && isItemView(w)) {
-            if (opt->state & State_Selected)
-                return;
-            p->save();
-            p->setRenderHint(QPainter::Antialiasing);
-            p->setPen(QPen(QColor(samhie::FOCUS_RING), 1));
-            p->setBrush(Qt::NoBrush);
-            p->drawRoundedRect(QRectF(opt->rect).adjusted(0.5, 0.5, -0.5, -0.5),
-                               samhie::ITEM_RADIUS - 0.5, samhie::ITEM_RADIUS - 0.5);
-            p->restore();
+        // Không vẽ khung focus cho ô file/mục danh sách. Khung "focus" của
+        // Kvantum bo 2px đè lên ô bo ITEM_RADIUS thành góc vuông; ô đang chọn
+        // đã có viền cyan; còn ô CHƯA chọn thì Dolphin đặt ô đầu tiên làm ô
+        // hiện tại mỗi lần vào thư mục → viền lơ lửng ở thư mục đầu (user bỏ,
+        // máy ảo 2026-10-04). Mũi tên trong Dolphin chọn luôn ô nên vẫn thấy.
+        if (pe == PE_FrameFocusRect && isItemView(w))
             return;
-        }
         // Vạch giữa sidebar và vùng file: viền của vùng file (PanePainter) thay.
         if (pe == PE_IndicatorDockWidgetResizeHandle)
             return;

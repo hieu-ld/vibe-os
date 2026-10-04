@@ -14,3 +14,6 @@ ShowSelectionToggle=false
 # Dải tab luôn hiện (bản vẽ user), kể cả khi chỉ có 1 tab — mặc định Dolphin
 # chỉ hiện khi có từ 2 tab. Nút + ở góc trái dải do style "samhie" thêm.
 AlwaysShowTabBar=true
+# Mở Dolphin luôn ở thư mục Home (HomeUrl), không mở lại các tab lần trước
+# (user 2026-10-04). Tab mới (+, Ctrl+T) cũng mở Home — style "samhie" lo.
+RememberOpenedTabs=false

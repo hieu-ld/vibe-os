@@ -42,16 +42,20 @@
 //      dòng widget trong menu (Zoom của Dolphin) cũng cao bằng.
 //   8. Ô file Dolphin / mục danh sách không có khung focus (khung của Kvantum
 //      bo 2px vẽ đè thành góc vuông; ô đầu thư mục luôn có viền lơ lửng).
-//  12. Menu con đóng sau SUBMENU_SLOPPY_MS khi chuột rời sang mục khác, thay
-//      vì 1000ms của Kvantum. Trong lúc menu con còn mở, nó giữ chuột: bấm
-//      nút trong dòng widget của menu cha (nút "Other" màu thư mục) thì cú
-//      bấm không tới nút mà cả menu đóng — user đi từ "Compress" lên "Other"
-//      (máy ảo 2026-10-04; container: hỏng với 1000ms, đi từ trên xuống thì
-//      không sao).
+//  12. Nút trong dòng widget của menu (nút "Other" màu thư mục, ô màu, Zoom)
+//      bấm được cả khi menu con còn mở. Lúc đó menu con giữ chuột; nó chuyển
+//      cú bấm cho MENU CHA (QMenuPrivate::mouseEventTaken) chứ không cho nút,
+//      menu cha coi như chọn cả dòng (QWidgetAction) → đóng hết. User đi từ
+//      "Compress" lên "Other" rồi bấm ngay (máy ảo 2026-10-04). → bộ lọc trên
+//      QMenu: cú bấm/thả tới chính menu mà dưới chuột là một nút thì đóng menu
+//      con, chuyển cho nút (MenuButtonForwarder). Bình thường cú bấm đi thẳng
+//      vào nút, menu không thấy — bộ lọc chỉ chạy ở trường hợp chuyển tiếp.
+//      Thêm: menu con đóng sau SUBMENU_SLOPPY_MS thay vì 1000ms của Kvantum.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
 
+#include <QAbstractButton>
 #include <QAbstractItemView>
 #include <QAction>
 #include <QDir>
@@ -61,6 +65,8 @@
 #include <QPainterPath>
 #include <QLayout>
 #include <QMenu>
+#include <QMouseEvent>
+#include <QCoreApplication>
 #include <QProxyStyle>
 #include <QScrollArea>
 #include <QStyleFactory>
@@ -281,6 +287,38 @@ public:
     }
 };
 
+// Mục 12. Gửi bằng postEvent (hàng đợi giữ thứ tự bấm → thả): nút có thể mở
+// danh sách bằng exec() — không chạy vòng lặp lồng trong lúc menu con còn
+// đang xử lý cú bấm của chính nó.
+class MenuButtonForwarder : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() != QEvent::MouseButtonPress && event->type() != QEvent::MouseButtonRelease)
+            return false;
+        auto *menu = static_cast<QMenu *>(obj);
+        auto *me = static_cast<QMouseEvent *>(event);
+        auto *button = qobject_cast<QAbstractButton *>(menu->childAt(me->position().toPoint()));
+        if (!button || !button->isEnabled())
+            return false;
+        if (event->type() == QEvent::MouseButtonPress) {
+            const auto actions = menu->actions();
+            for (QAction *action : actions) {
+                if (action->menu() && action->menu()->isVisible())
+                    action->menu()->hide();
+            }
+        }
+        const QPointF local = button->mapFrom(menu, me->position());
+        QCoreApplication::postEvent(button, new QMouseEvent(event->type(), local, me->scenePosition(),
+                                                            me->globalPosition(), me->button(), me->buttons(),
+                                                            me->modifiers(), me->pointingDevice()));
+        return true;
+    }
+};
+
 class SamhieStyle : public QProxyStyle
 {
 public:
@@ -346,6 +384,8 @@ public:
             row->setMinimumHeight(row->fontMetrics().height() + 2 * MENUITEM_FRAME);
         }
         // DolphinStatusBar::paintEvent: drawRoundedRect(palette().window()).
+        if (qobject_cast<QMenu *>(w))
+            w->installEventFilter(&m_menuForwarder);  // mục 12
         if (w->inherits("DolphinStatusBar")) {
             QPalette pal = w->palette();
             pal.setColor(QPalette::Window, QColor(samhie::PANE));
@@ -358,6 +398,7 @@ public:
     {
         w->removeEventFilter(&m_pane);
         w->removeEventFilter(&m_popup);
+        w->removeEventFilter(&m_menuForwarder);
         QProxyStyle::unpolish(w);
     }
     using QProxyStyle::unpolish;
@@ -493,6 +534,7 @@ public:
 private:
     PanePainter m_pane;
     PopupPainter m_popup;
+    MenuButtonForwarder m_menuForwarder;
 };
 
 }  // namespace

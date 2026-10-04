@@ -17,3 +17,14 @@ AlwaysShowTabBar=true
 # Mở Dolphin luôn ở thư mục Home (HomeUrl), không mở lại các tab lần trước
 # (user 2026-10-04). Tab mới (+, Ctrl+T) cũng mở Home — style "samhie" lo.
 RememberOpenedTabs=false
+
+[PreviewSettings]
+# Tắt xem trước THƯ MỤC (directorythumbnail: Dolphin vẽ ảnh thu nhỏ của file
+# bên trong đè lên icon thư mục — user thấy "lem" ở Pictures, chọn tắt
+# 2026-10-04). File ảnh/video vẫn có ảnh thu nhỏ.
+# Danh sách = KIO::PreviewJob::defaultPlugins() của image trừ
+# directorythumbnail — in bằng chương trình C++ nhỏ trong image e4ebf3d
+# (textthumbnail vốn không nằm trong mặc định). Khai Plugins là khai CẢ danh
+# sách: image thêm trình tạo ảnh thu nhỏ mới thì phải thêm tên vào đây, không
+# thì nó tắt. Người dùng bật lại: Dolphin → Configure → Interface → Previews.
+Plugins=exrthumbnail,mobithumbnail,blenderthumbnail,kraorathumbnail,imagethumbnail,jpegthumbnail,opendocumentthumbnail,audiothumbnail,svgthumbnail,ebookthumbnail,comicbookthumbnail,djvuthumbnail,gsthumbnail,windowsimagethumbnail,ffmpegthumbs,cursorthumbnail,rawthumbnail,windowsexethumbnail,ffmpegthumbnailer,gsf-office

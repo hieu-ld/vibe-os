@@ -107,6 +107,12 @@
 //      (QMenu không cha, khamburgermenu.cpp newMenu) — dựng mới khi Dolphin
 //      đổi danh sách → gỡ lúc polish + mỗi aboutToShow. Mọi QMenu không cha
 //      của Dolphin (trừ menu chuột phải) đều gỡ — kể cả File trong More.
+//      Menu chuột phải CHỖ TRỐNG không có hàng màu thư mục: ở đó nó đổi màu
+//      THƯ MỤC ĐANG MỞ — dễ nhầm, đã có ở menu của thư mục và hộp thoại tạo
+//      thư mục (user 2026-10-05). Menu chỗ trống = menu có Create New của cửa
+//      sổ ("new_menu"); hàng màu = QWidgetAction có nút kèm menu (Other).
+//      QMenu tạo widget cho QWidgetAction ngay lúc thêm hành động → lúc
+//      polish đã có. Gỡ khỏi menu (removeAction) chứ không ẩn.
 //  18. Thanh công cụ Dolphin không có menu chuột phải (Text Position, Icon
 //      Size, Configure Toolbars, Lock — bấm nhầm là hỏng thanh theo bản vẽ;
 //      user 2026-10-05). Ô đường dẫn trong thanh vẫn có menu riêng.
@@ -142,6 +148,9 @@
 #include <QToolBar>
 #include <QToolButton>
 #include <QUrl>
+#include <QWidgetAction>
+
+#include <algorithm>
 
 #include "colors.h"  // sinh từ theme/palette.toml (tools/gen-theme.py)
 
@@ -168,6 +177,13 @@ class ScrollAreaAccess : public QAbstractScrollArea
 {
 public:
     using QAbstractScrollArea::setViewportMargins;
+};
+
+// createdWidgets là protected — cùng cách trên (mục 17).
+class WidgetActionAccess : public QWidgetAction
+{
+public:
+    using QWidgetAction::createdWidgets;
 };
 
 bool isPlacesView(const QWidget *w)
@@ -489,8 +505,10 @@ public:
         // DolphinStatusBar::paintEvent: drawRoundedRect(palette().window()).
         if (qobject_cast<QMenu *>(w))
             w->installEventFilter(&m_menuForwarder);  // mục 12
-        if (w->inherits("DolphinContextMenu"))
+        if (w->inherits("DolphinContextMenu")) {
             hideItemCreateNew(static_cast<QMenu *>(w));
+            hideViewportFolderColors(static_cast<QMenu *>(w));
+        }
         if (qobject_cast<QMenu *>(w) && !w->parentWidget() && !w->inherits("DolphinContextMenu")
             && QCoreApplication::applicationName() == QLatin1String("dolphin")) {
             auto *menu = static_cast<QMenu *>(w);  // mục 17: menu ☰
@@ -767,18 +785,48 @@ private:
         }
     }
 
-    static void removeHamburgerCreateNew(QMenu *menu)  // mục 17
+    // Menu con "Create New" của các cửa sổ Dolphin (hành động "new_menu").
+    static QList<QMenu *> windowCreateNewMenus()
     {
-        QList<QMenu *> createNew;
+        QList<QMenu *> menus;
         for (QWidget *top : QApplication::topLevelWidgets()) {
             if (!top->inherits("DolphinMainWindow"))
                 continue;
             if (auto *a = top->findChild<QAction *>(QStringLiteral("new_menu")); a && a->menu())
-                createNew << a->menu();
+                menus << a->menu();
         }
+        return menus;
+    }
+
+    static void removeHamburgerCreateNew(QMenu *menu)  // mục 17
+    {
+        const QList<QMenu *> createNew = windowCreateNewMenus();
         for (QAction *a : menu->actions()) {
             if (a->menu() && createNew.contains(a->menu()))
                 menu->removeAction(a);
+        }
+    }
+
+    static void hideViewportFolderColors(QMenu *menu)  // mục 17
+    {
+        const QList<QMenu *> createNew = windowCreateNewMenus();
+        const QList<QAction *> actions = menu->actions();
+        if (std::none_of(actions.begin(), actions.end(),
+                         [&](QAction *a) { return a->menu() && createNew.contains(a->menu()); }))
+            return;
+        for (QAction *a : actions) {
+            auto *wa = qobject_cast<QWidgetAction *>(a);
+            if (!wa)
+                continue;
+            for (QWidget *row : static_cast<WidgetActionAccess *>(wa)->createdWidgets()) {
+                const auto buttons = row->findChildren<QPushButton *>();
+                if (std::any_of(buttons.begin(), buttons.end(), [](QPushButton *b) { return b->menu(); })) {
+                    // Gỡ hẳn: ẩn (setVisible) thì QMenu bỏ qua hành động
+                    // nhưng widget dòng vẫn hiện, đè lên dòng đầu (container).
+                    menu->removeAction(a);
+                    return;
+                }
+            }
         }
     }
 

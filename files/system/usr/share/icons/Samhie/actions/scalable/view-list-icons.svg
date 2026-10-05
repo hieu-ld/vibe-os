@@ -5,8 +5,8 @@
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <rect x="1.5" y="1.5" width="5.5" height="5.5" rx="1" style="stroke:currentColor" class="ColorScheme-Text" />
-  <rect x="1.5" y="9" width="5.5" height="5.5" rx="1" style="stroke:currentColor" class="ColorScheme-Text" />
-  <rect x="9" y="1.5" width="5.5" height="5.5" rx="1" style="stroke:currentColor" class="ColorScheme-Text" />
-  <rect x="9" y="9" width="5.5" height="5.5" rx="1" style="stroke:currentColor" class="ColorScheme-Text" />
+  <rect x="1.5" y="1.5" width="5" height="5" rx="1" style="stroke:currentColor" class="ColorScheme-Text" />
+  <rect x="1.5" y="9.5" width="5" height="5" rx="1" style="stroke:currentColor" class="ColorScheme-Text" />
+  <rect x="9.5" y="1.5" width="5" height="5" rx="1" style="stroke:currentColor" class="ColorScheme-Text" />
+  <rect x="9.5" y="9.5" width="5" height="5" rx="1" style="stroke:currentColor" class="ColorScheme-Text" />
 </svg>

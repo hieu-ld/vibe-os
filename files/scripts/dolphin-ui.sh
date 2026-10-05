@@ -10,6 +10,15 @@
 # trong <ActionProperties>, ghi vào /usr/share. Không chép tay file của Dolphin
 # vào repo: Dolphin lên bản thì file tự theo, menu mới của Dolphin không mất.
 #
+# Version = bản nhúng + 1. Người dùng đổi phím tắt/thanh công cụ thì KXmlGui
+# ghi bản RIÊNG ~/.local/share/kxmlgui5/dolphin/dolphinui.rc — cùng version
+# thì bản riêng (đứng trước) thắng, đổi gì sau đó ở đây không tới tài khoản
+# đó (máy ảo 2026-10-05: 4 mục ẩn mới vẫn hiện; container tái hiện bằng bản
+# riêng version 49). Version lớn hơn thì bản này thắng, KXmlGuiVersionHandler
+# chỉ nhập phần ActionProperties (phím tắt) của bản riêng vào. Thêm sửa đổi
+# mới mà tài khoản cũ đã có bản riêng version = bản này thì vẫn không tới —
+# đổi xong thì tăng SAMHIE_REV.
+#
 # KXmlGui áp MỌI thuộc tính trong <ActionProperties> qua QObject::setProperty,
 # không riêng phím tắt:
 #   compact        visible="false" shortcut=""   ẩn khỏi mọi menu, Ctrl+2 cũ chết theo
@@ -133,7 +142,12 @@ note = ("<!-- Samhie: Dolphin's own dolphinui.rc with three properties changed\n
         "     in <ActionProperties> and a new mainToolBar (files/scripts/dolphin-ui.sh). -->\n")
 ui = ui.replace("<gui ", note + "<gui ", 1)
 
-version = re.search(r'<gui name="dolphin" version="(\d+)"', ui).group(1)
+# Lần sửa của Samhie: tăng mỗi khi đổi file này theo cách tài khoản cũ cần
+# nhận (xem đầu file). Bản nhúng 49 + 1 + SAMHIE_REV.
+SAMHIE_REV = 0
+version = int(re.search(r'<gui name="dolphin" version="(\d+)"', ui).group(1)) + 1 + SAMHIE_REV
+ui, n = re.subn(r'(<gui name="dolphin" version=")\d+"', rf'\g<1>{version}"', ui, count=1)
+assert n == 1, "no version in dolphinui.rc"
 os.makedirs("/usr/share/kxmlgui5/dolphin", exist_ok=True)
 with open("/usr/share/kxmlgui5/dolphin/dolphinui.rc", "w") as f:
     f.write(ui)

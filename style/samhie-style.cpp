@@ -69,10 +69,14 @@
 //        còn tiêu đề thì căn trái). Nhận ra theo chữ: giao diện tiếng Anh;
 //      - cao thêm HEADER_GAP ở dưới, vẽ trong phần trên: dòng đầu cách ô
 //        hover đúng bằng khe từ mép trên vùng file tới ô hover (đo 10px).
-//      Ô hover/chọn của dòng file (Details) cũng rộng bằng: Dolphin đưa
-//      PE_PanelItemViewItem khung từ lề trái tới hết các cột (bỏ lề hai bên)
-//      → kéo ra cả bề ngang vùng file. Nhận ra dòng Details theo bề ngang
-//      (> 60% vùng file; ô chế độ Icons hẹp hơn nhiều).
+//      Ô hover/chọn của dòng file (Details) cũng rộng bằng, và VUÔNG (user
+//      2026-10-05; chế độ Icons giữ ô bo của Kvantum): Dolphin đưa
+//      PE_PanelItemViewItem khung từ lề trái tới hết các cột → style tự tô
+//      cả bề ngang viewport (= ô hover tiêu đề: viewport tự cách viền vùng
+//      file 7px — đo container 2026-10-05, cả hai 630…1528), cùng màu phần tử
+//      itemview của Kvantum (trỏ = nền hover, chọn = nền hover + viền
+//      accent). Nhận ra dòng Details theo bề ngang (> 60% vùng file; ô chế
+//      độ Icons hẹp hơn nhiều).
 //  15. Dòng trạng thái nhỏ của Dolphin (nổi ở góc dưới-trái vùng file) tô
 //      nền đè lên viền trái vùng file → vẽ lại đoạn viền đó.
 //
@@ -123,7 +127,6 @@ constexpr int MENUITEM_FRAME = 1;  // khung trên/dưới của MenuItem (tools/
 constexpr int SUBMENU_SLOPPY_MS = 300;
 // Mục 14: khe trên ô hover tiêu đề cột (Kvantum) đo trong máy ảo 2026-10-05.
 constexpr int HEADER_GAP = 10;
-constexpr int ROW_HOVER_OUTSET = 3;  // mục 14, xem chỗ dùng
 
 // setViewportMargins là protected — gọi qua lớp con chỉ để mở quyền truy cập.
 class ScrollAreaAccess : public QAbstractScrollArea
@@ -476,12 +479,23 @@ public:
         }
         auto *item = qstyleoption_cast<const QStyleOptionViewItem *>(opt);
         if (pe == PE_PanelItemViewItem && item && isDolphinView(w) && item->rect.width() > w->width() * 0.6) {
-            QStyleOptionViewItem row(*item);  // mục 14
-            // Kvantum chừa lề ô dòng ít hơn ô tiêu đề 3px mỗi bên — đo container
-            // 2026-10-05: dòng 633…1525, tiêu đề 630…1528 → bù lại cho bằng.
-            row.rect.setLeft(-ROW_HOVER_OUTSET);
-            row.rect.setRight(w->width() - 1 + ROW_HOVER_OUTSET);
-            QProxyStyle::drawPrimitive(pe, &row, p, w);
+            const bool selected = item->state & State_Selected;  // mục 14
+            if (!selected && !(item->state & State_MouseOver))
+                return;
+            // Đổi mép viewport sang toạ độ ô (KItemListWidget) — hiện ô nằm ở
+            // x = 0 nên trùng nhau, phòng khi cuộn ngang.
+            const QTransform toItem = p->transform().inverted();
+            const qreal left = toItem.map(QPointF(0, 0)).x();
+            const qreal right = toItem.map(QPointF(w->width(), 0)).x();
+            const QRectF box(left, item->rect.top(), right - left, item->rect.height());
+            p->fillRect(box, QColor(samhie::ROW_HOVER));
+            if (selected) {
+                p->save();
+                p->setPen(QPen(QColor(samhie::ROW_SELECTED_BORDER), 1));
+                p->setBrush(Qt::NoBrush);
+                p->drawRect(box.adjusted(0.5, 0.5, -0.5, -0.5));
+                p->restore();
+            }
             return;
         }
         if (pe == PE_PanelItemViewItem) {

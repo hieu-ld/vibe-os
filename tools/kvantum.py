@@ -222,11 +222,12 @@ FRAMES = [
         "toggled":  (None, None),
     }, False),
     ("scrollbargroove", {"normal": (None, None)}, False),
+    # Thanh cuộn đục (không thấy nền xuyên qua), sáng lên ít khi trỏ/kéo — user 2026-10-05.
     ("scrollbarslider", {
-        "normal":   ("text-muted@0.6", None),
-        "focused":  ("text-muted", None),
-        "pressed":  ("text", None),
-        "disabled": ("text-muted@0.3", None),
+        "normal":   ("scrollbar", None),
+        "focused":  ("scrollbar-hover", None),
+        "pressed":  ("scrollbar-pressed", None),
+        "disabled": ("scrollbar@0.5", None),
     }, False),
     # Vạch ngăn sidebar | vùng file của Dolphin (bản vẽ: 1px #3b3c3c) — Kvantum
     # vẽ tay nắm dock bằng chính phần tử splitter (PE_IndicatorDockWidgetResizeHandle).
@@ -393,7 +394,7 @@ def kvconfig(pal):
             "active_tab_overlap": 0, "embedded_tabs": "false",
             "spread_menuitems": "false", "spread_header": "true",
             "scroll_arrows": "false", "transient_scrollbar": "true",
-            "scrollbar_in_view": "true", "scroll_width": 8, "scroll_min_extent": 36,
+            "scrollbar_in_view": "true", "scroll_width": 6, "scroll_min_extent": 36,
             "slider_width": 4, "slider_handle_width": 16, "slider_handle_length": 16,
             "check_size": 16, "progressbar_thickness": 6,
             "splitter_width": 1,

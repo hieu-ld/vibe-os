@@ -23,8 +23,8 @@ folder-download), trừ các hình trong RENAME (home.svg → user-home). Màu �
   * Ký hiệu phóng 32/24 quanh tâm ô vẽ (SYMBOL_SCALE): user vẽ trong ô 24,
     muốn 32 cho rõ ở cỡ 48 (Details) — 2026-10-05. Nét to theo (1,5 → 2),
     user chọn sau khi so với bản giữ nét 1,5.
-  * Ký hiệu important màu `danger` của bảng tối (SYMBOL_ROLE, user 2026-10-05)
-    thay vì màu nắp — cả bản 16px.
+  * Ký hiệu có màu riêng trong bảng [folder-symbols] (important: đỏ, user
+    2026-10-05) thay vì màu nắp — cả bản 16px.
   * Bỏ width/height, giữ viewBox — co giãn theo chỗ dùng.
 
 Thư mục không ký hiệu (folder, các màu, …) sinh từ hai nét vỏ thư mục.
@@ -38,9 +38,11 @@ Cái giá: chỗ nào vẽ ĐÚNG 16px (Details cỡ nhỏ nhất, hộp thoại
 ký hiệu trơn — nên chỉ làm cho tên có trong menu Other (SYMBOL16), không làm
 cho Docs/Download/Pictures/Videos/Home. Ký hiệu tô currentColor theo màu chữ
 (như icon nét khác của bộ), khung cắt chung CROP16 để mọi ký hiệu to bằng nhau.
-Bản 16 KHÔNG phóng (CROP16 đã cắt sát ký hiệu); ký hiệu có SYMBOL_ROLE thì tô
-currentColor lớp ColorScheme-NegativeText (KDE thay bằng ForegroundNegative
-= danger).
+Bản 16 KHÔNG phóng (CROP16 đã cắt sát ký hiệu); ký hiệu có màu riêng
+([folder-symbols]) thì ghi thẳng màu đó, không qua ColorScheme.
+Ký hiệu nào user vẽ riêng ở khung 16 (folders/16/<tên>.svg, chỉ ký hiệu, nét
+1) thì bản 16px lấy nguyên hình đó — sắc nét theo lưới điểm ảnh, thay vì thu
+nhỏ ô 22 của hình 64 (nét 1,5 → 1,09px, lệch lưới).
 Tên icon đo trong image 2026-10-04 (chuỗi trong libKF6KIOCore,
 libdolphinprivate, setfoldericonitemaction — xem docs/PLAN.md).
 """
@@ -53,6 +55,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "theme" / "icons" / "folders"
+SRC16 = SRC / "16"
 OUT = ROOT / "files/system/usr/share/icons/Samhie/places/scalable"
 OUT16 = ROOT / "files/system/usr/share/icons/Samhie/places/16"
 PALETTE = ROOT / "theme" / "palette.toml"
@@ -89,9 +92,10 @@ CROP16 = "21 26 22 22"
 # thân thư mục 17..58 — còn chỗ). Đo lại nếu user vẽ ký hiệu ra ngoài ô 24.
 SYMBOL_CENTER = (32, 37)
 SYMBOL_SCALE = 32 / 24
-# Ký hiệu tô theo vai trò của bảng tối thay vì màu [folders] — tên hình → vai
-# trò. Bộ icon Samhie chỉ dùng ở bản tối (palette.toml [kde] icon-theme).
-SYMBOL_ROLE = {"important": "danger"}
+# Màu riêng của ký hiệu ([folder-symbols]) phải nổi trên nền menu (dark.card)
+# ít nhất mức "thành phần giao diện" của WCAG. Bộ icon Samhie chỉ dùng ở bản
+# tối (palette.toml [kde] icon-theme).
+SYMBOL_MIN_CONTRAST = 3.0
 FALLBACK = "#fcfcfc"  # như build-icons.py: KDE thay bằng màu chữ của bảng màu
 
 HEADER = """<?xml version='1.0' encoding='utf-8'?>
@@ -118,9 +122,31 @@ def palette():
     return folders
 
 
-def dark_role(role):
+def symbol_colors():
+    """[folder-symbols]: tên hình → màu, đã kiểm tên + độ tương phản."""
     with PALETTE.open("rb") as f:
-        return tomllib.load(f)["dark"][role]
+        pal = tomllib.load(f)
+    colors = pal.get("folder-symbols", {})
+    for name, c in colors.items():
+        if not (SRC / f"{name}.svg").exists():
+            sys.exit(f"[folder-symbols] {name}: không có theme/icons/folders/{name}.svg")
+        if not (isinstance(c, str) and len(c) == 7 and c.startswith("#") and c == c.lower()):
+            sys.exit(f"[folder-symbols] {name}: phải là \"#rrggbb\" chữ thường")
+        ratio = contrast(c, pal["dark"]["card"])
+        if ratio < SYMBOL_MIN_CONTRAST:
+            sys.exit(f"[folder-symbols] {name}: {ratio:.2f}:1 trên dark.card, cần ≥ {SYMBOL_MIN_CONTRAST}")
+    return colors
+
+
+def contrast(a, b):
+    def lum(h):
+        def ch(v):
+            v /= 255
+            return v / 12.92 if v <= 0.04045 else ((v + 0.055) / 1.055) ** 2.4
+        r, g, b = (ch(int(h[i:i + 2], 16)) for i in (1, 3, 5))
+        return 0.2126 * r + 0.7152 * g + 0.0722 * b
+    hi, lo = sorted((lum(a), lum(b)), reverse=True)
+    return (hi + 0.05) / (lo + 0.05)
 
 
 def build(src_name, text, colors, color_name, symbol_color=None):
@@ -161,22 +187,22 @@ def build(src_name, text, colors, color_name, symbol_color=None):
     return HEADER.format(src=src_name, color=color_name) + ET.tostring(root, encoding="unicode") + "\n"
 
 
-def symbol16(src_name, text, role=None):
+def symbol16(src_name, text, color=None, own16=False):
     """Chỉ ký hiệu, tô currentColor (class ColorScheme-Text), khung CROP16.
-    role: vai trò bảng tối → lớp ColorScheme-NegativeText (chỉ có danger)."""
-    scheme_class, fallback = "ColorScheme-Text", FALLBACK
-    if role:
-        if role != "danger":
-            sys.exit(f"{src_name}: bản 16px chưa có lớp ColorScheme cho vai trò {role}")
-        scheme_class, fallback = "ColorScheme-NegativeText", dark_role(role)
+    color: màu riêng ([folder-symbols]) ghi thẳng, không qua ColorScheme.
+    own16: hình vẽ riêng khung 16 (folders/16/) — giữ nguyên khung."""
     root = ET.fromstring(text)
     for a in ("width", "height"):
         root.attrib.pop(a, None)
     shapes = list(root)
-    if [s.get("d") for s in shapes[:2]] != [BACK, FRONT]:
-        sys.exit(f"{src_name}: hai phần tử đầu phải là nắp + thân thư mục")
-    for el in shapes[:2]:
-        root.remove(el)
+    if own16:
+        if root.get("viewBox") != "0 0 16 16":
+            sys.exit(f"{src_name}: khung phải là 0 0 16 16")
+    else:
+        if [s.get("d") for s in shapes[:2]] != [BACK, FRONT]:
+            sys.exit(f"{src_name}: hai phần tử đầu phải là nắp + thân thư mục")
+        for el in shapes[:2]:
+            root.remove(el)
     for el in root.iter():
         if el is root:
             continue
@@ -188,17 +214,20 @@ def symbol16(src_name, text, role=None):
             if v == "none":
                 decls.append(f"{prop}:none")
             elif v.lower() == INK:
-                decls.append(f"{prop}:currentColor")
+                decls.append(f"{prop}:{color or 'currentColor'}")
             else:
                 sys.exit(f"{src_name}: màu lạ {v} — ký hiệu chỉ vẽ bằng {INK}")
         if decls:
             el.set("style", ";".join(decls))
-            el.set("class", scheme_class)
-    root.set("viewBox", CROP16)
-    defs = ET.Element(q("defs"))
-    style = ET.SubElement(defs, q("style"), {"id": "current-color-scheme", "type": "text/css"})
-    style.text = f".{scheme_class} {{ color: {fallback}; }}"
-    root.insert(0, defs)
+            if not color:
+                el.set("class", "ColorScheme-Text")
+    if not own16:
+        root.set("viewBox", CROP16)
+    if not color:
+        defs = ET.Element(q("defs"))
+        style = ET.SubElement(defs, q("style"), {"id": "current-color-scheme", "type": "text/css"})
+        style.text = f".ColorScheme-Text {{ color: {FALLBACK}; }}"
+        root.insert(0, defs)
     ET.indent(root, space="  ")
     return ("<?xml version='1.0' encoding='utf-8'?>\n"
             f"<!-- Samhie — ký hiệu thư mục cỡ 16 (menu màu thư mục), {src_name}.\n"
@@ -215,6 +244,7 @@ def plain_source():
 
 def outputs():
     folders = palette()
+    symbols = symbol_colors()
     out = {}
     plain = plain_source()
     for icon in PLAIN:
@@ -223,15 +253,20 @@ def outputs():
         out[OUT / f"folder-{color}.svg"] = build("vỏ thư mục", plain, folders[color], color)
     for src in sorted(SRC.glob("*.svg")):
         icon = RENAME.get(src.stem, f"folder-{src.stem}")
-        role = SYMBOL_ROLE.get(src.stem)
         out[OUT / f"{icon}.svg"] = build(
             f"theme/icons/folders/{src.name}", src.read_text(), folders["default"], "default",
-            dark_role(role) if role else None)
+            symbols.get(src.stem))
 
+    stray = {p.stem for p in SRC16.glob("*.svg")} - set(SYMBOL16)
+    if stray:
+        sys.exit(f"theme/icons/folders/16/ có hình không nằm trong SYMBOL16: {', '.join(sorted(stray))}")
     for name in SYMBOL16:
-        src = SRC / f"{name}.svg"
-        out[OUT16 / f"folder-{name}.svg"] = symbol16(f"theme/icons/folders/{src.name}", src.read_text(),
-                                                      SYMBOL_ROLE.get(name))
+        src = SRC16 / f"{name}.svg"
+        own16 = src.exists()
+        if not own16:
+            src = SRC / f"{name}.svg"
+        out[OUT16 / f"folder-{name}.svg"] = symbol16(str(src.relative_to(ROOT)), src.read_text(),
+                                                      symbols.get(name), own16)
 
     # build-icons.py ghi chung thư mục places/ — trùng tên là hai script ghi đè
     # nhau (vd sidebar dùng user-home nét mảnh, thư mục to cũng user-home).

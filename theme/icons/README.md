@@ -19,7 +19,7 @@ cùng một cỡ là nét dày bằng nhau.
 | `download` `network` `hdd` `recent` | `samhie-folder-download` (sidebar) `folder-network` `drive-harddisk` `document-open-recent` |
 | `trash` `trash-full` | `user-trash` `user-trash-full` |
 | `copy` `edit` | `edit-copy` + `edit-copy-path`, `document-edit` + `edit-entry` (2026-10-03) |
-| `filter` `list` `menu` | `view-filter`, `view-list-icons`, `application-menu` (nút ☰ Dolphin) |
+| `filter` `list` `details` `menu` | `view-filter`, `view-list-icons`, `view-list-details`, `application-menu` (nút ☰ Dolphin) |
 | `prev-circle` `next-circle` | `samhie-go-back` `samhie-go-forward` — chỉ nút lùi/tiến Dolphin (khung 30, nét 1,875) |
 | `bell` `bell-ring` `bell-off` | `notification-inactive` `notification-active` `notifications-disabled` |
 | `volume` `volume-mute` | `audio-volume-high/medium/low` `audio-volume-muted` |
@@ -70,10 +70,17 @@ chạy `python3 tools/build-folder-icons.py` → `Samhie/places/scalable/`. Scri
 tô kín nắp/thân, ký hiệu một màu tối hơn nắp; màu ở `theme/palette.toml` `[folders]`.
 Ký hiệu user vẽ trong ô 24×24 (tâm 32, 37); script phóng lên 32 (nét 1,5 → 2,
 user 2026-10-05) — vẽ ký hiệu mới thì vẫn vẽ trong ô 24 như cũ. `important`
-tô màu `danger` thay vì màu nắp.
+tô màu riêng (`[folder-symbols]` trong palette) thay vì màu nắp.
+**Bản vẽ khung 16** (`folders/16/<tên>.svg`, chỉ ký hiệu, nét 1): menu Other
+dùng nguyên hình đó ở 16px thay vì thu nhỏ hình 64. Hiện có `important` (user
+vẽ lại 2026-10-05); hình 64 của nó là cùng hình đó ×1,5 đặt vào ô 24 (tâm 32,
+37, nét 1,5) — vẽ lại thì sửa cả hai. Chỉnh so với bản user: chấm + thân dấu
+than là ô vuông bo 0,5 (bản gốc bo tròn hẳn → mờ ở 16px).
 Thư mục trơn (`folder`, 9 màu) sinh từ vỏ thư mục, không cần file riêng.
 
-**Sửa so với bản xuất Figma:** `music.svg` (2026-10-04) — bản xuất mất hai
+**Sửa so với bản xuất Figma:** `details.svg` (2026-10-05) — ba chấm tròn
+r 0,5 thành ô vuông 1px: chấm tròn chỉ phủ ~78% điểm ảnh, mờ hơn các vạch.
+`music.svg` (2026-10-04) — bản xuất mất hai
 nét chân nốt nhạc (có trong ảnh Figma user chụp). Thêm lại hai nét dọc dày
 1,5 ở x = 25,25 (40,5 → 46) và 31,25 (39,5 → 45,25), đo trên ảnh Figma: nối
 cạnh thanh ngang xuống tới đầu nốt.

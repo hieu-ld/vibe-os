@@ -1,11 +1,8 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — ký hiệu thư mục cỡ 16 (menu màu thư mục), theme/icons/folders/important.svg.
+<!-- Samhie — ký hiệu thư mục cỡ 16 (menu màu thư mục), theme/icons/folders/16/important.svg.
      Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="21 26 22 22" fill="none">
-  <defs>
-    <style id="current-color-scheme" type="text/css">.ColorScheme-NegativeText { color: #e26767; }</style>
-  </defs>
-  <circle cx="32" cy="37" r="9.75" stroke-width="1.5" style="stroke:currentColor" class="ColorScheme-NegativeText" />
-  <path d="M30.6246 31.7448C30.5575 30.9401 31.1925 30.25 32 30.25C32.8075 30.25 33.4425 30.9401 33.3754 31.7448L32.7736 38.9666C32.7584 39.1496 32.6788 39.3212 32.5489 39.4511C32.2458 39.7542 31.7542 39.7542 31.4511 39.4511C31.3212 39.3212 31.2416 39.1496 31.2264 38.9666L30.6246 31.7448Z" stroke-width="1.5" style="stroke:currentColor" class="ColorScheme-NegativeText" />
-  <circle cx="32" cy="43" r="1.5" stroke-width="1.5" style="stroke:currentColor" class="ColorScheme-NegativeText" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
+  <circle cx="8" cy="8" r="6.5" style="stroke:#c25d5c" />
+  <rect x="7" y="4" width="2" height="5" rx="0.5" style="fill:#c25d5c" />
+  <rect x="7" y="10" width="2" height="2" rx="0.5" style="fill:#c25d5c" />
 </svg>

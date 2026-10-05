@@ -85,6 +85,14 @@
 //      tối thiểu bằng ngày giờ dài nhất có thể → cột không đổi theo thư mục.
 //  15. Dòng trạng thái nhỏ của Dolphin (nổi ở góc dưới-trái vùng file) tô
 //      nền đè lên viền trái vùng file → vẽ lại đoạn viền đó.
+//  16. Nút bấm (QPushButton) trong dòng widget của menu — hàng màu thư mục
+//      của Dolphin (setfoldericonitemaction: 5 ô màu chỉ icon + "Other"):
+//      - ô chỉ icon cao bằng nút có chữ: Kvantum tính theo icon 16px → ô
+//        lùn hơn hẳn "Other" (chữ Dongle cao; ảnh user 2026-10-05);
+//      - không có khung focus: bấm Other thì nút nhận focus, khung focus
+//        của Kvantum (accent@0.7) bị viền nút che trên/dưới, chỉ còn hai sọc
+//        dọc xanh (đo ảnh user: #0d93af ở hai cột). Focus BÀN PHÍM (đi bằng
+//        Tab/mũi tên trong hàng) hiện bằng nền hover, như dòng menu.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -107,6 +115,7 @@
 #include <QMouseEvent>
 #include <QCoreApplication>
 #include <QProxyStyle>
+#include <QPushButton>
 #include <QScrollArea>
 #include <QStyleFactory>
 #include <QStyleOption>
@@ -169,6 +178,13 @@ bool isDolphinView(const QWidget *w)
             return true;
     }
     return false;
+}
+
+// Mục 16: nút trong dòng widget của menu (nút → widget dòng → QMenu).
+bool isMenuRowButton(const QWidget *w)
+{
+    return qobject_cast<const QPushButton *>(w) && w->parentWidget()
+        && qobject_cast<const QMenu *>(w->parentWidget()->parentWidget());
 }
 
 // Khung nội dung của thanh tìm Dolphin: Search::Bar (AnimatedHeightWidget)
@@ -604,6 +620,16 @@ public:
             p->restore();
             return;
         }
+        auto *button = qstyleoption_cast<const QStyleOptionButton *>(opt);
+        if (ce == CE_PushButton && button && isMenuRowButton(w)
+            && (button->state & State_HasFocus)) {  // mục 16
+            QStyleOptionButton o(*button);
+            o.state &= ~State_HasFocus;
+            if (o.state & State_KeyboardFocusChange)
+                o.state |= State_MouseOver;
+            QProxyStyle::drawControl(ce, &o, p, w);
+            return;
+        }
         auto *header = qstyleoption_cast<const QStyleOptionHeader *>(opt);
         if (ce == CE_Header && header && isDolphinView(w)) {  // mục 14
             p->save();
@@ -683,6 +709,16 @@ public:
         if (ct == CT_HeaderSection && !w && size.isEmpty()
             && QCoreApplication::applicationName() == QLatin1String("dolphin"))
             s.setHeight(s.height() + HEADER_GAP);
+        // Mục 16: hỏi Kvantum cỡ của chính nút đó nếu có một chữ — lấy chiều
+        // cao (Kvantum tự tính từ chữ/icon trong option, không theo size).
+        auto *pbopt = qstyleoption_cast<const QStyleOptionButton *>(opt);
+        if (ct == CT_PushButton && pbopt && pbopt->text.isEmpty() && isMenuRowButton(w)) {
+            QStyleOptionButton o(*pbopt);
+            o.text = QStringLiteral("X");
+            const QSize withText = QProxyStyle::sizeFromContents(
+                ct, &o, size.expandedTo(QSize(0, o.fontMetrics.height())), w);
+            s.setHeight(qMax(s.height(), withText.height()));
+        }
         auto *mopt = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
         if (ct == CT_MenuItem && mopt && mopt->menuItemType != QStyleOptionMenuItem::Separator)
             s.setHeight(qMin(s.height(), mopt->fontMetrics.height() + 2 * MENUITEM_FRAME));

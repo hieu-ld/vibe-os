@@ -39,6 +39,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "theme" / "icons"
 THEME = ROOT / "files/system/usr/share/icons/Samhie"
+# Bảng dời cho Quickshell (ô hover lẻ 1px quanh icon đã dời — xem NUDGE).
+NUDGE_JS = ROOT / "files/system/usr/share/samhie/quickshell/bar/icon-nudge.js"
 
 SVG_NS = "http://www.w3.org/2000/svg"
 ET.register_namespace("", SVG_NS)
@@ -188,6 +190,35 @@ NUDGE = {
 }
 
 
+def nudge_js():
+    """icon-nudge.js: tên icon → [cỡ, nửa điểm ảnh dời ngang, dọc] (−1/0/1).
+    Quickshell (bar/HoverBox.qml) thu ô hover 1px về phía icon dời, để ô có
+    tâm ở giữa điểm ảnh như icon: icon cỡ chẵn đặt ở toạ độ nguyên trong ô
+    chẵn, dời −0,5 → tâm nét lệch nửa điểm ảnh so với tâm ô; ô bớt 1px (lẻ)
+    thì tâm ô cũng dời theo. Dời 0,25 làm tròn về 0 (lệch 0,25 kiểu nào cũng
+    còn)."""
+    def half(d):
+        return round(d * 2) if abs(d) > 0.25 else 0
+    rows = []
+    for name, (size, dx, dy) in sorted(NUDGE.items()):
+        hx, hy = half(dx), half(dy)
+        if hx == 0 and hy == 0:
+            continue
+        for _, icon in MAP[name]:
+            rows.append(f'    "{icon}": [{size}, {hx}, {hy}],')
+    return (
+        "// SINH TỰ ĐỘNG bởi tools/build-icons.py (bảng NUDGE) — đừng sửa tay.\n"
+        ".pragma library\n\n"
+        "// tên icon → [cỡ px, nửa điểm ảnh dời ngang, dọc]: −1 trái/lên, 1 phải/xuống.\n"
+        "var NUDGE = {\n" + "\n".join(sorted(rows)) + "\n};\n\n"
+        "// {x, y} (−1/0/1) của icon ở đúng cỡ đó; cỡ khác thì {0, 0}.\n"
+        "function half(name, size) {\n"
+        "    const n = NUDGE[name];\n"
+        "    return n && n[0] === size ? { x: n[1], y: n[2] } : { x: 0, y: 0 };\n"
+        "}\n"
+    )
+
+
 def view_box(name, original):
     """viewBox cuối của hình: cắt khung (CROP) rồi dời (NUDGE)."""
     vb = [float(v) for v in CROP.get(name, original).split()]
@@ -316,6 +347,7 @@ def main():
     check = "--check" in sys.argv[1:]
     out = outputs()
 
+    out[NUDGE_JS] = nudge_js()
     if check:
         stale = [p for p, s in out.items() if not p.exists() or p.read_text() != s]
         for p in stale:

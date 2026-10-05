@@ -202,6 +202,8 @@ constexpr int POPUP_RADIUS = 12;
 // = PANE_RADIUS − góc tab (8, tools/kvantum.py) → góc tab/nút + đồng tâm với
 // góc khung; cũng bằng khe trên của tab (TAB_INSET) nên lùi đều hai phía.
 constexpr int DOLPHIN_TAB_INSET = 4;
+// Khe giữa nút + (ô hover vuông, mục 21) và tab đầu (user 2026-10-05: dính sát).
+constexpr int NEW_TAB_GAP = 4;
 constexpr int MENUITEM_FRAME = 1;  // khung trên/dưới của MenuItem (tools/kvantum.py frame top=1)
 // Mục 12. Kvantum: SH_Menu_SubMenuSloppyCloseTimeout 1000 (đo bằng chương
 // trình nhỏ trong image), mở menu con sau 250. Vẫn đủ để rê chéo vào menu con.
@@ -970,6 +972,8 @@ public:
             && tw->inherits("DolphinTabWidget") && tw->tabPosition() == QTabWidget::North
             && r.isValid()) {
             r.translate(DOLPHIN_TAB_INSET, 0);
+            if (se == SE_TabWidgetTabBar)
+                r.translate(NEW_TAB_GAP, 0);  // tab đầu không dính ô hover nút +
             if (se == SE_TabWidgetLeftCorner)
                 r.setTop(DOLPHIN_TAB_INSET);  // nền khi trỏ ngang đỉnh tab
             r.setRight(qMin(r.right(), tw->width() - 1));

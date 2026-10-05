@@ -149,7 +149,7 @@ Item {
     }
 
     // Nút như QuickButton: nền bo mờ khi rê chuột, icon sáng nhẹ.
-    component WindowButton: Rectangle {
+    component WindowButton: Item {
         id: btn
         property string iconName
         signal clicked()
@@ -157,10 +157,16 @@ Item {
         visible: root.window !== null
         width: 30
         height: 26
-        radius: 6
-        color: hover.hovered ? root.bar.hoverFill : "transparent"
+
+        HoverBox {
+            bar: root.bar
+            lit: hover.hovered
+            iconName: icon.iconName
+            iconSize: icon.size
+        }
 
         SamhieIcon {
+            id: icon
             anchors.centerIn: parent
             iconName: btn.iconName
             size: 18  // bằng chuông + nút nguồn (20 trông sáng hơn hẳn — user 2026-10-05)

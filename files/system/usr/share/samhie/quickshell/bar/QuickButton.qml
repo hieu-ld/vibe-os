@@ -2,7 +2,7 @@
 // giữa bộ gõ và chuông: `en ˅ 🔔 ⏻`.
 import QtQuick
 
-Rectangle {
+Item {
     id: root
 
     required property var bar
@@ -10,10 +10,16 @@ Rectangle {
 
     width: 30
     height: 26
-    radius: 6
-    color: lit ? bar.hoverFill : "transparent"
+
+    HoverBox {
+        bar: root.bar
+        lit: root.lit
+        iconName: icon.iconName
+        iconSize: icon.size
+    }
 
     SamhieIcon {
+        id: icon
         anchors.centerIn: parent
         iconName: "arrow-down"
         size: 16

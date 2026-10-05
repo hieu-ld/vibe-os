@@ -57,6 +57,16 @@
 //      các dòng thấy hình nền (container 2026-10-05). AlternateBase trong
 //      suốt trên QGraphicsView + scene của vùng file: KItemListView lấy
 //      palette từ view lúc vào scene, sau đó từ scene (PaletteChange).
+//  14. Tiêu đề cột Dolphin (Details) — KItemListHeaderWidget vẽ từng cột +
+//      phần đệm hai bên bằng CE_Header, widget = viewport (máy ảo 2026-10-05):
+//      - nền đục như vùng file: hàng cuộn xuống nằm dưới tiêu đề (z 10)
+//        không còn lộ chữ qua tiêu đề trong suốt;
+//      - ô hover cột đầu kéo tới mép trái vùng file, cột cuối tới mép phải
+//        (Dolphin vẽ phần đệm thành ô riêng, ngay TRƯỚC cột kề nó);
+//      - cao thêm HEADER_GAP ở dưới, vẽ trong phần trên: dòng đầu cách ô
+//        hover đúng bằng khe từ mép trên vùng file tới ô hover (đo 10px).
+//  15. Dòng trạng thái nhỏ của Dolphin (nổi ở góc dưới-trái vùng file) tô
+//      nền đè lên viền trái vùng file → vẽ lại đoạn viền đó.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -103,6 +113,8 @@ constexpr int MENUITEM_FRAME = 1;  // khung trên/dưới của MenuItem (tools/
 // Mục 12. Kvantum: SH_Menu_SubMenuSloppyCloseTimeout 1000 (đo bằng chương
 // trình nhỏ trong image), mở menu con sau 250. Vẫn đủ để rê chéo vào menu con.
 constexpr int SUBMENU_SLOPPY_MS = 300;
+// Mục 14: khe trên ô hover tiêu đề cột (Kvantum) đo trong máy ảo 2026-10-05.
+constexpr int HEADER_GAP = 10;
 
 // setViewportMargins là protected — gọi qua lớp con chỉ để mở quyền truy cập.
 class ScrollAreaAccess : public QAbstractScrollArea
@@ -123,6 +135,16 @@ bool isItemView(const QWidget *w)
 {
     for (int i = 0; w && i < 3; ++i, w = w->parentWidget()) {
         if (qobject_cast<const QAbstractItemView *>(w) || w->inherits("KItemListContainer"))
+            return true;
+    }
+    return false;
+}
+
+// Vùng file Dolphin (không tính QHeaderView của danh sách Qt thường).
+bool isDolphinView(const QWidget *w)
+{
+    for (int i = 0; w && i < 3; ++i, w = w->parentWidget()) {
+        if (w->inherits("KItemListContainer"))
             return true;
     }
     return false;
@@ -477,6 +499,18 @@ public:
         // máy ảo 2026-10-04). Mũi tên trong Dolphin chọn luôn ô nên vẫn thấy.
         if (pe == PE_FrameFocusRect && isItemView(w))
             return;
+        // Mục 15. Dolphin tô nền ô (drawRoundedRect) rồi gọi PE_Frame — vẽ lại
+        // viền trái vùng file ở cột 0 của ô (cùng cột với viền PanePainter).
+        if (pe == PE_Frame && w && w->inherits("DolphinStatusBar")) {
+            QProxyStyle::drawPrimitive(pe, opt, p, w);
+            if (w->layoutDirection() == Qt::LeftToRight) {
+                p->save();
+                p->setPen(QPen(QColor(samhie::FRAME_LINE), 1));
+                p->drawLine(QPointF(0.5, 0), QPointF(0.5, w->height()));
+                p->restore();
+            }
+            return;
+        }
         // Vạch giữa sidebar và vùng file: viền của vùng file (PanePainter) thay.
         if (pe == PE_IndicatorDockWidgetResizeHandle)
             return;
@@ -509,6 +543,30 @@ public:
             p->setCompositionMode(QPainter::CompositionMode_Source);
             p->fillPath(path, paneColor());
             p->restore();
+            return;
+        }
+        auto *header = qstyleoption_cast<const QStyleOptionHeader *>(opt);
+        if (ce == CE_Header && header && isDolphinView(w)) {  // mục 14
+            p->save();
+            p->setCompositionMode(QPainter::CompositionMode_Source);
+            p->fillRect(header->rect, paneColor());
+            p->restore();
+            QStyleOptionHeader o(*header);
+            o.rect.setBottom(o.rect.bottom() - HEADER_GAP);
+            const bool padding = o.text.isEmpty() && o.sortIndicator == QStyleOptionHeader::None;
+            if (padding) {
+                if (o.position == QStyleOptionHeader::End)
+                    m_headerEnd = o.rect;
+            } else {
+                if (o.state & State_MouseOver) {
+                    if (o.section == 0 && w->layoutDirection() == Qt::LeftToRight)
+                        o.rect.setLeft(qMin(o.rect.left(), 0));
+                    if (m_headerEnd.isValid() && qAbs(m_headerEnd.left() - o.rect.right() - 1) <= 1)
+                        o.rect.setRight(m_headerEnd.right());
+                }
+                m_headerEnd = QRect();
+            }
+            QProxyStyle::drawControl(ce, &o, p, w);
             return;
         }
         QProxyStyle::drawControl(ce, opt, p, w);
@@ -552,6 +610,11 @@ public:
         // dòng cao của Dongle, khoản +8 thắng → 47px (máy ảo 2026-10-04, user
         // muốn gọn lại bằng sidebar). Bỏ khoản +8: chữ + khung MenuItem trên +
         // dưới (MENUITEM_FRAME, kvconfig frame.top/bottom). Vạch ngăn giữ nguyên.
+        // Mục 14: KItemListView::setHeaderVisible hỏi cỡ tiêu đề KHÔNG kèm
+        // widget (QHeaderView luôn kèm) — chỉ ở Dolphin.
+        if (ct == CT_HeaderSection && !w && size.isEmpty()
+            && QCoreApplication::applicationName() == QLatin1String("dolphin"))
+            s.setHeight(s.height() + HEADER_GAP);
         auto *mopt = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
         if (ct == CT_MenuItem && mopt && mopt->menuItemType != QStyleOptionMenuItem::Separator)
             s.setHeight(qMin(s.height(), mopt->fontMetrics.height() + 2 * MENUITEM_FRAME));
@@ -562,6 +625,8 @@ private:
     PanePainter m_pane;
     PopupPainter m_popup;
     MenuButtonForwarder m_menuForwarder;
+    // Mục 14: ô đệm phải của tiêu đề cột, Dolphin vẽ ngay trước cột cuối.
+    mutable QRect m_headerEnd;
 };
 
 }  // namespace

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Sửa font Dongle: (1) dời số đo dọc cho chữ nằm giữa dòng; (2) thêm các ký tự
-vô hình rộng 0 mà Dongle thiếu.
+vô hình rộng 0 và (3) các khoảng trắng hẹp mà Dongle thiếu.
 
     python3 tools/fix-dongle-metrics.py          # sửa 3 file trong files/system/usr/share/fonts/dongle/
     python3 tools/fix-dongle-metrics.py --check  # chỉ kiểm (cần fontTools)
@@ -25,6 +25,13 @@ họ hàng. KDE chèn U+200B sau `+ _ . -`… trong tên file để tên dài xu
 → Qt mượn font khác cho riêng ký tự đó, dòng chữ lấy hộp dòng của font mượn
 → "lost+found", "a_b" trong Dolphin tụt xuống 12px so với tên khác (đo máy
 ảo + container). Thêm glyph rỗng, rộng 0 cho từng ký tự trong ZERO_WIDTH.
+
+KHOẢNG TRẮNG HẸP (2026-10-05): cùng bệnh với ký tự vô hình. Giờ kiểu Mỹ của
+Qt/ICU có U+202F (narrow no-break space) trước AM/PM: "Today at 10:58 AM" ở
+cột Modified của Dolphin tụt xuống ~13px, "59 minutes ago" thì không (máy ảo
+2026-10-05). Thêm glyph rỗng cho U+202F và họ hàng (SPACES), rộng theo dấu
+cách của Dongle — dấu cách Dongle đã chỉ 200/1000 (= "thin space" của font
+thường) nên hẹp = nửa dấu cách.
 
 Giấy phép: OFL 1.1 cho sửa, bản sửa vẫn OFL; Dongle không có Reserved Font
 Name nên giữ tên. README cạnh file font ghi sha256 bản gốc và bản sửa.
@@ -50,23 +57,32 @@ ZERO_WIDTH = {cp: f"uni{cp:04X}" for cp in (
     0x2060,  # word joiner
     0xFEFF,  # zero-width no-break space (BOM)
 )}
+# Khoảng trắng có bề ngang → độ rộng tính từ font (dấu cách / dấu chấm).
+SPACES = {
+    0x202F: lambda space, period: space // 2,  # narrow no-break space — giờ "10:58 AM"
+    0x2009: lambda space, period: space // 2,  # thin space
+    0x200A: lambda space, period: space // 4,  # hair space
+    0x2008: lambda space, period: period,      # punctuation space = bề ngang dấu chấm
+}
+BLANK = {**ZERO_WIDTH, **{cp: f"uni{cp:04X}" for cp in SPACES}}
 
 
-def add_zero_width(font):
-    """Thêm glyph rỗng rộng 0 cho các ký tự trong ZERO_WIDTH còn thiếu.
-    Trả về danh sách ký tự đã thêm."""
+def add_blank(font):
+    """Thêm glyph rỗng (không nét vẽ) cho ký tự trong BLANK còn thiếu: rộng 0
+    với ZERO_WIDTH, rộng theo SPACES với khoảng trắng. Trả về ký tự đã thêm."""
     cmap = font.getBestCmap()
-    missing = [cp for cp in ZERO_WIDTH if cp not in cmap]
+    missing = [cp for cp in BLANK if cp not in cmap]
     if not missing:
         return []
     glyf, hmtx, vmtx = font["glyf"], font["hmtx"], font["vmtx"]
     v_space = vmtx[cmap[0x20]]          # chiều dọc: mượn của dấu cách
+    space, period = hmtx[cmap[0x20]][0], hmtx[cmap[0x2E]][0]
     for cp in missing:
-        name = ZERO_WIDTH[cp]
+        name = BLANK[cp]
         if name in glyf:
             sys.exit(f"glyph {name} đã có mà không nằm trong cmap — bản Dongle lạ?")
         glyf[name] = Glyph()            # không nét vẽ; tự thêm vào thứ tự glyph
-        hmtx[name] = (0, 0)
+        hmtx[name] = (SPACES[cp](space, period) if cp in SPACES else 0, 0)
         vmtx[name] = v_space
         for table in font["cmap"].tables:
             if table.isUnicode():
@@ -85,9 +101,9 @@ def main():
         now = (hhea.ascent, -hhea.descent, os2.usWinAscent, os2.usWinDescent)
         want = (ASCENT, DESCENT, ASCENT, DESCENT)
         cmap = font.getBestCmap()
-        lacking = [f"U+{cp:04X}" for cp in ZERO_WIDTH if cp not in cmap]
+        lacking = [f"U+{cp:04X}" for cp in BLANK if cp not in cmap]
         if now == want and not lacking:
-            print(f"  {name}: đã đúng ({ASCENT}/{DESCENT}, đủ ký tự vô hình)")
+            print(f"  {name}: đã đúng ({ASCENT}/{DESCENT}, đủ ký tự vô hình + khoảng trắng hẹp)")
             continue
         if check:
             print(f"  {name}: CHƯA SỬA số đo {now}, thiếu {lacking}", file=sys.stderr)
@@ -99,7 +115,7 @@ def main():
             hhea.ascent, hhea.descent = ASCENT, -DESCENT
             os2.usWinAscent, os2.usWinDescent = ASCENT, DESCENT
             print(f"  {name}: {now[0]}/{now[1]} → {ASCENT}/{DESCENT}")
-        added = add_zero_width(font)
+        added = add_blank(font)
         if added:
             print(f"  {name}: thêm " + " ".join(f"U+{cp:04X}" for cp in added))
         font.save(path)

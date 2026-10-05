@@ -22,13 +22,18 @@ U+200D, U+2060, U+FEFF — glyph rỗng, không nét vẽ. Dongle gốc thiếu,
 mượn font khác → tên file có `+ _ .`… trong Dolphin tụt xuống 12px (KDE chèn
 U+200B sau các dấu đó để tên dài xuống dòng được). Glyph cũ không đổi.
 
+**Thêm 4 khoảng trắng hẹp** (2026-10-05, cùng script): U+202F (rộng 100),
+U+2009 (100), U+200A (50), U+2008 (= dấu chấm) — glyph rỗng. Giờ kiểu Mỹ có
+U+202F trước AM/PM → cột Modified của Dolphin ("Today at 10:58 AM") tụt
+xuống ~13px vì Qt mượn font khác cho ký tự đó.
+
 OFL cho sửa; không có Reserved Font Name nên giữ tên Dongle. sha256 bản đã
 sửa (trong repo):
 
 ```
-3b40367de2661c7c94130b92380f97f33921a52ea18327d8dbe6a6bb85e6176f  Dongle-Light.ttf
-746c03ae7c4f09d5a3683bbc385564f58f8abd7db62fa62957e9a4230fba0193  Dongle-Regular.ttf
-591f49ed587da0eb4e23e3b66f2e31e0afca6ca698309098b1297a74cdd85068  Dongle-Bold.ttf
+ac334d924e5351228bcdc4f4aad18df12c0ab6b062f9b624ba8a85e8f632d756  Dongle-Light.ttf
+a1268087c4eed215bdf508486cf3ff71e23d48e2865f3adb73c63ee760b56cd8  Dongle-Regular.ttf
+0cf8dcd69612b1529b1012c7bae3922fe2c373adacf5eff390b685ad1103a76f  Dongle-Bold.ttf
 ```
 
 Đã kiểm (2026-09-28): cả ba file đủ 203/203 ký tự tiếng Việt (mọi chữ có dấu,

@@ -10,6 +10,7 @@ return {
     subSecondary  = "393939",
     windowBorder  = "363636",
     hover         = "363d3f",
+    itemSelectedBorder = "097389",
     scrollbar     = "5f5f5f",
     scrollbarHover = "6a6a6a",
     scrollbarPressed = "767676",

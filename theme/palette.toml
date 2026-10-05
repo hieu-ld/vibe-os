@@ -56,6 +56,9 @@ window-border = "#363636"  # viền cửa sổ (Hyprland), đang dùng = không 
                            # container); mặt app/dock thì KHÔNG lệch (thanh trên đúng #0a0a0a).
 hover         = "#363d3f"  # nền ô đang trỏ chuột (ô file Dolphin) — user vẽ 2026-10-03:
                            # xám pha chút cyan. Nhóm xám trung tính.
+item-selected-border = "#097389"  # viền ô file đang chọn (Dolphin, cả Icons lẫn Details) —
+                                 # user 2026-10-05: cyan accent chói → tối lại, hợp tông
+                                 # thư mục + hover: = thân thư mục mặc định ([folders] default)
 scrollbar         = "#5f5f5f"  # thanh cuộn (tự ẩn) — user 2026-10-05: ĐỤC, cùng độ sáng
                                # như bản cũ (text-muted 60% trên card = #5f5f5f)
 scrollbar-hover   = "#6a6a6a"  # đang trỏ chuột
@@ -97,6 +100,7 @@ secondary     = "#ededed"
 sub-secondary = "#d0d0d0"
 window-border = "#c9c9c9"  # tạm — Hyprland chỉ dùng bản tối (colors.lua); duyệt ở đợt bản sáng
 hover         = "#e3e8e9"  # tạm: cùng ý bản tối (xám pha chút cyan) — duyệt ở đợt bản sáng
+item-selected-border = "#0d728f"  # tạm = accent bản sáng
 scrollbar         = "#a4a4a4"  # tạm, cùng ý bản tối: text-muted 60% trên card, đậm dần khi trỏ/kéo
 scrollbar-hover   = "#989898"
 scrollbar-pressed = "#8c8c8c"

@@ -77,6 +77,12 @@
 //      itemview của Kvantum (trỏ = nền hover, chọn = nền hover + viền
 //      accent). Nhận ra dòng Details theo bề ngang (> 60% vùng file; ô chế
 //      độ Icons hẹp hơn nhiều).
+//      Cột Size/Modified rộng cố định (user 2026-10-05: đổi thư mục là cột
+//      xê dịch): Dolphin cho mỗi cột rộng tối thiểu = chữ tiêu đề + grip +
+//      2 × PM_HeaderMargin (KItemListView::preferredColumnWidths, hỏi KHÔNG
+//      kèm option/widget), còn lại theo chữ dài nhất trong thư mục ("Yesterday
+//      at 20:37" < "29/09/2026 at 20:38" → lệch 7px). Trả lề đủ để "Modified"
+//      tối thiểu bằng ngày giờ dài nhất có thể → cột không đổi theo thư mục.
 //  15. Dòng trạng thái nhỏ của Dolphin (nổi ở góc dưới-trái vùng file) tô
 //      nền đè lên viền trái vùng file → vẽ lại đoạn viền đó.
 //
@@ -84,6 +90,9 @@
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
 
 #include <QAbstractButton>
+#include <QApplication>
+#include <QFontMetricsF>
+#include <QtMath>
 #include <QAbstractItemView>
 #include <QAction>
 #include <QDir>
@@ -464,6 +473,23 @@ public:
     }
     using QProxyStyle::unpolish;
 
+    int pixelMetric(PixelMetric pm, const QStyleOption *opt, const QWidget *w) const override
+    {
+        // Mục 14: lề tiêu đề cột Dolphin (chỉ lời hỏi không kèm gì của Dolphin).
+        if (pm == PM_HeaderMargin && !opt && !w
+            && QCoreApplication::applicationName() == QLatin1String("dolphin")) {
+            const QFontMetricsF fm(QApplication::font());
+            // Ngày giờ dài nhất: số 8 rộng nhất trong Dongle; LC_TIME en_GB
+            // (samhie.lua). Cộng columnPadding của Dolphin (padding 2 × 6).
+            const qreal date = qMax(fm.horizontalAdvance(QStringLiteral("88/88/8888 at 88:88")),
+                                    fm.horizontalAdvance(QStringLiteral("Yesterday at 88:88"))) + 12;
+            const qreal header = fm.horizontalAdvance(QStringLiteral("Modified"))
+                + QProxyStyle::pixelMetric(PM_HeaderGripMargin, opt, w);
+            return qMax(QProxyStyle::pixelMetric(pm, opt, w), qCeil((date - header) / 2));
+        }
+        return QProxyStyle::pixelMetric(pm, opt, w);
+    }
+
     int styleHint(StyleHint hint, const QStyleOption *opt, const QWidget *w, QStyleHintReturn *ret) const override
     {
         if (hint == SH_Menu_SubMenuSloppyCloseTimeout)
@@ -599,7 +625,9 @@ public:
                         section.rect.setRight(m_headerEnd.right());
                     if (section.rect != o.rect) {
                         QProxyStyle::drawControl(CE_HeaderSection, &section, p, w);
-                        o.state &= ~State_MouseOver;  // không vẽ ô hover thứ hai
+                        // Không vẽ ô hover/ô đang bấm thứ hai chồng lên phần
+                        // cũ (bấm thì phần cũ đậm hơn phần kéo dài — máy ảo).
+                        o.state &= ~(State_MouseOver | State_Sunken);
                     }
                 }
                 if (o.text == QLatin1String("Size") || o.text == QLatin1String("Permissions"))

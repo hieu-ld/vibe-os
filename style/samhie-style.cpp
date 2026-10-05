@@ -116,6 +116,21 @@
 //  18. Thanh công cụ Dolphin không có menu chuột phải (Text Position, Icon
 //      Size, Configure Toolbars, Lock — bấm nhầm là hỏng thanh theo bản vẽ;
 //      user 2026-10-05). Ô đường dẫn trong thanh vẫn có menu riêng.
+//  19. Bớt menu chuột phải tab và sidebar Dolphin (user 2026-10-05; Dolphin
+//      26.08 / KIO 6.30 không có tuỳ chọn). Nhận mục theo TÊN ICON — chữ thì
+//      đổi theo ngôn ngữ. Gỡ khỏi menu (removeAction), hành động vẫn còn.
+//      - Tab (DolphinTabBar::contextMenuEvent, QMenu cha = dải tab): chỉ giữ
+//        Close Other Tabs (tab-close-other). New/Close Tab trùng nút + / ×.
+//      - Sidebar (KFilePlacesView::contextMenuEvent): QMenu KHÔNG cha, polish
+//        ngay lúc tạo khi còn trống → bớt lúc aboutToShow (đủ mục, cả mục
+//        Dolphin thêm). Nhận ra: có mục icon "hint" (Hide / Hide Section) hoặc
+//        hành động lock_panels (menu chỗ trống). Bỏ Open in New Window
+//        (window-new, menu thư mục cũng đã tắt), Properties
+//        (document-properties), Hide Section (mục "hint" CUỐI: mục sidebar
+//        có Hide rồi Hide Section, tiêu đề nhóm chỉ có Hide Section — sidebar
+//        chỉ một nhóm, ẩn là trống trơn), Icon Size (menu con duy nhất; cỡ 20
+//        đặt ở /etc/xdg/dolphinrc), Unlock Panels (lock_panels — mở khoá là
+//        hiện thanh tiêu đề panel, phá bố cục).
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -513,8 +528,13 @@ public:
             && QCoreApplication::applicationName() == QLatin1String("dolphin")) {
             auto *menu = static_cast<QMenu *>(w);  // mục 17: menu ☰
             removeHamburgerCreateNew(menu);
-            QObject::connect(menu, &QMenu::aboutToShow, menu, [menu] { removeHamburgerCreateNew(menu); });
+            QObject::connect(menu, &QMenu::aboutToShow, menu, [menu] {
+                removeHamburgerCreateNew(menu);
+                trimPlacesMenu(menu);  // mục 19
+            });
         }
+        if (qobject_cast<QMenu *>(w) && w->parentWidget() && w->parentWidget()->inherits("DolphinTabBar"))
+            trimTabMenu(static_cast<QMenu *>(w));  // mục 19
         if (qobject_cast<QToolBar *>(w) && w->window()->inherits("DolphinMainWindow"))
             w->setContextMenuPolicy(Qt::PreventContextMenu);  // mục 18
         if (w->inherits("DolphinStatusBar")) {
@@ -771,6 +791,35 @@ public:
     }
 
 private:
+    static void trimTabMenu(QMenu *menu)  // mục 19
+    {
+        for (QAction *a : menu->actions()) {
+            if (!a->isSeparator() && a->icon().name() != QLatin1String("tab-close-other"))
+                menu->removeAction(a);
+        }
+    }
+
+    static void trimPlacesMenu(QMenu *menu)  // mục 19
+    {
+        const QList<QAction *> actions = menu->actions();
+        QAction *lastHint = nullptr;
+        bool places = false;
+        for (QAction *a : actions) {
+            if (a->icon().name() == QLatin1String("hint"))
+                lastHint = a;
+            if (a->objectName() == QLatin1String("lock_panels"))
+                places = true;
+        }
+        if (!places && !lastHint)
+            return;
+        for (QAction *a : actions) {
+            const QString icon = a->icon().name();
+            if (a == lastHint || a->menu() || a->objectName() == QLatin1String("lock_panels")
+                || icon == QLatin1String("window-new") || icon == QLatin1String("document-properties"))
+                menu->removeAction(a);
+        }
+    }
+
     static void hideItemCreateNew(QMenu *menu)  // mục 17
     {
         bool first = true;

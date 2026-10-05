@@ -5,12 +5,14 @@ Lắp icon APP user vẽ (theme/icons/apps/, nhiều màu) vào bộ icon Samhie
     python3 tools/build-app-icons.py          # sinh lại
     python3 tools/build-app-icons.py --check  # chỉ kiểm file sinh ra khớp nguồn (CI chạy)
 
-NGUỒN: user vẽ trên Figma, khung 40, hình nằm trong 6..34; xuất SVG đè vào
+NGUỒN: user vẽ trên Figma, khung 32 (hình nằm trong 2..30; bản trước
+2026-10-05 là khung 40, hình 6..34 — script nhận cả hai); xuất SVG đè vào
 theme/icons/apps/<tên icon>.svg. Màu giữ nguyên (icon app, không tô lại).
 
 ĐỔI GÌ so với bản Figma (user muốn 2026-10-01):
-  * Khung cắt về "4 4 32 32", width/height 32: dock vẽ icon 32px trong ô 40,
-    hình 28px cách lề 2px như bản vẽ — 1 đơn vị = 1 điểm ảnh, nét không nhoè.
+  * Khung cắt về ô 32 ở giữa (khung 40: "4 4 32 32"), width/height 32: dock
+    vẽ icon 32px trong ô 40, hình 28px cách lề 2px như bản vẽ — 1 đơn vị = 1
+    điểm ảnh, nét không nhoè.
   * VIỀN NGOÀI vẽ VÀO TRONG hình (kiểu "Inside" của Figma). Figma xuất nét 1px
     nằm GIỮA đường viền, ở toạ độ nguyên thì nét vắt ngang hai hàng điểm ảnh →
     2 hàng mờ nửa độ sáng (thấy cả trong Dock.png user xuất). Cách làm: nét dày
@@ -57,7 +59,7 @@ ICONS = {
 
 HEADER = """<!-- SINH TỰ ĐỘNG bởi tools/build-app-icons.py từ theme/icons/apps/{name}.svg
      ({desc}) — đừng sửa tay: sửa bản Figma rồi chạy lại script.
-     Khung 4 4 32 32; viền ngoài vẽ vào trong + viền bắt sáng (xem script). -->
+     Khung 32 ở giữa; viền ngoài vẽ vào trong + viền bắt sáng (xem script). -->
 """
 
 
@@ -69,6 +71,10 @@ def build(name):
     outline_index, stops, desc = ICONS[name]
     tree = ET.parse(SRC / f"{name}.svg")
     root = tree.getroot()
+    frame = float(root.get("viewBox").split()[2])
+    if frame not in (32, 40):
+        sys.exit(f"{name}: khung {frame:g} — chỉ nhận khung 32 hoặc 40")
+    o = (frame - 32) / 2   # gốc ô 32 ở giữa khung
 
     outline = shapes_in_order(root)[outline_index]
     stroke = outline.get("stroke")
@@ -90,19 +96,20 @@ def build(name):
     parent = next(p for p in root.iter() if outline in list(p))
     parent.insert(list(parent).index(outline) + 1, border)
 
-    # Defs: mask theo hình (tô trắng = giữ) + gradient ánh sáng (-35°, chéo qua ô 6..34).
+    # Defs: mask theo hình (tô trắng = giữ) + gradient ánh sáng (-35°, chéo qua
+    # hình: ô 2..30 của khung 32, 6..34 của khung 40).
     defs = root.find(f"{{{SVG_NS}}}defs")
     if defs is None:
         defs = ET.SubElement(root, f"{{{SVG_NS}}}defs")
     mask = ET.SubElement(defs, f"{{{SVG_NS}}}mask", {
         "id": "samhie-shape", "maskUnits": "userSpaceOnUse",
-        "x": "0", "y": "0", "width": "40", "height": "40"})
+        "x": "0", "y": "0", "width": f"{frame:g}", "height": f"{frame:g}"})
     white = copy.deepcopy(shape)
     white.set("fill", "#FFFFFF")
     mask.append(white)
     grad = ET.SubElement(defs, f"{{{SVG_NS}}}linearGradient", {
         "id": "samhie-rim", "gradientUnits": "userSpaceOnUse",
-        "x1": "6", "y1": "6", "x2": "34", "y2": "34"})
+        "x1": f"{o + 2:g}", "y1": f"{o + 2:g}", "x2": f"{o + 30:g}", "y2": f"{o + 30:g}"})
     for offset, opacity in zip((0, 0.45, 0.8, 1), stops):
         ET.SubElement(grad, f"{{{SVG_NS}}}stop", {
             "offset": f"{offset:g}", "stop-color": "#FFFFFF", "stop-opacity": f"{opacity:g}"})
@@ -128,7 +135,7 @@ def build(name):
     root.remove(defs)
     root.insert(0, defs)
 
-    root.set("viewBox", "4 4 32 32")
+    root.set("viewBox", f"{o:g} {o:g} 32 32")
     root.set("width", "32")
     root.set("height", "32")
     ET.indent(tree, "  ")

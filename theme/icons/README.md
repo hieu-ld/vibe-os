@@ -23,6 +23,7 @@ cùng một cỡ là nét dày bằng nhau.
 | `prev-circle` `next-circle` | `samhie-go-back` `samhie-go-forward` — chỉ nút lùi/tiến Dolphin (khung 30, nét 1,875) |
 | `bell` `bell-ring` `bell-off` | `notification-inactive` `notification-active` `notifications-disabled` |
 | `volume` `volume-mute` | `audio-volume-high/medium/low` `audio-volume-muted` |
+| `terminal` (khung 16) | `utilities-terminal` ở **`apps/16`** — chỉ menu 16px (Dolphin "Open Terminal Here", "Open With"); cỡ khác vẫn là icon Konsole nhiều màu |
 
 **Vẽ sẵn, chưa lắp** (`UNUSED` trong script): `folder`, `document`, `desktop`,
 `next`, `prev`, `up`, `down` (bốn ô vuông có mũi tên). `folder` nét mảnh không
@@ -37,6 +38,13 @@ mang tên riêng `samhie-*`.
   đúng giữa điểm ảnh) và nới vòng tròn ra 15px cho to hơn (user thấy nhỏ):
   vòng `x=0.5 w=14`, dấu cộng dài 6 từ 4,5 tới 10,5.
 
+- **Dời nửa điểm ảnh** (2026-10-05, bảng `NUDGE` trong script): icon hiện ở
+  18/20px (thanh trên, sidebar, quick settings…) thì nét 1,25 của khung 20
+  không rơi vào lưới điểm ảnh — vạch nằm ở tâm 10 thành 2 hàng mờ. Script dời
+  cả hình (đổi gốc viewBox, không sửa nét, KHÔNG sửa file ở đây) ≤ 0,5 điểm
+  ảnh ở cỡ hiển thị chính của từng icon. Vẽ lại một hình trong bảng thì chạy
+  lại phép dò (ghi trong script) hoặc hỏi Claude.
+
 **Màu:** vẽ bằng `#A1A1A1` (nét) trên nền `#0A0A0A`. Script đổi thành
 `currentColor` để KDE/SDDM tô theo màu chữ của bảng màu — nên trên máy icon ra
 **màu chữ** (sáng hơn xám Figma), giống icon Tabler trong bộ. Chỗ tô mờ thì vẽ
@@ -49,8 +57,9 @@ tính ngược ra độ mờ (≈ 0,32) và thêm vào bảng `FIGMA`. Màu lạ
 
 ## Icon app (`apps/`) — nhiều màu, KHÔNG qua build-icons.py
 
-User vẽ trên Figma (khung 40, hình trong 6..34, xuất tên `hover*.svg`), bản
-mới 2026-10-01 tối. Lưu ở đây theo TÊN ICON rồi chạy
+User vẽ trên Figma (khung 32, hình trong 2..30 — bản cũ khung 40, script nhận
+cả hai; xuất tên `hover*.svg`). Bản 2026-10-05: viền Dolphin đậm hơn
+(`#006175`), thân Konsole sáng hơn (`#3B3C3C`); bánh răng chưa đổi. Lưu ở đây theo TÊN ICON rồi chạy
 `python3 tools/build-app-icons.py` → `files/system/usr/share/icons/Samhie/apps/scalable/`.
 Màu giữ nguyên như bản vẽ. Script đổi: khung `4 4 32 32` (icon 32px trong ô
 dock 40, cách lề 2px), viền ngoài vẽ VÀO TRONG cho sắc 1px, thêm viền bắt
@@ -58,9 +67,9 @@ sáng kiểu bản 1.0 — giải thích đủ ở đầu script. CI chạy `--c
 
 | Hình | Tên icon |
 |---|---|
-| `apps/org.kde.dolphin.svg` (hover-1) | `org.kde.dolphin` |
+| `apps/org.kde.dolphin.svg` (hover) | `org.kde.dolphin` |
 | `apps/utilities-terminal.svg` (hover-2) | `utilities-terminal` (Konsole) |
-| `apps/preferences-system.svg` (hover) | `preferences-system` — chưa app nào dùng, dock tạm ẩn |
+| `apps/preferences-system.svg` (hover-1) | `preferences-system` — chưa app nào dùng, dock tạm ẩn |
 
 ## Bộ thư mục Dolphin (`folders/`) — tô màu, KHÔNG qua build-icons.py
 

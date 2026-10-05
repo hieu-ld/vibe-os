@@ -1,5 +1,5 @@
-# Widget style "samhie" (QProxyStyle bọc Kvantum) — build trong stage
-# "samhie-style" của recipe (recipes/stages.yml), chỉ file .so vào image.
+# Widget style "samhie" (QProxyStyle bọc Kvantum) — build NGAY TRONG image bởi
+# files/scripts/samhie-style.sh, chỉ file .so ở lại image.
 cmake_minimum_required(VERSION 3.20)
 project(samhie-style LANGUAGES CXX)
 

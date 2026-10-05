@@ -83,12 +83,20 @@ modules:
         - pavucontrol
         - NetworkManager-tui
 
-        # Font
-        - google-noto-sans-fonts
-        - jetbrains-mono-fonts-all
+        # Font: Noto Sans (bản variable, mọi độ đậm) có sẵn trong image nền —
+        # google-noto-sans-fonts là bản tĩnh thứ hai, 43 MB (gỡ 2026-10-05).
+        # Font mono là Hack (đi kèm plasma-integration); Dongle nằm trong repo.
 
         # Bảo mật
         - firewalld
+      # Gói "gợi ý cài kèm" (weak deps) không ai dùng — chặn hẳn (đo 2026-10-05
+      # bằng dnf5 repoquery --whatrequires/--whatrecommends trong image):
+      #   cpp     43 MB — xrdb gợi ý (sddm → xorg-x11-xinit → xrdb), chỉ để
+      #           xrdb chạy bộ tiền xử lý C; SDDM của Samhie chạy Wayland.
+      #   catdoc  0,6 MB + tk 3,8 MB — kfilemetadata gợi ý, trích chữ file .doc.
+      exclude:
+        - cpp
+        - catdoc
 
   # Platform theme "kde" cho app Qt ngoài Plasma: Dolphin/Konsole đọc màu, icon,
   # font, widget style từ kdeglobals — gồm cả /etc/xdg/kdeglobals của image —
@@ -124,6 +132,9 @@ modules:
         - cliphist
         - nwg-look
         - wlroots
+        # Thanh panel GTK, COPR khai "Supplements: hyprland" nên tự vào cùng
+        # Hyprland (+5 gói python/gtk, ~5 MB). Samhie dùng Quickshell.
+        - nwg-panel
 
   # ── 3. VS Code từ kho của Microsoft ────────────────────────────────────────
   # File .repo tự viết (files/dnf/vscode.repo) thay vì dùng file của Microsoft,

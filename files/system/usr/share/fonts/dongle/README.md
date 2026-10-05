@@ -27,13 +27,20 @@ U+2009 (100), U+200A (50), U+2008 (= dấu chấm) — glyph rỗng. Giờ kiể
 U+202F trước AM/PM → cột Modified của Dolphin ("Today at 10:58 AM") tụt
 xuống ~13px vì Qt mượn font khác cho ký tự đó.
 
+**Bỏ chữ Hàn** (2026-10-05, cùng script): Dongle là font Hàn — 11.523 ký tự
+Hangul/CJK (âm tiết, jamo, dấu câu CJK, toàn khổ) chiếm ~90% file. Samhie chỉ
+cần Latin + tiếng Việt → bỏ, mỗi file ~4,3 MB → ~140 KB. Glyph còn lại không
+đổi: vẽ thử chuỗi tiếng Việt đủ 134 chữ có dấu + dấu câu bằng bản cũ và bản
+mới, khác 0 điểm ảnh; số đo dọc giữ nguyên. Chữ Hàn (nếu gặp) thì fontconfig
+mượn Noto CJK của image nền.
+
 OFL cho sửa; không có Reserved Font Name nên giữ tên Dongle. sha256 bản đã
 sửa (trong repo):
 
 ```
-ac334d924e5351228bcdc4f4aad18df12c0ab6b062f9b624ba8a85e8f632d756  Dongle-Light.ttf
-a1268087c4eed215bdf508486cf3ff71e23d48e2865f3adb73c63ee760b56cd8  Dongle-Regular.ttf
-0cf8dcd69612b1529b1012c7bae3922fe2c373adacf5eff390b685ad1103a76f  Dongle-Bold.ttf
+dbce4f2bfafe914db5afd45c84538442424abb5c3c61bebee1a7ba7aba8999d8  Dongle-Light.ttf
+29c4d23eba9c9e9811f430d353a4b0aaaab3e8ee4c624288465cb76f67b8cf9d  Dongle-Regular.ttf
+2f2687541f52caf9ec8bcd7efa258194f60f5494d340dec47c864ac3b2c02c8c  Dongle-Bold.ttf
 ```
 
 Đã kiểm (2026-09-28): cả ba file đủ 203/203 ký tự tiếng Việt (mọi chữ có dấu,

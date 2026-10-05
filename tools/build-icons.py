@@ -126,6 +126,12 @@ MAP = {
     "volume":     [("status", "audio-volume-high"), ("status", "audio-volume-medium"),
                    ("status", "audio-volume-low")],
     "volume-mute": [("status", "audio-volume-muted")],
+    # Terminal nét đơn khung 16 (user vẽ 2026-10-05) — ở THƯ MỤC CỠ 16
+    # (nhóm "apps/16"): menu 16px (Dolphin "Open Terminal Here", "Open With")
+    # lấy hình này, cỡ khác (dock 32, thanh trên 18) vẫn lấy icon app nhiều
+    # màu ở apps/scalable (tools/build-app-icons.py). Thư mục cỡ cố định đứng
+    # trước scalable trong index.theme nên thắng đúng ở 16px.
+    "terminal":   [("apps/16", "utilities-terminal")],
 }
 
 # Vẽ sẵn, chưa lắp. `folder` (nét mảnh): tên "folder" đã là thư mục TO tô màu
@@ -140,6 +146,56 @@ CROP = {
     "max": "4.1421 4.1421 20 20",
 }
 
+# Dời hình cho nét rơi vào lưới điểm ảnh ở CỠ HIỂN THỊ CHÍNH của icon (rà
+# 2026-10-05). Hình vẽ khung 20 nét 1,25 chỉ sắc hẳn ở 16px; ở cỡ khác, một
+# nét nằm đúng ranh giới hai điểm ảnh (vd vạch ngang ở y=10) thành 2 hàng mờ
+# nửa độ sáng. Dời cả hình (đổi gốc viewBox, không sửa nét) một phần điểm ảnh
+# → một hàng đậm + viền mờ mảnh. Số dời dò bằng máy: thử mọi bước 1/8 điểm
+# ảnh trong ±0,5, vẽ bằng rsvg ở cỡ đó, chọn bản ít điểm ảnh mờ nhất (mờ =
+# Σ min(a, 1−a) / Σ a); chỉ giữ hình giảm mờ ≥ 0,06. Hình lệch tâm tối đa
+# nửa điểm ảnh — mắt không thấy, nét thì thấy.
+# Cỡ chính (đo trong Quickshell/SDDM/Dolphin): mũi tên nhọn 16 (thanh trên,
+# SDDM), chuông + nút nguồn 18 (thanh trên), mũi tên thẳng 20 (lịch, menu
+# khay, SDDM), loa 20 (quick settings), nút cửa sổ 20 (thanh trên), sidebar
+# Dolphin 20 (dolphinrc IconSize).
+# tên hình: (cỡ px, dời ngang px, dời dọc px)
+NUDGE = {
+    "ar-right":    (16, -0.5, 0),
+    "ar-left":     (16, -0.5, 0),
+    "ar-top":      (16, 0, -0.5),
+    "ar-bottom":   (16, 0, -0.5),
+    "power":       (18, -0.5, 0.375),
+    "bell":        (18, 0, -0.25),
+    "bell-ring":   (18, 0, -0.25),
+    "next-2":      (20, 0, -0.5),
+    "prev-2":      (20, 0, -0.5),
+    "up-2":        (20, -0.5, 0),
+    "down-2":      (20, -0.5, 0),
+    "volume":      (20, -0.375, -0.5),
+    "volume-mute": (20, -0.375, -0.375),
+    "restart":     (20, 0.375, 0.375),
+    "smart-home":  (20, -0.5, -0.25),  # máy chọn −0,5: vạch đáy mờ → chọn bằng mắt
+    "download":    (20, -0.5, -0.5),
+    "network":     (20, -0.5, -0.25),
+    "trash":       (20, 0, -0.5),
+    "trash-full":  (20, -0.5, -0.5),
+    "hdd":         (20, -0.5, -0.5),
+    "close":       (20, -0.5, -0.5),
+    "minus":       (20, -0.5, -0.5),
+    "min":         (20, -0.5, -0.5),
+}
+
+
+def view_box(name, original):
+    """viewBox cuối của hình: cắt khung (CROP) rồi dời (NUDGE)."""
+    vb = [float(v) for v in CROP.get(name, original).split()]
+    if name in NUDGE:
+        size, dx, dy = NUDGE[name]
+        unit = vb[2] / size          # đơn vị SVG trên một điểm ảnh
+        vb[0] -= dx * unit
+        vb[1] -= dy * unit
+    return " ".join(f"{v:g}" for v in vb)
+
 
 def q(tag):
     return f"{{{SVG_NS}}}{tag}"
@@ -152,8 +208,7 @@ def convert(name, text):
         sys.exit(f"{name}.svg: thiếu viewBox")
     for a in ("width", "height"):
         root.attrib.pop(a, None)
-    if name in CROP:
-        root.set("viewBox", CROP[name])
+    root.set("viewBox", view_box(name, root.get("viewBox")))
 
     # Gỡ clipPath (và <defs> nếu chỉ chứa clipPath).
     for defs in root.findall(q("defs")):
@@ -207,6 +262,11 @@ def convert(name, text):
     )
 
 
+def dest(group, icon):
+    """Đường dẫn file đích. Nhóm có cỡ ("apps/16") là thư mục cỡ cố định."""
+    return THEME / group / f"{icon}.svg" if "/" in group else THEME / group / "scalable" / f"{icon}.svg"
+
+
 def outputs():
     """{đường dẫn đích: nội dung} cho mọi icon, sau khi kiểm bảng MAP/UNUSED."""
     names = {p.stem for p in SRC.glob("*.svg")}
@@ -220,7 +280,7 @@ def outputs():
     for name, targets in sorted(MAP.items()):
         svg = convert(name, (SRC / f"{name}.svg").read_text())
         for group, icon in targets:
-            out[THEME / group / "scalable" / f"{icon}.svg"] = svg
+            out[dest(group, icon)] = svg
     return out
 
 
@@ -229,10 +289,11 @@ def compare(name, dest):
     from PIL import Image, ImageChops
 
     src = (SRC / f"{name}.svg").read_text()
-    if name in CROP:
+    if name in CROP or name in NUDGE:
         # Chỉ sửa thẻ <svg> gốc — <rect> của clipPath cũng có width/height.
         head, tail = src.split(">", 1)
-        head = re.sub(r'viewBox="[^"]*"', f'viewBox="{CROP[name]}"', head)
+        vb = view_box(name, re.search(r'viewBox="([^"]*)"', head).group(1))
+        head = re.sub(r'viewBox="[^"]*"', f'viewBox="{vb}"', head)
         head = re.sub(r'\s(width|height)="[^"]*"', "", head)
         src = head + ">" + tail
     new = dest.read_text().replace(FALLBACK, FIGMA_INK)
@@ -269,8 +330,7 @@ def main():
     # So hình: mỗi hình một lần (các tên phụ cùng nội dung).
     worst = 0
     for name, targets in sorted(MAP.items()):
-        group, icon = targets[0]
-        bad = compare(name, THEME / group / "scalable" / f"{icon}.svg")
+        bad = compare(name, dest(*targets[0]))
         worst = max(worst, bad)
         mark = "" if bad == 0 else f"  ← lệch {bad} điểm ảnh"
         print(f"  {name:12} → {', '.join(i for _, i in targets)}{mark}")

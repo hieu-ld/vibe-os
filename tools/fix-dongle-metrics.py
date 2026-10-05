@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 Sửa font Dongle: (1) dời số đo dọc cho chữ nằm giữa dòng; (2) thêm các ký tự
-vô hình rộng 0 và (3) các khoảng trắng hẹp mà Dongle thiếu.
+vô hình rộng 0 và (3) các khoảng trắng hẹp mà Dongle thiếu; (4) bỏ chữ Hàn.
 
     python3 tools/fix-dongle-metrics.py          # sửa 3 file trong files/system/usr/share/fonts/dongle/
     python3 tools/fix-dongle-metrics.py --check  # chỉ kiểm (cần fontTools)
@@ -33,6 +33,12 @@ cột Modified của Dolphin tụt xuống ~13px, "59 minutes ago" thì không (
 cách của Dongle — dấu cách Dongle đã chỉ 200/1000 (= "thin space" của font
 thường) nên hẹp = nửa dấu cách.
 
+BỎ CHỮ HÀN (2026-10-05): Dongle là font Hàn — 11.172 âm tiết Hangul + jamo,
+dấu câu CJK, ký tự toàn khổ, ~90% glyph, ~4 MB mỗi file. Samhie chỉ cần
+Latin + tiếng Việt (giao diện tiếng Anh, ngày giờ tiếng Việt). Bỏ các khối
+trong DROP (fontTools.subset: giữ nguyên mọi glyph còn lại, bảng GSUB/GPOS,
+hinting, tên); chữ Hàn gặp đâu đó thì fontconfig mượn Noto CJK của image nền.
+
 Giấy phép: OFL 1.1 cho sửa, bản sửa vẫn OFL; Dongle không có Reserved Font
 Name nên giữ tên. README cạnh file font ghi sha256 bản gốc và bản sửa.
 """
@@ -40,6 +46,7 @@ Name nên giữ tên. README cạnh file font ghi sha256 bản gốc và bản s
 import sys
 from pathlib import Path
 
+from fontTools import subset
 from fontTools.ttLib import TTFont
 from fontTools.ttLib.tables._g_l_y_f import Glyph
 
@@ -64,6 +71,9 @@ SPACES = {
     0x200A: lambda space, period: space // 4,  # hair space
     0x2008: lambda space, period: period,      # punctuation space = bề ngang dấu chấm
 }
+# Khối chữ Hàn / CJK bỏ đi (4): dấu câu CJK + jamo tương thích + chữ khoanh
+# tròn CJK, âm tiết Hangul, ký tự toàn khổ/nửa khổ.
+DROP = ((0x3000, 0x33FF), (0xAC00, 0xD7FF), (0xFF00, 0xFFEF))
 BLANK = {**ZERO_WIDTH, **{cp: f"uni{cp:04X}" for cp in SPACES}}
 
 
@@ -91,6 +101,31 @@ def add_blank(font):
     return missing
 
 
+def dropped(cmap):
+    return [cp for cp in cmap if any(lo <= cp <= hi for lo, hi in DROP)]
+
+
+def drop_hangul(font):
+    """Bỏ các ký tự trong DROP (và glyph chỉ chúng dùng). Trả về số ký tự đã bỏ."""
+    cmap = font.getBestCmap()
+    gone = dropped(cmap)
+    if not gone:
+        return 0
+    options = subset.Options()
+    options.layout_features = ["*"]
+    options.name_IDs = ["*"]
+    options.name_languages = ["*"]
+    options.name_legacy = True
+    options.notdef_outline = True
+    options.glyph_names = True
+    options.legacy_kern = True
+    options.drop_tables = []           # giữ mọi bảng (DSIG, vhea/vmtx, gasp…)
+    sub = subset.Subsetter(options)
+    sub.populate(unicodes=set(cmap) - set(gone))
+    sub.subset(font)
+    return len(gone)
+
+
 def main():
     check = "--check" in sys.argv[1:]
     bad = 0
@@ -102,11 +137,12 @@ def main():
         want = (ASCENT, DESCENT, ASCENT, DESCENT)
         cmap = font.getBestCmap()
         lacking = [f"U+{cp:04X}" for cp in BLANK if cp not in cmap]
-        if now == want and not lacking:
-            print(f"  {name}: đã đúng ({ASCENT}/{DESCENT}, đủ ký tự vô hình + khoảng trắng hẹp)")
+        hangul = len(dropped(cmap))
+        if now == want and not lacking and not hangul:
+            print(f"  {name}: đã đúng ({ASCENT}/{DESCENT}, đủ ký tự vô hình + khoảng trắng hẹp, không chữ Hàn)")
             continue
         if check:
-            print(f"  {name}: CHƯA SỬA số đo {now}, thiếu {lacking}", file=sys.stderr)
+            print(f"  {name}: CHƯA SỬA số đo {now}, thiếu {lacking}, còn {hangul} ký tự Hàn/CJK", file=sys.stderr)
             bad += 1
             continue
         if now != want:
@@ -118,6 +154,8 @@ def main():
         added = add_blank(font)
         if added:
             print(f"  {name}: thêm " + " ".join(f"U+{cp:04X}" for cp in added))
+        if n := drop_hangul(font):
+            print(f"  {name}: bỏ {n} ký tự Hàn/CJK")
         font.save(path)
     if bad:
         sys.exit("Chạy python3 tools/fix-dongle-metrics.py rồi commit font.")

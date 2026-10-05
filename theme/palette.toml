@@ -54,8 +54,11 @@ window-border = "#363636"  # viền cửa sổ (Hyprland), đang dùng = không 
                            # chọn màu này cho mọi viền. Khai #363636 vì Hyprland (render:cm_enabled)
                            # vẽ màu viền lệch: 393939→3c3c3c, 363636→393939, 808080→7f7f7f (đo
                            # container); mặt app/dock thì KHÔNG lệch (thanh trên đúng #0a0a0a).
-hover         = "#363d3f"  # nền ô đang trỏ chuột (ô file Dolphin) — user vẽ 2026-10-03:
-                           # xám pha chút cyan. Nhóm xám trung tính.
+hover         = "#262626"  # nền ô đang trỏ chuột TRÊN NỀN CARD: dòng menu, ô file Dolphin,
+                           # tiêu đề cột, dòng popup Quickshell — = secondary, như popup nút
+                           # nguồn (user 2026-10-05: mọi app một màu hover; trước là #363d3f
+                           # xám pha cyan, user vẽ 2026-10-03). Trên nền secondary (thanh
+                           # công cụ, dải tab) hover nâng một bậc = sub-secondary.
 item-selected-border = "#097389"  # viền ô file đang chọn (Dolphin, cả Icons lẫn Details) —
                                  # user 2026-10-05: cyan accent chói → tối lại, hợp tông
                                  # thư mục + hover: = thân thư mục mặc định ([folders] default)
@@ -99,7 +102,7 @@ card-alt      = "#f4f4f4"
 secondary     = "#ededed"
 sub-secondary = "#d0d0d0"
 window-border = "#c9c9c9"  # tạm — Hyprland chỉ dùng bản tối (colors.lua); duyệt ở đợt bản sáng
-hover         = "#e3e8e9"  # tạm: cùng ý bản tối (xám pha chút cyan) — duyệt ở đợt bản sáng
+hover         = "#ededed"  # = secondary, như bản tối — duyệt ở đợt bản sáng
 item-selected-border = "#0d728f"  # tạm = accent bản sáng
 scrollbar         = "#a4a4a4"  # tạm, cùng ý bản tối: text-muted 60% trên card, đậm dần khi trỏ/kéo
 scrollbar-hover   = "#989898"

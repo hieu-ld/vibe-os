@@ -34,3 +34,15 @@ Plugins=exrthumbnail,mobithumbnail,blenderthumbnail,kraorathumbnail,imagethumbna
 # ~50px Dolphin chừa bên trái icon cho mũi tên, icon thẳng hàng với tiêu đề
 # cột Name (user chốt 2026-10-05). Khoá: dolphin_detailsmodesettings.kcfg.
 ExpandableFolders=false
+
+[ContextMenu]
+# Bớt mục trong menu chuột phải (user chốt 2026-10-05). Khoá:
+# dolphin_contextmenusettings.kcfg. Bật lại: Dolphin → Configure → Context Menu.
+#   Open in New Window: đã có Open in New Tab + Open in Split View.
+#   Sort By + View Mode (bấm chỗ trống): trùng nút ▦ trên thanh công cụ.
+#   Duplicate Here: ít dùng, Ctrl+D vẫn chạy.
+# "Create New" khi bấm VÀO thư mục không có khoá — style "samhie" ẩn (mục 17).
+ShowOpenInNewWindow=false
+ShowSortBy=false
+ShowViewMode=false
+ShowDuplicateHere=false

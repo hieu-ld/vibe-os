@@ -164,11 +164,14 @@ FRAMES = [
         "toggled":  ("sub-secondary", "accent"),
         "disabled": ("secondary@0.5", "sub-secondary@0.5"),
     }, False),
+    # HOVER (user 2026-10-05: mọi app một màu, như popup nút nguồn): trên nền
+    # card → `hover` (= secondary); trên nền secondary (thanh công cụ, dải
+    # tab, thanh menu) → sub-secondary, nâng một bậc. Bấm sáng hơn hover.
     # Nút trên thanh công cụ / nút + của Konsole: không nền, sáng lên khi trỏ.
     ("tbutton", {
         "normal":   (None, None),
-        "focused":  ("text@0.08", None),
-        "pressed":  ("text@0.14", None),
+        "focused":  ("sub-secondary", None),
+        "pressed":  ("text@0.2", None),
         "toggled":  ("text@0.12", None),
         "disabled": (None, None),
     }, False),
@@ -181,7 +184,7 @@ FRAMES = [
     # Tab: tab đang mở = card liền với nội dung; tab khác trong suốt.
     ("tab", {
         "normal":   (None, None),
-        "focused":  ("text@0.05", None),
+        "focused":  ("sub-secondary", None),
         "toggled":  ("card", None),
         "pressed":  ("card", None),
         "disabled": (None, None),
@@ -202,23 +205,25 @@ FRAMES = [
         "disabled": (None, None),
     }, False),
     ("menu", {"normal": ("card", "sub-secondary")}, False),
+    # Dòng menu: nền hover, chữ giữ màu thường (trước: nền selection cyan,
+    # chữ trắng).
     ("menuitem", {
         "normal":   (None, None),
-        "focused":  ("selection", None),
-        "pressed":  ("selection", None),
-        "toggled":  ("selection", None),
+        "focused":  ("hover", None),
+        "pressed":  ("hover", None),
+        "toggled":  ("hover", None),
     }, False),
     ("menubaritem", {
         "normal":   (None, None),
-        "focused":  ("text@0.08", None),
-        "pressed":  ("text@0.14", None),
-        "toggled":  ("text@0.14", None),
+        "focused":  ("sub-secondary", None),
+        "pressed":  ("text@0.2", None),
+        "toggled":  ("text@0.2", None),
     }, False),
     ("tooltip", {"normal": ("card", "sub-secondary")}, False),
     ("header", {
         "normal":   (None, None),
-        "focused":  ("text@0.06", None),
-        "pressed":  ("text@0.10", None),
+        "focused":  ("hover", None),
+        "pressed":  ("sub-secondary", None),
         "toggled":  (None, None),
     }, False),
     ("scrollbargroove", {"normal": (None, None)}, False),
@@ -496,8 +501,8 @@ def kvconfig(pal):
                            "text.margin.left": 6, "text.margin.right": 6}),
         ("Menu", {"inherits": "PanelButtonCommand", **frame("menu")}),
         ("MenuItem", {"inherits": "PanelButtonCommand", **frame("menuitem", top=1, side=4),
-                      "text.focus.color": d["on-selection"], "text.toggle.color": d["on-selection"],
-                      "text.press.color": d["on-selection"], "indicator.element": "arrow",
+                      "text.focus.color": d["text"], "text.toggle.color": d["text"],
+                      "text.press.color": d["text"], "indicator.element": "arrow",
                       "text.margin.top": 0, "text.margin.bottom": 0,
                       "text.margin.left": 4, "text.margin.right": 4}),
         ("MenuBar", {"frame": "false", "interior": "false"}),

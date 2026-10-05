@@ -93,6 +93,13 @@
 //        của Kvantum (accent@0.7) bị viền nút che trên/dưới, chỉ còn hai sọc
 //        dọc xanh (đo ảnh user: #0d93af ở hai cột). Focus BÀN PHÍM (đi bằng
 //        Tab/mũi tên trong hàng) hiện bằng nền hover, như dòng menu.
+//  17. Menu chuột phải Dolphin khi bấm VÀO một thư mục không có "Create New"
+//      (user 2026-10-05: tạo file BÊN TRONG thư mục đó, dễ nhầm với bấm chỗ
+//      trống). Dolphin không có tuỳ chọn (các mục khác tắt bằng /etc/xdg/
+//      dolphinrc [ContextMenu]). Menu con có icon list-add: menu chỗ trống
+//      đặt nó ĐẦU TIÊN (DolphinContextMenu::addViewportContextMenu, 26.08),
+//      menu thư mục đặt sau Open in…/Open With → cái không đứng đầu thì ẩn.
+//      Làm lúc polish: QMenu::popup gọi ensurePolished trước khi tính cỡ.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -472,6 +479,8 @@ public:
         // DolphinStatusBar::paintEvent: drawRoundedRect(palette().window()).
         if (qobject_cast<QMenu *>(w))
             w->installEventFilter(&m_menuForwarder);  // mục 12
+        if (w->inherits("DolphinContextMenu"))
+            hideItemCreateNew(static_cast<QMenu *>(w));
         if (w->inherits("DolphinStatusBar")) {
             QPalette pal = w->palette();
             pal.setColor(QPalette::Window, QColor(samhie::PANE));
@@ -726,6 +735,20 @@ public:
     }
 
 private:
+    static void hideItemCreateNew(QMenu *menu)  // mục 17
+    {
+        bool first = true;
+        for (QAction *a : menu->actions()) {
+            if (!a->isVisible() || a->isSeparator())
+                continue;
+            if (!first && a->menu() && a->icon().name() == QLatin1String("list-add")) {
+                a->setVisible(false);
+                return;
+            }
+            first = false;
+        }
+    }
+
     PanePainter m_pane;
     PopupPainter m_popup;
     MenuButtonForwarder m_menuForwarder;

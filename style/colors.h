@@ -9,7 +9,7 @@ constexpr const char *FRAME_LINE = "#393939";  // viền trên + trái vùng fil
 constexpr const char *POPUP = "#262626";  // thẻ thanh tìm Dolphin (dạng popup, đục)
 constexpr const char *POPUP_BORDER = "#393939";  // viền thẻ thanh tìm
 constexpr const char *FOCUS_RING = "#b300c0e8";  // khung focus của ô file (accent 70%)
-constexpr const char *ROW_HOVER = "#363d3f";  // ô dòng file Dolphin chế độ Details (vuông) — như itemview của Kvantum
+constexpr const char *ROW_HOVER = "#262626";  // ô dòng file Dolphin chế độ Details (vuông) — như itemview của Kvantum
 constexpr const char *ROW_SELECTED_BORDER = "#097389";  // viền ô dòng file đang chọn (= itemview Kvantum)
 constexpr double WINDOW_OPACITY = 0.9;  // [window] opacity
 constexpr int ITEM_RADIUS = 10;  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)

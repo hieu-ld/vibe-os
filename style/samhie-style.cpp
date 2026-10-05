@@ -51,6 +51,12 @@
 //      con, chuyển cho nút (MenuButtonForwarder). Bình thường cú bấm đi thẳng
 //      vào nút, menu không thấy — bộ lọc chỉ chạy ở trường hợp chuyển tiếp.
 //      Thêm: menu con đóng sau SUBMENU_SLOPPY_MS thay vì 1000ms của Kvantum.
+//  13. Dolphin chế độ Details không kẻ sọc. KItemListWidget::paint tự tô dòng
+//      xen kẽ bằng fillRect(AlternateBase) — không qua style — mà vùng file
+//      trong (Kvantum transparent_dolphin_view) → dòng sọc đục #171717 giữa
+//      các dòng thấy hình nền (container 2026-10-05). AlternateBase trong
+//      suốt trên QGraphicsView + scene của vùng file: KItemListView lấy
+//      palette từ view lúc vào scene, sau đó từ scene (PaletteChange).
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -61,6 +67,8 @@
 #include <QDir>
 #include <QAbstractScrollArea>
 #include <QEvent>
+#include <QGraphicsScene>
+#include <QGraphicsView>
 #include <QPainter>
 #include <QPainterPath>
 #include <QLayout>
@@ -185,6 +193,17 @@ public:
         return false;
     }
 };
+
+// Mục 13. Chỉ khoá AlternateBase — vai trò khác vẫn theo palette app (đổi
+// Dark mode).
+template<typename T>
+void clearAlternateBase(T *target, const QPalette &from)
+{
+    QPalette pal = from;
+    for (auto group : {QPalette::Active, QPalette::Inactive, QPalette::Disabled})
+        pal.setColor(group, QPalette::AlternateBase, Qt::transparent);
+    target->setPalette(pal);
+}
 
 QColor paneColor()
 {
@@ -366,6 +385,14 @@ public:
             w->setContentsMargins(m, m, m, 0);
             w->parentWidget()->setAutoFillBackground(false);  // viewport: để thấy vùng file trong
             w->installEventFilter(&m_popup);
+        }
+        if (w->inherits("KItemListContainer")) {  // mục 13
+            auto *view = qobject_cast<QGraphicsView *>(static_cast<QAbstractScrollArea *>(w)->viewport());
+            if (view) {
+                clearAlternateBase(view, view->palette());
+                if (QGraphicsScene *scene = view->scene())
+                    clearAlternateBase(scene, scene->palette());
+            }
         }
         if (w->inherits("DolphinTabWidget"))
             addNewTabButton(static_cast<QTabWidget *>(w));

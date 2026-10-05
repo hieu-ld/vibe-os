@@ -149,6 +149,7 @@ icon-theme     = { dark = "Samhie", light = "breeze" }
 #   Ký hiệu: = màu nắp, như ảnh mẫu (1,56:1 với thân — mờ mờ, user thích
 #            vậy). Đã thử bản đậm L × 0,55, C × 0,6 của thân (2,88:1) trong máy
 #            ảo 2026-10-04 — user chọn giữ bản mờ. Tách riêng để chỉnh sau.
+#            Riêng important: `danger` của [dark] (user 2026-10-05).
 #   8 màu kia: cùng độ đậm, chỉ đổi sắc (H); vàng/cam sáng hơn chút (L 0,66 /
 #            0,60) vì cùng L thì vàng ra màu bùn; nâu L 0,50 C 0,065; xám C 0,012.
 # Thanh "màu thư mục" của Dolphin: Default = inode-directory (= default),

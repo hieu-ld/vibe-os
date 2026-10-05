@@ -68,6 +68,9 @@ User vẽ 2026-10-04 (khung 64, chỉ viền `#A1A1A1`: nắp + thân thư mục
 nhau ở mọi hình, ký hiệu ở giữa). Lưu ở đây theo tên icon bỏ `folder-`, rồi
 chạy `python3 tools/build-folder-icons.py` → `Samhie/places/scalable/`. Script
 tô kín nắp/thân, ký hiệu một màu tối hơn nắp; màu ở `theme/palette.toml` `[folders]`.
+Ký hiệu user vẽ trong ô 24×24 (tâm 32, 37); script phóng lên 32 (nét 1,5 → 2,
+user 2026-10-05) — vẽ ký hiệu mới thì vẫn vẽ trong ô 24 như cũ. `important`
+tô màu `danger` thay vì màu nắp.
 Thư mục trơn (`folder`, 9 màu) sinh từ vỏ thư mục, không cần file riêng.
 
 **Sửa so với bản xuất Figma:** `music.svg` (2026-10-04) — bản xuất mất hai

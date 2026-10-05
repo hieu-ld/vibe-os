@@ -28,3 +28,9 @@ RememberOpenedTabs=false
 # sách: image thêm trình tạo ảnh thu nhỏ mới thì phải thêm tên vào đây, không
 # thì nó tắt. Người dùng bật lại: Dolphin → Configure → Interface → Previews.
 Plugins=exrthumbnail,mobithumbnail,blenderthumbnail,kraorathumbnail,imagethumbnail,jpegthumbnail,opendocumentthumbnail,audiothumbnail,svgthumbnail,ebookthumbnail,comicbookthumbnail,djvuthumbnail,gsthumbnail,windowsimagethumbnail,ffmpegthumbs,cursorthumbnail,rawthumbnail,windowsexethumbnail,ffmpegthumbnailer,gsf-office
+
+[DetailsMode]
+# Chế độ Details không mở thư mục con dạng cây (mũi tên ▸): bỏ khoảng trống
+# ~50px Dolphin chừa bên trái icon cho mũi tên, icon thẳng hàng với tiêu đề
+# cột Name (user chốt 2026-10-05). Khoá: dolphin_detailsmodesettings.kcfg.
+ExpandableFolders=false

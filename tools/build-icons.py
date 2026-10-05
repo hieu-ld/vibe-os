@@ -156,7 +156,8 @@ CROP = {
 # nửa điểm ảnh — mắt không thấy, nét thì thấy.
 # Cỡ chính (đo trong Quickshell/SDDM/Dolphin): mũi tên nhọn 16 (thanh trên,
 # SDDM), chuông + nút nguồn 18 (thanh trên), mũi tên thẳng 20 (lịch, menu
-# khay, SDDM), loa 20 (quick settings), nút cửa sổ 20 (thanh trên), sidebar
+# khay, SDDM), loa 20 (quick settings), nút cửa sổ 18 (thanh trên — cùng cỡ chuông/nút
+# nguồn, user 2026-10-05), sidebar
 # Dolphin 20 (dolphinrc IconSize).
 # tên hình: (cỡ px, dời ngang px, dời dọc px)
 NUDGE = {
@@ -180,9 +181,10 @@ NUDGE = {
     "trash":       (20, 0, -0.5),
     "trash-full":  (20, -0.5, -0.5),
     "hdd":         (20, -0.5, -0.5),
-    "close":       (20, -0.5, -0.5),
-    "minus":       (20, -0.5, -0.5),
-    "min":         (20, -0.5, -0.5),
+    "close":       (18, -0.5, -0.375),
+    "minus":       (18, 0.375, -0.5),
+    "max":         (18, -0.5, -0.375),
+    "min":         (18, -0.5, -0.375),
 }
 
 

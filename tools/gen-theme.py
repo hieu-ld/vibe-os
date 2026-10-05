@@ -368,6 +368,7 @@ def style_colors_h(pal):
     rows = [
         ("ACTIVE_TEXT", d["accent-text"], "sidebar: mục đang chọn — chữ + icon cyan, không nền"),
         ("HOVER_TEXT", s["white"], "sidebar: mục đang trỏ chuột — chữ sáng lên, không nền"),
+        ("HOVER_ACCENT", d["accent-text"], "thanh đường dẫn Dolphin: tên thư mục đang trỏ — chữ cyan, không nền"),
         ("PANE", d["card"], "vùng nội dung (file Dolphin, chữ Konsole) trên nền cửa sổ secondary"),
         ("FRAME_LINE", d["sub-secondary"], "viền trên + trái vùng file Dolphin"),
         ("POPUP", d["secondary"], "thẻ thanh tìm Dolphin (dạng popup, đục)"),

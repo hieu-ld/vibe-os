@@ -4,6 +4,7 @@
 namespace samhie {
 constexpr const char *ACTIVE_TEXT = "#00c0e8";  // sidebar: mục đang chọn — chữ + icon cyan, không nền
 constexpr const char *HOVER_TEXT = "#fafafa";  // sidebar: mục đang trỏ chuột — chữ sáng lên, không nền
+constexpr const char *HOVER_ACCENT = "#00c0e8";  // thanh đường dẫn Dolphin: tên thư mục đang trỏ — chữ cyan, không nền
 constexpr const char *PANE = "#171717";  // vùng nội dung (file Dolphin, chữ Konsole) trên nền cửa sổ secondary
 constexpr const char *FRAME_LINE = "#393939";  // viền trên + trái vùng file Dolphin
 constexpr const char *POPUP = "#262626";  // thẻ thanh tìm Dolphin (dạng popup, đục)

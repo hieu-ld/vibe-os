@@ -163,7 +163,7 @@ Item {
         SamhieIcon {
             anchors.centerIn: parent
             iconName: btn.iconName
-            size: 20
+            size: 18  // bằng chuông + nút nguồn (20 trông sáng hơn hẳn — user 2026-10-05)
             color: hover.hovered ? root.bar.hoverColor : root.bar.textColor
         }
 

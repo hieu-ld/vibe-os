@@ -331,6 +331,23 @@ hl.window_rule({
     suppress_event = "maximize",
 })
 
+-- Dolphin và Konsole mở NỔI giữa màn hình, cỡ theo phần trăm màn hình (user
+-- 2026-10-05: Dolphin xếp kín cả màn thì cột Name dài quá) — app khác vẫn xếp
+-- kín. Super+F đưa về xếp kín. `float = false`: hộp thoại của app (Properties
+-- của Dolphin cùng class) Hyprland đã cho nổi sẵn → không bị kéo giãn theo
+-- (container 2026-10-05: thiếu điều kiện này, Properties rộng 1152px).
+local function float_centered(name, class, fraction)
+    hl.window_rule({
+        name   = name,
+        match  = { class = class, float = false },
+        float  = true,
+        size   = { "monitor_w * " .. fraction, "monitor_h * " .. fraction },
+        center = true,
+    })
+end
+float_centered("dolphin-float", "^org\\.kde\\.dolphin$", 0.6)
+float_centered("konsole-float", "^org\\.kde\\.konsole$", 0.5)
+
 -- Sửa lỗi kéo thả của app XWayland (cũng lấy từ mẫu upstream).
 hl.window_rule({
     name  = "fix-xwayland-drags",

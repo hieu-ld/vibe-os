@@ -15,6 +15,8 @@
 -- Sinh từ theme/palette.toml (nguồn màu duy nhất của Samhie) — đổi màu thì sửa
 -- file đó rồi chạy tools/gen-theme.py, đừng ghi mã màu thẳng vào đây.
 local color = require("/usr/share/samhie/hypr/colors")
+-- Chia đôi màn hình kiểu Windows (Super + mũi tên) + cỡ cửa sổ nổi mặc định.
+local snap = require("/usr/share/samhie/hypr/snap")
 
 -------------------
 ---- TUỲ CHỌN ----
@@ -288,14 +290,20 @@ hl.bind("Print",               hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot")
 
 hl.bind("ALT + F4",            hl.dsp.window.close())
 hl.bind(mod .. " + Q",         hl.dsp.window.close())
-hl.bind(mod .. " + F",         hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mod .. " + J",         hl.dsp.layout("togglesplit"))
 hl.bind(mod .. " + SHIFT + M", hl.dsp.exec_cmd("hyprctl dispatch 'hl.dsp.exit()'"))  -- đăng xuất
 
-hl.bind(mod .. " + left",  hl.dsp.focus({ direction = "left" }))
-hl.bind(mod .. " + right", hl.dsp.focus({ direction = "right" }))
-hl.bind(mod .. " + up",    hl.dsp.focus({ direction = "up" }))
-hl.bind(mod .. " + down",  hl.dsp.focus({ direction = "down" }))
+-- Win + mũi tên như Windows (snap.lua): ← → nửa trái/phải, ↑ phóng kín, ↓
+-- về cửa sổ nổi. Thay Super+F (bật/tắt nổi) — user 2026-10-05.
+hl.bind(mod .. " + left",  function() snap.snap("left") end)
+hl.bind(mod .. " + right", function() snap.snap("right") end)
+hl.bind(mod .. " + up",    snap.maximize)
+hl.bind(mod .. " + down",  snap.restore)
+-- Chuyển focus sang cửa sổ bên cạnh (trước là Super + mũi tên).
+hl.bind(mod .. " + ALT + left",  hl.dsp.focus({ direction = "left" }))
+hl.bind(mod .. " + ALT + right", hl.dsp.focus({ direction = "right" }))
+hl.bind(mod .. " + ALT + up",    hl.dsp.focus({ direction = "up" }))
+hl.bind(mod .. " + ALT + down",  hl.dsp.focus({ direction = "down" }))
 
 for i = 1, 10 do
     local key = i % 10 -- phím 0 là workspace 10
@@ -332,21 +340,20 @@ hl.window_rule({
 })
 
 -- Dolphin và Konsole mở NỔI giữa màn hình, cỡ theo phần trăm màn hình (user
--- 2026-10-05: Dolphin xếp kín cả màn thì cột Name dài quá) — app khác vẫn xếp
--- kín. Super+F đưa về xếp kín. `float = false`: hộp thoại của app (Properties
--- của Dolphin cùng class) Hyprland đã cho nổi sẵn → không bị kéo giãn theo
--- (container 2026-10-05: thiếu điều kiện này, Properties rộng 1152px).
-local function float_centered(name, class, fraction)
+-- 2026-10-05: Dolphin xếp kín cả màn thì cột Name dài quá; cỡ ở snap.lua
+-- M.float) — app khác vẫn xếp kín. Super+↑ / ← / → đưa về xếp kín.
+-- `float = false`: hộp thoại của app (Properties của Dolphin cùng class)
+-- Hyprland đã cho nổi sẵn → không bị kéo giãn theo (container 2026-10-05:
+-- thiếu điều kiện này, Properties rộng 1152px).
+for class, fraction in pairs(snap.float) do
     hl.window_rule({
-        name   = name,
-        match  = { class = class, float = false },
+        name   = "float-" .. class,
+        match  = { class = "^" .. class:gsub("%.", "\\.") .. "$", float = false },
         float  = true,
         size   = { "monitor_w * " .. fraction, "monitor_h * " .. fraction },
         center = true,
     })
 end
-float_centered("dolphin-float", "^org\\.kde\\.dolphin$", 0.6)
-float_centered("konsole-float", "^org\\.kde\\.konsole$", 0.5)
 
 -- Sửa lỗi kéo thả của app XWayland (cũng lấy từ mẫu upstream).
 hl.window_rule({

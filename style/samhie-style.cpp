@@ -62,9 +62,17 @@
 //      - nền đục như vùng file: hàng cuộn xuống nằm dưới tiêu đề (z 10)
 //        không còn lộ chữ qua tiêu đề trong suốt;
 //      - ô hover cột đầu kéo tới mép trái vùng file, cột cuối tới mép phải
-//        (Dolphin vẽ phần đệm thành ô riêng, ngay TRƯỚC cột kề nó);
+//        (Dolphin vẽ phần đệm thành ô riêng, ngay TRƯỚC cột kề nó). Chỉ ô
+//        nền kéo dài (CE_HeaderSection); chữ + mũi tên sắp xếp vẽ ở chỗ cũ;
+//      - chữ "Size"/"Permissions" căn phải như số liệu bên dưới (Dolphin
+//        căn phải hai cột này — KFileItemListWidget::isRoleRightAligned —
+//        còn tiêu đề thì căn trái). Nhận ra theo chữ: giao diện tiếng Anh;
 //      - cao thêm HEADER_GAP ở dưới, vẽ trong phần trên: dòng đầu cách ô
 //        hover đúng bằng khe từ mép trên vùng file tới ô hover (đo 10px).
+//      Ô hover/chọn của dòng file (Details) cũng rộng bằng: Dolphin đưa
+//      PE_PanelItemViewItem khung từ lề trái tới hết các cột (bỏ lề hai bên)
+//      → kéo ra cả bề ngang vùng file. Nhận ra dòng Details theo bề ngang
+//      (> 60% vùng file; ô chế độ Icons hẹp hơn nhiều).
 //  15. Dòng trạng thái nhỏ của Dolphin (nổi ở góc dưới-trái vùng file) tô
 //      nền đè lên viền trái vùng file → vẽ lại đoạn viền đó.
 //
@@ -115,6 +123,7 @@ constexpr int MENUITEM_FRAME = 1;  // khung trên/dưới của MenuItem (tools/
 constexpr int SUBMENU_SLOPPY_MS = 300;
 // Mục 14: khe trên ô hover tiêu đề cột (Kvantum) đo trong máy ảo 2026-10-05.
 constexpr int HEADER_GAP = 10;
+constexpr int ROW_HOVER_OUTSET = 3;  // mục 14, xem chỗ dùng
 
 // setViewportMargins là protected — gọi qua lớp con chỉ để mở quyền truy cập.
 class ScrollAreaAccess : public QAbstractScrollArea
@@ -465,6 +474,16 @@ public:
             baseStyle()->drawPrimitive(PE_PanelLineEdit, opt, p, w);
             return;
         }
+        auto *item = qstyleoption_cast<const QStyleOptionViewItem *>(opt);
+        if (pe == PE_PanelItemViewItem && item && isDolphinView(w) && item->rect.width() > w->width() * 0.6) {
+            QStyleOptionViewItem row(*item);  // mục 14
+            // Kvantum chừa lề ô dòng ít hơn ô tiêu đề 3px mỗi bên — đo container
+            // 2026-10-05: dòng 633…1525, tiêu đề 630…1528 → bù lại cho bằng.
+            row.rect.setLeft(-ROW_HOVER_OUTSET);
+            row.rect.setRight(w->width() - 1 + ROW_HOVER_OUTSET);
+            QProxyStyle::drawPrimitive(pe, &row, p, w);
+            return;
+        }
         if (pe == PE_PanelItemViewItem) {
             // KIO gọi không kèm widget — lấy từ option.
             // Delegate gọi KHÔNG kèm widget; KFilePlacesView::paintEvent gọi KÈM
@@ -559,11 +578,18 @@ public:
                     m_headerEnd = o.rect;
             } else {
                 if (o.state & State_MouseOver) {
+                    QStyleOptionHeader section(o);
                     if (o.section == 0 && w->layoutDirection() == Qt::LeftToRight)
-                        o.rect.setLeft(qMin(o.rect.left(), 0));
+                        section.rect.setLeft(qMin(o.rect.left(), 0));
                     if (m_headerEnd.isValid() && qAbs(m_headerEnd.left() - o.rect.right() - 1) <= 1)
-                        o.rect.setRight(m_headerEnd.right());
+                        section.rect.setRight(m_headerEnd.right());
+                    if (section.rect != o.rect) {
+                        QProxyStyle::drawControl(CE_HeaderSection, &section, p, w);
+                        o.state &= ~State_MouseOver;  // không vẽ ô hover thứ hai
+                    }
                 }
+                if (o.text == QLatin1String("Size") || o.text == QLatin1String("Permissions"))
+                    o.textAlignment = Qt::AlignRight | Qt::AlignVCenter;
                 m_headerEnd = QRect();
             }
             QProxyStyle::drawControl(ce, &o, p, w);

@@ -82,6 +82,12 @@ hl.env("QT_QPA_PLATFORMTHEME", "kde")
 hl.env("XMODIFIERS", "@im=fcitx")
 hl.env("QT_IM_MODULE", "fcitx")
 
+-- Ngày giờ kiểu Anh: 29/09/2026, giờ 24h (user 2026-10-05: Dolphin cột
+-- Modified ra 9/29/26 kiểu Mỹ). Chữ vẫn tiếng Anh ("Today at 09:32"); không
+-- locale nào có năm 2 chữ số + ngày trước tháng mà chữ tiếng Anh. Đồng hồ và
+-- màn khoá Quickshell tự ghép chuỗi tiếng Việt, không đọc biến này.
+hl.env("LC_TIME", "en_GB.UTF-8")
+
 -- App Electron (VS Code) chạy Wayland thật thay vì XWayland.
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 

@@ -160,6 +160,36 @@ if props=$(getfattr --only-values -n "$dolphin_xattr" -- "$dolphin_props" 2>/dev
     echo "Reset Dolphin column widths"
 fi
 
+# ── 0f. Dolphin Details: cột Modified đứng trước Size ───────────────────────
+# User 2026-10-05. Thứ tự mặc định (Name, Size, Modified) viết cứng trong
+# Dolphin (ViewProperties::visibleRoles: chưa chọn cột thì thêm size rồi
+# modificationtime) và không có bản mặc định toàn máy — kiểu xem chung nằm
+# trong xattr của view_properties/global của từng tài khoản (xem 0e). Ghi
+# VisibleRoles theo thứ tự mới, MỘT lần mỗi tài khoản (mốc riêng): chỉ khi
+# chưa chọn cột cho Details, hoặc đang đúng thứ tự mặc định — tự sắp khác thì
+# để nguyên, sau đó đổi gì giữ nấy.
+columns_marker=$state_dir/dolphin-columns
+if [ ! -e "$columns_marker" ]; then
+    props=$(getfattr --only-values -n "$dolphin_xattr" -- "$dolphin_props" 2>/dev/null) \
+        || props='[Dolphin]'
+    roles=$(printf '%s\n' "$props" | sed -n 's/^VisibleRoles=//p')
+    details=$(printf '%s' "$roles" | tr ',' '\n' | grep '^Details_' | paste -sd, -) || true
+    new_roles=
+    if [ -z "$details" ]; then
+        new_roles=${roles:+$roles,}CustomizedDetails,Details_text,Details_modificationtime,Details_size
+    elif [ "$details" = Details_text,Details_size,Details_modificationtime ]; then
+        new_roles=${roles/Details_size,Details_modificationtime/Details_modificationtime,Details_size}
+    fi
+    if [ -n "$new_roles" ]; then
+        props=$(printf '%s\n' "$props" | grep -v '^VisibleRoles=')
+        mkdir -p -- "$dolphin_props"
+        setfattr -n "$dolphin_xattr" -v "$props"$'\n'"VisibleRoles=$new_roles" -- "$dolphin_props"
+        echo "Put Dolphin's Modified column before Size"
+    fi
+    mkdir -p -- "$state_dir"
+    touch -- "$columns_marker"
+fi
+
 done_version=0
 if [ -r "$marker" ]; then
     read -r done_version < "$marker" || true

@@ -21,6 +21,17 @@
 #                  ActionProperties) bỏ Selection Mode khỏi menu ☰ và phím
 #                  Space: hai thanh xanh lá, chọn bằng bấm từng ô — trùng với
 #                  Ctrl/Shift+bấm, Ctrl+A (user 2026-10-04).
+#   Bớt menu (user 2026-10-05) — cũng visible="false" (hành động ẩn thì phím
+#   tắt của nó cũng chết; bốn cái này không có phím tắt):
+#   view_properties  "Adjust View Display Style…" (menu ▦): Samhie dùng chung
+#                    một kiểu xem cho mọi thư mục (GlobalViewProps mặc định
+#                    true) → hộp thoại chỉ lặp lại các mục có sẵn trong ▦.
+#   group_by         "Group By" (▦).
+#   additional_info  "Show Additional Information" (▦): dòng chữ dưới tên file
+#                    ở Icons; Details chọn cột bằng chuột phải tiêu đề cột.
+#   basic_actions    "Actions for Current View" (☰): Cut/Copy/Paste/Select
+#                    All… trùng menu chuột phải; phím tắt vẫn chạy (ẩn MENU
+#                    con, không ẩn từng hành động).
 #
 # Thanh công cụ theo bản vẽ của user (2026-10-03):
 #   ← → | ▦  [đường dẫn ✎]  🔍  ☰
@@ -96,13 +107,20 @@ ui = ui[:bar.start(2)] + items + ui[bar.end(2):]
 # Nút thêm mới (nếu có) phải hiện chỉ icon: <Action priority="0" name=…> trong
 # ActionProperties như go_back… — thanh để "chữ cạnh icon". Hiện không có nút mới.
 head, sep, tail = ui.partition("<ActionProperties")
-# Hành động CHƯA có mục trong ActionProperties: thêm mục mới (phải là hành
-# động có thật — có trong menu của file).
-hidden = {"toggle_selection_mode": ' shortcut="" visible="false"'}
-for a, attrs in hidden.items():
-    assert f'name="{a}"' in head, f'unknown action "{a}"'
-    assert f'name="{a}"' not in tail.split("</ActionProperties>")[0], a
-    tail = tail.replace(">", f'>\n        <Action name="{a}"{attrs}/>', 1)
+# Ẩn hành động. Phải là hành động có thật: có trong menu của file, hoặc tên
+# có trong mã Dolphin (basic_actions chỉ nằm ở menu ☰, không có trong file;
+# tên trong mã là QStringLiteral = UTF-16).
+# Đã có mục trong ActionProperties thì thêm thuộc tính, chưa có thì thêm mục.
+libs = data + open("/usr/lib64/libdolphinprivate.so.6", "rb").read()
+hidden = ["toggle_selection_mode", "view_properties", "group_by", "additional_info", "basic_actions"]
+for a in hidden:
+    attrs = ' shortcut="" visible="false"' if a == "toggle_selection_mode" else ' visible="false"'
+    assert f'name="{a}"' in head or a.encode("utf-16-le") + b"\0\0" in libs, f'unknown action "{a}"'
+    props_part = tail.split("</ActionProperties>")[0]
+    if re.search(rf'<Action\b[^>]*\bname="{a}"', props_part):
+        tail, n = re.subn(rf'(<Action\b[^>]*\bname="{a}")', rf"\1{attrs}", tail, count=1)
+    else:
+        tail = tail.replace(">", f'>\n        <Action name="{a}"{attrs}/>', 1)
 # Icon tròn cho lùi/tiến: thuộc tính icon= trong ActionProperties (KXmlGui gán
 # QIcon::fromTheme — đo container: nút hiện đúng icon).
 for a, icon in (("go_back", "samhie-go-back"), ("go_forward", "samhie-go-forward")):

@@ -107,8 +107,11 @@ MAP = {
     "edit":       [("actions", "document-edit"), ("actions", "edit-entry")],
     "filter":     [("actions", "view-filter")],
     "list":       [("actions", "view-list-icons")],
-    # Nút chế độ Details (user vẽ 2026-10-05, thay icon Tabler cũ).
-    "details":    [("actions", "view-list-details")],
+    # Chế độ Details (user vẽ 2026-10-05). Dolphin đặt tên lệch: Details =
+    # view-list-TREE, view-list-details là chế độ Compact (Samhie ẩn) — đo
+    # dolphinviewactionhandler.cpp 26.08. Hộp thoại mở file của KDE dùng
+    # view-list-details cho kiểu "Detailed" → giữ cả hai.
+    "details":    [("actions", "view-list-tree"), ("actions", "view-list-details")],
     "menu":       [("actions", "application-menu")],
     # Nút lùi/tiến hình tròn của Dolphin (user vẽ 2026-10-03). Tên RIÊNG, không
     # đè go-previous/go-next: hai tên đó còn dùng ở menu khay, lịch, nút đăng

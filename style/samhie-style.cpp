@@ -100,6 +100,16 @@
 //      đặt nó ĐẦU TIÊN (DolphinContextMenu::addViewportContextMenu, 26.08),
 //      menu thư mục đặt sau Open in…/Open With → cái không đứng đầu thì ẩn.
 //      Làm lúc polish: QMenu::popup gọi ensurePolished trước khi tính cỡ.
+//      Menu ☰ cũng không có "Create New" (trùng chuột phải chỗ trống). Menu
+//      con đó là MỘT với menu chỗ trống (hành động "new_menu" của cửa sổ,
+//      DolphinMainWindow::m_newFileMenu) → gỡ khỏi menu ☰ (removeAction),
+//      không ẩn hành động. Menu ☰ hiện ra là bản CHÉP KHamburgerMenu dựng
+//      (QMenu không cha, khamburgermenu.cpp newMenu) — dựng mới khi Dolphin
+//      đổi danh sách → gỡ lúc polish + mỗi aboutToShow. Mọi QMenu không cha
+//      của Dolphin (trừ menu chuột phải) đều gỡ — kể cả File trong More.
+//  18. Thanh công cụ Dolphin không có menu chuột phải (Text Position, Icon
+//      Size, Configure Toolbars, Lock — bấm nhầm là hỏng thanh theo bản vẽ;
+//      user 2026-10-05). Ô đường dẫn trong thanh vẫn có menu riêng.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -481,6 +491,14 @@ public:
             w->installEventFilter(&m_menuForwarder);  // mục 12
         if (w->inherits("DolphinContextMenu"))
             hideItemCreateNew(static_cast<QMenu *>(w));
+        if (qobject_cast<QMenu *>(w) && !w->parentWidget() && !w->inherits("DolphinContextMenu")
+            && QCoreApplication::applicationName() == QLatin1String("dolphin")) {
+            auto *menu = static_cast<QMenu *>(w);  // mục 17: menu ☰
+            removeHamburgerCreateNew(menu);
+            QObject::connect(menu, &QMenu::aboutToShow, menu, [menu] { removeHamburgerCreateNew(menu); });
+        }
+        if (qobject_cast<QToolBar *>(w) && w->window()->inherits("DolphinMainWindow"))
+            w->setContextMenuPolicy(Qt::PreventContextMenu);  // mục 18
         if (w->inherits("DolphinStatusBar")) {
             QPalette pal = w->palette();
             pal.setColor(QPalette::Window, QColor(samhie::PANE));
@@ -746,6 +764,21 @@ private:
                 return;
             }
             first = false;
+        }
+    }
+
+    static void removeHamburgerCreateNew(QMenu *menu)  // mục 17
+    {
+        QList<QMenu *> createNew;
+        for (QWidget *top : QApplication::topLevelWidgets()) {
+            if (!top->inherits("DolphinMainWindow"))
+                continue;
+            if (auto *a = top->findChild<QAction *>(QStringLiteral("new_menu")); a && a->menu())
+                createNew << a->menu();
+        }
+        for (QAction *a : menu->actions()) {
+            if (a->menu() && createNew.contains(a->menu()))
+                menu->removeAction(a);
         }
     }
 

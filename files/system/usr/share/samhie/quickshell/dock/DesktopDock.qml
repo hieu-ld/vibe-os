@@ -114,10 +114,16 @@ PanelWindow {
     color: "transparent"
     exclusiveZone: 0
     WlrLayershell.namespace: "samhie-dock"
-    // Overlay: phải nằm TRÊN lớp màn tổng quan (Top, mở sau dock nên đè lên
-    // nếu cùng tầng). Lớp tạo sau cùng tầng Overlay (chụp màn hình,
-    // clipboard) vẫn đè lên dock.
-    WlrLayershell.layer: WlrLayer.Overlay
+    // Bottom (DƯỚI cửa sổ): menu chuột phải/tooltip của app là popup của cửa
+    // sổ — Hyprland vẽ cùng tầng cửa sổ, dưới Top/Overlay — nên dock tầng
+    // Overlay đè lên menu mở sát đáy màn (user 2026-10-05). Hyprland chỉ đẩy
+    // popup lên khỏi vùng GIỮ CHỖ (Popup.cpp: logicalBoxMinusReserved), mà
+    // dock không giữ chỗ. Dock chỉ hiện khi không cửa sổ nào đè chỗ của nó
+    // (covered), nên nằm dưới cửa sổ nhìn vẫn y như cũ.
+    // Overlay khi màn tổng quan đang dựng/mở: dock phải nằm TRÊN lớp tổng
+    // quan (Top) — xem overviewOpen. Đổi tầng từ lúc nhấn Win (dựng sẵn,
+    // lớp tổng quan còn trong suốt) nên kịp trước khi tổng quan hiện.
+    WlrLayershell.layer: overview !== null && overview.visible ? WlrLayer.Overlay : WlrLayer.Bottom
     visible: reveal > 0
 
     Dock {

@@ -123,6 +123,43 @@ if [ ! -e "$edge_marker" ]; then
     touch -- "$edge_marker"
 fi
 
+# ── 0e. Dolphin: về cỡ mặc định MỖI lần đăng nhập ───────────────────────────
+# User 2026-10-05: trong phiên kéo sidebar/cột rộng hẹp tuỳ ý, đăng nhập lại
+# thì về mặc định (cửa sổ nổi đã tự về 60% mỗi lần mở — samhie.lua). Không
+# có mốc: chạy mọi lần đăng nhập, trước khi Dolphin kịp mở.
+#  - Sidebar: độ rộng nằm trong khối State nhị phân (QMainWindow::saveState)
+#    của ~/.local/state/dolphinstaterc, nhóm [State]. Khối dưới đây đo trong
+#    máy ảo 2026-10-05 (Dolphin 26.08): dock trái 237px = sidebar ~227px mà
+#    user đang dùng (mặc định của Dolphin chỉ 134px); dock Folders/Information/
+#    Terminal tắt, thanh công cụ hiện. Cái giá: bảng phụ (F7, F11, F4) bật
+#    trong phiên cũng tắt lại.
+#  - Cột chế độ Details: kéo mép phải tiêu đề cột sát vào thì Dolphin tắt
+#    chế độ cột tự động (kitemlistheaderwidget.cpp) và lưu RightPadding=0 +
+#    độ rộng cố định — máy ảo: Name 1047px, cửa sổ nổi 60% không còn chỗ cho
+#    Size/Modified. Xoá lề hai bên trong dolphinrc và HeaderColumnWidths của
+#    kiểu xem chung (Dolphin 24.05+ lưu trong xattr của thư mục
+#    view_properties/global; hết chỗ xattr thì vào file .directory trong đó)
+#    → cột tự động lại. Kiểu xem riêng từng thư mục (khi tắt kiểu xem chung)
+#    thì không đụng.
+dolphin_state=${XDG_STATE_HOME:-$HOME/.local/state}/dolphinstaterc
+dolphin_props=$data_home/dolphin/view_properties/global
+dolphin_xattr='user.kde.fm.viewproperties#1'
+if command -v kwriteconfig6 >/dev/null; then
+    kwriteconfig6 --file "$dolphin_state" --group State --key State \
+        'AAAA/wAAAAD9AAAAAwAAAAAAAADtAAAClvwCAAAAAvsAAAAWAGYAbwBsAGQAZQByAHMARABvAGMAawgAAAA6AAACIwAAAAAA////+wAAABQAcABsAGEAYwBlAHMARABvAGMAawEAAAA6AAAClgAAAGQA////AAAAAQAAAZIAAARG/AIAAAAB+wAAABAAaQBuAGYAbwBEAG8AYwBrCAAAADoAAARGAAAAAAD///8AAAADAAADsgAAAN/8AQAAAAH7AAAAGAB0AGUAcgBtAGkAbgBhAGwARABvAGMAawgAAAAAAAADsgAAAAAA////AAADkgAAApYAAAAEAAAABAAAAAgAAAAI/AAAAAEAAAACAAAAAQAAABYAbQBhAGkAbgBUAG8AbwBsAEIAYQByAQAAAAD/////AAAAAAAAAAA='
+    for key in LeftPadding RightPadding; do
+        kwriteconfig6 --file "$config_home/dolphinrc" --group DetailsMode --key "$key" --delete
+    done
+    if [ -e "$dolphin_props/.directory" ]; then
+        kwriteconfig6 --file "$dolphin_props/.directory" --group Dolphin --key HeaderColumnWidths --delete
+    fi
+fi
+if props=$(getfattr --only-values -n "$dolphin_xattr" -- "$dolphin_props" 2>/dev/null) \
+    && [[ $props == *HeaderColumnWidths=* ]]; then
+    setfattr -n "$dolphin_xattr" -v "$(printf '%s\n' "$props" | grep -v '^HeaderColumnWidths=')" -- "$dolphin_props"
+    echo "Reset Dolphin column widths"
+fi
+
 done_version=0
 if [ -r "$marker" ]; then
     read -r done_version < "$marker" || true

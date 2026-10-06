@@ -66,6 +66,7 @@ def _alpha_over_bg(color):
 FIGMA = {
     FIGMA_INK: 1.0,
     "#3b3c3c": _alpha_over_bg("#3b3c3c"),   # lòng trash-full ≈ 0,32
+    "#3c3c3c": _alpha_over_bg("#3c3c3c"),   # lòng trash-full bản 2026-10-06 ≈ 0,33
 }
 
 # Hình Figma → [(nhóm, tên freedesktop), …]
@@ -73,7 +74,10 @@ MAP = {
     # Nút nguồn + màn hình đăng nhập (SDDM đọc thẳng actions/, xem SamhieIcon.qml)
     "power":      [("actions", "system-shutdown")],
     "restart":    [("actions", "system-reboot")],
-    "moon":       [("actions", "system-suspend")],
+    "sleep":      [("actions", "system-suspend")],
+    # Menu nguồn (Quickshell PowerMenu, 20px) — user vẽ 2026-10-06
+    "lock":       [("actions", "system-lock-screen")],
+    "logout":     [("actions", "system-log-out")],
     # Mũi tên thẳng
     "next-2":     [("actions", "go-next")],
     "prev-2":     [("actions", "go-previous")],
@@ -98,9 +102,9 @@ MAP = {
     "smart-home": [("places", "samhie-user-home"), ("actions", "go-home")],
     "download":   [("places", "samhie-folder-download")],
     "network":    [("places", "folder-network")],
-    "trash":      [("places", "user-trash")],
+    "trash-empty": [("places", "user-trash")],
     "trash-full": [("places", "user-trash-full")],
-    "hdd":        [("devices", "drive-harddisk")],
+    "storage":    [("devices", "drive-harddisk")],   # mục Storage của sidebar
     "recent":     [("actions", "document-open-recent")],
     # Thanh công cụ Dolphin (2026-10-03). Tên đo bằng chuỗi trong dolphin,
     # libdolphinprivate và KIO/KF6 của image: Copy Location = edit-copy-path,
@@ -108,7 +112,9 @@ MAP = {
     "copy":       [("actions", "edit-copy"), ("actions", "edit-copy-path")],
     "edit":       [("actions", "document-edit"), ("actions", "edit-entry")],
     "filter":     [("actions", "view-filter")],
-    "list":       [("actions", "view-list-icons")],
+    "icons":      [("actions", "view-list-icons")],
+    # Nút tìm thanh công cụ Dolphin (22px); cũng là ô tìm tổng quan/clipboard.
+    "search":     [("actions", "system-search")],
     # Chế độ Details (user vẽ 2026-10-05). Dolphin đặt tên lệch: Details =
     # view-list-TREE, view-list-details là chế độ Compact (Samhie ẩn) — đo
     # dolphinviewactionhandler.cpp 26.08. Hộp thoại mở file của KDE dùng
@@ -118,16 +124,25 @@ MAP = {
     # Nút lùi/tiến hình tròn của Dolphin (user vẽ 2026-10-03). Tên RIÊNG, không
     # đè go-previous/go-next: hai tên đó còn dùng ở menu khay, lịch, nút đăng
     # nhập SDDM. dolphin-ui.sh gán tên này cho go_back/go_forward.
-    "prev-circle": [("actions", "samhie-go-back")],
-    "next-circle": [("actions", "samhie-go-forward")],
+    "prev":       [("actions", "samhie-go-back")],
+    "next":       [("actions", "samhie-go-forward")],
     # Chuông, loa — cho thanh trên (giai đoạn 3). Bản -symbolic của ba tên
     # chuông là symlink có sẵn trong repo, trỏ về đây.
     "bell":       [("status", "notification-inactive")],
-    "bell-ring":  [("status", "notification-active")],
-    "bell-off":   [("status", "notifications-disabled")],
-    "volume":     [("status", "audio-volume-high"), ("status", "audio-volume-medium"),
-                   ("status", "audio-volume-low")],
+    "noti":       [("status", "notification-active")],   # chấm đỏ: BellButton.qml vẽ
+    "noti-off":   [("status", "notifications-disabled")],
+    # Loa theo mức (VolumeRow.qml): ≤25% / ≤50% / ≤75% / trên 75%.
+    "volume-25":  [("status", "audio-volume-low")],
+    "volume-50":  [("status", "audio-volume-medium")],
+    "volume-75":  [("status", "samhie-audio-volume-75")],
+    "volume-full": [("status", "audio-volume-high")],
     "volume-mute": [("status", "audio-volume-muted")],
+    # Ô quick settings (20px) — user vẽ 2026-10-06
+    "dark-mode":  [("actions", "samhie-dark-style")],
+    "do-not-dis-turb": [("actions", "samhie-do-not-disturb")],
+    "night-light": [("status", "redshift-status-on")],
+    "wifi":       [("status", "network-wireless-connected-100")],
+    "wired-2":    [("devices", "network-wired-activated")],
     # Terminal nét đơn khung 16 (user vẽ 2026-10-05) — ở THƯ MỤC CỠ 16
     # (nhóm "apps/16"): menu 16px (Dolphin "Open Terminal Here", "Open With")
     # lấy hình này, cỡ khác (dock 32, thanh trên 18) vẫn lấy icon app nhiều
@@ -139,13 +154,12 @@ MAP = {
 # Vẽ sẵn, chưa lắp. `folder` (nét mảnh): tên "folder" đã là thư mục TO tô màu
 # (tools/build-folder-icons.py, bộ scalable dùng một file cho mọi cỡ). Còn lại
 # chưa có chỗ dùng.
-UNUSED = {"folder", "document", "desktop", "next", "prev", "up", "down"}
+# `wired` (quả địa cầu + sóng): bản thứ hai của ô Wired — ở 20px rối, dùng wired-2.
+UNUSED = {"folder", "document", "desktop", "up", "down", "wired"}
 
-# Cắt khung: tên → viewBox mới. min/max: khung 20x20 xoay 45° quanh tâm
-# (14,1421; 14,1421) — tâm đo từ clipPath trong bản xuất.
+# Cắt khung: tên → viewBox mới (khi Figma xuất khung bao lớn hơn ô vẽ, vd hình
+# xoay). Hiện không hình nào cần — min/max bản 2026-10-06 vẽ thẳng khung 18.
 CROP = {
-    "min": "4.1421 4.1421 20 20",
-    "max": "4.1421 4.1421 20 20",
 }
 
 # Dời hình cho nét rơi vào lưới điểm ảnh ở CỠ HIỂN THỊ CHÍNH của icon (rà
@@ -166,27 +180,11 @@ NUDGE = {
     "ar-right":    (16, -0.5, 0),
     "ar-left":     (16, -0.5, 0),
     "ar-top":      (16, 0, -0.5),
-    "ar-bottom":   (16, 0, -0.5),
-    "power":       (18, -0.5, 0.375),
-    "bell":        (18, 0, -0.25),
-    "bell-ring":   (18, 0, -0.25),
     "next-2":      (20, 0, -0.5),
     "prev-2":      (20, 0, -0.5),
     "up-2":        (20, -0.5, 0),
     "down-2":      (20, -0.5, 0),
-    "volume":      (20, -0.375, -0.5),
-    "volume-mute": (20, -0.375, -0.375),
-    "restart":     (20, 0.375, 0.375),
-    "smart-home":  (20, -0.5, -0.25),  # máy chọn −0,5: vạch đáy mờ → chọn bằng mắt
-    "download":    (20, -0.5, -0.5),
     "network":     (20, -0.5, -0.25),
-    "trash":       (20, 0, -0.5),
-    "trash-full":  (20, -0.5, -0.5),
-    "hdd":         (20, -0.5, -0.5),
-    "close":       (18, -0.5, -0.375),
-    "minus":       (18, 0.375, -0.5),
-    "max":         (18, -0.5, -0.375),
-    "min":         (18, -0.5, -0.375),
 }
 
 

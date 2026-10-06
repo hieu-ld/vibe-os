@@ -1,12 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/volume.svg.
+<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/volume-25.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.375 0.5 20 20" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <path d="M2.875 14C2.32271 14 1.875 13.5523 1.875 13L1.875 10V6.99999C1.875 6.44771 2.32272 5.99999 2.875 5.99999H5.23249C5.53684 5.99999 5.82462 5.8614 6.01436 5.62344L8.21814 2.8597C8.80797 2.12 10 2.53708 10 3.48315V16.5169C10 17.463 8.80796 17.88 8.21813 17.1403L6.01436 14.3765C5.82462 14.1386 5.53683 14 5.23249 14H2.875Z" stroke-width="1.25" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M11.875 17.5C15.741 17.5 18.125 13.866 18.125 10C18.125 6.13401 15.741 2.5 11.875 2.5" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M11.875 15C14.0841 15 15.625 12.2091 15.625 10C15.625 7.79086 14.0841 5 11.875 5" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M11.6 12.5C12.7046 12.5 13.125 11.25 13.125 10C13.125 8.89543 12.5 7.5 11.6 7.5C11.3 7.5 11.3 8.89535 11.3 9.99992C11.3 11.1045 11.3 12.5 11.6 12.5Z" style="fill:currentColor" class="ColorScheme-Text" />
+  <path d="M2.5 13.6266C1.94772 13.6266 1.5 13.1789 1.5 12.6266L1.5 9.99996V7.37327C1.5 6.82098 1.94772 6.37327 2.5 6.37327H5.07749C5.35715 6.37327 5.62404 6.25616 5.81339 6.05035L8.26409 3.38673C8.88099 2.71623 10 3.1527 10 4.06381V15.9362C10 16.8473 8.88098 17.2837 8.26409 16.6132L5.8134 13.9496C5.62404 13.7437 5.35715 13.6266 5.07748 13.6266H2.5Z" style="stroke:currentColor" class="ColorScheme-Text" />
 </svg>

@@ -8,22 +8,10 @@ icon (`files/system/usr/share/icons/Samhie/`) sinh bằng
 Khung 20 (nét 1,25) hoặc 16 (nét 1) — cùng tỉ lệ nét/khung nên co giãn về
 cùng một cỡ là nét dày bằng nhau.
 
-| Hình | Tên icon |
-|---|---|
-| `power` `restart` `moon` | `system-shutdown` `system-reboot` `system-suspend` |
-| `next-2` `prev-2` `up-2` `down-2` | `go-next` `go-previous` `go-up` `go-down` |
-| `ar-right` `ar-left` `ar-top` `ar-bottom` | `arrow-right` `arrow-left` `arrow-up` `arrow-down` |
-| `close` `minus` `max` `min` | `window-close/minimize/maximize/restore-symbolic` |
-| `plus` | `tab-new` (nút `+` và "New Tab" của Konsole) |
-| `smart-home` | `samhie-user-home` (sidebar), `go-home` |
-| `download` `network` `hdd` `recent` | `samhie-folder-download` (sidebar) `folder-network` `drive-harddisk` `document-open-recent` |
-| `trash` `trash-full` | `user-trash` `user-trash-full` |
-| `copy` `edit` | `edit-copy` + `edit-copy-path`, `document-edit` + `edit-entry` (2026-10-03) |
-| `filter` `list` `details` `menu` | `view-filter`, `view-list-icons`, `view-list-tree` + `view-list-details` (Dolphin: Details = tree), `application-menu` (nút ☰ Dolphin) |
-| `prev-circle` `next-circle` | `samhie-go-back` `samhie-go-forward` — chỉ nút lùi/tiến Dolphin (khung 30, nét 1,875) |
-| `bell` `bell-ring` `bell-off` | `notification-inactive` `notification-active` `notifications-disabled` |
-| `volume` `volume-mute` | `audio-volume-high/medium/low` `audio-volume-muted` |
-| `terminal` (khung 16) | `utilities-terminal` ở **`apps/16`** — chỉ menu 16px (Dolphin "Open Terminal Here", "Open With"); cỡ khác vẫn là icon Konsole nhiều màu |
+Bảng ghép hình → tên icon: `MAP` trong `tools/build-icons.py` (có chú thích
+chỗ dùng). Bộ vẽ lại 2026-10-06 (user, đúng cỡ hiển thị): khung 18 cho thanh
+trên (chuông, nút nguồn, ⊖⤢⊗, ⌄), 20 cho sidebar / quick settings / menu
+nguồn / loa, 22 cho thanh công cụ Dolphin (☰, ▦, lùi/tiến, tìm), 32 cho dock.
 
 **Vẽ sẵn, chưa lắp** (`UNUSED` trong script): `folder`, `document`, `desktop`,
 `next`, `prev`, `up`, `down` (bốn ô vuông có mũi tên). `folder` nét mảnh không
@@ -32,6 +20,12 @@ thư mục to tô màu (`folders/` bên dưới). Cùng lý do, nhà và tải v
 mang tên riêng `samhie-*`.
 
 **Sửa so với bản xuất Figma:**
+- Bộ 2026-10-06: vạch TÔ (fill) dày 1px phải ở toạ độ NGUYÊN — ,5 chỉ đúng
+  cho nét stroke. Đã dời −0,5: `details`, `menu`, `minus`, `power` (thân),
+  `lock` (lỗ khoá + chấm, cùng dời để giữ thẳng hàng), `smart-home` (vạch
+  đáy), `apps/utilities-terminal` (dấu `_`); mũi tên trong `next`/`prev`
+  dời lên 0,5 (`transform`). `noti`: gỡ chấm đỏ — Quickshell tô MỘT màu cả
+  icon nên chấm vẽ trong `BellButton.qml` (màu `bar-badge`).
 - `plus.svg` (2026-10-01): Konsole vẽ nút `+` ở đúng 16px. Bản gốc có vạch
   dấu cộng ở toạ độ 8,0 — nằm trên ranh giới hai điểm ảnh, nên nét 1px thành
   2 hàng mờ (user thấy nhoè trong máy ảo). Dời cả hình về tâm 7,5 (vạch rơi

@@ -1,11 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/prev-circle.svg.
+<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/prev.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 30 30" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" fill="none">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <rect width="24.375" height="24.375" rx="12.1875" transform="matrix(-1 0 0 1 27.1875 2.8125)" stroke-width="1.875" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M19.6875 15H11.25" stroke-width="1.875" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M13.125 18.75L10.7008 16.3258C9.96859 15.5936 9.96859 14.4064 10.7008 13.6742L13.125 11.25" stroke-width="1.875" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M6.77656 11.2305C6.63263 11.1105 6.63263 10.8895 6.77656 10.7695L10.3638 7.78016C10.5899 7.59178 10.899 7.88073 10.7263 8.11896L9 10.5H15C15.2761 10.5 15.5 10.7239 15.5 11C15.5 11.2761 15.2761 11.5 15 11.5H9L10.7263 13.881C10.899 14.1193 10.5899 14.4082 10.3638 14.2198L6.77656 11.2305Z" transform="translate(0 -0.5)" style="fill:currentColor" class="ColorScheme-Text" />
+  <circle cx="11" cy="11" r="9.5" style="stroke:currentColor" class="ColorScheme-Text" />
 </svg>

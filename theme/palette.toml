@@ -44,6 +44,7 @@ capture-shade = "#0a0a0a"
 bar           = "#0a0a0a"  # thanh trên, dock                (Figma: Black)
 bar-text      = "#e8e8e8"  # chữ/icon trên thanh — tách riêng vì thanh luôn tối
 bar-accent    = "#00c0e8"  # vạch active, icon đang bật trên thanh
+bar-badge     = "#790000"  # chấm "có thông báo" trên chuông (user vẽ 2026-10-06)
 card          = "#171717"  # vùng nội dung, popup, tooltip   (Figma: Card)
 card-alt      = "#171717"  # hàng xen kẽ trong danh sách — bản tối cố ý KHÔNG kẻ sọc
 secondary     = "#262626"  # khung cửa sổ, sidebar, thanh tab (Figma: Secondary)
@@ -97,6 +98,7 @@ warm    = "#e8a048"        # điểm nhấn ấm (xem "CÁCH DÙNG MÀU" ở tr�
 bar           = "#f3f3f3"
 bar-text      = "#1c1c1c"
 bar-accent    = "#0d728f"  # cyan đậm như `accent` bản sáng — #00c0e8 trên nền sáng không đọc được
+bar-badge     = "#b3261e"  # = danger bản sáng: #790000 trên nền sáng gần như đen
 card          = "#fafafa"
 card-alt      = "#f4f4f4"
 secondary     = "#ededed"

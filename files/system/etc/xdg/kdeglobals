@@ -18,6 +18,7 @@ contrast=4
 frameContrast=0.1
 SingleClick=false
 widgetStyle=samhie
+ShowIconsInMenuItems=false
 
 [ColorEffects:Disabled]
 Color=56,56,56

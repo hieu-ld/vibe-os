@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
 <!-- Samhie — user vẽ trên Figma, nguồn theme/icons/power.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.555556 -0.416667 20 20" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" fill="none">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <path d="M5.60181 3.16895C3.36001 4.61531 1.875 7.13371 1.875 10C1.875 14.4873 5.51269 18.125 10 18.125C14.4873 18.125 18.125 14.4873 18.125 10C18.125 7.13455 16.6401 4.61796 14.3994 3.17139" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M10 1.875V8.125" stroke-width="1.25" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M3.69494 3.5C2.33839 4.87805 1.49999 6.78206 1.49999 8.88444C1.49999 13.0904 4.85785 16.5 8.99999 16.5C13.1421 16.5 16.5 13.0904 16.5 8.88444C16.5 6.79122 15.6681 4.89539 14.322 3.51879" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <rect x="8" y="1" width="1" height="7" rx="0.5" style="fill:currentColor" class="ColorScheme-Text" />
 </svg>

@@ -1,7 +1,7 @@
 // Hàng âm lượng trên cùng của quick settings, như bản 1.0 (user chốt
 // 2026-09-10): [loa] ━━━━━●──── 42%  [˅]
-//   * icon loa đổi theo mức (audio-volume-high/medium/low/muted — icon Tabler
-//     đã có trong bộ Samhie); bấm vào là tắt/bật tiếng;
+//   * icon loa đổi theo mức: 4 bậc 25/50/75/100% + tắt tiếng (user vẽ
+//     2026-10-06); bấm vào là tắt/bật tiếng;
 //   * kéo/bấm/lăn chuột trên thanh để đổi mức;
 //   * nút ˅ (chỉ hiện khi có hơn một ngõ ra) mở danh sách chọn ngõ ra.
 // Đọc/ghi thẳng qua Pipewire (module của Quickshell), không gọi lệnh — đổi ở
@@ -57,8 +57,9 @@ Column {
                 size: 20
                 color: Theme.c.text
                 iconName: root.muted || root.volume <= 0 ? "audio-volume-muted"
-                    : root.volume < 0.34 ? "audio-volume-low"
-                    : root.volume < 0.67 ? "audio-volume-medium" : "audio-volume-high"
+                    : root.volume <= 0.25 ? "audio-volume-low"
+                    : root.volume <= 0.5 ? "audio-volume-medium"
+                    : root.volume <= 0.75 ? "samhie-audio-volume-75" : "audio-volume-high"
             }
             MouseArea {
                 id: speakerMouse

@@ -1,12 +1,15 @@
 <?xml version='1.0' encoding='utf-8'?>
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-  <defs><style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style></defs><path stroke="none" d="M0 0h24v24H0z" fill="none" />
-  <path d="M6 9a6 6 0 1 0 12 0a6 6 0 0 0 -12 0" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M12 3c1.333 .333 2 2.333 2 6s-.667 5.667 -2 6" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M12 3c-1.333 .333 -2 2.333 -2 6s.667 5.667 2 6" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M6 9h12" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M3 20h7" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M14 20h7" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M10 20a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
-  <path d="M12 15v3" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/wired-2.svg.
+     Sinh bằng tools/build-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <path d="M14.5 3.5C13.4716 2.18005 11.6199 1.5 10 1.5C8.38524 1.5 6.52978 2.18642 5.5 3.5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M13.5 5C12.7001 4.01004 11.2599 3.5 10 3.5C8.74407 3.5 7.30094 4.01482 6.5 5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M12 6.5C11.5429 5.84002 10.72 5.5 10 5.5C9.28233 5.5 8.45768 5.84321 8 6.5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <circle cx="10" cy="8" r="1" style="fill:currentColor" class="ColorScheme-Text" />
+  <path d="M3.5 13.5H4.5V12H9.5V13C9.5 13.2761 9.72386 13.5 10 13.5C10.2761 13.5 10.5 13.2761 10.5 13V12H15.5V13.5H16.5V12H17.5C17.7761 12 18 11.7761 18 11.5C18 11.2239 17.7761 11 17.5 11H10.5V10C10.5 9.72386 10.2761 9.5 10 9.5C9.72386 9.5 9.5 9.72386 9.5 10V11H2.5C2.22386 11 2 11.2239 2 11.5C2 11.7761 2.22386 12 2.5 12H3.5V13.5Z" style="fill:currentColor" class="ColorScheme-Text" />
+  <rect x="1.5" y="13.5" width="5" height="5" rx="1" style="stroke:currentColor" class="ColorScheme-Text" />
+  <rect x="13.5" y="13.5" width="5" height="5" rx="1" style="stroke:currentColor" class="ColorScheme-Text" />
 </svg>

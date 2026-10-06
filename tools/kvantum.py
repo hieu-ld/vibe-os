@@ -437,6 +437,11 @@ def kvconfig(pal):
             "tint_on_mouseover": 0, "disabled_icon_opacity": 50,
             "normal_default_pushbutton": "true", "iconless_pushbutton": "false",
             "blur_translucent": "false",
+            # Menu chỉ có chữ, KHÔNG chừa cột icon (user 2026-10-06: menu hẹp
+            # lại, khỏi vẽ icon từng mục). Riêng ShowIconsInMenuItems=false
+            # (kdeglobals) thì icon ẩn nhưng Kvantum vẫn chừa chỗ: QMenu vẫn báo
+            # maxIconWidth > 0 (Kvantum.cpp 1.1.6, CE_MenuItem iconSpace).
+            "iconless_menu": "true",
         }),
         # Cỡ khung trên/dưới ~0 ở mọi nút/ô: hộp dòng Dongle (~39px ở cỡ 20) đã
         # có sẵn khoảng trống trên dưới chữ — nút cao ~41 như ô đường dẫn bản vẽ.

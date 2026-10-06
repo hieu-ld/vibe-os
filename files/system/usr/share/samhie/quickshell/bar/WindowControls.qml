@@ -119,7 +119,7 @@ Item {
                 anchors.verticalCenter: parent.verticalCenter
                 x: parent.width - root.pad - width
                 iconName: "arrow-down"
-                size: 16
+                size: 18  // user vẽ khung 18 (2026-10-06)
                 color: picker.lit ? root.bar.hoverColor : root.bar.textColor
             }
 

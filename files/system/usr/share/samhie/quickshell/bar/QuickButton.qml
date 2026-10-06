@@ -22,7 +22,7 @@ Item {
         id: icon
         anchors.centerIn: parent
         iconName: "arrow-down"
-        size: 16
+        size: 18  // user vẽ khung 18 (2026-10-06)
         color: root.lit ? root.bar.hoverColor : root.bar.textColor
     }
 

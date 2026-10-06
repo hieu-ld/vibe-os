@@ -287,8 +287,11 @@ def kdeglobals(pal):
         ("Icons", dict(Theme=pal["kde"]["icon-theme"]["dark"])),
         # widgetStyle "samhie" = theme Kvantum Samhie + vài chỗ vẽ thêm
         # (style/samhie-style.cpp, giai đoạn 4).
+        # ShowIconsInMenuItems: menu của app KDE chỉ có chữ (user 2026-10-06:
+        # menu hẹp hơn, khỏi vẽ icon cho từng mục). Plasma-integration đọc
+        # khoá này → Qt::AA_DontShowIconsInMenus; ô đánh dấu vẫn hiện.
         ("KDE", dict(contrast="4", frameContrast=str(pal["kde"]["frame-contrast"]["dark"]),
-                     SingleClick="false", widgetStyle="samhie")),
+                     SingleClick="false", widgetStyle="samhie", ShowIconsInMenuItems="false")),
     ] + kde_color_sections(pal, "dark")
     return "\n".join(head) + ini(sections)
 

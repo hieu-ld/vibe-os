@@ -4,6 +4,7 @@ return {
     bar           = "0a0a0a",
     barText       = "e8e8e8",
     barAccent     = "00c0e8",
+    barBadge      = "790000",
     card          = "171717",
     cardAlt       = "171717",
     secondary     = "262626",

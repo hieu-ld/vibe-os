@@ -84,6 +84,7 @@ disabled_icon_opacity=50
 normal_default_pushbutton=true
 iconless_pushbutton=false
 blur_translucent=false
+iconless_menu=true
 
 [PanelButtonCommand]
 frame=true

@@ -162,12 +162,16 @@
 //      vẫn chạy), 🔒 + Aᴮ của thanh lọc, dòng KFind và nhóm "Search using:"
 //      (Simple search / File Indexing — image không có Baloo) trong popup
 //      Filter của thanh tìm, hai dòng "Focus … Panel" trong Show Panels
-//      (phím tắt vẫn chạy). Thanh lọc (F10 → Filter) cũng không viền focus
-//      cyan, ô hover vuông như thanh tìm (mục 20, 21), cách đáy 8px.
+//      (phím tắt vẫn chạy) cùng dòng Folders (F7 vẫn chạy), panel
+//      Information (F11) ẩn hẳn. Thanh lọc (F10 → Filter) cũng không viền
+//      focus cyan, ô hover vuông như thanh tìm (mục 20, 21), cách đáy 8px.
 //  23. Vạch ngăn thanh công cụ (giữa ⊙→ và ▦ của Dolphin): 1px màu
 //      FRAME_LINE, cao TOOLBAR_SEPARATOR_HEIGHT, ở giữa khoảng trống giữa ô
 //      icon hai nút bên cạnh (user 2026-10-06). Kvantum vẽ 2px gần trùng nền
 //      (#282c2d trên #262a2b), cao 29px — đo ảnh máy ảo.
+//  25. Radio/checkbox bấm bằng chuột không có khung focus cyan quanh chữ
+//      (user 2026-10-06, popup Filter của thanh tìm Dolphin); đi bằng Tab
+//      thì vẫn có.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -198,6 +202,7 @@
 #include <QTabBar>
 #include <QTabWidget>
 #include <QToolBar>
+#include <QDockWidget>
 #include <QLabel>
 #include <QLineEdit>
 #include <QTimer>
@@ -533,6 +538,22 @@ public:
     }
 };
 
+// Mục 24. Panel Information của Dolphin (F11) luôn ẩn: Dolphin dựng lại nó
+// theo trạng thái lưu lần trước (QMainWindow::restoreState — ai đã mở nó ở
+// bản cũ thì nó tự hiện) → hễ được hiện là ẩn lại, ngay vòng sự kiện sau.
+class HideDock : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() == QEvent::ShowToParent)
+            QMetaObject::invokeMethod(static_cast<QWidget *>(obj), &QWidget::hide, Qt::QueuedConnection);
+        return false;
+    }
+};
+
 // Mục 20. Màu chữ nút trên thanh đường dẫn khi trỏ chuột. Palette rỗng = lại
 // thừa hưởng từ cha.
 class UrlButtonHover : public QObject
@@ -788,6 +809,8 @@ public:
         // Panel" / "Focus Terminal Panel" trong Show Panels (user 2026-10-06)
         // — gỡ khỏi menu, hành động vẫn gắn cửa sổ (KXmlGui) nên Ctrl+P /
         // Ctrl+Shift+F4 vẫn chạy; ẩn hành động thì Qt tắt luôn phím tắt.
+        // Cũng vậy: "Folders" (cây thư mục — trùng sidebar Places + thanh
+        // đường dẫn; user 2026-10-06), F7 vẫn mở.
         if (auto *menu = qobject_cast<QMenu *>(w); menu && QCoreApplication::applicationName() == QLatin1String("dolphin")
                                                    && !menu->property("samhieNoZoom").toBool()) {
             menu->setProperty("samhieNoZoom", true);
@@ -796,7 +819,8 @@ public:
                 for (QAction *a : actions) {
                     if (a->objectName() == QLatin1String("zoom")
                         || a->objectName() == QLatin1String("focus_places_panel")
-                        || a->objectName() == QLatin1String("focus_terminal_panel"))
+                        || a->objectName() == QLatin1String("focus_terminal_panel")
+                        || a->objectName() == QLatin1String("show_folders_panel"))
                         menu->removeAction(a);
                 }
             });
@@ -889,6 +913,18 @@ public:
             } else
                 w->installEventFilter(&m_urlHover);
         }
+        // Mục 24: không có panel Information (F11, user 2026-10-06): icon to
+        // bằng cả bề ngang panel đẩy thông tin xuống phải cuộn, mà Properties
+        // → Details đã có đủ. Ẩn hành động (khỏi menu Show Panels, F11 tắt
+        // theo) và giữ dock ẩn (HideDock) — objectName "infoDock"
+        // (DolphinMainWindow::setupDockWidgets 26.08.1).
+        if (auto *dock = qobject_cast<QDockWidget *>(w);
+            dock && dock->objectName() == QLatin1String("infoDock") && dock->window()->inherits("DolphinMainWindow")) {
+            dock->toggleViewAction()->setVisible(false);
+            dock->installEventFilter(&m_hideDock);
+            if (!dock->isHidden())
+                QMetaObject::invokeMethod(dock, &QWidget::hide, Qt::QueuedConnection);
+        }
         if (qobject_cast<QToolBar *>(w) && w->window()->inherits("DolphinMainWindow"))
             w->setContextMenuPolicy(Qt::PreventContextMenu);  // mục 18
         if (w->inherits("DolphinStatusBar")) {
@@ -908,6 +944,7 @@ public:
         w->removeEventFilter(&m_menuForwarder);
         w->removeEventFilter(&m_urlHover);
         w->removeEventFilter(&m_noPencil);
+        w->removeEventFilter(&m_hideDock);
         QProxyStyle::unpolish(w);
     }
     using QProxyStyle::unpolish;
@@ -1159,6 +1196,16 @@ public:
             QProxyStyle::drawControl(ce, &o, p, w);
             return;
         }
+        // Mục 25: radio/checkbox vừa bấm chuột không có khung focus cyan quanh
+        // chữ. Đi bằng Tab (State_KeyboardFocusChange) thì vẫn vẽ — không thì
+        // không biết đang đứng ở ô nào.
+        if ((ce == CE_RadioButton || ce == CE_CheckBox) && button && (button->state & State_HasFocus)
+            && !(button->state & State_KeyboardFocusChange)) {
+            QStyleOptionButton o(*button);
+            o.state &= ~State_HasFocus;
+            QProxyStyle::drawControl(ce, &o, p, w);
+            return;
+        }
         auto *header = qstyleoption_cast<const QStyleOptionHeader *>(opt);
         if (ce == CE_Header && header && isDolphinView(w)) {  // mục 14
             p->save();
@@ -1362,6 +1409,7 @@ private:
     MenuButtonForwarder m_menuForwarder;
     UrlButtonHover m_urlHover;
     NoEditPencil m_noPencil;
+    HideDock m_hideDock;
     // Mục 14: ô đệm phải của tiêu đề cột, Dolphin vẽ ngay trước cột cuối.
     mutable QRect m_headerEnd;
 };

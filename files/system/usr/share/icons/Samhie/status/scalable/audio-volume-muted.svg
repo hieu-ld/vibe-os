@@ -1,12 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/volume-mute.svg.
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/volume-mute.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <g>
-    <path d="M2.5 13.6266C1.94772 13.6266 1.5 13.1789 1.5 12.6266L1.5 9.99996V7.37327C1.5 6.82098 1.94772 6.37327 2.5 6.37327H5.07749C5.35715 6.37327 5.62404 6.25616 5.81339 6.05035L8.26409 3.38673C8.88099 2.71623 10 3.1527 10 4.06381V15.9362C10 16.8473 8.88098 17.2837 8.26409 16.6132L5.8134 13.9496C5.62404 13.7437 5.35715 13.6266 5.07748 13.6266H2.5Z" style="stroke:currentColor" class="ColorScheme-Text" />
-    <path d="M14.7929 10L13.0251 8.23223C12.8299 8.03697 12.8299 7.72039 13.0251 7.52513C13.2204 7.32986 13.537 7.32986 13.7322 7.52513L15.5 9.29289L17.2678 7.52513C17.463 7.32986 17.7796 7.32986 17.9749 7.52513C18.1701 7.72039 18.1701 8.03697 17.9749 8.23223L16.2071 10L17.9749 11.7678C18.1701 11.963 18.1701 12.2796 17.9749 12.4749C17.7796 12.6701 17.463 12.6701 17.2678 12.4749L15.5 10.7071L13.7322 12.4749C13.537 12.6701 13.2204 12.6701 13.0251 12.4749C12.8299 12.2796 12.8299 11.963 13.0251 11.7678L14.7929 10Z" style="fill:currentColor" class="ColorScheme-Text" />
-  </g>
+  <path d="M14 14.8135V9.18646C14 6.04126 14 4.46866 13.0747 4.0773C12.1494 3.68593 11.0603 4.79793 8.88232 7.02192C7.75439 8.17365 7.11085 8.42869 5.50604 8.42869C4.10257 8.42869 3.40084 8.42869 2.89675 8.77262C1.85035 9.48655 2.00852 10.882 2.00852 12C2.00852 13.118 1.85035 14.5134 2.89675 15.2274C3.40084 15.5713 4.10257 15.5713 5.50604 15.5713C7.11085 15.5713 7.75439 15.8264 8.88232 16.9781C11.0603 19.2021 12.1494 20.3141 13.0747 19.9227C14 19.5313 14 17.9587 14 14.8135Z" stroke-linejoin="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M18 10L22 14M18 14L22 10" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
 </svg>

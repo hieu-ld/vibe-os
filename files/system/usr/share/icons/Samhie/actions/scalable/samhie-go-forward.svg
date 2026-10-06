@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/next.svg.
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/next.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 22 22" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <path d="M15.2234 11.2305C15.3674 11.1105 15.3674 10.8895 15.2234 10.7695L11.6362 7.78016C11.4101 7.59178 11.101 7.88073 11.2737 8.11896L13 10.5H7C6.72386 10.5 6.5 10.7239 6.5 11C6.5 11.2761 6.72386 11.5 7 11.5H13L11.2737 13.881C11.101 14.1193 11.4101 14.4082 11.6362 14.2198L15.2234 11.2305Z" transform="translate(0 -0.5)" style="fill:currentColor" class="ColorScheme-Text" />
-  <circle cx="11" cy="11" r="9.5" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M15 12.0002L7.99995 12.0002M12.5001 8.50012C12.5001 8.50012 16.0001 11.0778 16.0001 12.0001C16.0001 12.9225 12.5001 15.5001 12.5001 15.5001" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
 </svg>

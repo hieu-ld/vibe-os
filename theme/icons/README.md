@@ -1,53 +1,14 @@
-# Icon Samhie — bản vẽ gốc
+# Icon Samhie — nguồn
 
-User (Rogg) vẽ trên Figma (khung "Samhie icons"), 2026-09-30, xuất SVG thẳng
-từ Figma, tên file = tên layer viết thường. Đây là NGUỒN; file thật trong bộ
-icon (`files/system/usr/share/icons/Samhie/`) sinh bằng
-`python3 tools/build-icons.py` — bảng ghép tên (`MAP`) nằm đầu script đó.
+Ba bộ, ba script:
 
-Khung 20 (nét 1,25) hoặc 16 (nét 1) — cùng tỉ lệ nét/khung nên co giãn về
-cùng một cỡ là nét dày bằng nhau.
-
-Bảng ghép hình → tên icon: `MAP` trong `tools/build-icons.py` (có chú thích
-chỗ dùng). Bộ vẽ lại 2026-10-06 (user, đúng cỡ hiển thị): khung 18 cho thanh
-trên (chuông, nút nguồn, ⊖⤢⊗, ⌄), 20 cho sidebar / quick settings / menu
-nguồn / loa, 22 cho thanh công cụ Dolphin (☰, ▦, lùi/tiến, tìm), 32 cho dock.
-
-**Vẽ sẵn, chưa lắp** (`UNUSED` trong script): `folder`, `document`, `desktop`,
-`next`, `prev`, `up`, `down` (bốn ô vuông có mũi tên). `folder` nét mảnh không
-lắp được: bộ Samhie là SVG co giãn — một file cho MỌI cỡ — và tên `folder` là
-thư mục to tô màu (`folders/` bên dưới). Cùng lý do, nhà và tải về của sidebar
-mang tên riêng `samhie-*`.
-
-**Sửa so với bản xuất Figma:**
-- Bộ 2026-10-06: vạch TÔ (fill) dày 1px phải ở toạ độ NGUYÊN — ,5 chỉ đúng
-  cho nét stroke. Đã dời −0,5: `details`, `menu`, `minus`, `power` (thân),
-  `lock` (lỗ khoá + chấm, cùng dời để giữ thẳng hàng), `smart-home` (vạch
-  đáy), `apps/utilities-terminal` (dấu `_`); mũi tên trong `next`/`prev`
-  dời lên 0,5 (`transform`). `noti`: gỡ chấm đỏ — Quickshell tô MỘT màu cả
-  icon nên chấm vẽ trong `BellButton.qml` (màu `bar-badge`).
-- `plus.svg` (2026-10-01): Konsole vẽ nút `+` ở đúng 16px. Bản gốc có vạch
-  dấu cộng ở toạ độ 8,0 — nằm trên ranh giới hai điểm ảnh, nên nét 1px thành
-  2 hàng mờ (user thấy nhoè trong máy ảo). Dời cả hình về tâm 7,5 (vạch rơi
-  đúng giữa điểm ảnh) và nới vòng tròn ra 15px cho to hơn (user thấy nhỏ):
-  vòng `x=0.5 w=14`, dấu cộng dài 6 từ 4,5 tới 10,5.
-
-- **Dời nửa điểm ảnh** (2026-10-05, bảng `NUDGE` trong script): icon hiện ở
-  18/20px (thanh trên, sidebar, quick settings…) thì nét 1,25 của khung 20
-  không rơi vào lưới điểm ảnh — vạch nằm ở tâm 10 thành 2 hàng mờ. Script dời
-  cả hình (đổi gốc viewBox, không sửa nét, KHÔNG sửa file ở đây) ≤ 0,5 điểm
-  ảnh ở cỡ hiển thị chính của từng icon. Vẽ lại một hình trong bảng thì chạy
-  lại phép dò (ghi trong script) hoặc hỏi Claude.
-
-**Màu:** vẽ bằng `#A1A1A1` (nét) trên nền `#0A0A0A`. Script đổi thành
-`currentColor` để KDE/SDDM tô theo màu chữ của bảng màu — nên trên máy icon ra
-**màu chữ** (sáng hơn xám Figma), giống icon Tabler trong bộ. Chỗ tô mờ thì vẽ
-bằng một màu nằm giữa hai màu đó (vd `#3B3C3C` ở lòng `trash-full`) — script
-tính ngược ra độ mờ (≈ 0,32) và thêm vào bảng `FIGMA`. Màu lạ là script báo lỗi.
-
-**Vẽ thêm / sửa hình:** xuất SVG đè vào đây (tên viết thường), thêm tên vào
-`MAP` hoặc `UNUSED` trong script, chạy `python3 tools/build-icons.py` rồi
-`./tools/build-icon-theme.sh`, commit cả file sinh ra. CI chạy `--check`.
+- **Icon nét một màu** (`hugeicons/`) — bộ free của [Hugeicons](https://hugeicons.com),
+  user chọn và tải 2026-10-06 thay cho bộ tự vẽ trên Figma (nét 1px của bộ vẽ
+  tay mỏng và lấm tấm ở đường cong — đo ở `docs/PLAN.md`). Sinh bằng
+  `python3 tools/build-icons.py`; giấy phép, nguồn và cách thêm hình: xem
+  `hugeicons/README.md`. Bộ vẽ tay cũ còn trong lịch sử git (commit `4805dac`).
+- **Icon app nhiều màu** (`apps/`) — user vẽ, mục bên dưới.
+- **Thư mục Dolphin tô màu** (`folders/`) — user vẽ, mục bên dưới.
 
 ## Icon app (`apps/`) — nhiều màu, KHÔNG qua build-icons.py
 

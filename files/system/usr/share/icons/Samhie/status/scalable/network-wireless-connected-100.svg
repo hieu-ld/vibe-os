@@ -1,12 +1,9 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/wifi.svg.
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/wifi.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.6 -0.45 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <path d="M18.5 6.5C16.5574 3.8601 13.0598 2.5 10 2.5C6.94989 2.5 3.44514 3.87284 1.5 6.5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M16.5 9.5C15.0145 7.52007 12.3399 6.5 10 6.5C7.66756 6.5 4.98746 7.52963 3.5 9.5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M14.5 12.5C13.4716 11.18 11.6199 10.5 10 10.5C8.38524 10.5 6.52978 11.1864 5.5 12.5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <circle cx="10" cy="16.5" r="1.5" style="fill:currentColor" class="ColorScheme-Text" />
+  <path d="M2 8.31966C4.75011 5.85989 8.31034 4.5 12 4.5C15.6897 4.5 19.2499 5.85989 22 8.31966M5 12.3587C6.86929 10.5264 9.38247 9.50009 12 9.50009C14.6175 9.50009 17.1307 10.5264 19 12.3587M8.5 15.9287C9.43464 15.0125 10.6912 14.4994 12 14.4994C13.3088 14.4994 14.5654 15.0125 15.5 15.9287M12.1256 19.25H12.0006M12.2506 19.25C12.2506 19.3881 12.1387 19.5 12.0006 19.5C11.8625 19.5 11.7506 19.3881 11.7506 19.25C11.7506 19.1119 11.8625 19 12.0006 19C12.1387 19 12.2506 19.1119 12.2506 19.25Z" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
 </svg>

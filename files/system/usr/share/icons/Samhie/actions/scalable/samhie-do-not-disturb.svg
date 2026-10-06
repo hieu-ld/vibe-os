@@ -1,10 +1,12 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/do-not-dis-turb.svg.
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/bell-off.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0.6 24 24" stroke-width="1.5" stroke-linecap="round">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <path d="M14.8889 3.05194C13.5012 2.07431 11.8076 1.5 9.97949 1.5C9.85006 1.5 9.72132 1.50295 9.59331 1.50872C9.48287 1.5137 9.46602 1.67154 9.56994 1.70924C11.1592 2.28583 12.4607 3.45864 13.205 4.95624M16.9952 5.17514C17.9442 6.54579 18.5 8.20815 18.5 10C18.5 14.6944 14.6852 18.5 9.97949 18.5C8.19694 18.5 6.54218 17.9539 5.17418 17.0203M3.03756 14.9301C2.29404 13.8902 1.77948 12.6761 1.56731 11.3612C1.54975 11.2523 1.69985 11.2036 1.75808 11.2972C2.38748 12.309 3.286 13.1367 4.35389 13.6808M7.33105 14.3926C10.9202 14.3922 13.8331 11.5143 13.8818 7.94531" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <rect x="18.1018" y="1.19111" width="1" height="24.1304" rx="0.5" transform="rotate(45 18.1018 1.19111)" style="fill:currentColor" class="ColorScheme-Text" />
+  <path d="M16 18C16 20.2091 14.2091 22 12 22C9.79086 22 8 20.2091 8 18" stroke-linejoin="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M8 3.12589C8.88491 2.48978 9.95074 2.08864 11.1071 2.01285C11.3031 2 11.5353 2 11.9995 2C12.4638 2 12.696 2 12.892 2.01285C15.8965 2.20977 18.2898 4.60304 18.4867 7.60758C18.4995 7.80358 18.4995 8.03572 18.4995 8.5V9.8056C18.4995 10.5353 18.4995 10.9002 18.5356 11.254C18.6477 12.354 19.0187 13.4119 19.6184 14.3409C19.8113 14.6397 20.0392 14.9246 20.4951 15.4944L20.6648 15.7066C20.7508 15.814 20.8286 15.9113 20.8986 16" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M18 18H4.43654C3.70878 18 3.3449 18 3.13431 17.8951C2.72509 17.6913 2.50621 17.2359 2.60268 16.789C2.65233 16.559 2.87964 16.2749 3.33427 15.7066L3.50401 15.4944C3.95985 14.9246 4.18779 14.6397 4.38067 14.3409C4.98035 13.4119 5.35143 12.354 5.46349 11.254C5.49954 10.9002 5.49954 10.5353 5.49954 9.8056V8.5C5.49954 8.03572 5.49954 7.80358 5.51239 7.60758C5.54913 7.04701 5.66232 6.50772 5.84168 6" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M2 2L22 22" stroke-linejoin="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
 </svg>

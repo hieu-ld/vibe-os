@@ -1,13 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/max.svg.
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/max.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <g>
-    <circle cx="9" cy="9" r="7.5" transform="rotate(45 9 9)" style="stroke:currentColor" class="ColorScheme-Text" />
-    <path d="M5.0912 12.6327C5.10255 12.7802 5.21977 12.8975 5.36731 12.9088L7.68232 13.0869C7.97627 13.1095 8.06024 12.6937 7.78055 12.6005L6.52513 12.182L8.64645 10.0607C8.84172 9.8654 8.84172 9.54882 8.64645 9.35355C8.45119 9.15829 8.13461 9.15829 7.93935 9.35355L5.81803 11.4749L5.39956 10.2195C5.30633 9.93977 4.89051 10.0237 4.91312 10.3177L5.0912 12.6327Z" style="fill:currentColor" class="ColorScheme-Text" />
-    <path d="M12.7182 5.09777C12.8165 5.10534 12.8947 5.18349 12.9022 5.28184L13.0869 7.68232C13.1095 7.97627 12.6937 8.06024 12.6005 7.78055L12.182 6.52513L10.0607 8.64645C9.8654 8.84172 9.54882 8.84172 9.35355 8.64645C9.15829 8.45119 9.15829 8.13461 9.35355 7.93935L11.4749 5.81803L10.2195 5.39956C9.93977 5.30633 10.0237 4.89051 10.3177 4.91312L12.7182 5.09777Z" style="fill:currentColor" class="ColorScheme-Text" />
-  </g>
+  <circle cx="12" cy="12" r="10" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M7.93668 16.0634C7.41936 15.5461 7.50535 13.3483 7.50535 13.3483M7.93668 16.0634C8.45401 16.5808 10.6517 16.4946 10.6517 16.4946M7.93668 16.0634L11 13M16.0634 7.93661C15.5461 7.41928 13.3484 7.50537 13.3484 7.50537M16.0634 7.93661C16.5808 8.45394 16.4946 10.6516 16.4946 10.6516M16.0634 7.93661L13 11" stroke-linecap="round" stroke-linejoin="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
 </svg>

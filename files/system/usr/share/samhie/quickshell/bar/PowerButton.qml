@@ -1,4 +1,5 @@
-// Nút nguồn góc phải: icon `system-shutdown` (nét user vẽ), bấm mở PowerMenu.
+// Nút nguồn góc phải: icon `samhie-power` (Hugeicons "power"), bấm mở PowerMenu.
+// Mục "Shut Down" trong menu là hình khác (`system-shutdown`).
 import QtQuick
 
 Item {
@@ -20,7 +21,7 @@ Item {
     SamhieIcon {
         id: icon
         anchors.centerIn: parent
-        iconName: "system-shutdown"
+        iconName: "samhie-power"
         size: 18
         color: root.lit ? root.bar.hoverColor : root.bar.textColor
     }

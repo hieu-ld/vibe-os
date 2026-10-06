@@ -1,13 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/min.svg.
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/min.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <g>
-    <circle cx="9" cy="9" r="7.5" transform="rotate(-45 9 9)" style="stroke:currentColor" class="ColorScheme-Text" />
-    <path d="M9.33383 9.60994C9.34518 9.46241 9.4624 9.34518 9.60994 9.33383L11.925 9.15576C12.2189 9.13315 12.3029 9.54896 12.0232 9.64219L10.7678 10.0607L12.8891 12.182C13.0843 12.3772 13.0843 12.6938 12.8891 12.8891C12.6938 13.0844 12.3772 13.0844 12.182 12.8891L10.0607 10.7678L9.64219 12.0232C9.54896 12.3029 9.13314 12.2189 9.15575 11.925L9.33383 9.60994Z" style="fill:currentColor" class="ColorScheme-Text" />
-    <path d="M8.47552 8.6596C8.57388 8.65203 8.65203 8.57388 8.65959 8.47553L8.84424 6.07505C8.86685 5.7811 8.45104 5.69713 8.35781 5.97682L7.93934 7.23224L5.81802 5.11092C5.62275 4.91565 5.30617 4.91565 5.11091 5.11092C4.91565 5.30618 4.91565 5.62276 5.11091 5.81802L7.23223 7.93934L5.97681 8.35781C5.69713 8.45104 5.7811 8.86686 6.07504 8.84425L8.47552 8.6596Z" style="fill:currentColor" class="ColorScheme-Text" />
-  </g>
+  <circle cx="12" cy="12" r="10" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M11.115 11.1151C11.6324 10.5977 11.5463 8.4 11.5463 8.4M11.115 11.1151C10.5977 11.6324 8.4 11.5462 8.4 11.5462M11.115 11.1151L7.5 7.5M12.8882 12.8882C13.4055 12.3708 15.6032 12.4569 15.6032 12.4569M12.8882 12.8882C12.3709 13.4055 12.457 15.6032 12.457 15.6032M12.8882 12.8882L16.5 16.5" stroke-linecap="round" stroke-linejoin="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
 </svg>

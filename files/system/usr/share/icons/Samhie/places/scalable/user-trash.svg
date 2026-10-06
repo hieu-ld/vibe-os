@@ -1,14 +1,11 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/trash-empty.svg.
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/trash-empty.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <path d="M18.5 4.5H17.5M1.5 4.5H2.5M2.5 4.5L4.19336 16.3536C4.36931 17.5852 5.42411 18.5 6.66824 18.5H10H13.3318C14.5759 18.5 15.6307 17.5852 15.8066 16.3536L17.5 4.5M2.5 4.5H10H17.5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M8.50024 10L9.5715 8.21458C9.7657 7.89091 10.2348 7.89091 10.429 8.21458L11.5002 10M7.90024 11L6.91705 12.7557C6.73041 13.089 6.97131 13.5 7.35331 13.5H9.50024M12.1002 11L13.0834 12.7557C13.2701 13.089 13.0292 13.5 12.6472 13.5H10.5002" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M10.0002 13.5002L10.6252 12.5002V14.5002L10.0002 13.5002Z" style="fill:currentColor" class="ColorScheme-Text" />
-  <path d="M11.842 10.4884L12.3773 9.43761L10.663 10.4677L11.842 10.4884Z" style="fill:currentColor" class="ColorScheme-Text" />
-  <path d="M8.17901 10.5L8.73254 11.5413L7.00049 10.5413L8.17901 10.5Z" style="fill:currentColor" class="ColorScheme-Text" />
-  <path d="M5 4L5.24627 3.01493C5.46885 2.12459 6.26882 1.5 7.18655 1.5H10H12.8134C13.7312 1.5 14.5311 2.12459 14.7537 3.01493L15 4" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M3 5H8.42963C9.09834 5 9.7228 4.6658 10.0937 4.1094L10.9063 2.8906C11.2772 2.3342 11.9017 2 12.5704 2H17.0585C17.9193 2 18.6836 2.55086 18.9558 3.36754L19.5 5M21 5H8" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M19.5 5L18.8803 14.906C18.8588 15.2333 18.8387 15.5385 18.8185 15.8235M4.5 5L5.10461 14.8966C5.25945 17.3107 5.33688 18.5177 5.97868 19.3857C6.296 19.8149 6.7048 20.1771 7.17905 20.4493C8.1383 21 9.42312 21 11.9927 21H14.5" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M20 19C20 17.3431 18.6569 16 17 16C15.3431 16 14 17.3431 14 19C14 20.6569 15.3431 22 17 22C18.6569 22 20 20.6569 20 19Z" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
 </svg>

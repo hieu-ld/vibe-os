@@ -6,11 +6,14 @@ lấy của Breeze — thay được bao nhiêu dùng bấy nhiêu.
 
 ## Nguồn
 
-Hai nguồn:
-- **Icon user tự vẽ** (Figma) — nguồn ở `theme/icons/`, sinh bằng
-  `python3 tools/build-icons.py`. File sinh ra có dòng chú thích
-  "Sinh bằng tools/build-icons.py" ở đầu; sửa hình thì sửa ở `theme/icons/`.
-- **Tabler Icons** — những icon còn lại:
+Ba nguồn:
+- **Hugeicons** (bộ free, MIT — `LICENSE.hugeicons`) — mọi icon nét một màu.
+  Nguồn ở `theme/icons/hugeicons/`, sinh bằng `python3 tools/build-icons.py`.
+  File sinh ra có dòng chú thích "Sinh bằng tools/build-icons.py" ở đầu; đổi
+  hình thì đổi ở `theme/icons/hugeicons/`.
+- **Icon user tự vẽ** (Figma) — icon app nhiều màu (`apps/scalable`) và thư
+  mục tô màu (`places/`), xem `theme/icons/README.md`.
+- **Tabler Icons** — còn đúng một icon cũ (`battery-profile-performance`):
 
 | | |
 |---|---|
@@ -43,8 +46,7 @@ Muốn thêm icon mới thì **chạy script, đừng chép tay**:
 
 ### Mức sóng Wi-Fi (`status/network-wireless-signal-*`)
 
-`network-wireless-signal-excellent` là Tabler `wifi` (v3.46.0) qua script trên.
-Bốn mức còn lại **suy ra từ file đó**: vòng ngoài không đạt mức thì thêm
-`opacity="0.3"` (như Windows 11) — `good` = đủ 3 vòng, `ok` mờ vòng ngoài
-cùng, `weak` mờ 2 vòng, `none` chỉ còn chấm. Dùng ở trang Wi-Fi của quick
-settings; app khác (khay hệ thống) cũng tìm đúng các tên này.
+Từ 2026-10-06 là Hugeicons `wifi-zero`/`wifi-low`/`wifi-high`/`wifi-02`
+(chấm + 0–3 vòng, vòng chưa đạt mức thì không vẽ). Bốn hình cho năm tên KDE:
+`ok` và `good` cùng hình 2 vòng. Trang Wi-Fi của quick settings chỉ dùng bốn
+mức (`WifiPage.qml`).

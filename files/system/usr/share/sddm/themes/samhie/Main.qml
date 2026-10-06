@@ -253,7 +253,7 @@ Rectangle {
                 contentItem: Item {
                     SamhieIcon {
                         anchors.centerIn: parent
-                        iconName: "go-next"
+                        iconName: "samhie-log-in"
                         size: 20
                     }
                 }
@@ -299,7 +299,7 @@ Rectangle {
         contentItem: Item {
             SamhieIcon {
                 anchors.centerIn: parent
-                iconName: "system-shutdown"
+                iconName: "samhie-power"
                 size: 22
             }
         }

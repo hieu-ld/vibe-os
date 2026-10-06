@@ -243,6 +243,16 @@ bool inDolphinLocationOrSearch(const QWidget *w)
     return false;
 }
 
+// Trong thanh tìm của Dolphin.
+bool inSearchBar(const QWidget *w)
+{
+    for (; w; w = w->parentWidget()) {
+        if (w->inherits("Search::Bar"))
+            return true;
+    }
+    return false;
+}
+
 // Ô vuông cạnh `side` ở giữa `r` (không lớn hơn r).
 QRect centeredSquare(const QRect &r, int side)
 {
@@ -446,14 +456,30 @@ public:
     bool eventFilter(QObject *obj, QEvent *event) override
     {
         auto *w = static_cast<QWidget *>(obj);
-        if (event->type() == QEvent::Paint) {
+        // Viewport đổi cỡ (thanh trượt xuống/lên): vẽ lại cả thẻ — Qt chỉ vẽ
+        // phần mới lộ ra, viền đáy cũ sẽ nằm lại giữa thẻ.
+        if (event->type() == QEvent::Resize && !isSearchContents(w)) {
+            if (auto *area = qobject_cast<QScrollArea *>(w->parentWidget()); area && area->widget())
+                area->widget()->update();
+            return false;
+        }
+        if (event->type() == QEvent::Paint && isSearchContents(w)) {
             QPainter p(w);
             p.setRenderHint(QPainter::Antialiasing);
-            // Mép dưới thẻ = mép dưới thanh: Dolphin tính chiều cao thanh với
-            // đúng 4px dưới dòng nút thứ hai (Bar::preferredHeight), nên
-            // không nới lề dưới được.
-            const QRectF card = QRectF(w->rect()).adjusted(POPUP_MARGIN + 0.5, POPUP_MARGIN + 0.5,
-                                                           -POPUP_MARGIN - 0.5, -0.5);
+            // Mép dưới thẻ = mép dưới phần NHÌN THẤY của khung nội dung, không
+            // phải mép dưới khung: khung cao hơn thanh vài px (máy ảo
+            // 2026-10-06: Dolphin tính Bar::preferredHeight với đúng 4px dưới
+            // dòng nút thứ hai, khung nội dung thì theo sizeHint) → viewport
+            // cắt mất viền đáy + hai góc bo. Lúc thanh đang trượt, thẻ cũng
+            // co theo phần nhìn thấy — góc dưới luôn bo.
+            qreal bottom = w->height();
+            for (const QWidget *a = w->parentWidget(); a; a = a->parentWidget()) {
+                bottom = qMin<qreal>(bottom, w->mapFrom(a, QPoint(0, a->height())).y());
+                if (a->inherits("Search::Bar"))
+                    break;
+            }
+            const QRectF card(QPointF(POPUP_MARGIN + 0.5, POPUP_MARGIN + 0.5),
+                              QPointF(w->width() - POPUP_MARGIN - 0.5, bottom - 0.5));
             p.setPen(QPen(QColor(samhie::POPUP_BORDER), 1));
             p.setBrush(QColor(samhie::POPUP));
             p.drawRoundedRect(card, POPUP_RADIUS, POPUP_RADIUS);
@@ -644,6 +670,17 @@ public:
             w->setContentsMargins(m, m, m, 0);
             w->parentWidget()->setAutoFillBackground(false);  // viewport: để thấy vùng file trong
             w->installEventFilter(&m_popup);
+            w->parentWidget()->installEventFilter(&m_popup);  // đổi cỡ → vẽ lại thẻ
+        }
+        // Mục 20: ô tìm không chớp viền cyan lúc mất focus. Viền focus đã gỡ
+        // khi vẽ (drawPrimitive), nhưng bộ lọc sự kiện của Kvantum bắt
+        // FocusOut rồi cho viền mờ dần TỪ trạng thái "focused" — ghi cứng,
+        // không đọc cờ focus (eventFiltering.cpp 1.1.6, FocusOut) → chớp một
+        // khung cyan (máy ảo 2026-10-06, bấm Filter hoặc bấm ra ngoài). Với
+        // ô nhập, bộ lọc đó chỉ lo hiệu ứng focus + màu chữ trên thanh công
+        // cụ (ô tìm không nằm trên thanh công cụ) → gỡ khỏi riêng ô này.
+        if (qobject_cast<QLineEdit *>(w) && inSearchBar(w)) {
+            w->removeEventFilter(baseStyle());
         }
         if (w->inherits("KItemListContainer")) {  // mục 13
             auto *view = qobject_cast<QGraphicsView *>(static_cast<QAbstractScrollArea *>(w)->viewport());
@@ -717,6 +754,8 @@ public:
     {
         w->removeEventFilter(&m_pane);
         w->removeEventFilter(&m_popup);
+        if (isSearchContents(w))
+            w->parentWidget()->removeEventFilter(&m_popup);
         w->removeEventFilter(&m_menuForwarder);
         w->removeEventFilter(&m_urlHover);
         QProxyStyle::unpolish(w);

@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/power.svg.
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/shut-down.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 18 18" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <path d="M3.69494 3.5C2.33839 4.87805 1.49999 6.78206 1.49999 8.88444C1.49999 13.0904 4.85785 16.5 8.99999 16.5C13.1421 16.5 16.5 13.0904 16.5 8.88444C16.5 6.79122 15.6681 4.89539 14.322 3.51879" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <rect x="8" y="1" width="1" height="7" rx="0.5" style="fill:currentColor" class="ColorScheme-Text" />
+  <path d="M7.86907 4C4.97674 5.49689 3 8.51664 3 11.9981C3 16.9686 7.02944 20.9981 12 20.9981C16.9706 20.9981 21 16.9686 21 11.9981C21 8.51664 19.0233 5.49689 16.1309 4" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M12 3V10" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
 </svg>

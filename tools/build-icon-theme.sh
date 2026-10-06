@@ -87,6 +87,15 @@ if ! grep -qF 'Paweł Kuna' "$license_file"; then
     exit 1
 fi
 
+# Icon nét Hugeicons (tools/build-icons.py) cũng MIT, cùng lý do: thông báo
+# bản quyền của họ phải nằm trong image. Chép từ theme/icons/hugeicons/LICENSE
+# (bản gốc trong repo hugeicons/hugeicons), không gõ tay.
+if ! cmp -s "$REPO/theme/icons/hugeicons/LICENSE" "$THEME_DIR/LICENSE.hugeicons"; then
+    echo "THIẾU hoặc SAI $THEME_DIR/LICENSE.hugeicons" >&2
+    echo "  cp theme/icons/hugeicons/LICENSE files/system/usr/share/icons/Samhie/LICENSE.hugeicons" >&2
+    exit 1
+fi
+
 if [[ ${#dir_list[@]} -eq 0 ]]; then
     echo "Chưa có icon nào. Bỏ file SVG vào files/system/usr/share/icons/Samhie/<nhóm>/scalable/," >&2
     echo "đặt tên theo tên chuẩn freedesktop — xem ~/Projects/Distro/docs/icons-wanted.md (bản 1.0)." >&2

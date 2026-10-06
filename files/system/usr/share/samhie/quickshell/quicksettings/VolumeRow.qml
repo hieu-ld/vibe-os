@@ -56,10 +56,10 @@ Column {
                 category: "status"
                 size: 20
                 color: Theme.c.text
+                // Ba mức + tắt, theo bộ Hugeicons user chọn (volume-35/70/full).
                 iconName: root.muted || root.volume <= 0 ? "audio-volume-muted"
-                    : root.volume <= 0.25 ? "audio-volume-low"
-                    : root.volume <= 0.5 ? "audio-volume-medium"
-                    : root.volume <= 0.75 ? "samhie-audio-volume-75" : "audio-volume-high"
+                    : root.volume <= 0.35 ? "audio-volume-low"
+                    : root.volume <= 0.7 ? "audio-volume-medium" : "audio-volume-high"
             }
             MouseArea {
                 id: speakerMouse

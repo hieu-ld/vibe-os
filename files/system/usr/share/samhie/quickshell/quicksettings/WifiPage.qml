@@ -477,8 +477,8 @@ Column {
                 }
             }
 
-            // Sóng: chấm + 3 vòng, vòng không đạt mức thì mờ (icon status
-            // network-wireless-signal-*). Mạng có khoá: ổ khoá nhỏ góc dưới-phải.
+            // Sóng: chấm + 0–3 vòng (icon status network-wireless-signal-*,
+            // 4 mức). Mạng có khoá: ổ khoá nhỏ góc dưới-phải.
             Item {
                 x: 12
                 y: 16
@@ -488,9 +488,8 @@ Column {
                     category: "status"
                     size: 20
                     color: Theme.c.text
-                    iconName: "network-wireless-signal-" + (row.signal > 80 ? "excellent"
-                        : row.signal > 55 ? "good" : row.signal > 30 ? "ok"
-                        : row.signal > 5 ? "weak" : "none")
+                    iconName: "network-wireless-signal-" + (row.signal > 75 ? "excellent"
+                        : row.signal > 50 ? "good" : row.signal > 25 ? "weak" : "none")
                 }
                 SamhieIcon {
                     visible: row.secure

@@ -1,32 +1,34 @@
 #!/usr/bin/env python3
 """
-Lắp icon user vẽ trên Figma (theme/icons/) vào bộ icon Samhie.
+Lắp icon nét Hugeicons (theme/icons/hugeicons/) vào bộ icon Samhie.
 
     python3 tools/build-icons.py          # sinh lại + so hình với bản gốc (cần rsvg-convert + Pillow)
     python3 tools/build-icons.py --check  # chỉ kiểm file sinh ra có khớp nguồn, thư viện chuẩn (CI chạy)
+    python3 tools/build-icons.py --tune   # dò lại bảng NUDGE (cần rsvg-convert + Pillow), in ra để chép vào
 
 Chạy xong thì chạy tiếp tools/build-icon-theme.sh (sinh lại index.theme khi có
 nhóm mới, kiểm từng SVG).
 
-NGUỒN (theme/icons/, xem README ở đó): xuất thẳng từ Figma, tên file = tên
-layer viết thường. Bảng MAP bên dưới nói mỗi hình thành những tên freedesktop
-nào — một hình có thể mang nhiều tên (nhà → samhie-user-home và go-home). Hình nằm trong UNUSED là user vẽ sẵn, chưa có chỗ dùng. File không
-nằm trong bảng nào là báo lỗi, để hình mới xuất không nằm im mà không ai biết.
+NGUỒN (theme/icons/hugeicons/, xem README ở đó): user tải từ hugeicons.com
+(bộ free, Stroke Rounded, khung 24, nét 1,5), tên file = tên user đặt. Bảng
+MAP bên dưới nói mỗi hình thành những tên freedesktop nào — một hình có thể
+mang nhiều tên (nhà → samhie-user-home và go-home). Hình nằm trong UNUSED là
+có sẵn, chưa có chỗ dùng. File không nằm trong bảng nào là báo lỗi, để hình
+mới tải không nằm im mà không ai biết.
 
-ĐỔI GÌ so với bản Figma:
-  * Màu. Figma ghi màu cứng #A1A1A1; KDE và SDDM cần `currentColor` + class
-    ColorScheme-Text + khối <style id="current-color-scheme"> để tô lại theo
-    bảng màu (cách Breeze làm — xem tools/import-tabler-icon.sh). Màu lạ là
-    báo lỗi, theo bảng FIGMA.
-  * Màu thứ hai #3B3C3C (lòng thùng rác đầy) KHÔNG phải một màu riêng mà là
-    #A1A1A1 phủ mờ lên nền #0A0A0A của khung Figma. Ghi thành currentColor với
-    fill-opacity tính ngược từ ba màu đó → trên nền tối ra đúng #3B3C3C, còn
-    trên nền sáng vẫn là "một lớp mờ của màu chữ" thay vì mảng xám cứng.
-  * clipPath bị gỡ. Figma bọc hình trong một clip đúng bằng khung — không cắt
-    gì cả, mà QtSvg (thứ KDE/SDDM dùng vẽ icon) không hỗ trợ clipPath đầy đủ.
+ĐỔI GÌ so với bản Hugeicons:
+  * Màu. Hugeicons ghi `currentColor` (đôi khi `black`) mà không định nghĩa
+    `color` ở đâu — trong KDE nó rơi về ĐEN. KDE và SDDM cần `currentColor` +
+    class ColorScheme-Text + khối <style id="current-color-scheme"> để tô lại
+    theo bảng màu (cách Breeze làm — xem tools/import-tabler-icon.sh). Màu lạ
+    là báo lỗi, theo bảng INK.
+  * Màu khai ở thẻ <svg> gốc (stroke/fill) được đẩy xuống TỪNG phần tử vẽ —
+    class phải nằm trên phần tử vẽ, và gỡ fill="none" ở gốc mà không đẩy
+    xuống thì mọi <path> thành tô đen kín. Thuộc tính không dính màu
+    (stroke-width, linecap, linejoin) để nguyên ở gốc cho các phần tử thừa
+    kế — giống icon Tabler đã chạy trong KDE/QtSvg.
   * width/height bị gỡ, chỉ giữ viewBox — icon co giãn theo chỗ dùng.
-  * `min`/`max` là khung 20x20 xoay 45° nên Figma xuất khung bao 28,28x28,28.
-    Cắt lại đúng ô 20x20 ở giữa (CROP), để cùng cỡ với `close`/`minus`.
+  * Dời ≤ nửa điểm ảnh cho nét rơi vào lưới (bảng NUDGE).
 """
 
 import re
@@ -37,7 +39,7 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
-SRC = ROOT / "theme" / "icons"
+SRC = ROOT / "theme" / "icons" / "hugeicons"
 THEME = ROOT / "files/system/usr/share/icons/Samhie"
 # Bảng dời cho Quickshell (ô hover lẻ 1px quanh icon đã dời — xem NUDGE).
 NUDGE_JS = ROOT / "files/system/usr/share/samhie/quickshell/bar/icon-nudge.js"
@@ -49,55 +51,50 @@ ET.register_namespace("", SVG_NS)
 # Tabler trong bộ, để icon ra sáng trên nền tối chứ không đen.
 FALLBACK = "#fcfcfc"
 
-# Màu Figma → độ đục của currentColor.
-FIGMA_INK = "#a1a1a1"
-FIGMA_BG = "#0a0a0a"      # nền khung "Samhie icons" trên Figma
+# Màu trong file Hugeicons → độ đục của currentColor. `black`: trang web ghi
+# màu đó khi user chỉnh tay một hình (trash-full).
+INK = {"currentcolor": 1.0, "black": 1.0, "#000000": 1.0}
+DRAWN = {"path", "circle", "rect", "line", "ellipse", "polyline", "polygon"}
 
-
-def _alpha_over_bg(color):
-    """Độ đục a sao cho a·INK + (1−a)·BG = color, đo trên cả ba kênh."""
-    ink, bg, c = (bytes.fromhex(x[1:]) for x in (FIGMA_INK, FIGMA_BG, color))
-    alphas = [(c[i] - bg[i]) / (ink[i] - bg[i]) for i in range(3)]
-    if max(alphas) - min(alphas) > 0.02:
-        sys.exit(f"{color} không phải {FIGMA_INK} phủ mờ lên {FIGMA_BG} (lệch màu giữa các kênh)")
-    return round(sum(alphas) / 3, 4)
-
-
-FIGMA = {
-    FIGMA_INK: 1.0,
-    "#3b3c3c": _alpha_over_bg("#3b3c3c"),   # lòng trash-full ≈ 0,32
-    "#3c3c3c": _alpha_over_bg("#3c3c3c"),   # lòng trash-full bản 2026-10-06 ≈ 0,33
-}
-
-# Hình Figma → [(nhóm, tên freedesktop), …]
+# Hình → [(nhóm, tên freedesktop), …]
 MAP = {
-    # Nút nguồn + màn hình đăng nhập (SDDM đọc thẳng actions/, xem SamhieIcon.qml)
-    "power":      [("actions", "system-shutdown")],
-    "restart":    [("actions", "system-reboot")],
-    "sleep":      [("actions", "system-suspend")],
-    # Menu nguồn (Quickshell PowerMenu, 20px) — user vẽ 2026-10-06
-    "lock":       [("actions", "system-lock-screen")],
-    "logout":     [("actions", "system-log-out")],
-    # Mũi tên thẳng
-    "next-2":     [("actions", "go-next")],
-    "prev-2":     [("actions", "go-previous")],
-    "up-2":       [("actions", "go-up")],
-    "down-2":     [("actions", "go-down")],
-    # Mũi tên nhọn (chevron)
-    "ar-right":   [("actions", "arrow-right")],
-    "ar-left":    [("actions", "arrow-left")],
-    "ar-top":     [("actions", "arrow-up")],
+    # Thanh trên (Quickshell, 18px). Nút nguồn ở thanh trên và màn hình đăng
+    # nhập là `power`; mục "Shut Down" trong menu nguồn là `shut-down`.
+    "power":      [("actions", "samhie-power")],
+    "bell":       [("status", "notification-inactive"),
+                   ("status", "notification-active")],   # chấm: BellButton.qml vẽ
+    "noti-off":   [("status", "notifications-disabled")],
     "ar-bottom":  [("actions", "arrow-down")],
     # Nút cửa sổ
     "close":      [("actions", "window-close-symbolic")],
     "minus":      [("actions", "window-minimize-symbolic")],
     "max":        [("actions", "window-maximize-symbolic")],
     "min":        [("actions", "window-restore-symbolic")],
-    # Nút "+" trên thanh tab Konsole — cũng là "New Tab" trong menu (tên đo
-    # trong libkonsoleprivate/libkonsoleapp của image, 2026-09-30)
+    # Clipboard (Win+V, 18px): ghim + xoá. edit-delete cũng là "Delete" của KDE.
+    "pin":        [("actions", "pin")],
+    "trash-delete": [("actions", "edit-delete")],
+    # Menu nguồn (Quickshell PowerMenu, 20px) + màn hình đăng nhập (SDDM đọc
+    # thẳng actions/, xem SamhieIcon.qml)
+    "shut-down":  [("actions", "system-shutdown")],
+    "restart":    [("actions", "system-reboot")],
+    "sleep":      [("actions", "system-suspend")],
+    "lock":       [("actions", "system-lock-screen")],
+    "logout":     [("actions", "system-log-out")],
+    "login":      [("actions", "samhie-log-in")],   # nút đăng nhập SDDM
+    # Mũi tên thẳng (20px: lịch, menu khay)
+    "next-2":     [("actions", "go-next")],
+    "prev-2":     [("actions", "go-previous")],
+    "up-2":       [("actions", "go-up")],
+    "down-2":     [("actions", "go-down")],
+    # Mũi tên nhọn (chevron, 14–16px: quick settings, trang Wi-Fi, SDDM)
+    "ar-right":   [("actions", "arrow-right")],
+    "ar-left":    [("actions", "arrow-left")],
+    "ar-top":     [("actions", "arrow-up")],
+    # Nút "+" trên thanh tab Konsole/Dolphin (tên đo trong
+    # libkonsoleprivate/libkonsoleapp của image, 2026-09-30)
     "plus":       [("actions", "tab-new")],
-    # Sidebar Dolphin (tên lấy từ usr/share/samhie/user-places.xbel.in). Nhà
-    # và tải về mang tên RIÊNG: user-home/folder-download là thư mục TO
+    # Sidebar Dolphin (20px, tên lấy từ usr/share/samhie/user-places.xbel.in).
+    # Nhà và tải về mang tên RIÊNG: user-home/folder-download là thư mục TO
     # (tools/build-folder-icons.py) — bộ scalable chỉ có một file cho mọi cỡ.
     "smart-home": [("places", "samhie-user-home"), ("actions", "go-home")],
     "download":   [("places", "samhie-folder-download")],
@@ -106,85 +103,159 @@ MAP = {
     "trash-full": [("places", "user-trash-full")],
     "storage":    [("devices", "drive-harddisk")],   # mục Storage của sidebar
     "recent":     [("actions", "document-open-recent")],
-    # Thanh công cụ Dolphin (2026-10-03). Tên đo bằng chuỗi trong dolphin,
+    # Thanh công cụ Dolphin (22px). Tên đo bằng chuỗi trong dolphin,
     # libdolphinprivate và KIO/KF6 của image: Copy Location = edit-copy-path,
     # nút sửa đường dẫn của KUrlNavigator = edit-entry, nút ☰ = application-menu.
-    "copy":       [("actions", "edit-copy"), ("actions", "edit-copy-path")],
-    "edit":       [("actions", "document-edit"), ("actions", "edit-entry")],
-    "filter":     [("actions", "view-filter")],
     "icons":      [("actions", "view-list-icons")],
-    # Nút tìm thanh công cụ Dolphin (22px); cũng là ô tìm tổng quan/clipboard.
-    "search":     [("actions", "system-search")],
-    # Chế độ Details (user vẽ 2026-10-05). Dolphin đặt tên lệch: Details =
-    # view-list-TREE, view-list-details là chế độ Compact (Samhie ẩn) — đo
+    # Chế độ Details. Dolphin đặt tên lệch: Details = view-list-TREE,
+    # view-list-details là chế độ Compact (Samhie ẩn) — đo
     # dolphinviewactionhandler.cpp 26.08. Hộp thoại mở file của KDE dùng
     # view-list-details cho kiểu "Detailed" → giữ cả hai.
     "details":    [("actions", "view-list-tree"), ("actions", "view-list-details")],
     "menu":       [("actions", "application-menu")],
-    # Nút lùi/tiến hình tròn của Dolphin (user vẽ 2026-10-03). Tên RIÊNG, không
-    # đè go-previous/go-next: hai tên đó còn dùng ở menu khay, lịch, nút đăng
-    # nhập SDDM. dolphin-ui.sh gán tên này cho go_back/go_forward.
+    # Nút tìm thanh công cụ Dolphin; cũng là ô tìm tổng quan/clipboard.
+    "search":     [("actions", "system-search")],
+    # Nút lùi/tiến hình tròn của Dolphin. Tên RIÊNG, không đè
+    # go-previous/go-next: hai tên đó còn dùng ở menu khay, lịch.
+    # dolphin-ui.sh gán tên này cho go_back/go_forward.
     "prev":       [("actions", "samhie-go-back")],
     "next":       [("actions", "samhie-go-forward")],
-    # Chuông, loa — cho thanh trên (giai đoạn 3). Bản -symbolic của ba tên
-    # chuông là symlink có sẵn trong repo, trỏ về đây.
-    "bell":       [("status", "notification-inactive")],
-    "noti":       [("status", "notification-active")],   # chấm đỏ: BellButton.qml vẽ
-    "noti-off":   [("status", "notifications-disabled")],
-    # Loa theo mức (VolumeRow.qml): ≤25% / ≤50% / ≤75% / trên 75%.
-    "volume-25":  [("status", "audio-volume-low")],
-    "volume-50":  [("status", "audio-volume-medium")],
-    "volume-75":  [("status", "samhie-audio-volume-75")],
-    "volume-full": [("status", "audio-volume-high")],
-    "volume-mute": [("status", "audio-volume-muted")],
-    # Ô quick settings (20px) — user vẽ 2026-10-06
+    # Thanh đường dẫn + thanh tìm Dolphin (16px). Tên đo 2026-10-06 bằng
+    # chuỗi UTF-16 trong image: ✓ của KUrlNavigator khi đang sửa = dialog-ok
+    # (libKF6KIOFileWidgets), × đóng thanh tìm = dialog-close (dolphin), ⌫
+    # trong ô nhập = edit-clear-locationbar-* của QLineEdit (libQt6Widgets),
+    # rơi về edit-clear (KF6Completion).
+    "check":      [("actions", "dialog-ok")],
+    "x":          [("actions", "dialog-close")],
+    "backspace":  [("actions", "edit-clear-locationbar-rtl"),
+                   ("actions", "edit-clear-locationbar-ltr"),
+                   ("actions", "edit-clear")],
+    "filter":     [("actions", "view-filter")],
+    # Hành động KDE (menu chỉ có chữ từ 2026-10-06, nhưng tên vẫn hiện ở
+    # thanh công cụ, hộp thoại, nút bấm).
+    "copy":       [("actions", "edit-copy"), ("actions", "edit-copy-path")],
+    "cut":        [("actions", "edit-cut")],
+    "paste":      [("actions", "edit-paste")],
+    "edit":       [("actions", "document-edit"), ("actions", "edit-entry")],
+    "rename":     [("actions", "edit-rename")],
+    "folder-new": [("actions", "folder-new")],
+    "refresh":    [("actions", "view-refresh")],
+    "split":      [("actions", "view-split-left-right")],
+    "bookmark":   [("actions", "bookmarks")],
+    "settings":   [("actions", "configure")],
+    # Ô quick settings (20px)
     "dark-mode":  [("actions", "samhie-dark-style")],
-    "do-not-dis-turb": [("actions", "samhie-do-not-disturb")],
+    "bell-off":   [("actions", "samhie-do-not-disturb")],
     "night-light": [("status", "redshift-status-on")],
-    "wifi":       [("status", "network-wireless-connected-100")],
-    "wired-2":    [("devices", "network-wired-activated")],
-    # Terminal nét đơn khung 16 (user vẽ 2026-10-05) — ở THƯ MỤC CỠ 16
-    # (nhóm "apps/16"): menu 16px (Dolphin "Open Terminal Here", "Open With")
-    # lấy hình này, cỡ khác (dock 32, thanh trên 18) vẫn lấy icon app nhiều
-    # màu ở apps/scalable (tools/build-app-icons.py). Thư mục cỡ cố định đứng
-    # trước scalable trong index.theme nên thắng đúng ở 16px.
+    "wired":      [("devices", "network-wired-activated")],
+    "bluetooth":  [("devices", "network-bluetooth")],
+    # Wi-Fi: ô quick settings + 4 mức sóng trong danh sách mạng (WifiPage.qml:
+    # >75% / >50% / >25% / còn lại). `ok` là tên chuẩn thứ năm của KDE, đi
+    # cùng hình 2 vòng.
+    "wifi":       [("status", "network-wireless-connected-100"),
+                   ("status", "network-wireless-signal-excellent")],
+    "wifi-2":     [("status", "network-wireless-signal-good"),
+                   ("status", "network-wireless-signal-ok")],
+    "wifi-1":     [("status", "network-wireless-signal-weak")],
+    "wifi-0":     [("status", "network-wireless-signal-none")],
+    # Loa theo mức (VolumeRow.qml): tắt / ≤35% / ≤70% / trên 70%.
+    "volume-mute": [("status", "audio-volume-muted")],
+    "volume-35":  [("status", "audio-volume-low")],
+    "volume-70":  [("status", "audio-volume-medium")],
+    "volume-full": [("status", "audio-volume-high")],
+    # Terminal ở THƯ MỤC CỠ 16 (nhóm "apps/16"): chỗ 16px (Dolphin "Open
+    # Terminal Here") lấy hình này, cỡ khác (dock 32, thanh trên 18) vẫn lấy
+    # icon app nhiều màu ở apps/scalable (tools/build-app-icons.py). Thư mục
+    # cỡ cố định đứng trước scalable trong index.theme nên thắng đúng ở 16px.
     "terminal":   [("apps/16", "utilities-terminal")],
 }
 
-# Vẽ sẵn, chưa lắp. `folder` (nét mảnh): tên "folder" đã là thư mục TO tô màu
-# (tools/build-folder-icons.py, bộ scalable dùng một file cho mọi cỡ). Còn lại
-# chưa có chỗ dùng.
-# `wired` (quả địa cầu + sóng): bản thứ hai của ô Wired — ở 20px rối, dùng wired-2.
-UNUSED = {"folder", "document", "desktop", "up", "down", "wired"}
+# Có sẵn, chưa lắp. `wifi-lock`: chỉ có bản sóng đầy — danh sách Wi-Fi cần
+# khoá đi cùng cả bốn mức, nên vẫn dùng ổ khoá nhỏ đè góc (WifiPage.qml).
+UNUSED = {"wifi-lock"}
 
-# Cắt khung: tên → viewBox mới (khi Figma xuất khung bao lớn hơn ô vẽ, vd hình
-# xoay). Hiện không hình nào cần — min/max bản 2026-10-06 vẽ thẳng khung 18.
-CROP = {
+# Cỡ hiển thị CHÍNH của từng hình (đo trong Quickshell/SDDM/Dolphin) — để dò
+# NUDGE. Hình không có ở đây: cỡ 16 (menu, thanh đường dẫn Dolphin).
+SIZE = {
+    18: ["power", "bell", "noti-off", "ar-bottom", "close", "minus", "max",
+         "min", "pin", "trash-delete"],
+    20: ["shut-down", "restart", "sleep", "lock", "logout", "login",
+         "next-2", "prev-2", "up-2", "down-2",
+         "smart-home", "download", "network", "trash-empty", "trash-full",
+         "storage", "recent", "dark-mode", "bell-off", "night-light", "wired",
+         "bluetooth", "wifi", "wifi-2", "wifi-1", "wifi-0",
+         "volume-mute", "volume-35", "volume-70", "volume-full"],
+    22: ["icons", "details", "menu", "search", "prev", "next"],
 }
 
-# Dời hình cho nét rơi vào lưới điểm ảnh ở CỠ HIỂN THỊ CHÍNH của icon (rà
-# 2026-10-05). Hình vẽ khung 20 nét 1,25 chỉ sắc hẳn ở 16px; ở cỡ khác, một
-# nét nằm đúng ranh giới hai điểm ảnh (vd vạch ngang ở y=10) thành 2 hàng mờ
-# nửa độ sáng. Dời cả hình (đổi gốc viewBox, không sửa nét) một phần điểm ảnh
-# → một hàng đậm + viền mờ mảnh. Số dời dò bằng máy: thử mọi bước 1/8 điểm
-# ảnh trong ±0,5, vẽ bằng rsvg ở cỡ đó, chọn bản ít điểm ảnh mờ nhất (mờ =
+
+def main_size(name):
+    return next((s for s, names in SIZE.items() if name in names), 16)
+
+
+# Dịch hình (đơn vị SVG của khung 24) cho các hình thay nhau ở cùng một chỗ
+# có phần chung đứng yên. Hugeicons căn giữa TỪNG hình: loa ít sóng thì thân
+# loa đứng lệch phải (mép phải thân loa: tắt/đầy x = 14, 70% x = 16; thân
+# rộng 12) → kéo âm lượng là loa nhảy ngang (user 2026-10-06). Dịch về chỗ
+# của bản đầy. Bản 35% (Hugeicons `volume`) còn vẽ đuôi loa khác hẳn → file
+# nguồn đã thay bằng thân loa của volume-full (xem README nguồn).
+ALIGN = {
+    "volume-70": (-2, 0),
+}
+
+
+# Hình thay nhau ở CÙNG một chỗ phải dời giống nhau, không thì đổi trạng thái
+# (kéo âm lượng, sóng Wi-Fi, bật Do not disturb) là hình nhảy nửa điểm ảnh.
+# --tune dò chung cả họ (mờ trung bình). Mũi tên trái/phải là ảnh gương nên
+# dò riêng vẫn ra số đối xứng.
+FAMILIES = [
+    ("volume-mute", "volume-35", "volume-70", "volume-full"),
+    ("wifi-0", "wifi-1", "wifi-2", "wifi"),
+    ("bell", "noti-off"),
+    ("trash-empty", "trash-full"),
+]
+
+
+# Dời hình cho nét rơi vào lưới điểm ảnh ở CỠ HIỂN THỊ CHÍNH của icon.
+# Hugeicons vẽ khung 24, nét 1,5: thu về 20px thì nét 1,25px, vạch ở tâm
+# (toạ độ 12 → 10px) nằm đúng ranh giới hai điểm ảnh → 2 hàng mờ. Dời cả hình
+# (đổi gốc viewBox, không sửa nét) một phần điểm ảnh → một hàng đậm + viền
+# mờ mảnh. Số dời dò bằng máy (`--tune`): thử mọi bước 1/8 điểm ảnh trong
+# ±0,5, vẽ bằng rsvg ở cỡ đó, chọn bản ít điểm ảnh mờ nhất (mờ =
 # Σ min(a, 1−a) / Σ a); chỉ giữ hình giảm mờ ≥ 0,06. Hình lệch tâm tối đa
-# nửa điểm ảnh — mắt không thấy, nét thì thấy.
-# Cỡ chính (đo trong Quickshell/SDDM/Dolphin): mũi tên nhọn 16 (thanh trên,
-# SDDM), chuông + nút nguồn 18 (thanh trên), mũi tên thẳng 20 (lịch, menu
-# khay, SDDM), loa 20 (quick settings), nút cửa sổ 18 (thanh trên — cùng cỡ chuông/nút
-# nguồn, user 2026-10-05), sidebar
-# Dolphin 20 (dolphinrc IconSize).
+# nửa điểm ảnh — mắt không thấy, nét thì thấy. Đổi hình thì chạy lại --tune.
+# Họ loa và họ thùng rác: dò chung không giảm mờ đủ 0,06 nên không dời.
 # tên hình: (cỡ px, dời ngang px, dời dọc px)
 NUDGE = {
-    "ar-right":    (16, -0.5, 0),
-    "ar-left":     (16, -0.5, 0),
-    "ar-top":      (16, 0, -0.5),
-    "next-2":      (20, 0, -0.5),
-    "prev-2":      (20, 0, -0.5),
-    "up-2":        (20, -0.5, 0),
-    "down-2":      (20, -0.5, 0),
-    "network":     (20, -0.5, -0.25),
+    "backspace": (16, -0.5, -0.5),       # mờ 0.57 → 0.40
+    "bell": (18, -0.5, 0),               # mờ 0.37 → 0.31 (họ chuông)
+    "noti-off": (18, -0.5, 0),
+    "bell-off": (20, 0, -0.5),           # mờ 0.40 → 0.31
+    "bluetooth": (20, -0.375, -0.5),     # mờ 0.45 → 0.29
+    "check": (16, 0, -0.5),              # mờ 0.53 → 0.41
+    "copy": (16, 0.125, 0.125),          # mờ 0.46 → 0.39
+    "cut": (16, -0.25, -0.25),           # mờ 0.51 → 0.44
+    "down-2": (20, -0.5, -0.25),         # mờ 0.49 → 0.26
+    "download": (20, -0.5, -0.5),        # mờ 0.48 → 0.31
+    "edit": (16, -0.5, -0.5),            # mờ 0.52 → 0.41
+    "filter": (16, 0, -0.5),             # mờ 0.60 → 0.33
+    "folder-new": (16, 0.125, -0.375),   # mờ 0.50 → 0.38
+    "icons": (22, -0.5, -0.5),           # mờ 0.44 → 0.30
+    "logout": (20, 0.25, 0.375),         # mờ 0.40 → 0.30
+    "network": (20, 0.375, -0.5),        # mờ 0.44 → 0.37
+    "next-2": (20, -0.25, -0.5),         # mờ 0.52 → 0.27
+    "pin": (18, 0.25, -0.25),            # mờ 0.45 → 0.38
+    "power": (18, -0.5, -0.125),         # mờ 0.46 → 0.40
+    "prev-2": (20, 0.25, -0.5),          # mờ 0.52 → 0.27
+    "refresh": (16, -0.5, -0.125),       # mờ 0.54 → 0.45
+    "smart-home": (20, 0.125, -0.5),     # mờ 0.38 → 0.32
+    "split": (16, -0.5, -0.5),           # mờ 0.68 → 0.33
+    "terminal": (16, -0.5, -0.5),        # mờ 0.69 → 0.31
+    "up-2": (20, -0.5, 0.25),            # mờ 0.49 → 0.26
+    "wifi-0": (20, -0.5, 0.375),         # mờ 0.63 → 0.37 (họ Wi-Fi)
+    "wifi-1": (20, -0.5, 0.375),
+    "wifi-2": (20, -0.5, 0.375),
+    "wifi": (20, -0.5, 0.375),
 }
 
 
@@ -217,14 +288,17 @@ def nudge_js():
     )
 
 
-def view_box(name, original):
-    """viewBox cuối của hình: cắt khung (CROP) rồi dời (NUDGE)."""
-    vb = [float(v) for v in CROP.get(name, original).split()]
-    if name in NUDGE:
-        size, dx, dy = NUDGE[name]
-        unit = vb[2] / size          # đơn vị SVG trên một điểm ảnh
-        vb[0] -= dx * unit
-        vb[1] -= dy * unit
+def view_box(name, original, nudge=None):
+    """viewBox cuối của hình: dịch theo ALIGN, rồi dời theo NUDGE (hoặc theo
+    `nudge` khi đang dò)."""
+    vb = [float(v) for v in original.split()]
+    ax, ay = ALIGN.get(name, (0, 0))
+    vb[0] -= ax
+    vb[1] -= ay
+    size, dx, dy = nudge or NUDGE.get(name, (1, 0, 0))
+    unit = vb[2] / size          # đơn vị SVG trên một điểm ảnh
+    vb[0] -= dx * unit
+    vb[1] -= dy * unit
     return " ".join(f"{v:g}" for v in vb)
 
 
@@ -232,48 +306,44 @@ def q(tag):
     return f"{{{SVG_NS}}}{tag}"
 
 
-def convert(name, text):
+def convert(name, text, nudge=None):
     """Trả về SVG đã chuyển đổi (chuỗi), hoặc thoát với lỗi."""
     root = ET.fromstring(text)
     if "viewBox" not in root.attrib:
         sys.exit(f"{name}.svg: thiếu viewBox")
-    for a in ("width", "height"):
+    for a in ("width", "height", "color"):
         root.attrib.pop(a, None)
-    root.set("viewBox", view_box(name, root.get("viewBox")))
-
-    # Gỡ clipPath (và <defs> nếu chỉ chứa clipPath).
-    for defs in root.findall(q("defs")):
-        for child in list(defs):
-            if child.tag != q("clipPath"):
-                sys.exit(f"{name}.svg: <defs> có <{child.tag.split('}')[-1]}> — script chưa biết xử lý")
-            defs.remove(child)
-        root.remove(defs)
+    root.set("viewBox", view_box(name, root.get("viewBox"), nudge))
     for el in root.iter():
-        el.attrib.pop("clip-path", None)
         el.attrib.pop("id", None)
+
+    # Màu ở gốc → đẩy xuống phần tử vẽ (xem đầu file).
+    inherited = {p: root.attrib.pop(p) for p in ("stroke", "fill") if p in root.attrib}
 
     painted = 0
     for el in root.iter():
+        tag = el.tag.split("}")[-1]
         if el is root:
             continue
+        if tag not in DRAWN:
+            sys.exit(f"{name}.svg: có <{tag}> — script chưa biết xử lý")
         decls = []
         for prop in ("stroke", "fill"):
-            v = el.attrib.pop(prop, None)
+            v = el.attrib.pop(prop, inherited.get(prop))
             if v is None:
                 continue
             if v == "none":
                 decls.append(f"{prop}:none")
                 continue
-            alpha = FIGMA.get(v.lower())
+            alpha = INK.get(v.lower())
             if alpha is None:
-                sys.exit(f"{name}.svg: màu lạ {v} — chỉ nhận {', '.join(FIGMA)}")
+                sys.exit(f"{name}.svg: màu lạ {v} — chỉ nhận {', '.join(INK)}")
             decls.append(f"{prop}:currentColor")
             if alpha != 1.0:
                 decls.append(f"{prop}-opacity:{alpha}")
-        if decls:
-            el.set("style", ";".join(decls))
-            el.set("class", "ColorScheme-Text")
-            painted += 1
+        el.set("style", ";".join(decls))
+        el.set("class", "ColorScheme-Text")
+        painted += 1
     if painted == 0:
         sys.exit(f"{name}.svg: không có phần tử vẽ nào")
 
@@ -287,7 +357,7 @@ def convert(name, text):
     body = ET.tostring(root, encoding="unicode")
     return (
         "<?xml version='1.0' encoding='utf-8'?>\n"
-        f"<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/{name}.svg.\n"
+        f"<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/{name}.svg.\n"
         "     Sinh bằng tools/build-icons.py, đừng sửa tay. -->\n"
         f"{body}\n"
     )
@@ -298,15 +368,22 @@ def dest(group, icon):
     return THEME / group / f"{icon}.svg" if "/" in group else THEME / group / "scalable" / f"{icon}.svg"
 
 
-def outputs():
-    """{đường dẫn đích: nội dung} cho mọi icon, sau khi kiểm bảng MAP/UNUSED."""
+def check_tables():
     names = {p.stem for p in SRC.glob("*.svg")}
     stray = names - MAP.keys() - UNUSED
     missing = MAP.keys() - names
+    sized = [n for ns in SIZE.values() for n in ns]
     if stray:
-        sys.exit(f"theme/icons/ có hình chưa nằm trong MAP hay UNUSED: {', '.join(sorted(stray))}")
+        sys.exit(f"theme/icons/hugeicons/ có hình chưa nằm trong MAP hay UNUSED: {', '.join(sorted(stray))}")
     if missing:
-        sys.exit(f"MAP nhắc tới hình không có trong theme/icons/: {', '.join(sorted(missing))}")
+        sys.exit(f"MAP nhắc tới hình không có trong theme/icons/hugeicons/: {', '.join(sorted(missing))}")
+    if set(sized) - MAP.keys() or len(sized) != len(set(sized)):
+        sys.exit("SIZE nhắc tới hình không có trong MAP, hoặc một hình hai cỡ")
+
+
+def outputs():
+    """{đường dẫn đích: nội dung} cho mọi icon, sau khi kiểm các bảng."""
+    check_tables()
     out = {}
     for name, targets in sorted(MAP.items()):
         svg = convert(name, (SRC / f"{name}.svg").read_text())
@@ -315,46 +392,92 @@ def outputs():
     return out
 
 
+def stale_outputs(out):
+    """File do script này sinh trước đây mà giờ không còn trong MAP."""
+    mark = "Sinh bằng tools/build-icons.py"
+    return [p for p in THEME.rglob("*.svg")
+            if not p.is_symlink() and p not in out and mark in p.read_text()]
+
+
+def render(svg_text, size, bg=None):
+    from PIL import Image
+    with tempfile.TemporaryDirectory() as tmp:
+        svg, png = Path(tmp, "a.svg"), Path(tmp, "a.png")
+        svg.write_text(svg_text)
+        cmd = ["rsvg-convert", "-w", str(size), "-h", str(size), "-o", str(png), str(svg)]
+        if bg:
+            cmd[1:1] = ["-b", bg]
+        subprocess.run(cmd, check=True)
+        return Image.open(png).convert("RGBA" if bg is None else "RGB")
+
+
+def blur(name, size, dx, dy):
+    """Phần mực nằm ở điểm ảnh mờ (0 = mọi điểm ảnh hoặc kín hoặc trống)."""
+    img = render(convert(name, (SRC / f"{name}.svg").read_text(), (size, dx, dy)), size)
+    alphas = [p[3] / 255 for p in img.getdata()]
+    return sum(min(a, 1 - a) for a in alphas) / sum(alphas)
+
+
+def tune():
+    steps = [i / 8 for i in range(-4, 5)]
+    family = {n: fam for fam in FAMILIES for n in fam}
+    groups = sorted({family.get(n, (n,)) for n in MAP})
+    print("NUDGE = {")
+    for group in groups:
+        size = main_size(group[0])
+        if any(main_size(n) != size for n in group):
+            sys.exit(f"FAMILIES: {', '.join(group)} không cùng cỡ trong SIZE")
+
+        def total(dx, dy):
+            return sum(blur(n, size, dx, dy) for n in group) / len(group)
+        base = total(0, 0)
+        best = min((total(dx, dy), abs(dx) + abs(dy), dx, dy)
+                   for dx in steps for dy in steps)
+        if base - best[0] >= 0.06:
+            for n in group:
+                print(f'    "{n}": ({size}, {best[2]:g}, {best[3]:g}),'
+                      f'   # mờ {base:.2f} → {best[0]:.2f}')
+    print("}")
+
+
 def compare(name, dest):
-    """Vẽ bản Figma và bản đã chuyển trên nền Figma, so từng điểm ảnh."""
-    from PIL import Image, ImageChops
+    """Vẽ bản Hugeicons và bản đã chuyển cùng một màu, so từng điểm ảnh."""
+    from PIL import ImageChops
 
     src = (SRC / f"{name}.svg").read_text()
-    if name in CROP or name in NUDGE:
-        # Chỉ sửa thẻ <svg> gốc — <rect> của clipPath cũng có width/height.
-        head, tail = src.split(">", 1)
-        vb = view_box(name, re.search(r'viewBox="([^"]*)"', head).group(1))
-        head = re.sub(r'viewBox="[^"]*"', f'viewBox="{vb}"', head)
-        head = re.sub(r'\s(width|height)="[^"]*"', "", head)
-        src = head + ">" + tail
-    new = dest.read_text().replace(FALLBACK, FIGMA_INK)
-    with tempfile.TemporaryDirectory() as tmp:
-        pngs = []
-        for tag, text in (("goc", src), ("moi", new)):
-            svg, png = Path(tmp, f"{tag}.svg"), Path(tmp, f"{tag}.png")
-            svg.write_text(text)
-            subprocess.run(["rsvg-convert", "-w", "128", "-h", "128", "-b", FIGMA_BG,
-                            "-o", str(png), str(svg)], check=True)
-            pngs.append(Image.open(png).convert("RGB"))
-        diff = ImageChops.difference(*pngs).convert("L")
-        bad = sum(1 for v in diff.getdata() if v > 24)
-    return bad
+    head, tail = src.split(">", 1)
+    vb = view_box(name, re.search(r'viewBox="([^"]*)"', head).group(1))
+    head = re.sub(r'viewBox="[^"]*"', f'viewBox="{vb}"', head)
+    src = re.sub(r'(?i)"(currentColor|black|#000000)"', '"#a1a1a1"', head + ">" + tail)
+    new = dest.read_text().replace(FALLBACK, "#a1a1a1")
+    a, b = render(src, 128, "#0a0a0a"), render(new, 128, "#0a0a0a")
+    diff = ImageChops.difference(a, b).convert("L")
+    return sum(1 for v in diff.getdata() if v > 24)
 
 
 def main():
-    check = "--check" in sys.argv[1:]
+    args = sys.argv[1:]
+    if "--tune" in args:
+        check_tables()
+        tune()
+        return
+    check = "--check" in args
     out = outputs()
-
     out[NUDGE_JS] = nudge_js()
+    stale = stale_outputs(out)
+
     if check:
-        stale = [p for p, s in out.items() if not p.exists() or p.read_text() != s]
-        for p in stale:
+        old = [p for p, s in out.items() if not p.exists() or p.read_text() != s] + stale
+        for p in old:
             print(f"CŨ: {p.relative_to(ROOT)}", file=sys.stderr)
-        if stale:
-            sys.exit("Icon sinh ra không khớp theme/icons/ — chạy python3 tools/build-icons.py rồi commit.")
-        print(f"icon: {len(out)} file khớp nguồn ({len(MAP)} hình, {len(UNUSED)} vẽ sẵn chưa lắp)")
+        if old:
+            sys.exit("Icon sinh ra không khớp theme/icons/hugeicons/ — chạy python3 tools/build-icons.py rồi commit.")
+        print(f"icon: {len(out)} file khớp nguồn ({len(MAP)} hình, {len(UNUSED)} có sẵn chưa lắp)")
         return
 
+    for p in stale:
+        print(f"  xoá {p.relative_to(THEME)} (không còn trong MAP)")
+        p.unlink()
     for p, s in out.items():
         p.parent.mkdir(parents=True, exist_ok=True)
         p.write_text(s)
@@ -366,9 +489,9 @@ def main():
         worst = max(worst, bad)
         mark = "" if bad == 0 else f"  ← lệch {bad} điểm ảnh"
         print(f"  {name:12} → {', '.join(i for _, i in targets)}{mark}")
-    print(f"\n{len(out)} file từ {len(MAP)} hình. Vẽ sẵn chưa lắp: {', '.join(sorted(UNUSED))}")
+    print(f"\n{len(out)} file từ {len(MAP)} hình. Có sẵn chưa lắp: {', '.join(sorted(UNUSED))}")
     if worst > 0:
-        sys.exit("Có hình vẽ ra khác bản Figma (ở 128px, trên nền Figma) — xem lại trước khi commit.")
+        sys.exit("Có hình vẽ ra khác bản Hugeicons (ở 128px) — xem lại trước khi commit.")
 
 
 if __name__ == "__main__":

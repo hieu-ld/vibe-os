@@ -1,10 +1,10 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — user vẽ trên Figma, nguồn theme/icons/prev-2.svg.
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/prev-2.svg.
      Sinh bằng tools/build-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0.4 16 16" fill="none">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-0.3 0.6 24 24" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
   <defs>
     <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
   </defs>
-  <path d="M11.5 8H5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
-  <path d="M7 11L4.70711 8.70711C4.31658 8.31658 4.31658 7.68342 4.70711 7.29289L7 5" stroke-linecap="round" style="stroke:currentColor" class="ColorScheme-Text" />
+  <path d="M5.5 12.002H19" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M10.9999 18.002C10.9999 18.002 4.99998 13.583 4.99997 12.0019C4.99996 10.4208 11 6.00195 11 6.00195" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
 </svg>

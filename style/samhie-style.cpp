@@ -159,10 +159,11 @@
 //  24. Bớt chi tiết thừa trong Dolphin (user 2026-10-06): bút chì "sửa
 //      đường dẫn" (trỏ vào thanh đã hiện con trỏ chữ I), nút "lưu tìm kiếm"
 //      trong ô tìm (thêm mục vào sidebar), dòng Zoom trong menu (phím tắt
-//      vẫn chạy), 🔒 + Aᴮ của thanh lọc, dòng KFind trong popup Filter của
-//      thanh tìm, hai dòng "Focus … Panel" trong Show Panels (phím tắt vẫn
-//      chạy). Thanh lọc (F10 → Filter) cũng không viền focus cyan, ô
-//      hover vuông như thanh tìm (mục 20, 21).
+//      vẫn chạy), 🔒 + Aᴮ của thanh lọc, dòng KFind và nhóm "Search using:"
+//      (Simple search / File Indexing — image không có Baloo) trong popup
+//      Filter của thanh tìm, hai dòng "Focus … Panel" trong Show Panels
+//      (phím tắt vẫn chạy). Thanh lọc (F10 → Filter) cũng không viền focus
+//      cyan, ô hover vuông như thanh tìm (mục 20, 21), cách đáy 8px.
 //  23. Vạch ngăn thanh công cụ (giữa ⊙→ và ▦ của Dolphin): 1px màu
 //      FRAME_LINE, cao TOOLBAR_SEPARATOR_HEIGHT, ở giữa khoảng trống giữa ô
 //      icon hai nút bên cạnh (user 2026-10-06). Kvantum vẽ 2px gần trùng nền
@@ -824,14 +825,17 @@ public:
                 || icon == QLatin1String("format-text-superscript") || icon == QLatin1String("format-text-bold")) {
                 tb->setChecked(false);
                 tb->hide();
+                if (icon.startsWith(QLatin1String("object-")))
+                    tb->setProperty("samhieFilterBarHeight", true);  // xem lề dưới ngay sau
             }
         }
         // Bỏ 🔒 thì ô lọc dính viền trái vùng file, × dính góc bo cửa sổ →
-        // lề trái/phải như thẻ tìm. Chỉ hai bên: chiều cao thanh lọc là
-        // sizeHint cao nhất của các con (FilterBar::preferredHeight), lề
-        // trên/dưới sẽ cắt mất ô.
+        // lề trái/phải như thẻ tìm; lề dưới cho thanh khỏi dính đáy cửa sổ
+        // (user 2026-10-06). Chiều cao thanh lọc là sizeHint cao nhất của các
+        // con, TÍNH CẢ 🔒 đã ẩn (FilterBar::preferredHeight) — 🔒 khai cao
+        // thêm đúng lề dưới (sizeFromContents), không thì lề cắt mất ô.
         if (qobject_cast<QLineEdit *>(w) && inFilterBar(w) && w->parentWidget()->layout())
-            w->parentWidget()->layout()->setContentsMargins(POPUP_MARGIN, 0, POPUP_MARGIN, 0);
+            w->parentWidget()->layout()->setContentsMargins(POPUP_MARGIN, 0, POPUP_MARGIN, POPUP_MARGIN);
         // Mục 24: popup Filter của thanh tìm không có dòng "For more advanced
         // searches:" + nút cài/mở KFind (search/popup.cpp 26.08.1: nhãn, nút
         // ngay sau, khoảng trống 12px ngay trước — ẩn cả ba).
@@ -843,6 +847,38 @@ public:
                     next->widget()->hide();
                 if (QLayoutItem *gap = box->itemAt(i - 1); gap && gap->spacerItem())
                     gap->spacerItem()->changeSize(0, 0);
+                label->hide();
+            }
+        }
+        // Mục 24: popup Filter cũng không có nhóm "Search using:" — chọn giữa
+        // Simple search và File Indexing (Baloo). Image không cài trình đánh
+        // chỉ mục (kf6-baloo-file) nên File Indexing không ra kết quả và nút
+        // ⚙ cạnh nó mở trang cài đặt không có; còn một công cụ thì Dolphin
+        // build không Baloo cũng không hiện nhóm này. /etc/xdg/dolphinrc khoá
+        // SearchTool=Filenamesearch. Thứ tự (search/popup.cpp 26.08.1): khoảng
+        // trống 12, nhãn, dòng Simple search (nút + ⓘ), dòng File Indexing
+        // (nút + ⓘ + ⚙), khoảng trống 12. Hai dòng là QHBoxLayout: chuyển các
+        // con sang một widget ẩn chứ không hide() — Dolphin tự setVisible ⓘ
+        // của Simple search mỗi lần đổi "Search in" (Popup::updateState).
+        if (auto *label = qobject_cast<QLabel *>(w); label && label->text() == QLatin1String("Search using:")) {
+            if (auto *box = qobject_cast<QBoxLayout *>(label->parentWidget() ? label->parentWidget()->layout() : nullptr)) {
+                const int i = box->indexOf(label);
+                auto *hidden = new QWidget(label->parentWidget());
+                hidden->hide();
+                for (int row = i + 1; row <= i + 2; ++row) {
+                    QLayout *rowLayout = box->itemAt(row) ? box->itemAt(row)->layout() : nullptr;
+                    QList<QWidget *> rowWidgets;
+                    for (int j = 0; rowLayout && j < rowLayout->count(); ++j) {
+                        if (QWidget *rw = rowLayout->itemAt(j)->widget())
+                            rowWidgets << rw;
+                    }
+                    for (QWidget *rw : rowWidgets)
+                        rw->setParent(hidden);  // Qt tự gỡ khỏi dòng
+                }
+                for (int gap : {i - 1, i + 3}) {
+                    if (QLayoutItem *item = box->itemAt(gap); item && item->spacerItem())
+                        item->spacerItem()->changeSize(0, 0);
+                }
                 label->hide();
             }
         }
@@ -1193,6 +1229,18 @@ public:
             && !(bopt->features & QStyleOptionToolButton::MenuButtonPopup)) {
             const int side = qMax(bopt->iconSize.width(), bopt->iconSize.height()) + 2 * TOOL_PADDING;
             s = QSize(side, side);
+        }
+        // Mục 24: 🔒 đã ẩn của thanh lọc khai cao = con hiện cao nhất + lề
+        // dưới → thanh lọc cao thêm đúng lề đó (FilterBar::preferredHeight).
+        // Lúc thanh chưa hiện lần nào mọi con đều isHidden() → chỉ bỏ con ẩn
+        // tường minh (Aᴮ).
+        if (ct == CT_ToolButton && w && w->property("samhieFilterBarHeight").toBool() && w->parentWidget()) {
+            int tallest = 0;
+            for (QWidget *sib : w->parentWidget()->findChildren<QWidget *>(Qt::FindDirectChildrenOnly)) {
+                if (sib != w && !(sib->isHidden() && sib->testAttribute(Qt::WA_WState_ExplicitShowHide)))
+                    tallest = qMax(tallest, sib->sizeHint().height());
+            }
+            s.setHeight(tallest + POPUP_MARGIN);
         }
         // Dòng menu cao bằng nhịp sidebar Places (41px với Dongle): Kvantum lấy
         // max(chữ + khung, chiều cao font + 8 "như qcommonstyle") — với hộp

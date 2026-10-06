@@ -46,3 +46,12 @@ ShowOpenInNewWindow=false
 ShowSortBy=false
 ShowViewMode=false
 ShowDuplicateHere=false
+
+[Search]
+# Tìm bằng "Simple search" (kio_filenamesearch: duyệt thư mục, tìm nội dung
+# bằng grep). Image không cài trình đánh chỉ mục Baloo (kf6-baloo-file) nên
+# "File Indexing" không ra kết quả — style "samhie" ẩn nhóm chọn đó trong
+# popup Filter của thanh tìm (mục 24). [$i] = khoá, ~/.config/dolphinrc không
+# đè được: ai lỡ chọn File Indexing ở bản cũ cũng về Simple search.
+# Khoá: search/dolphin_searchsettings.kcfg (26.08.1).
+SearchTool[$i]=Filenamesearch

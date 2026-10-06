@@ -104,6 +104,9 @@ Hai file đã sửa (MIT cho sửa):
 | `wifi-lock` | `wifi-lock` |
 | `wired` | `computer-ethernet` |
 | `x` | `x` |
+| `zoom-default` | `search-replace` |
+| `zoom-in` | `zoom-in` |
+| `zoom-out` | `zoom-out` |
 
 Chỗ dùng của từng hình (tên icon freedesktop, cỡ): bảng `MAP` và `SIZE` trong
 `tools/build-icons.py`.

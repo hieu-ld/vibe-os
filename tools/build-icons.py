@@ -131,6 +131,11 @@ MAP = {
                    ("actions", "edit-clear-locationbar-ltr"),
                    ("actions", "edit-clear")],
     "filter":     [("actions", "view-filter")],
+    # Zoom (Dolphin ẩn dòng Zoom trong menu ▦ — style mục 24 — nhưng tên chuẩn
+    # còn hiện ở app khác: trình xem ảnh/PDF).
+    "zoom-in":    [("actions", "zoom-in")],
+    "zoom-out":   [("actions", "zoom-out")],
+    "zoom-default": [("actions", "zoom-original")],
     # Hành động KDE (menu chỉ có chữ từ 2026-10-06, nhưng tên vẫn hiện ở
     # thanh công cụ, hộp thoại, nút bấm).
     "copy":       [("actions", "edit-copy"), ("actions", "edit-copy-path")],

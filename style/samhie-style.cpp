@@ -150,7 +150,23 @@
 //      tab Dolphin (cao bằng dải tab — mục 5) và nút icon trên thanh công cụ
 //      Dolphin (☰ do KHamburgerMenu dựng cao bằng thanh, 34×42 — container),
 //      nút × của thanh tìm (Dolphin xếp nó lùn hơn icon: ô hover 26×14 —
-//      container) — nút đó được nới tối thiểu bằng ô vuông.
+//      container) — nút đó được nới tối thiểu bằng ô vuông. Nút ⊖ ⟲ ⊕ dòng
+//      Zoom (menu ▦ của Dolphin): ô hover vuông, KHÔNG có khung nền thường
+//      trực — Dolphin dựng QToolButton không autoRaise nên Kvantum vẽ khung
+//      vuông cho cả ba nút, rê chuột thì thêm ô hover bo góc đè lên (ảnh user
+//      2026-10-06: "như có tận 2 ô hover"); Dolphin cho nút cao bằng dòng
+//      menu − 4 (~36px).
+//  24. Bớt chi tiết thừa trong Dolphin (user 2026-10-06): bút chì "sửa
+//      đường dẫn" (trỏ vào thanh đã hiện con trỏ chữ I), nút "lưu tìm kiếm"
+//      trong ô tìm (thêm mục vào sidebar), dòng Zoom trong menu (phím tắt
+//      vẫn chạy), 🔒 + Aᴮ của thanh lọc, dòng KFind trong popup Filter của
+//      thanh tìm, hai dòng "Focus … Panel" trong Show Panels (phím tắt vẫn
+//      chạy). Thanh lọc (F10 → Filter) cũng không viền focus cyan, ô
+//      hover vuông như thanh tìm (mục 20, 21).
+//  23. Vạch ngăn thanh công cụ (giữa ⊙→ và ▦ của Dolphin): 1px màu
+//      FRAME_LINE, cao TOOLBAR_SEPARATOR_HEIGHT, ở giữa khoảng trống giữa ô
+//      icon hai nút bên cạnh (user 2026-10-06). Kvantum vẽ 2px gần trùng nền
+//      (#282c2d trên #262a2b), cao 29px — đo ảnh máy ảo.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -181,6 +197,7 @@
 #include <QTabBar>
 #include <QTabWidget>
 #include <QToolBar>
+#include <QLabel>
 #include <QLineEdit>
 #include <QTimer>
 #include <QToolButton>
@@ -188,6 +205,7 @@
 #include <QWidgetAction>
 
 #include <algorithm>
+#include <climits>
 
 #include "colors.h"  // sinh từ theme/palette.toml (tools/gen-theme.py)
 
@@ -196,6 +214,7 @@ namespace {
 constexpr int SIDEBAR_INDENT = 8;  // bản vẽ: icon sidebar cách mép ~16px (KIO tự chừa 4)
 constexpr int PANE_RADIUS = 12;    // góc viền vùng file Dolphin (bản vẽ ~12) = góc cửa sổ
 constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6px mỗi phía
+constexpr int TOOLBAR_SEPARATOR_HEIGHT = 18;  // icon thanh công cụ cao ~20px (mục 23)
 constexpr int POPUP_MARGIN = 8;    // thẻ tìm cách mép vùng file
 constexpr int POPUP_PADDING = 10;  // nội dung cách mép thẻ
 constexpr int POPUP_RADIUS = 12;
@@ -233,21 +252,22 @@ bool isUrlNavigatorButton(const QWidget *w)
     return w && w->inherits("KDEPrivate::KUrlNavigatorButtonBase");
 }
 
-// Trong thanh đường dẫn hoặc thanh tìm của Dolphin (mục 20).
+// Trong thanh đường dẫn, thanh tìm hoặc thanh lọc (F10 → Filter) của Dolphin
+// (mục 20).
 bool inDolphinLocationOrSearch(const QWidget *w)
 {
     for (; w; w = w->parentWidget()) {
-        if (w->inherits("KUrlNavigator") || w->inherits("Search::Bar"))
+        if (w->inherits("KUrlNavigator") || w->inherits("Search::Bar") || w->inherits("FilterBar"))
             return true;
     }
     return false;
 }
 
-// Trong thanh tìm của Dolphin.
-bool inSearchBar(const QWidget *w)
+// Trong thanh lọc Dolphin (F10 → Filter, Ctrl+I).
+bool inFilterBar(const QWidget *w)
 {
     for (; w; w = w->parentWidget()) {
-        if (w->inherits("Search::Bar"))
+        if (w->inherits("FilterBar"))
             return true;
     }
     return false;
@@ -285,6 +305,13 @@ bool isDolphinView(const QWidget *w)
             return true;
     }
     return false;
+}
+
+// Mục 21: nút icon trong dòng widget của menu (dòng Zoom của Dolphin).
+bool isMenuRowToolButton(const QWidget *w)
+{
+    return qobject_cast<const QToolButton *>(w) && w->parentWidget()
+        && qobject_cast<const QMenu *>(w->parentWidget()->parentWidget());
 }
 
 // Mục 16: nút trong dòng widget của menu (nút → widget dòng → QMenu).
@@ -488,6 +515,23 @@ public:
     }
 };
 
+// Mục 24. Thanh đường dẫn không có bút chì "sửa đường dẫn" ở mép phải khi trỏ
+// chuột (user 2026-10-06: trỏ vào đã hiện con trỏ chữ I). Nút KIO vẽ nó là
+// cả khoảng trống bên phải thanh — bấm chỗ nào cũng vào chế độ sửa, con trỏ
+// chữ I cũng do nó đặt — nên giữ nút, chỉ không vẽ: lúc chưa bấm, nút KHÔNG
+// vẽ gì khác ngoài bút chì (KUrlNavigatorToggleButton::paintEvent, KIO 6.30);
+// lúc đang sửa nó vẽ ✓ như cũ.
+class NoEditPencil : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        return event->type() == QEvent::Paint && !static_cast<QAbstractButton *>(obj)->isChecked();
+    }
+};
+
 // Mục 20. Màu chữ nút trên thanh đường dẫn khi trỏ chuột. Palette rỗng = lại
 // thừa hưởng từ cha.
 class UrlButtonHover : public QObject
@@ -672,15 +716,23 @@ public:
             w->installEventFilter(&m_popup);
             w->parentWidget()->installEventFilter(&m_popup);  // đổi cỡ → vẽ lại thẻ
         }
-        // Mục 20: ô tìm không chớp viền cyan lúc mất focus. Viền focus đã gỡ
-        // khi vẽ (drawPrimitive), nhưng bộ lọc sự kiện của Kvantum bắt
-        // FocusOut rồi cho viền mờ dần TỪ trạng thái "focused" — ghi cứng,
+        // Mục 20: ô tìm / ô lọc không chớp viền cyan lúc mất focus. Viền
+        // focus đã gỡ khi vẽ (drawPrimitive), nhưng bộ lọc sự kiện của Kvantum
+        // bắt FocusOut rồi cho viền mờ dần TỪ trạng thái "focused" — ghi cứng,
         // không đọc cờ focus (eventFiltering.cpp 1.1.6, FocusOut) → chớp một
         // khung cyan (máy ảo 2026-10-06, bấm Filter hoặc bấm ra ngoài). Với
         // ô nhập, bộ lọc đó chỉ lo hiệu ứng focus + màu chữ trên thanh công
-        // cụ (ô tìm không nằm trên thanh công cụ) → gỡ khỏi riêng ô này.
-        if (qobject_cast<QLineEdit *>(w) && inSearchBar(w)) {
+        // cụ (các ô này không nằm trên thanh công cụ) → gỡ khỏi riêng chúng.
+        if (auto *edit = qobject_cast<QLineEdit *>(w); edit && inDolphinLocationOrSearch(w)) {
             w->removeEventFilter(baseStyle());
+            // Mục 24: ô tìm không có nút "lưu tìm kiếm" (thêm một mục vào
+            // sidebar — Samhie giữ sidebar gọn). Dolphin chỉ bật/tắt nó
+            // (setEnabled, search/bar.cpp 26.08.1), không ẩn/hiện lại.
+            const auto actions = edit->actions();
+            for (QAction *a : actions) {
+                if (a->icon().name() == QLatin1String("document-save-symbolic"))
+                    a->setVisible(false);
+            }
         }
         if (w->inherits("KItemListContainer")) {  // mục 13
             auto *view = qobject_cast<QGraphicsView *>(static_cast<QAbstractScrollArea *>(w)->viewport());
@@ -701,10 +753,14 @@ public:
         // ▦ của Dolphin) cao bằng dòng menu thường: Dolphin cho nó cao bằng nút
         // + 4px → ~31px giữa các dòng 41px (container 2026-10-04). ZoomWidget
         // không có Q_OBJECT nên nhận ra theo chỗ đứng: nút → widget → QMenu.
-        if (qobject_cast<QToolButton *>(w) && w->parentWidget()
-            && qobject_cast<QMenu *>(w->parentWidget()->parentWidget())) {
+        if (isMenuRowToolButton(w)) {
             QWidget *row = w->parentWidget();
             row->setMinimumHeight(row->fontMetrics().height() + 2 * MENUITEM_FRAME);
+            // Mục 21: chỉ ô hover, vuông.
+            auto *tb = static_cast<QToolButton *>(w);
+            tb->setAutoRaise(true);
+            const int side = qMax(tb->iconSize().width(), tb->iconSize().height()) + 2 * TOOL_PADDING;
+            tb->setFixedSize(side, side);
         }
         // DolphinStatusBar::paintEvent: drawRoundedRect(palette().window()).
         if (qobject_cast<QMenu *>(w))
@@ -722,6 +778,28 @@ public:
                 trimPlacesMenu(menu);  // mục 19
             });
         }
+        // Mục 24: Dolphin không có dòng Zoom trong menu (⊖ ⟲ ⊕ — Ctrl + lăn
+        // chuột, Ctrl +/−/0 vẫn chạy: đó là các hành động zoom_in/out/reset,
+        // dòng Zoom chỉ là widget gom ba nút). Gỡ lúc menu sắp hiện: Dolphin
+        // thêm hành động sau khi dựng menu. GỠ chứ không setVisible(false):
+        // QMenu đã dựng widget của dòng, ẩn hành động thì widget vẫn nằm đè
+        // lên dòng Sort By (container 2026-10-06). Cùng chỗ: "Focus Places
+        // Panel" / "Focus Terminal Panel" trong Show Panels (user 2026-10-06)
+        // — gỡ khỏi menu, hành động vẫn gắn cửa sổ (KXmlGui) nên Ctrl+P /
+        // Ctrl+Shift+F4 vẫn chạy; ẩn hành động thì Qt tắt luôn phím tắt.
+        if (auto *menu = qobject_cast<QMenu *>(w); menu && QCoreApplication::applicationName() == QLatin1String("dolphin")
+                                                   && !menu->property("samhieNoZoom").toBool()) {
+            menu->setProperty("samhieNoZoom", true);
+            QObject::connect(menu, &QMenu::aboutToShow, menu, [menu] {
+                const auto actions = menu->actions();
+                for (QAction *a : actions) {
+                    if (a->objectName() == QLatin1String("zoom")
+                        || a->objectName() == QLatin1String("focus_places_panel")
+                        || a->objectName() == QLatin1String("focus_terminal_panel"))
+                        menu->removeAction(a);
+                }
+            });
+        }
         if (qobject_cast<QMenu *>(w) && w->parentWidget() && w->parentWidget()->inherits("DolphinTabBar"))
             trimTabMenu(static_cast<QMenu *>(w));  // mục 19
         if (auto *edit = qobject_cast<QLineEdit *>(w); edit && edit->font().family() == QLatin1String("Dongle")
@@ -734,10 +812,45 @@ public:
             const int side = qMax(tb->iconSize().width(), tb->iconSize().height()) + 2 * TOOL_PADDING;
             tb->setMinimumSize(side, side);  // mục 21: nút × thanh tìm
         }
+        // Mục 24: thanh lọc không có 🔒 "Keep Filter When Changing Folders" và
+        // Aᴮ "Match case" (user 2026-10-06: cho gọn). Nhận theo icon — nút
+        // không có tên (filterbar.cpp 26.08.1). Ẩn lúc polish: con được polish
+        // khi thanh hiện lần đầu, TRƯỚC khi Qt hiện các con — con đã ẩn tường
+        // minh thì Qt bỏ qua. Bỏ chọn trước khi ẩn: Aᴮ đọc trạng thái cũ từ
+        // cấu hình, ẩn mà còn bật thì không còn chỗ tắt.
+        if (auto *tb = qobject_cast<QToolButton *>(w); tb && inFilterBar(w)) {
+            const QString icon = tb->icon().name();
+            if (icon == QLatin1String("object-unlocked") || icon == QLatin1String("object-locked")
+                || icon == QLatin1String("format-text-superscript") || icon == QLatin1String("format-text-bold")) {
+                tb->setChecked(false);
+                tb->hide();
+            }
+        }
+        // Bỏ 🔒 thì ô lọc dính viền trái vùng file, × dính góc bo cửa sổ →
+        // lề trái/phải như thẻ tìm. Chỉ hai bên: chiều cao thanh lọc là
+        // sizeHint cao nhất của các con (FilterBar::preferredHeight), lề
+        // trên/dưới sẽ cắt mất ô.
+        if (qobject_cast<QLineEdit *>(w) && inFilterBar(w) && w->parentWidget()->layout())
+            w->parentWidget()->layout()->setContentsMargins(POPUP_MARGIN, 0, POPUP_MARGIN, 0);
+        // Mục 24: popup Filter của thanh tìm không có dòng "For more advanced
+        // searches:" + nút cài/mở KFind (search/popup.cpp 26.08.1: nhãn, nút
+        // ngay sau, khoảng trống 12px ngay trước — ẩn cả ba).
+        if (auto *label = qobject_cast<QLabel *>(w);
+            label && label->text() == QLatin1String("For more advanced searches:")) {
+            if (auto *box = qobject_cast<QBoxLayout *>(label->parentWidget() ? label->parentWidget()->layout() : nullptr)) {
+                const int i = box->indexOf(label);
+                if (QLayoutItem *next = box->itemAt(i + 1); next && next->widget())
+                    next->widget()->hide();
+                if (QLayoutItem *gap = box->itemAt(i - 1); gap && gap->spacerItem())
+                    gap->spacerItem()->changeSize(0, 0);
+                label->hide();
+            }
+        }
         if (isUrlNavigatorButton(w)) {
-            if (w->inherits("KDEPrivate::KUrlNavigatorToggleButton"))
+            if (w->inherits("KDEPrivate::KUrlNavigatorToggleButton")) {
                 w->setMinimumWidth(TOGGLE_SIDE);  // mục 20: đủ chỗ cho ô vuông
-            else
+                w->installEventFilter(&m_noPencil);  // mục 24
+            } else
                 w->installEventFilter(&m_urlHover);
         }
         if (qobject_cast<QToolBar *>(w) && w->window()->inherits("DolphinMainWindow"))
@@ -758,6 +871,7 @@ public:
             w->parentWidget()->removeEventFilter(&m_popup);
         w->removeEventFilter(&m_menuForwarder);
         w->removeEventFilter(&m_urlHover);
+        w->removeEventFilter(&m_noPencil);
         QProxyStyle::unpolish(w);
     }
     using QProxyStyle::unpolish;
@@ -788,8 +902,38 @@ public:
         return QProxyStyle::styleHint(hint, opt, w, ret);
     }
 
+    // Mục 23. Vạch ở giữa khoảng trống giữa ô icon của hai nút hai bên (nút
+    // rộng hẹp khác nhau — vd nút có menu — thì giữa vạch ngăn chưa chắc là
+    // giữa hai icon). Không tìm được nút hai bên thì đặt giữa vạch ngăn.
+    static void drawToolBarSeparator(const QRect &rect, QPainter *p, const QWidget *w)
+    {
+        qreal x = rect.center().x();
+        if (const QWidget *bar = w->parentWidget()) {
+            const QRect me = w->geometry();
+            int left = INT_MIN, right = INT_MAX;
+            for (const auto *tb : bar->findChildren<QToolButton *>(Qt::FindDirectChildrenOnly)) {
+                if (!tb->isVisible())
+                    continue;
+                const QRect g = tb->geometry();
+                const int half = tb->iconSize().width() / 2;
+                if (g.right() < me.left())
+                    left = qMax(left, g.center().x() + 1 + half);
+                else if (g.left() > me.right())
+                    right = qMin(right, g.center().x() + 1 - half);
+            }
+            if (left != INT_MIN && right != INT_MAX)
+                x = w->mapFromParent(QPoint((left + right) / 2, 0)).x();
+        }
+        const int h = qMin(TOOLBAR_SEPARATOR_HEIGHT, rect.height());
+        p->fillRect(QRect(int(x), rect.top() + (rect.height() - h) / 2, 1, h), QColor(samhie::FRAME_LINE));
+    }
+
     void drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
     {
+        if (pe == PE_IndicatorToolBarSeparator && w && (opt->state & State_Horizontal)) {
+            drawToolBarSeparator(opt->rect, p, w);  // mục 23
+            return;
+        }
         // Mục 20: tên thư mục / mũi tên không có ô hover (chữ đổi màu thay);
         // nút ✓ có ô vuông ở giữa.
         if (pe == PE_PanelButtonCommand && isUrlNavigatorButton(w)) {
@@ -911,9 +1055,14 @@ public:
         // combo_as_lineedit) hỏi thẳng cb->hasFocus() chứ không chỉ đọc state
         // → bỏ cờ focus VÀ không đưa widget (chỉ dùng để hỏi focus / ô nhập
         // trong suốt — ô của KUrlComboBox đục, cùng nhánh khi không có widget).
-        if (cc == CC_ComboBox && w && w->parentWidget() && w->parentWidget()->inherits("KUrlNavigator")) {
+        if (cc == CC_ComboBox && w && w->parentWidget()
+            && (w->parentWidget()->inherits("KUrlNavigator") || inFilterBar(w))) {
             QStyleOptionComboBox o(*qstyleoption_cast<const QStyleOptionComboBox *>(opt));
             o.state &= ~State_HasFocus;
+            // Dropdown thanh lọc đang mở danh sách: Kvantum vẽ "đang bấm" bằng
+            // viền cyan như focus (máy ảo 2026-10-06) → vẽ như thường.
+            if (inFilterBar(w))
+                o.state &= ~(State_On | State_Sunken);
             QProxyStyle::drawComplexControl(cc, &o, p, nullptr);
             return;
         }
@@ -923,6 +1072,21 @@ public:
 
     void drawControl(ControlElement ce, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
     {
+        // Mục 21: dòng widget trong menu (dòng Zoom của Dolphin tự vẽ nền
+        // bằng CE_MenuItem, state lấy từ chính nó) không vẽ trạng thái trỏ.
+        // Trỏ vào nút ⊖ ⟲ ⊕ thì dòng vẽ lại ĐÚNG ô dưới nút, đang "trỏ" →
+        // nền hover dòng menu; chuột rời đi dòng không vẽ lại → ô #262626
+        // vuông nằm lại dưới nút (container 2026-10-06; ảnh user: "như có
+        // tận 2 ô hover"). Dòng này vốn không sáng khi trỏ vào chữ Zoom.
+        if (ce == CE_MenuItem && w && !qobject_cast<const QMenu *>(w)
+            && qobject_cast<const QMenu *>(w->parentWidget())) {
+            if (auto *mopt = qstyleoption_cast<const QStyleOptionMenuItem *>(opt)) {
+                QStyleOptionMenuItem o(*mopt);
+                o.state &= ~(State_MouseOver | State_Selected);
+                QProxyStyle::drawControl(ce, &o, p, w);
+                return;
+            }
+        }
         // Tab đang mở (dải tab kiểu document: Konsole, Dolphin) trong như vùng
         // nội dung bên dưới: card với độ đục cửa sổ, tô ĐÈ (Source) lên nền
         // cửa sổ — Kvantum tô chồng (SourceOver) thì thành ~99% đục (máy ảo
@@ -1149,6 +1313,7 @@ private:
     PopupPainter m_popup;
     MenuButtonForwarder m_menuForwarder;
     UrlButtonHover m_urlHover;
+    NoEditPencil m_noPencil;
     // Mục 14: ô đệm phải của tiêu đề cột, Dolphin vẽ ngay trước cột cuối.
     mutable QRect m_headerEnd;
 };

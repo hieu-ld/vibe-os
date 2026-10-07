@@ -218,7 +218,8 @@
 //      view-list-details (viewsettingspage.cpp 26.08.1) — chữ đổi theo ngôn ngữ.
 //  35. Danh sách Configure Keyboard Shortcuts bớt các dòng KHÔNG còn dùng
 //      được ở Samhie (user 2026-10-07: "ẩn và không còn sử dụng"; ẩn khỏi
-//      menu mà phím tắt vẫn chạy thì giữ). Bộ lọc tìm của danh sách hiện lại
+//      menu mà phím tắt vẫn chạy thì giữ), và dòng trùng việc dòng khác / không
+//      phải lệnh (user, đợt 2 cùng ngày). Bộ lọc tìm của danh sách hiện lại
 //      dòng ẩn → xoá hẳn dòng (hành động vẫn còn). Danh sách: REMOVED_SHORTCUTS.
 //  36. Trang Interface của Configure Dolphin dùng icon nét riêng
 //      (samhie-settings-interface) thay icon APP org.kde.dolphin — đổi tên đó
@@ -736,6 +737,22 @@ const QSet<QString> REMOVED_SHORTCUTS = {
     // Bỏ cùng tầng Configure của menu ☰ (mục 29)
     QStringLiteral("window_color_sheme"), QStringLiteral("switch_application_language"),
     QStringLiteral("options_configure_toolbars"),
+    // Đợt 2 (user 2026-10-07: "dòng nào dư thừa thì bỏ luôn"):
+    // cần app image không cài — Kompare; Filelight (không có thì hành động chỉ
+    // mời cài)
+    QStringLiteral("compare_files"), QStringLiteral("manage_disk_space"),
+    // sắp theo dữ liệu Baloo: image không có bộ đánh chỉ mục, và chỗ gắn nhãn/
+    // điểm/ghi chú đã bỏ (Assign Tags — mục 38, panel Information — mục 24)
+    QStringLiteral("sort_by_rating"), QStringLiteral("sort_by_tags"), QStringLiteral("sort_by_comment"),
+    // Unlock Panels: đã gỡ khỏi menu sidebar (mục 19) — mở khoá phá bố cục
+    QStringLiteral("lock_panels"),
+    // bản "toggle" của Search…/Filter… (Ctrl+F, Ctrl+I) — cùng việc, chỉ để
+    // gắn lên thanh công cụ; nút 🔍 vẫn chạy
+    QStringLiteral("toggle_search"), QStringLiteral("toggle_filter"),
+    // không phải lệnh: "Location Bar" là chính thanh đường dẫn đặt trên thanh
+    // công cụ; "Change View Mode" là nút chọn chế độ xem mà thanh của Samhie
+    // không dùng (có ▦, Icons Ctrl+1, Details Ctrl+2)
+    QStringLiteral("url_navigators"), QStringLiteral("view_mode"),
 };
 
 // Mục 35: xoá dòng của hành động trong REMOVED_SHORTCUTS, rồi nhóm con rỗng.

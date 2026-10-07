@@ -12,6 +12,9 @@ User tải từ trang web 2026-10-06 (lọc chỉ icon free), đặt tên theo c
 thêm `folder`, `context-menu`, `interface`, `general`, `content-display` và
 mười lăm icon cho trang Context Menu ngày 2026-10-07 (đối chiếu cùng commit,
 khớp đủ mọi nét).
+Hai mươi sáu icon cho hộp thoại Configure Keyboard Shortcuts (2026-10-07,
+user nhờ tìm): Claude lấy thẳng từ thư mục `icons/` của repo ở commit trên,
+chỉ đổi màu `#141B34` của repo thành `currentColor` (như bản tải từ web).
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
 (icon Pro KHÔNG được đưa vào mã nguồn mở, xem README của repo đó).
@@ -51,9 +54,13 @@ Hai file đã sửa (MIT cho sửa):
 | `bluetooth` | `bluetooth-connected` |
 | `bookmark` | `bookmark-02` |
 | `bookmark-plus` | `bookmark-add-02` |
+| `bug` | `bug-01` |
+| `cancel` | `cancel-circle` |
 | `check` | `check` |
-| `compress` | `folder-zip` |
 | `close` | `circle-x` |
+| `close-tab` | `cancel-square` |
+| `compare` | `file-diff` |
+| `compress` | `folder-zip` |
 | `content-display` | `content-writing` |
 | `context-menu` | `mouse-right-click-04` |
 | `copy` | `copy-02` |
@@ -62,28 +69,35 @@ Hai file đã sửa (MIT cho sửa):
 | `dark-mode` | `moon-star` |
 | `details` | `list` |
 | `disk-image` | `software` |
+| `disk-usage` | `pie-chart` |
+| `donate` | `favourite` |
 | `down-2` | `arrow-down-02` |
 | `download` | `square-arrow-down-03` |
 | `download-service` | `download-04` |
 | `duplicate` | `copy-01` |
 | `edit` | `pencil-edit-02` |
 | `extract` | `folder-archive` |
+| `file-new` | `file-add` |
 | `filter` | `filter` |
 | `folder` | `folder-01` |
 | `folder-edit` | `folder-edit` |
 | `folder-export` | `folder-export` |
+| `folder-new` | `folder-plus` |
 | `general` | `left-to-right-list-triangle` |
 | `git` | `git-branch` |
+| `handbook` | `book-open-01` |
+| `help` | `help-circle` |
 | `hide` | `eye-closed` |
-| `folder-new` | `folder-plus` |
 | `icons` | `grid-view` |
 | `interface` | `dashboard-browsing` |
+| `invert-selection` | `contrast` |
 | `lock` | `lock-keyhole` |
 | `login` | `login-02` |
 | `logout` | `logout-02` |
 | `makefile-action` | `gears` |
 | `max` | `circle-arrow-expand-01` |
 | `menu` | `menu` |
+| `menubar` | `layout-top` |
 | `min` | `circle-arrow-shrink-01` |
 | `minus` | `circle-minus` |
 | `network` | `house-wifi` |
@@ -92,6 +106,7 @@ Hai file đã sửa (MIT cho sửa):
 | `next-2` | `arrow-right-02` |
 | `night-light` | `sun-moon` |
 | `noti-off` | `bell-off` |
+| `open-folder` | `folder-open` |
 | `paste` | `file-paste` |
 | `pin` | `pin` |
 | `play-square` | `play-square` |
@@ -99,22 +114,36 @@ Hai file đã sửa (MIT cho sửa):
 | `power` | `power` |
 | `prev` | `circle-arrow-left-02` |
 | `prev-2` | `arrow-left-02` |
+| `preview` | `image-01` |
+| `print` | `printer` |
+| `properties` | `information-square` |
+| `quit` | `logout-04` |
 | `recent` | `history` |
+| `redo` | `redo-03` |
 | `refresh` | `refresh-ccw` |
 | `rename` | `pencil-edit-01` |
 | `restart` | `rotate-ccw` |
+| `restore` | `undo` |
 | `search` | `search-01` |
+| `select-all` | `tick-double-02` |
 | `settings` | `settings-01` |
+| `show-hidden` | `view` |
 | `shut-down` | `shut-down` |
+| `sidebar` | `view-sidebar-left` |
 | `sleep` | `moon-02` |
-| `sort` | `arrow-data-transfer-vertical` |
 | `smart-home` | `home-02` |
+| `sort` | `arrow-data-transfer-vertical` |
 | `split` | `square-split-horizontal` |
+| `stop` | `stop-circle` |
 | `storage` | `hdd` |
+| `swap` | `arrow-data-transfer-horizontal` |
 | `terminal` | `square-terminal` |
+| `terminal-panel` | `command-line` |
 | `trash-delete` | `delete-01` |
 | `trash-empty` | `waste` |
 | `trash-full` | `waste` (+ 3 vạch dọc user thêm) |
+| `undo` | `undo-03` |
+| `unlock` | `lock-keyhole-open` |
 | `up-2` | `arrow-up-02` |
 | `volume-35` | `volume-high` bỏ sóng (user tải `volume`) |
 | `volume-70` | `volume-01` |

@@ -78,7 +78,8 @@ MAP = {
     "shut-down":  [("actions", "system-shutdown")],
     "restart":    [("actions", "system-reboot")],
     "sleep":      [("actions", "system-suspend")],
-    "lock":       [("actions", "system-lock-screen")],
+    "lock":       [("actions", "system-lock-screen"),
+                   ("actions", "object-locked")],   # Lock Panels
     "logout":     [("actions", "system-log-out")],
     "login":      [("actions", "samhie-log-in")],   # nút đăng nhập SDDM
     # Mũi tên thẳng (20px: lịch, menu khay)
@@ -99,7 +100,8 @@ MAP = {
     "smart-home": [("places", "samhie-user-home"), ("actions", "go-home")],
     "download":   [("places", "samhie-folder-download")],
     "network":    [("places", "folder-network")],
-    "trash-empty": [("places", "user-trash")],
+    "trash-empty": [("places", "user-trash"),
+                    ("actions", "trash-empty")],   # Move to Trash…, Empty Trash
     "trash-full": [("places", "user-trash-full")],
     "storage":    [("devices", "drive-harddisk")],   # mục Storage của sidebar
     "recent":     [("actions", "document-open-recent")],
@@ -115,7 +117,9 @@ MAP = {
     "details":    [("actions", "view-list-tree"), ("actions", "view-list-details")],
     "menu":       [("actions", "application-menu")],
     # Nút tìm thanh công cụ Dolphin; cũng là ô tìm tổng quan/clipboard.
-    "search":     [("actions", "system-search")],
+    "search":     [("actions", "system-search"),
+                   ("actions", "edit-find"),   # Search…, Toggle Search Bar
+                   ("actions", "search")],     # Find Action… (KCommandBar)
     # Nút lùi/tiến hình tròn của Dolphin. Tên RIÊNG, không đè
     # go-previous/go-next: hai tên đó còn dùng ở menu khay, lịch.
     # dolphin-ui.sh gán tên này cho go_back/go_forward.
@@ -171,7 +175,8 @@ MAP = {
     "duplicate":  [("actions", "edit-duplicate")],
     "new-windows": [("actions", "window-new")],
     "sort":       [("actions", "view-sort")],
-    "hide":       [("actions", "hide_table_row")],       # tên của plugin Hide (KIO)
+    "hide":       [("actions", "hide_table_row"),        # tên của plugin Hide (KIO)
+                   ("actions", "view-hidden")],
     # … và tên RIÊNG, style "samhie" gán cho đúng dòng (mục 39): tên gốc là
     # icon app Ark / icon LOẠI FILE (text-x-makefile, application-x-cd-image —
     # đổi chung thì file Makefile, .iso trong Dolphin đổi theo) / code-class
@@ -187,6 +192,40 @@ MAP = {
     # Nút "Download Services…" (KNewStuff). Hình download của sidebar trông nhỏ
     # trên nút (user 2026-10-07) → hình riêng.
     "download-service": [("actions", "get-hot-new-stuff")],
+    # Hộp thoại Configure Keyboard Shortcuts (nút Shortcuts… của trang Context
+    # Menu, 16px). Tên in từ chính hộp thoại 2026-10-07 (Dolphin 26.08.1,
+    # KF 6.30): mọi dòng còn rơi về Breeze, cộng bốn nút dưới hộp thoại.
+    # kompare/filelight là tên icon APP — hai app đó không có trong image,
+    # bản Flatpak dùng tên org.kde.*, nên đè ở đây chỉ đổi dòng của Dolphin.
+    # Giữ logo `kde` (About KDE) như logo Dolphin ở dòng About Dolphin.
+    "compare":    [("actions", "kompare")],                # Compare Files
+    "file-new":   [("actions", "document-new")],           # Create File…
+    "undo":       [("actions", "edit-undo")],              # Undo, Undo close tab
+    "redo":       [("actions", "edit-redo")],
+    "select-all": [("actions", "edit-select-all")],
+    "invert-selection": [("actions", "edit-select-invert")],
+    "close-tab":  [("actions", "document-close")],
+    "quit":       [("actions", "application-exit")],
+    "swap":       [("actions", "swap-panels")],            # Focus Other View / Places / Terminal
+    "handbook":   [("actions", "help-contents")],
+    "donate":     [("actions", "help-donate-usd"), ("actions", "help-donate")],
+    "bug":        [("actions", "tools-report-bug")],
+    "help":       [("actions", "help-contextual")],        # What's This?
+    "unlock":     [("actions", "object-unlocked")],        # Unlock Panels (khoá: `lock`)
+    "disk-usage": [("actions", "filelight")],              # Manage Disk Space Usage
+    "menubar":    [("actions", "show-menu")],
+    "properties": [("actions", "document-properties")],
+    # Restore to Defaults (trang View) và nút Defaults của hộp thoại
+    "restore":    [("actions", "view-restore"), ("actions", "document-revert")],
+    "show-hidden": [("actions", "view-visible")],          # ẩn: `hide`
+    "sidebar":    [("actions", "compass")],                # panel Places
+    "preview":    [("actions", "view-preview")],
+    "open-folder": [("actions", "document-open-folder")],  # Show Target
+    # Panel Terminal (F4). Dolphin cho cả menu con "Location Bar" cùng tên này.
+    "terminal-panel": [("actions", "dialog-scripts")],
+    "stop":       [("actions", "process-stop")],
+    "cancel":     [("actions", "dialog-cancel")],
+    "print":      [("actions", "document-print")],
     # Ô quick settings (20px)
     "dark-mode":  [("actions", "samhie-dark-style")],
     "bell-off":   [("actions", "samhie-do-not-disturb")],
@@ -317,6 +356,20 @@ NUDGE = {
     "wifi-1": (20, -0.5, 0.375),
     "wifi-2": (20, -0.5, 0.375),
     "wifi": (20, -0.5, 0.375),
+    # Hộp thoại Configure Keyboard Shortcuts (2026-10-07)
+    "bug": (16, -0.5, -0.125),           # mờ 0.48 → 0.36
+    "compare": (16, -0.5, -0.25),        # mờ 0.51 → 0.38
+    "disk-usage": (16, -0.25, 0.25),     # mờ 0.51 → 0.40
+    "invert-selection": (16, -0.5, 0.125),  # mờ 0.49 → 0.38
+    "menubar": (16, -0.5, -0.5),         # mờ 0.60 → 0.37
+    "preview": (16, -0.5, 0.375),        # mờ 0.51 → 0.44
+    "properties": (16, -0.5, 0.25),      # mờ 0.57 → 0.46
+    "quit": (16, -0.5, -0.5),            # mờ 0.66 → 0.29
+    "redo": (16, 0.25, 0.125),           # mờ 0.46 → 0.34
+    "restore": (16, -0.5, 0.375),        # mờ 0.54 → 0.42
+    "sidebar": (16, -0.5, -0.5),         # mờ 0.71 → 0.16
+    "swap": (16, 0.125, -0.5),           # mờ 0.76 → 0.17
+    "undo": (16, -0.25, 0.125),          # mờ 0.46 → 0.35
 }
 
 

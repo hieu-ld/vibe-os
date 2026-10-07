@@ -1,0 +1,14 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/hide.svg.
+     Sinh bằng tools/build-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0.75 0.5625 24 24" stroke-width="1.5" stroke-linecap="round">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <path d="M12 13.5V16.5" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M16 13L17 15.5" stroke-linejoin="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M19.5 11L21.5 13" stroke-linejoin="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M2.5 13L4.5 11" stroke-linejoin="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M8 13L7 15.5" stroke-linejoin="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M2 7.5C2 7.5 5 13.5 12 13.5C19 13.5 22 7.5 22 7.5" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+</svg>

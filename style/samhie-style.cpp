@@ -169,9 +169,10 @@
 //      FRAME_LINE, cao TOOLBAR_SEPARATOR_HEIGHT, ở giữa khoảng trống giữa ô
 //      icon hai nút bên cạnh (user 2026-10-06). Kvantum vẽ 2px gần trùng nền
 //      (#282c2d trên #262a2b), cao 29px — đo ảnh máy ảo.
-//  25. Radio/checkbox bấm bằng chuột không có khung focus cyan quanh chữ
-//      (user 2026-10-06, popup Filter của thanh tìm Dolphin); đi bằng Tab
-//      thì vẫn có.
+//  25. Radio/checkbox không có khung focus cyan quanh chữ (user 2026-10-06,
+//      popup Filter của thanh tìm Dolphin). Bấm chuột: không gì cả. Đi bằng
+//      Tab: nền như ô hover bo MENUITEM_RADIUS quanh vòng + chữ (user
+//      2026-10-07) — trên popup/menu màu hover, trên nền cửa sổ sub-secondary.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -1196,13 +1197,26 @@ public:
             QProxyStyle::drawControl(ce, &o, p, w);
             return;
         }
-        // Mục 25: radio/checkbox vừa bấm chuột không có khung focus cyan quanh
-        // chữ. Đi bằng Tab (State_KeyboardFocusChange) thì vẫn vẽ — không thì
-        // không biết đang đứng ở ô nào.
-        if ((ce == CE_RadioButton || ce == CE_CheckBox) && button && (button->state & State_HasFocus)
-            && !(button->state & State_KeyboardFocusChange)) {
+        // Mục 25: radio/checkbox không có khung focus cyan quanh chữ. Bấm chuột
+        // thì thôi hẳn; đi bằng Tab (State_KeyboardFocusChange) thì ô đang
+        // đứng có nền như ô hover — không thì bấm Space không biết chọn ô nào.
+        if ((ce == CE_RadioButton || ce == CE_CheckBox) && button && (button->state & State_HasFocus)) {
             QStyleOptionButton o(*button);
             o.state &= ~State_HasFocus;
+            if (button->state & State_KeyboardFocusChange) {
+                o.state |= State_MouseOver;  // vòng/ô vuông sáng lên như lúc trỏ chuột
+                const bool radio = ce == CE_RadioButton;
+                const QRect ind = subElementRect(radio ? SE_RadioButtonIndicator : SE_CheckBoxIndicator, button, w);
+                const QRect txt = subElementRect(radio ? SE_RadioButtonFocusRect : SE_CheckBoxFocusRect, button, w);
+                const QRect box = ind.united(txt).adjusted(-6, -3, 6, 3) & button->rect;
+                const bool onCard = w && w->window() && w->window()->inherits("QMenu");
+                p->save();
+                p->setRenderHint(QPainter::Antialiasing);
+                p->setPen(Qt::NoPen);
+                p->setBrush(QColor(onCard ? samhie::KEY_FOCUS_FILL : samhie::KEY_FOCUS_FILL_RAISED));
+                p->drawRoundedRect(QRectF(box), samhie::MENUITEM_RADIUS, samhie::MENUITEM_RADIUS);
+                p->restore();
+            }
             QProxyStyle::drawControl(ce, &o, p, w);
             return;
         }

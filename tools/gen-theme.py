@@ -380,11 +380,17 @@ def style_colors_h(pal):
         ("FOCUS_RING", "#b3" + d["accent"].lstrip("#"), "khung focus của ô file (accent 70%)"),
         ("ROW_HOVER", d["hover"], "ô dòng file Dolphin chế độ Details (vuông) — như itemview của Kvantum"),
         ("ROW_SELECTED_BORDER", d["item-selected-border"], "viền ô dòng file đang chọn (= itemview Kvantum)"),
+        # Radio/checkbox đang focus bàn phím (Tab): nền như ô hover thay khung cyan.
+        # Trên popup/menu (nền card) = hover; trên nền cửa sổ (secondary) nâng
+        # một bậc = sub-secondary, như ghi chú của vai trò `hover`.
+        ("KEY_FOCUS_FILL", d["hover"], "radio/checkbox đi bằng Tab, trên nền card (popup, menu)"),
+        ("KEY_FOCUS_FILL_RAISED", d["sub-secondary"], "radio/checkbox đi bằng Tab, trên nền cửa sổ secondary"),
     ]
     out = [f"// {HEADER}", "#pragma once", "", "namespace samhie {"]
     out += [f'constexpr const char *{n} = "{c}";  // {why}' for n, c, why in rows]
     out += [f'constexpr double WINDOW_OPACITY = {pal["window"]["opacity"]};  // [window] opacity']
     out += [f'constexpr int ITEM_RADIUS = {kvantum.RADIUS["itemview"]};  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)']
+    out += [f'constexpr int MENUITEM_RADIUS = {kvantum.RADIUS["menuitem"]};  // góc ô hover dòng menu = RADIUS["menuitem"] (tools/kvantum.py)']
     out += [f'constexpr int TAB_RADIUS = {kvantum.RADIUS["tab"]};  // góc trên tab = RADIUS["tab"] (tools/kvantum.py)']
     out += [f'constexpr int TAB_INSET = {kvantum.TAB_INSET};  // khe trên tab = TAB_INSET (tools/kvantum.py)']
     out += ["}", ""]

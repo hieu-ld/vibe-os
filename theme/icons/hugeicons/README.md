@@ -9,8 +9,9 @@
 | sha256 | `SHA256SUMS` |
 
 User tải từ trang web 2026-10-06 (lọc chỉ icon free), đặt tên theo chỗ dùng;
-thêm `folder`, `context-menu`, `interface`, `general`, `content-display`
-ngày 2026-10-07 (đối chiếu cùng commit, khớp đủ mọi nét).
+thêm `folder`, `context-menu`, `interface`, `general`, `content-display` và
+mười icon cho trang Context Menu ngày 2026-10-07 (đối chiếu cùng commit,
+khớp đủ mọi nét).
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
 (icon Pro KHÔNG được đưa vào mã nguồn mở, xem README của repo đó).
@@ -49,7 +50,9 @@ Hai file đã sửa (MIT cho sửa):
 | `bell-off` | `bell-off` |
 | `bluetooth` | `bluetooth-connected` |
 | `bookmark` | `bookmark-02` |
+| `bookmark-plus` | `bookmark-add-02` |
 | `check` | `check` |
+| `compress` | `folder-zip` |
 | `close` | `circle-x` |
 | `content-display` | `content-writing` |
 | `context-menu` | `mouse-right-click-04` |
@@ -57,23 +60,30 @@ Hai file đã sửa (MIT cho sửa):
 | `cut` | `square-bottom-dashed-scissors` |
 | `dark-mode` | `moon-star` |
 | `details` | `list` |
+| `disk-image` | `software` |
 | `down-2` | `arrow-down-02` |
 | `download` | `square-arrow-down-03` |
+| `duplicate` | `copy-01` |
 | `edit` | `pencil-edit-02` |
+| `extract` | `folder-archive` |
 | `filter` | `filter` |
 | `folder` | `folder-01` |
 | `general` | `left-to-right-list-triangle` |
+| `git` | `git-branch` |
+| `hide` | `eye-closed` |
 | `folder-new` | `folder-plus` |
 | `icons` | `grid-view` |
 | `interface` | `dashboard-browsing` |
 | `lock` | `lock-keyhole` |
 | `login` | `login-02` |
 | `logout` | `logout-02` |
+| `makefile-action` | `gears` |
 | `max` | `circle-arrow-expand-01` |
 | `menu` | `menu` |
 | `min` | `circle-arrow-shrink-01` |
 | `minus` | `circle-minus` |
 | `network` | `house-wifi` |
+| `new-windows` | `layer-add` |
 | `next` | `circle-arrow-right-02` |
 | `next-2` | `arrow-right-02` |
 | `night-light` | `sun-moon` |
@@ -92,6 +102,7 @@ Hai file đã sửa (MIT cho sửa):
 | `settings` | `settings-01` |
 | `shut-down` | `shut-down` |
 | `sleep` | `moon-02` |
+| `sort` | `arrow-data-transfer-vertical` |
 | `smart-home` | `home-02` |
 | `split` | `square-split-horizontal` |
 | `storage` | `hdd` |

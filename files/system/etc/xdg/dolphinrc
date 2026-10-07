@@ -47,6 +47,13 @@ ShowSortBy=false
 ShowViewMode=false
 ShowDuplicateHere=false
 
+[VersionControl]
+# Plugin Git của Dolphin bật sẵn (user 2026-10-07: code nhiều): trạng thái git
+# hiện trên file + menu Git khi bấm chuột phải trong repo. Mercurial,
+# Subversion để tắt. Bật/tắt: Dolphin → Configure → Context Menu.
+# Khoá: dolphin_versioncontrolsettings.kcfg (26.08.1).
+enabledPlugins=Git
+
 [Search]
 # Tìm bằng "Simple search" (kio_filenamesearch: duyệt thư mục, tìm nội dung
 # bằng grep). Image không cài trình đánh chỉ mục Baloo (kf6-baloo-file) nên

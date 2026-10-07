@@ -228,12 +228,15 @@
 //      Q_PROPERTY icon. Chỉ trong hộp thoại Dolphin.
 //  37. Danh sách trong hộp thoại cài đặt (QListView trong KPageDialog, vd
 //      Context Menu): ô hover cách mép PAGE_LIST_GAP, cách nhau
-//      PAGE_LIST_GAP (user 2026-10-07); bấm dòng không để lại viền chọn (danh
-//      sách tích chọn, "chọn dòng" không có nghĩa gì).
+//      PAGE_LIST_GAP (user 2026-10-07); danh sách tích chọn không có viền
+//      chọn ("chọn dòng" vô nghĩa), danh sách chọn (Trash: thùng rác từng ổ)
+//      có nền + viền chọn như danh sách trang.
 //  38. Configure Dolphin → Context Menu bớt dòng không dùng được ở Samhie
 //      (CONTEXT_MENU_HIDDEN). ServiceModel không xoá được dòng → chèn một lớp
 //      lọc giữa model gốc và lớp sắp xếp/tìm của trang (trang không dùng
 //      mapToSource; lưu/đặt lại đọc thẳng model gốc → dòng ẩn giữ nguyên).
+//  39. Trang Context Menu: icon nét riêng cho Compress, Extract, Makefile,
+//      Mount ISO, Git (CONTEXT_MENU_ICONS) — lớp lọc mục 38 trả icon khác.
 //  30. Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -281,6 +284,7 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
+#include <QHash>
 #include <QSortFilterProxyModel>
 #include <QSet>
 #include <QTreeWidget>
@@ -759,15 +763,39 @@ const QSet<QString> CONTEXT_MENU_HIDDEN = {
     QStringLiteral("tagsfileitemaction"),
     // Link Files to Activities: Activity của Plasma, Hyprland không có
     QStringLiteral("kactivitymanagerd_fileitem_linking_plugin"),
-    // Dropbox (cần ứng dụng Dropbox), Bazaar (quản lý phiên bản đã ngừng)
+    // Dropbox (cần ứng dụng Dropbox), Bazaar (quản lý phiên bản đã ngừng),
+    // Mercurial/Subversion (plugin gọi lệnh hg/svn — image không cài; cài
+    // trong toolbox thì Dolphin ở ngoài cũng không thấy)
     QStringLiteral("_version_control_Dropbox"),
     QStringLiteral("_version_control_Bazaar"),
+    QStringLiteral("_version_control_Mercurial"),
+    QStringLiteral("_version_control_Subversion"),
+};
+
+// Mục 39: icon riêng cho từng dòng (tên gốc là icon app Ark, icon LOẠI FILE,
+// hoặc code-class chung cho mọi hệ quản lý phiên bản — tools/build-icons.py).
+const QHash<QString, QString> CONTEXT_MENU_ICONS = {
+    {QStringLiteral("compressfileitemaction"), QStringLiteral("samhie-compress")},
+    {QStringLiteral("extractfileitemaction"), QStringLiteral("samhie-extract")},
+    {QStringLiteral("makefileactions"), QStringLiteral("samhie-makefile")},
+    {QStringLiteral("mountisoaction"), QStringLiteral("samhie-disk-image")},
+    {QStringLiteral("_version_control_Git"), QStringLiteral("samhie-git")},
 };
 
 class ContextMenuRowFilter : public QSortFilterProxyModel
 {
 public:
     using QSortFilterProxyModel::QSortFilterProxyModel;
+
+    QVariant data(const QModelIndex &index, int role) const override
+    {
+        if (role == Qt::DecorationRole) {  // mục 39
+            const QString icon = CONTEXT_MENU_ICONS.value(index.data(Qt::UserRole).toString());
+            if (!icon.isEmpty())
+                return QIcon::fromTheme(icon);
+        }
+        return QSortFilterProxyModel::data(index, role);
+    }
 
 protected:
     bool filterAcceptsRow(int row, const QModelIndex &parent) const override
@@ -1594,10 +1622,17 @@ public:
                     QStyleOptionViewItem panel(o);
                     panel.viewItemPosition = QStyleOptionViewItem::OnlyOne;
                     panel.rect.adjust(PAGE_LIST_GAP, PAGE_LIST_GAP / 2, -PAGE_LIST_GAP, -PAGE_LIST_GAP / 2);
-                    panel.state &= ~State_Selected;
+                    // Danh sách tích chọn: "dòng đang chọn" vô nghĩa → không
+                    // viền chọn. Danh sách chọn (thùng rác của từng ổ, trang
+                    // Trash) thì giữ nền + viền chọn như danh sách trang.
+                    if (o.features & QStyleOptionViewItem::HasCheckIndicator)
+                        panel.state &= ~State_Selected;
                     QProxyStyle::drawPrimitive(PE_PanelItemViewItem, &panel, p, w);
                     o.state &= ~(State_Selected | State_MouseOver);
                     o.viewItemPosition = QStyleOptionViewItem::OnlyOne;
+                    // Nội dung lùi theo ô: chữ không dính mép trái ô (dòng chỉ
+                    // có chữ, Trash — Kvantum để lề chữ ItemView = 0).
+                    o.rect.adjust(2 * PAGE_LIST_GAP, 0, -2 * PAGE_LIST_GAP, 0);
                 } else if (view && o.index.isValid()) {
                     QStyleOptionViewItem panel(o);
                     panel.viewItemPosition = QStyleOptionViewItem::OnlyOne;

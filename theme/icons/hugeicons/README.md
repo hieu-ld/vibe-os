@@ -15,6 +15,8 @@ khớp đủ mọi nét).
 Hai mươi sáu icon cho hộp thoại Configure Keyboard Shortcuts (2026-10-07,
 user nhờ tìm): Claude lấy thẳng từ thư mục `icons/` của repo ở commit trên,
 chỉ đổi màu `#141B34` của repo thành `currentColor` (như bản tải từ web).
+`browse` (nút Browse… của hộp chọn icon) user tải 2026-10-07, đối chiếu cùng
+commit: trùng nét `folder-search`.
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
 (icon Pro KHÔNG được đưa vào mã nguồn mở, xem README của repo đó).
@@ -52,6 +54,7 @@ Hai file đã sửa (MIT cho sửa):
 | `bell` | `bell` |
 | `bell-off` | `bell-off` |
 | `bluetooth` | `bluetooth-connected` |
+| `browse` | `folder-search` |
 | `bookmark` | `bookmark-02` |
 | `bookmark-plus` | `bookmark-add-02` |
 | `bug` | `bug-01` |

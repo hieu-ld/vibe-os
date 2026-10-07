@@ -220,7 +220,15 @@ MAP = {
     "show-hidden": [("actions", "view-visible")],          # ẩn: `hide`
     "sidebar":    [("actions", "compass")],                # panel Places
     "preview":    [("actions", "view-preview")],
-    "open-folder": [("actions", "document-open-folder")],  # Show Target
+    "open-folder": [("actions", "document-open-folder"),  # Show Target
+                    # Nút "Open file dialog" cạnh ô đường dẫn (KUrlRequester,
+                    # kurlrequester.cpp KIO 6.30) — hộp Add/Edit Places Entry
+                    # (user 2026-10-07). Breeze cũng vẽ document-open là
+                    # thư mục mở, nên "Open…" ở app khác vẫn đúng nghĩa.
+                    ("actions", "document-open")],
+    # Nút Browse… của hộp chọn icon (KIconDialog): style "samhie" mục 43 gán
+    # tên riêng — tên gốc folder-open là nút chọn thư mục ở Configure Dolphin.
+    "browse":     [("actions", "samhie-browse")],
     # Panel Terminal (F4). Dolphin cho cả menu con "Location Bar" cùng tên này.
     "terminal-panel": [("actions", "dialog-scripts")],
     "stop":       [("actions", "process-stop")],
@@ -323,6 +331,7 @@ NUDGE = {
     "download": (20, -0.5, -0.5),        # mờ 0.48 → 0.31
     "edit": (16, -0.5, -0.5),            # mờ 0.52 → 0.41
     "filter": (16, 0, -0.5),             # mờ 0.60 → 0.33
+    "browse": (16, 0, -0.375),           # mờ 0.49 → 0.34
     "bookmark-plus": (16, -0.5, 0.125),  # mờ 0.55 → 0.42
     "compress": (16, 0.125, -0.5),       # mờ 0.52 → 0.35
     "content-display": (16, -0.5, 0.125),  # mờ 0.51 → 0.39

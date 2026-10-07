@@ -40,6 +40,7 @@ var NUDGE = {
     "notification-inactive": [18, -1, 0],
     "notifications-disabled": [18, -1, 0],
     "preferences-desktop-icons": [22, -1, -1],
+    "samhie-browse": [16, 0, -1],
     "samhie-compress": [16, 0, -1],
     "samhie-copy-move-to": [16, 0, -1],
     "samhie-disk-image": [16, -1, 0],

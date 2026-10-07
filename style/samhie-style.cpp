@@ -253,7 +253,18 @@
 //      động options_show_menubar đứng đầu (chữ đổi theo ngôn ngữ). Help là
 //      menu thật của thanh menu (dùng chung) → gỡ hành động trong HELP_HIDDEN
 //      khỏi nó. Làm như mục 17: lúc polish + mỗi aboutToShow.
-//  30. Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
+//  42. Hộp Add/Edit Places Entry (chuột phải sidebar Dolphin): ô Label vẽ như
+//      ô nhập thường — bo góc, không khung cyan, chữ cách lề như ô Location
+//      (user 2026-10-07). Hộp thoại có cha là sidebar (KFilePlacesView) nên
+//      Kvantum tưởng ô Label là ô sửa tên trong danh sách (Kvantum.cpp 1.1.6:
+//      cha của cha là QAbstractItemView → khung Highlight 1px vuông, chữ sát
+//      mép, cao theo chữ) → hỏi Kvantum không kèm widget.
+//  43. Hộp chọn icon (KIconDialog — "Choose an icon" của mục 42) chỉ có icon
+//      của bộ Samhie; ô chọn nhóm chỉ còn nhóm bộ đó có, bỏ "Other". Nút
+//      Browse… dùng icon samhie-browse (user 2026-10-07).
+//  44. Hộp thoại chọn file của KDE (KFileWidget, vd Browse…) không có nút
+//      Compact View và Bookmarks (user 2026-10-07) — như Dolphin.
+//  30.Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
 //      QApplication, KHÔNG kèm widget); cả hai tự đặt vị trí ô đầu/giữa/cuối
@@ -297,6 +308,10 @@
 #include <QTabWidget>
 #include <QToolBar>
 #include <QDockWidget>
+#include <QComboBox>
+#include <QDialogButtonBox>
+#include <QSettings>
+#include <QStandardPaths>
 #include <QMainWindow>
 #include <QLabel>
 #include <QLineEdit>
@@ -373,6 +388,27 @@ bool inDolphinLocationOrSearch(const QWidget *w)
 {
     for (; w; w = w->parentWidget()) {
         if (w->inherits("KUrlNavigator") || w->inherits("Search::Bar") || w->inherits("FilterBar"))
+            return true;
+    }
+    return false;
+}
+
+// Mục 42: ô nhập nằm thẳng trong một hộp thoại mà cha của hộp thoại là danh
+// sách — Add/Edit Places Entry (cha là sidebar KFilePlacesView). Kvantum coi
+// "cha của cha là QAbstractItemView" là ô sửa tên ngay trong danh sách. Ô sửa
+// tên thật nằm trong viewport, không phải trong một cửa sổ.
+bool isFakeItemEditor(const QWidget *w)
+{
+    const QWidget *p = w ? w->parentWidget() : nullptr;
+    return qobject_cast<const QLineEdit *>(w) && p && p->isWindow()
+        && qobject_cast<const QAbstractItemView *>(p->parentWidget());
+}
+
+// Nằm (ở cấp nào cũng được) trong một widget thuộc lớp `cls`.
+bool insideClass(const QWidget *w, const char *cls)
+{
+    for (w = w ? w->parentWidget() : nullptr; w; w = w->parentWidget()) {
+        if (w->inherits(cls))
             return true;
     }
     return false;
@@ -936,6 +972,56 @@ private:
     mutable QSet<const QMenu *> m_hiddenMenus;
 };
 
+// Mục 43: hộp chọn icon (KIconDialog) chỉ liệt kê icon của bộ đang dùng
+// (Samhie, user 2026-10-07), không lấy Breeze/hicolor mà bộ đó thừa kế.
+// KIconDialogModel (KF 6.30) giữ đường dẫn file ở Qt::UserRole; KIconLoader
+// đã bỏ tên trùng, giữ bản của bộ đứng trước → bản Samhie thắng bản Breeze.
+class IconThemeFilter : public QSortFilterProxyModel
+{
+public:
+    explicit IconThemeFilter(QObject *parent)
+        : QSortFilterProxyModel(parent)
+        , m_dir(QStringLiteral("/icons/%1/").arg(QIcon::themeName()))
+    {
+    }
+
+protected:
+    bool filterAcceptsRow(int row, const QModelIndex &parent) const override
+    {
+        return sourceModel()->index(row, 0, parent).data(Qt::UserRole).toString().contains(m_dir);
+    }
+
+private:
+    const QString m_dir;
+};
+
+// Nhóm (Context=) có trong bộ icon đang dùng, theo giá trị KIconLoader::Context
+// mà ô chọn nhóm của KIconDialog lưu ở dữ liệu từng dòng (kiconloader.h
+// KF 6.30: Any 0, Action 1, Application 2, Device 3, MimeType 4, Animation 5,
+// Category 6, Emblem 7, Emote 8, International 9, Place 10, StatusIcon 11 —
+// cố định trong ABI KF6; style không link KIconThemes nên ghi số). Đọc
+// index.theme của bộ: bộ thêm nhóm mới thì ô chọn tự có.
+QSet<int> iconThemeContexts()
+{
+    static const QHash<QString, int> ids = {
+        {QStringLiteral("Actions"), 1}, {QStringLiteral("Applications"), 2},
+        {QStringLiteral("Devices"), 3}, {QStringLiteral("MimeTypes"), 4},
+        {QStringLiteral("Categories"), 6}, {QStringLiteral("Emblems"), 7},
+        {QStringLiteral("Emotes"), 8}, {QStringLiteral("Places"), 10},
+        {QStringLiteral("Status"), 11},
+    };
+    QSet<int> found = {0};  // All
+    const QString file = QStandardPaths::locate(QStandardPaths::GenericDataLocation,
+                                                QStringLiteral("icons/%1/index.theme").arg(QIcon::themeName()));
+    QSettings theme(file, QSettings::IniFormat);
+    for (const QString &dir : theme.value(QStringLiteral("Icon Theme/Directories")).toStringList()) {
+        const QString context = theme.value(dir + QStringLiteral("/Context")).toString();
+        if (ids.contains(context))
+            found.insert(ids.value(context));
+    }
+    return found;
+}
+
 // Mục 37: danh sách trong hộp thoại cài đặt (không tính danh sách trang).
 bool isSettingsList(const QWidget *w)
 {
@@ -1398,6 +1484,43 @@ public:
                 tv->setCurrentIndex(rank->index(0, 0));
             });
         }
+        // Mục 43. Mọi thứ được dựng trong hàm tạo KIconDialog; danh sách chỉ
+        // nạp icon lúc hiện (showEvent) → polish là kịp. Lớp lọc chèn DƯỚI
+        // lớp tìm/lọc symbolic của KDE: hộp thoại chọn sẵn icon hiện tại và
+        // đọc icon được chọn bằng chỉ số của lớp đó — lớp đó vẫn nằm trên cùng.
+        if (w->inherits("KIconDialog")) {
+            if (auto *canvas = w->findChild<QListView *>(QStringLiteral("canvas"))) {
+                auto *search = qobject_cast<QSortFilterProxyModel *>(canvas->model());
+                if (search && search->sourceModel() && !dynamic_cast<IconThemeFilter *>(search->sourceModel())) {
+                    auto *filter = new IconThemeFilter(search);
+                    filter->setSourceModel(search->sourceModel());
+                    search->setSourceModel(filter);
+                }
+            }
+            // Ô chọn nhóm: bỏ nhóm bộ icon không có, bỏ "Other" (ảnh PNG rời
+            // trong thư mục icon, không thuộc bộ nào) và vạch ngăn thừa.
+            // KIconDialog::setup() đổi cờ của dòng CUỐI (vốn là Other) chỉ
+            // khi khoá chọn icon riêng — Dolphin không khoá.
+            if (auto *combo = w->findChild<QComboBox *>(QStringLiteral("contextCombo"))) {
+                const QSet<int> keep = iconThemeContexts();
+                for (int i = combo->count() - 1; i >= 0; --i) {
+                    const QVariant id = combo->itemData(i);
+                    const bool separator = combo->itemData(i, Qt::AccessibleDescriptionRole).toString()
+                        == QLatin1String("separator");
+                    if ((!separator && (!id.isValid() || !keep.contains(id.toInt())))
+                        || (separator && i == combo->count() - 1))
+                        combo->removeItem(i);
+                }
+            }
+            // Nút Browse… (icon folder-open — trùng nút chọn thư mục của
+            // Configure Dolphin) dùng icon riêng (user 2026-10-07).
+            if (auto *box = w->findChild<QDialogButtonBox *>(QStringLiteral("buttonBox"))) {
+                for (QAbstractButton *b : box->buttons()) {
+                    if (box->buttonRole(b) == QDialogButtonBox::HelpRole)
+                        b->setIcon(QIcon::fromTheme(QStringLiteral("samhie-browse")));
+                }
+            }
+        }
         // Mục 38: lớp lọc chèn một lần (model của view là lớp sắp xếp/tìm).
         if (auto *lv = qobject_cast<QListView *>(w); lv && lv->parentWidget()
             && lv->parentWidget()->inherits("ContextMenuSettingsPage")) {
@@ -1467,6 +1590,20 @@ public:
         }
         if (qobject_cast<QToolBar *>(w) && w->window()->inherits("DolphinMainWindow"))
             w->setContextMenuPolicy(Qt::PreventContextMenu);  // mục 18
+        // Mục 44: hộp thoại chọn file của KDE (KFileWidget — vd Browse… của hộp
+        // chọn icon) không có nút Compact View và Bookmarks (user 2026-10-07),
+        // như Dolphin. Thanh dựng xong trong hàm tạo KFileWidget, polish lúc
+        // hiện. Nhận theo tên icon (kdiroperator.cpp / kfilewidget.cpp KIO
+        // 6.30: Compact = view-list-details, Details = view-list-tree).
+        // Thanh nằm trong m_opsWidget, trong bộ chia (sidebar | file) của
+        // KFileWidget (đo container 2026-10-08).
+        if (auto *bar = qobject_cast<QToolBar *>(w); bar && insideClass(w, "KFileWidget")) {
+            for (QAction *a : bar->actions()) {
+                const QString icon = a->icon().name();
+                if (icon == QLatin1String("view-list-details") || icon == QLatin1String("bookmarks"))
+                    bar->removeAction(a);
+            }
+        }
         if (w->inherits("DolphinStatusBar")) {
             QPalette pal = w->palette();
             pal.setColor(QPalette::Window, QColor(samhie::PANE));
@@ -1547,6 +1684,12 @@ public:
     {
         if (pe == PE_IndicatorToolBarSeparator && w && (opt->state & State_Horizontal)) {
             drawToolBarSeparator(opt->rect, p, w);  // mục 23
+            return;
+        }
+        // Mục 42: Kvantum chỉ xét widget để nhận ra "ô sửa tên trong danh
+        // sách" → vẽ không kèm widget là ra ô nhập thường.
+        if (pe == PE_PanelLineEdit && isFakeItemEditor(w)) {
+            QProxyStyle::drawPrimitive(pe, opt, p, nullptr);
             return;
         }
         // Mục 20: tên thư mục / mũi tên không có ô hover (chữ đổi màu thay);
@@ -1919,6 +2062,8 @@ public:
 
     QRect subElementRect(SubElement se, const QStyleOption *opt, const QWidget *w) const override
     {
+        if (se == SE_LineEditContents && isFakeItemEditor(w))  // mục 42: lề chữ như ô nhập thường
+            return QProxyStyle::subElementRect(se, opt, nullptr);
         // Mục 28: vùng bấm/vòng/chữ của radio/checkbox theo chỗ đã lùi.
         if (isToggle(w) && qstyleoption_cast<const QStyleOptionButton *>(opt)
             && (se == SE_RadioButtonIndicator || se == SE_RadioButtonContents || se == SE_RadioButtonFocusRect
@@ -1967,6 +2112,12 @@ public:
 
     QSize sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &size, const QWidget *w) const override
     {
+        // Mục 42: cao như ô nhập thường. Không kèm widget thì Kvantum nâng lên
+        // cỡ mặc định của Qt (nội dung + khung — cao 56 thay vì 41, đo
+        // container) → đưa nội dung cao 0: chiều cao chỉ còn theo font + khung
+        // như khi có widget (ô nhập thường không dùng chiều cao nội dung).
+        if (ct == CT_LineEdit && isFakeItemEditor(w))
+            return QProxyStyle::sizeFromContents(ct, opt, QSize(size.width(), 0), nullptr);
         QSize s = QProxyStyle::sizeFromContents(ct, opt, size, w);
         auto *bopt = qstyleoption_cast<const QStyleOptionToolButton *>(opt);
         if (ct == CT_ToolButton && bopt && w && qobject_cast<QToolBar *>(w->parentWidget())

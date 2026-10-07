@@ -907,6 +907,13 @@ public:
                 label->hide();
             }
         }
+        // Mục 25: Tab trong popup Filter không dừng ở nhãn tiêu đề ("Search
+        // in:"…) — Dolphin cho nhãn chọn chữ bằng bàn phím (popup.cpp 26.08.1)
+        // nên Tab đậu ở đó, hiện con trỏ nhập chữ trên dòng không gõ được.
+        // Bôi chữ bằng chuột vẫn giữ (QLabel tự hạ focus xuống ClickFocus).
+        if (auto *label = qobject_cast<QLabel *>(w); label && label->window()->inherits("Search::Popup"))
+            label->setTextInteractionFlags(label->textInteractionFlags()
+                                           & ~(Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByKeyboard));
         if (isUrlNavigatorButton(w)) {
             if (w->inherits("KDEPrivate::KUrlNavigatorToggleButton")) {
                 w->setMinimumWidth(TOGGLE_SIDE);  // mục 20: đủ chỗ cho ô vuông

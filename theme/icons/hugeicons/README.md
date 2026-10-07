@@ -10,7 +10,7 @@
 
 User tải từ trang web 2026-10-06 (lọc chỉ icon free), đặt tên theo chỗ dùng;
 thêm `folder`, `context-menu`, `interface`, `general`, `content-display` và
-mười icon cho trang Context Menu ngày 2026-10-07 (đối chiếu cùng commit,
+mười lăm icon cho trang Context Menu ngày 2026-10-07 (đối chiếu cùng commit,
 khớp đủ mọi nét).
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
@@ -57,17 +57,21 @@ Hai file đã sửa (MIT cho sửa):
 | `content-display` | `content-writing` |
 | `context-menu` | `mouse-right-click-04` |
 | `copy` | `copy-02` |
+| `copy-link` | `copy-link` |
 | `cut` | `square-bottom-dashed-scissors` |
 | `dark-mode` | `moon-star` |
 | `details` | `list` |
 | `disk-image` | `software` |
 | `down-2` | `arrow-down-02` |
 | `download` | `square-arrow-down-03` |
+| `download-service` | `download-04` |
 | `duplicate` | `copy-01` |
 | `edit` | `pencil-edit-02` |
 | `extract` | `folder-archive` |
 | `filter` | `filter` |
 | `folder` | `folder-01` |
+| `folder-edit` | `folder-edit` |
+| `folder-export` | `folder-export` |
 | `general` | `left-to-right-list-triangle` |
 | `git` | `git-branch` |
 | `hide` | `eye-closed` |
@@ -90,6 +94,7 @@ Hai file đã sửa (MIT cho sửa):
 | `noti-off` | `bell-off` |
 | `paste` | `file-paste` |
 | `pin` | `pin` |
+| `play-square` | `play-square` |
 | `plus` | `circle-plus` |
 | `power` | `power` |
 | `prev` | `circle-arrow-left-02` |

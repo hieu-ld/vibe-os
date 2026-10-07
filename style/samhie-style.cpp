@@ -236,7 +236,8 @@
 //      lọc giữa model gốc và lớp sắp xếp/tìm của trang (trang không dùng
 //      mapToSource; lưu/đặt lại đọc thẳng model gốc → dòng ẩn giữ nguyên).
 //  39. Trang Context Menu: icon nét riêng cho Compress, Extract, Makefile,
-//      Mount ISO, Git (CONTEXT_MENU_ICONS) — lớp lọc mục 38 trả icon khác.
+//      Mount ISO, Git, 'Copy To'/'Move To', Run In Konsole, Set Folder Icon
+//      (CONTEXT_MENU_ICONS) — lớp lọc mục 38 trả icon khác.
 //  30. Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -780,6 +781,11 @@ const QHash<QString, QString> CONTEXT_MENU_ICONS = {
     {QStringLiteral("makefileactions"), QStringLiteral("samhie-makefile")},
     {QStringLiteral("mountisoaction"), QStringLiteral("samhie-disk-image")},
     {QStringLiteral("_version_control_Git"), QStringLiteral("samhie-git")},
+    // Ba dòng dùng chung icon với dòng khác (edit-copy, utilities-terminal,
+    // folder-new — user 2026-10-07: "icon đang lặp lại")
+    {QStringLiteral("_copy_to_move_to"), QStringLiteral("samhie-copy-move-to")},
+    {QStringLiteral("runInKonsole"), QStringLiteral("samhie-run-in-konsole")},
+    {QStringLiteral("setfoldericonitemaction"), QStringLiteral("samhie-folder-icon")},
 };
 
 class ContextMenuRowFilter : public QSortFilterProxyModel

@@ -97,8 +97,7 @@ MAP = {
     # Nhà và tải về mang tên RIÊNG: user-home/folder-download là thư mục TO
     # (tools/build-folder-icons.py) — bộ scalable chỉ có một file cho mọi cỡ.
     "smart-home": [("places", "samhie-user-home"), ("actions", "go-home")],
-    "download":   [("places", "samhie-folder-download"),
-                   ("actions", "get-hot-new-stuff")],   # nút "Download …" (KNewStuff)
+    "download":   [("places", "samhie-folder-download")],
     "network":    [("places", "folder-network")],
     "trash-empty": [("places", "user-trash")],
     "trash-full": [("places", "user-trash-full")],
@@ -140,7 +139,9 @@ MAP = {
     "zoom-default": [("actions", "zoom-original")],
     # Hành động KDE (menu chỉ có chữ từ 2026-10-06, nhưng tên vẫn hiện ở
     # thanh công cụ, hộp thoại, nút bấm).
-    "copy":       [("actions", "edit-copy"), ("actions", "edit-copy-path")],
+    "copy":       [("actions", "edit-copy")],
+    # Copy Location (hành động copy_location, menu chuột phải + danh sách Context Menu)
+    "copy-link":  [("actions", "edit-copy-path")],
     "cut":        [("actions", "edit-cut")],
     "paste":      [("actions", "edit-paste")],
     "edit":       [("actions", "document-edit"), ("actions", "edit-entry")],
@@ -180,6 +181,12 @@ MAP = {
     "makefile-action": [("actions", "samhie-makefile")],
     "disk-image": [("actions", "samhie-disk-image")],
     "git":        [("actions", "samhie-git")],
+    "folder-export": [("actions", "samhie-copy-move-to")],   # 'Copy To' and 'Move To'
+    "play-square": [("actions", "samhie-run-in-konsole")],   # Run In Konsole
+    "folder-edit": [("actions", "samhie-folder-icon")],      # Set Folder Icon
+    # Nút "Download Services…" (KNewStuff). Hình download của sidebar trông nhỏ
+    # trên nút (user 2026-10-07) → hình riêng.
+    "download-service": [("actions", "get-hot-new-stuff")],
     # Ô quick settings (20px)
     "dark-mode":  [("actions", "samhie-dark-style")],
     "bell-off":   [("actions", "samhie-do-not-disturb")],
@@ -280,13 +287,18 @@ NUDGE = {
     "bookmark-plus": (16, -0.5, 0.125),  # mờ 0.55 → 0.42
     "compress": (16, 0.125, -0.5),       # mờ 0.52 → 0.35
     "content-display": (16, -0.5, 0.125),  # mờ 0.51 → 0.39
+    "copy-link": (16, -0.5, -0.5),       # mờ 0.70 → 0.33
     "disk-image": (16, -0.5, -0.25),     # mờ 0.56 → 0.38
+    "download-service": (16, 0.125, -0.5),  # mờ 0.57 → 0.33
     "duplicate": (16, -0.5, -0.5),       # mờ 0.54 → 0.41
     "extract": (16, 0.125, -0.25),       # mờ 0.43 → 0.35
     "folder": (16, 0, -0.375),           # mờ 0.48 → 0.32
+    "folder-edit": (16, 0.125, -0.25),   # mờ 0.47 → 0.34
+    "folder-export": (16, 0.125, -0.375),  # mờ 0.50 → 0.35
     "general": (16, -0.5, -0.5),         # mờ 0.58 → 0.44
     "hide": (16, -0.5, -0.375),          # mờ 0.51 → 0.36
     "makefile-action": (16, 0, -0.5),    # mờ 0.50 → 0.43
+    "play-square": (16, -0.5, -0.5),     # mờ 0.55 → 0.45
     "sort": (16, -0.5, 0.125),           # mờ 0.79 → 0.17
     "folder-new": (16, 0.125, -0.375),   # mờ 0.50 → 0.38
     "icons": (22, -0.5, -0.5),           # mờ 0.44 → 0.30

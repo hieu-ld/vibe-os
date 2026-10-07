@@ -104,6 +104,11 @@ MAP = {
                     ("actions", "trash-empty")],   # Move to Trash…, Empty Trash
     "trash-full": [("places", "user-trash-full")],
     "storage":    [("devices", "drive-harddisk")],   # mục Storage của sidebar
+    # Thư mục người dùng thêm vào sidebar (Add to Places, kéo thả, Add Entry):
+    # style "samhie" mục 45 đổi icon thư mục MÀU của mục đó sang tên này.
+    # Cùng hình với `folder` (16px, nút chọn thư mục) — file riêng để căn
+    # lưới cho cỡ sidebar 20px.
+    "place-folder": [("places", "samhie-folder")],
     "recent":     [("actions", "document-open-recent")],
     # Thanh công cụ Dolphin (22px). Tên đo bằng chuỗi trong dolphin,
     # libdolphinprivate và KIO/KF6 của image: Copy Location = edit-copy-path,
@@ -273,7 +278,7 @@ SIZE = {
     20: ["shut-down", "restart", "sleep", "lock", "logout", "login",
          "next-2", "prev-2", "up-2", "down-2",
          "smart-home", "download", "network", "trash-empty", "trash-full",
-         "storage", "recent", "dark-mode", "bell-off", "night-light", "wired",
+         "storage", "place-folder", "recent", "dark-mode", "bell-off", "night-light", "wired",
          "bluetooth", "wifi", "wifi-2", "wifi-1", "wifi-0",
          "volume-mute", "volume-35", "volume-70", "volume-full"],
     22: ["icons", "details", "menu", "search", "prev", "next"],

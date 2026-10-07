@@ -238,8 +238,10 @@ FRAMES = [
     }, False),
     # Vạch ngăn sidebar | vùng file của Dolphin (bản vẽ: 1px #3b3c3c) — Kvantum
     # vẽ tay nắm dock bằng chính phần tử splitter (PE_IndicatorDockWidgetResizeHandle).
-    ("splitter", {"normal": ("sub-secondary", None), "focused": ("accent@0.6", None),
-                  "pressed": ("accent", None)}, False),
+    # Trỏ/kéo KHÔNG đổi màu (user 2026-10-08: vạch cyan khi kéo thanh chia
+    # của hộp chọn file) — con trỏ ⟺ đã báo kéo được.
+    ("splitter", {"normal": ("sub-secondary", None), "focused": ("sub-secondary", None),
+                  "pressed": ("sub-secondary", None)}, False),
     ("progress", {"normal": ("sub-secondary", None)}, False),
     ("progress-pattern", {"normal": ("accent", None), "disabled": ("text-muted", None)}, False),
     ("slider", {"normal": ("sub-secondary", None), "toggled": ("accent", None),

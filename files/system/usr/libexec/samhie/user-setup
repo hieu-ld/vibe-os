@@ -190,6 +190,29 @@ if [ ! -e "$columns_marker" ]; then
     touch -- "$columns_marker"
 fi
 
+# ── 0g. Sidebar: sửa file Places có chú thích đứng trước <xbel> ─────────────
+# File mẫu cũ (trước 2026-10-08) có khối chú thích giữa <!DOCTYPE> và <xbel>.
+# KBookmarkManager chỉ gỡ khai báo <?xml?> khi nó đứng ngay trước <xbel> →
+# lần lưu đầu (Add to Places, ẩn/sửa mục) chèn khai báo thứ hai sau chú
+# thích, XML hỏng, lần đọc sau KIO ghi đè bộ mục mặc định của KDE (xem
+# usr/share/samhie/user-places.xbel.in). Bỏ mọi chú thích và khai báo thừa
+# trước <xbel>; các mục giữ nguyên. Chạy mỗi lần đăng nhập, file không có gì
+# trước <xbel> ngoài khai báo + DOCTYPE thì không ghi.
+if [ -f "$places" ] && awk '
+    /<xbel[ >]/ { found = 1; exit }
+    /<!--/ || (/<\?xml/ && decl++) { bad = 1 }
+    END { exit !(found && bad) }' "$places"; then
+    awk '
+        xbel { print; next }
+        /<xbel[ >]/ { xbel = 1; print; next }
+        comment { if (/-->/) comment = 0; next }
+        /<!--/ { if (!/-->/) comment = 1; next }
+        /<\?xml/ { if (decl++) next }
+        { print }' "$places" > "$places.tmp"
+    mv -f -- "$places.tmp" "$places"
+    echo "Repaired the comment before <xbel> in $places"
+fi
+
 done_version=0
 if [ -r "$marker" ]; then
     read -r done_version < "$marker" || true

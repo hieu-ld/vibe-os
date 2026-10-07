@@ -112,6 +112,7 @@ Hai file đã sửa (MIT cho sửa):
 | `open-folder` | `folder-open` |
 | `paste` | `file-paste` |
 | `pin` | `pin` |
+| `place-folder` | `folder-01` (bản chép của `folder`, căn lưới cỡ 20) |
 | `play-square` | `play-square` |
 | `plus` | `circle-plus` |
 | `power` | `power` |

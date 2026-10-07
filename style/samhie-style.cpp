@@ -262,8 +262,16 @@
 //  43. Hộp chọn icon (KIconDialog — "Choose an icon" của mục 42) chỉ có icon
 //      của bộ Samhie; ô chọn nhóm chỉ còn nhóm bộ đó có, bỏ "Other". Nút
 //      Browse… dùng icon samhie-browse (user 2026-10-07).
-//  44. Hộp thoại chọn file của KDE (KFileWidget, vd Browse…) không có nút
-//      Compact View và Bookmarks (user 2026-10-07) — như Dolphin.
+//  44. Hộp thoại chọn file của KDE (KFileWidget — Browse…, hộp Open/Save của
+//      mọi app KDE), user 2026-10-07/08: thanh công cụ bỏ Compact View,
+//      Bookmarks, thanh zoom, Reload, Show Preview; menu ⚙ chỉ còn Show
+//      Hidden Files + Show Quick Filter; menu chuột phải bỏ Sorting, View
+//      Mode, Reload, Open Containing Folder, dòng mờ ẩn khi menu mở. Phím
+//      tắt vẫn chạy (hành động gắn trên hộp thoại, không phải trên menu).
+//  45. Sidebar chỉ dùng icon NÉT (user 2026-10-08): thư mục thêm vào (Add to
+//      Places, kéo thả) mang icon thư mục màu → đổi sang icon nét, lưu luôn
+//      vào user-places.xbel (icon thư mục ở vùng file giữ nguyên); Add Entry
+//      mở với icon nét; hộp chọn icon của Add/Edit Entry chỉ có icon nét.
 //  30.Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -311,6 +319,10 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QSettings>
+#include <QSlider>
+#include <QFile>
+#include <QFileInfo>
+#include <dlfcn.h>
 #include <QStandardPaths>
 #include <QMainWindow>
 #include <QLabel>
@@ -972,36 +984,112 @@ private:
     mutable QSet<const QMenu *> m_hiddenMenus;
 };
 
+// Thư mục con của bộ icon đang dùng, đọc từ index.theme: (thư mục, Context=,
+// có phải Type=Scalable). Bộ icon không đổi trong lúc app chạy → đọc một lần.
+struct IconThemeDir {
+    QString path;  // đường dẫn đầy đủ, có "/" ở cuối
+    QString context;
+    bool scalable;
+};
+
+const QList<IconThemeDir> &iconThemeDirs()
+{
+    static const QList<IconThemeDir> dirs = [] {
+        QList<IconThemeDir> out;
+        const QString file = QStandardPaths::locate(QStandardPaths::GenericDataLocation,
+                                                    QStringLiteral("icons/%1/index.theme").arg(QIcon::themeName()));
+        if (file.isEmpty())
+            return out;
+        const QString root = QFileInfo(file).absolutePath() + QLatin1Char('/');
+        QSettings theme(file, QSettings::IniFormat);
+        for (const QString &dir : theme.value(QStringLiteral("Icon Theme/Directories")).toStringList()) {
+            out.append({root + dir + QLatin1Char('/'), theme.value(dir + QStringLiteral("/Context")).toString(),
+                        theme.value(dir + QStringLiteral("/Type")).toString() == QLatin1String("Scalable")});
+        }
+        return out;
+    }();
+    return dirs;
+}
+
+// Mục 45: icon NÉT = SVG trong thư mục Scalable, tô theo màu chữ (class
+// ColorScheme-Text — tools/build-icons.py). Thư mục màu
+// (tools/build-folder-icons.py), icon app thì không; bản 16px chỉ có ký hiệu
+// (places/16) cũng không — chọn nó thì cỡ 20 của sidebar lại ra thư mục màu.
+bool isStrokeIconFile(const QString &path)
+{
+    static QHash<QString, bool> cache;
+    auto it = cache.constFind(path);
+    if (it != cache.constEnd())
+        return *it;
+    bool stroke = false;
+    if (path.endsWith(QLatin1String(".svg"))) {
+        for (const IconThemeDir &d : iconThemeDirs()) {
+            if (d.scalable && path.startsWith(d.path) && !path.mid(d.path.size()).contains(QLatin1Char('/'))) {
+                QFile f(path);
+                stroke = f.open(QIODevice::ReadOnly) && f.readAll().contains("ColorScheme-Text");
+                break;
+            }
+        }
+    }
+    cache.insert(path, stroke);
+    return stroke;
+}
+
+bool isStrokeIconName(const QString &name)
+{
+    for (const IconThemeDir &d : iconThemeDirs()) {
+        const QString path = d.path + name + QStringLiteral(".svg");
+        if (d.scalable && QFile::exists(path))
+            return isStrokeIconFile(path);
+    }
+    return false;
+}
+
+// Icon nét thay cho icon thư mục MÀU của một mục sidebar (thư mục cục bộ).
+// Home và Download có bản nét riêng như mục mặc định (user-places.xbel.in).
+QString strokePlaceIcon(const QString &icon)
+{
+    if (icon == QLatin1String("user-home"))
+        return QStringLiteral("samhie-user-home");
+    if (icon == QLatin1String("folder-download"))
+        return QStringLiteral("samhie-folder-download");
+    return QStringLiteral("samhie-folder");
+}
+
 // Mục 43: hộp chọn icon (KIconDialog) chỉ liệt kê icon của bộ đang dùng
 // (Samhie, user 2026-10-07), không lấy Breeze/hicolor mà bộ đó thừa kế.
 // KIconDialogModel (KF 6.30) giữ đường dẫn file ở Qt::UserRole; KIconLoader
 // đã bỏ tên trùng, giữ bản của bộ đứng trước → bản Samhie thắng bản Breeze.
+// Mục 45: chọn icon cho mục sidebar thì chỉ icon nét.
 class IconThemeFilter : public QSortFilterProxyModel
 {
 public:
-    explicit IconThemeFilter(QObject *parent)
+    IconThemeFilter(bool strokeOnly, QObject *parent)
         : QSortFilterProxyModel(parent)
         , m_dir(QStringLiteral("/icons/%1/").arg(QIcon::themeName()))
+        , m_strokeOnly(strokeOnly)
     {
     }
 
 protected:
     bool filterAcceptsRow(int row, const QModelIndex &parent) const override
     {
-        return sourceModel()->index(row, 0, parent).data(Qt::UserRole).toString().contains(m_dir);
+        const QString path = sourceModel()->index(row, 0, parent).data(Qt::UserRole).toString();
+        return m_strokeOnly ? isStrokeIconFile(path) : path.contains(m_dir);
     }
 
 private:
     const QString m_dir;
+    const bool m_strokeOnly;
 };
 
-// Nhóm (Context=) có trong bộ icon đang dùng, theo giá trị KIconLoader::Context
-// mà ô chọn nhóm của KIconDialog lưu ở dữ liệu từng dòng (kiconloader.h
-// KF 6.30: Any 0, Action 1, Application 2, Device 3, MimeType 4, Animation 5,
-// Category 6, Emblem 7, Emote 8, International 9, Place 10, StatusIcon 11 —
-// cố định trong ABI KF6; style không link KIconThemes nên ghi số). Đọc
-// index.theme của bộ: bộ thêm nhóm mới thì ô chọn tự có.
-QSet<int> iconThemeContexts()
+// Nhóm (Context=) có icon trong bộ đang dùng (strokeOnly: có icon nét), theo
+// giá trị KIconLoader::Context mà ô chọn nhóm của KIconDialog lưu ở dữ liệu
+// từng dòng (kiconloader.h KF 6.30: Any 0, Action 1, Application 2, Device 3,
+// MimeType 4, Animation 5, Category 6, Emblem 7, Emote 8, International 9,
+// Place 10, StatusIcon 11 — cố định trong ABI KF6; style không link
+// KIconThemes nên ghi số). Bộ thêm nhóm mới thì ô chọn tự có.
+QSet<int> iconThemeContexts(bool strokeOnly)
 {
     static const QHash<QString, int> ids = {
         {QStringLiteral("Actions"), 1}, {QStringLiteral("Applications"), 2},
@@ -1011,15 +1099,52 @@ QSet<int> iconThemeContexts()
         {QStringLiteral("Status"), 11},
     };
     QSet<int> found = {0};  // All
-    const QString file = QStandardPaths::locate(QStandardPaths::GenericDataLocation,
-                                                QStringLiteral("icons/%1/index.theme").arg(QIcon::themeName()));
-    QSettings theme(file, QSettings::IniFormat);
-    for (const QString &dir : theme.value(QStringLiteral("Icon Theme/Directories")).toStringList()) {
-        const QString context = theme.value(dir + QStringLiteral("/Context")).toString();
-        if (ids.contains(context))
-            found.insert(ids.value(context));
+    for (const IconThemeDir &d : iconThemeDirs()) {
+        if (!ids.contains(d.context))
+            continue;
+        bool any = !strokeOnly;
+        if (strokeOnly && d.scalable) {
+            const QStringList files = QDir(d.path).entryList({QStringLiteral("*.svg")}, QDir::Files);
+            any = std::any_of(files.begin(), files.end(),
+                              [&d](const QString &f) { return isStrokeIconFile(d.path + f); });
+        }
+        if (any)
+            found.insert(ids.value(d.context));
     }
     return found;
+}
+
+// Mục 45: mục sidebar là thư mục cục bộ mang icon thư mục màu (Add to Places
+// của Dolphin lấy icon của chính thư mục, kéo thả lấy KIO::iconNameForUrl)
+// → đổi sang icon nét; icon thư mục trong vùng file giữ nguyên. Đổi qua
+// KFilePlacesModel::editPlace (lưu vào ~/.local/share/user-places.xbel, mọi
+// app thấy). Hàm đó không gọi được qua meta-object; style không link KIO
+// (style nạp vào MỌI app Qt) → tìm hàm trong thư viện KIO mà app ĐÃ nạp (có
+// KFilePlacesModel nghĩa là đã nạp). Hàm không ảo, gọi với `this` là tham
+// số đầu (Itanium C++ ABI). Không tìm thấy (KIO đổi ABI) thì thôi, không đổi.
+// appName rỗng: mục thêm kiểu này không gắn app; Add Entry thì hộp thoại đã
+// đổi sẵn icon (polish) nên không tới đây.
+void strokePlaceIcons(QAbstractItemModel *model, int first, int last)
+{
+    using EditPlace = void (*)(QAbstractItemModel *, const QModelIndex &, const QString &, const QUrl &,
+                               const QString &, const QString &);
+    static const auto editPlace = reinterpret_cast<EditPlace>(
+        dlsym(RTLD_DEFAULT, "_ZN16KFilePlacesModel9editPlaceERK11QModelIndexRK7QStringRK4QUrlS5_S5_"));
+    constexpr int URL_ROLE = 0x069CD12B, HIDDEN_ROLE = 0x0741CAAC, ICON_NAME_ROLE = 0x00a45c00;  // kfileplacesmodel.h
+    if (!editPlace || !QIcon::hasThemeIcon(QStringLiteral("samhie-folder")))
+        return;
+    for (int row = first; row <= last; ++row) {
+        const QModelIndex index = model->index(row, 0);
+        bool device = false;
+        QMetaObject::invokeMethod(model, "isDevice", Qt::DirectConnection, Q_RETURN_ARG(bool, device),
+                                  Q_ARG(QModelIndex, index));
+        const QString icon = index.data(ICON_NAME_ROLE).toString();
+        const QUrl url = index.data(URL_ROLE).toUrl();
+        if (device || index.data(HIDDEN_ROLE).toBool() || !url.isLocalFile() || icon.isEmpty()
+            || icon.startsWith(QLatin1Char('/')) || isStrokeIconName(icon))
+            continue;
+        editPlace(model, index, index.data(Qt::DisplayRole).toString(), url, strokePlaceIcon(icon), QString());
+    }
 }
 
 // Mục 37: danh sách trong hộp thoại cài đặt (không tính danh sách trang).
@@ -1488,11 +1613,17 @@ public:
         // nạp icon lúc hiện (showEvent) → polish là kịp. Lớp lọc chèn DƯỚI
         // lớp tìm/lọc symbolic của KDE: hộp thoại chọn sẵn icon hiện tại và
         // đọc icon được chọn bằng chỉ số của lớp đó — lớp đó vẫn nằm trên cùng.
+        // Mục 45: hộp mở từ nút icon của Add/Edit Places Entry (KIconButton
+        // "icon button" là cha của KIconDialog) → chỉ icon nét. Mỗi nút dựng
+        // hộp của riêng nó một lần, nên chế độ không đổi.
         if (w->inherits("KIconDialog")) {
+            const QWidget *button = w->parentWidget();
+            const bool strokeOnly = button && button->objectName() == QLatin1String("icon button")
+                && button->window()->inherits("KFilePlaceEditDialog");
             if (auto *canvas = w->findChild<QListView *>(QStringLiteral("canvas"))) {
                 auto *search = qobject_cast<QSortFilterProxyModel *>(canvas->model());
                 if (search && search->sourceModel() && !dynamic_cast<IconThemeFilter *>(search->sourceModel())) {
-                    auto *filter = new IconThemeFilter(search);
+                    auto *filter = new IconThemeFilter(strokeOnly, search);
                     filter->setSourceModel(search->sourceModel());
                     search->setSourceModel(filter);
                 }
@@ -1502,7 +1633,7 @@ public:
             // KIconDialog::setup() đổi cờ của dòng CUỐI (vốn là Other) chỉ
             // khi khoá chọn icon riêng — Dolphin không khoá.
             if (auto *combo = w->findChild<QComboBox *>(QStringLiteral("contextCombo"))) {
-                const QSet<int> keep = iconThemeContexts();
+                const QSet<int> keep = iconThemeContexts(strokeOnly);
                 for (int i = combo->count() - 1; i >= 0; --i) {
                     const QVariant id = combo->itemData(i);
                     const bool separator = combo->itemData(i, Qt::AccessibleDescriptionRole).toString()
@@ -1520,6 +1651,34 @@ public:
                         b->setIcon(QIcon::fromTheme(QStringLiteral("samhie-browse")));
                 }
             }
+        }
+        // Mục 45: Add Entry mở với icon KIO::iconNameForUrl (thư mục màu)
+        // → đổi sẵn sang icon nét. Hàm tạo hộp thoại đã đặt icon; polish lúc
+        // hiện. Thuộc tính `icon` của KIconButton (Q_PROPERTY, KF 6.30).
+        if (w->inherits("KFilePlaceEditDialog")) {
+            QWidget *button = w->findChild<QWidget *>(QStringLiteral("icon button"));
+            const QString icon = button ? button->property("icon").toString() : QString();
+            if (!icon.isEmpty() && !icon.startsWith(QLatin1Char('/')) && !isStrokeIconName(icon)
+                && QIcon::hasThemeIcon(QStringLiteral("samhie-folder")))
+                button->setProperty("icon", strokePlaceIcon(icon));
+        }
+        // Mục 45: model sidebar (Dolphin dùng chung một model cho mọi cửa sổ;
+        // hộp chọn file mỗi hộp một model) — móc một lần, sau một nhịp (view
+        // được polish trước khi gắn model). Đổi luôn mục đã có từ trước.
+        if (isPlacesView(w)) {
+            QTimer::singleShot(0, w, [w] {
+                QAbstractItemModel *model = static_cast<QAbstractItemView *>(w)->model();
+                if (!model || !model->inherits("KFilePlacesModel") || model->property("_samhie_stroke").toBool())
+                    return;
+                model->setProperty("_samhie_stroke", true);
+                // Sau một nhịp: editPlace ngay trong lúc model đang báo thêm
+                // dòng là sửa model giữa chừng. Xét lại cả danh sách (vài
+                // chục dòng) — chỉ số dòng có thể đã đổi sau nhịp đó.
+                auto strokeAll = [model] { strokePlaceIcons(model, 0, model->rowCount() - 1); };
+                QObject::connect(model, &QAbstractItemModel::rowsInserted, model,
+                                 [model, strokeAll] { QTimer::singleShot(0, model, strokeAll); });
+                strokeAll();
+            });
         }
         // Mục 38: lớp lọc chèn một lần (model của view là lớp sắp xếp/tìm).
         if (auto *lv = qobject_cast<QListView *>(w); lv && lv->parentWidget()
@@ -1591,17 +1750,82 @@ public:
         if (qobject_cast<QToolBar *>(w) && w->window()->inherits("DolphinMainWindow"))
             w->setContextMenuPolicy(Qt::PreventContextMenu);  // mục 18
         // Mục 44: hộp thoại chọn file của KDE (KFileWidget — vd Browse… của hộp
-        // chọn icon) không có nút Compact View và Bookmarks (user 2026-10-07),
-        // như Dolphin. Thanh dựng xong trong hàm tạo KFileWidget, polish lúc
-        // hiện. Nhận theo tên icon (kdiroperator.cpp / kfilewidget.cpp KIO
-        // 6.30: Compact = view-list-details, Details = view-list-tree).
-        // Thanh nằm trong m_opsWidget, trong bộ chia (sidebar | file) của
-        // KFileWidget (đo container 2026-10-08).
+        // chọn icon; cũng là hộp Open/Save của mọi app KDE). Thanh dựng xong
+        // trong hàm tạo KFileWidget, polish lúc hiện. Nhận theo tên icon
+        // (kdiroperator.cpp / kfilewidget.cpp KIO 6.30: Compact =
+        // view-list-details, Details = view-list-tree). Thanh nằm trong
+        // m_opsWidget, trong bộ chia (sidebar | file) của KFileWidget (đo
+        // container 2026-10-08). Gỡ khỏi thanh/menu, hành động vẫn gắn trên
+        // hộp thoại → phím tắt (F5, Ctrl+lăn chuột, Ctrl+−/+, F9, F11) vẫn chạy.
         if (auto *bar = qobject_cast<QToolBar *>(w); bar && insideClass(w, "KFileWidget")) {
-            for (QAction *a : bar->actions()) {
-                const QString icon = a->icon().name();
-                if (icon == QLatin1String("view-list-details") || icon == QLatin1String("bookmarks"))
+            static const QSet<QString> dropped = {
+                QStringLiteral("view-list-details"),  // Compact View (user 2026-10-07)
+                QStringLiteral("bookmarks"),
+                // user 2026-10-08: thanh zoom (Dolphin cũng bỏ dòng Zoom),
+                // ↻ Reload (hộp thoại tự cập nhật), 🖼 Show Preview
+                QStringLiteral("zoom-out"), QStringLiteral("zoom-in"),
+                QStringLiteral("view-refresh"), QStringLiteral("view-preview"),
+            };
+            const QList<QAction *> actions = bar->actions();
+            for (int i = 0; i < actions.size(); ++i) {
+                QAction *a = actions[i];
+                const bool slider = qobject_cast<QSlider *>(bar->widgetForAction(a));
+                // Vạch ngăn giữa thanh zoom và New Folder thành vạch lẻ loi.
+                const bool orphan = a->isSeparator() && i > 0 && actions[i - 1]->icon().name() == QLatin1String("zoom-in");
+                if (slider || orphan || dropped.contains(a->icon().name()))
                     bar->removeAction(a);
+                // Menu ⚙ Options (dựng một lần): bỏ Allow Expansion in Details
+                // View (Dolphin Samhie đã tắt mở dạng cây), Show Places Panel
+                // (F9 — tắt nhầm là mất sidebar), Show Preview Panel (F11 —
+                // như panel Information Dolphin); giữ Show Hidden Files, Show
+                // Quick Filter (user 2026-10-08). Allow Expansion là dòng tích
+                // duy nhất không có phím tắt.
+                if (a->icon().name() == QLatin1String("configure") && a->menu()) {
+                    for (QAction *m : a->menu()->actions()) {
+                        const QKeySequence key = m->shortcut();
+                        if (key == QKeySequence(Qt::Key_F9) || key == QKeySequence(Qt::Key_F11)
+                            || (m->isCheckable() && key.isEmpty()) || m->isSeparator())
+                            a->menu()->removeAction(m);
+                    }
+                }
+            }
+        }
+        // Mục 44: menu chuột phải của hộp chọn file (KDirOperator, hành động
+        // PopupMenu — menu dựng lại khi app gọi setupMenu, nên dọn mỗi lần
+        // mở): bỏ Sorting + View Mode (trùng nút ⇅ và nút chế độ xem), Reload
+        // (F5), Open Containing Folder (user 2026-10-08). Dòng mờ (bấm chỗ
+        // trống: Rename, Move to Trash, Properties) ẩn trong lúc menu mở —
+        // ẩn lâu thì phím tắt của chúng (F2, Del…) chết theo.
+        if (w->inherits("KDirOperator")) {
+            for (QAction *popup : w->actions()) {
+                QMenu *menu = popup->menu();
+                if (!menu || menu->property("_samhie_dirop").toBool()
+                    || std::none_of(menu->actions().cbegin(), menu->actions().cend(), [](const QAction *a) {
+                           return a->icon().name() == QLatin1String("document-properties");
+                       }))
+                    continue;
+                menu->setProperty("_samhie_dirop", true);
+                QObject::connect(menu, &QMenu::aboutToShow, menu, [menu] {
+                    static const QSet<QString> dropped = {
+                        QStringLiteral("view-sort"), QStringLiteral("view-list-tree"),
+                        QStringLiteral("view-refresh"), QStringLiteral("system-file-manager"),
+                    };
+                    QList<QPointer<QAction>> hidden;
+                    for (QAction *a : menu->actions()) {
+                        if (dropped.contains(a->icon().name()))
+                            menu->removeAction(a);
+                        else if (!a->isSeparator() && !a->isEnabled() && a->isVisible()) {
+                            a->setVisible(false);
+                            hidden.append(a);
+                        }
+                    }
+                    QObject::connect(menu, &QMenu::aboutToHide, menu, [hidden] {
+                        for (const QPointer<QAction> &a : hidden) {
+                            if (a)
+                                a->setVisible(true);
+                        }
+                    }, Qt::SingleShotConnection);
+                });
             }
         }
         if (w->inherits("DolphinStatusBar")) {

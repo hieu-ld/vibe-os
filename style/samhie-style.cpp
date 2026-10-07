@@ -211,6 +211,15 @@
 //  32. Danh sách trang hộp thoại cài đặt (KPageListView: Interface, View…):
 //      ô hover/chọn cách hai mép và cách nhau PAGE_LIST_GAP (user
 //      2026-10-07: đang sát nhau, sát mép).
+//  33. Thanh trượt (cỡ icon ở Configure Dolphin → View) không khung focus
+//      cyan, không sáng lên khi trỏ chuột (user 2026-10-07).
+//  34. Configure Dolphin → View không có tab Compact: Samhie đã bỏ chế độ
+//      Compact (files/scripts/dolphin-ui.sh). Nhận tab theo icon
+//      view-list-details (viewsettingspage.cpp 26.08.1) — chữ đổi theo ngôn ngữ.
+//  35. Danh sách Configure Keyboard Shortcuts bớt các dòng KHÔNG còn dùng
+//      được ở Samhie (user 2026-10-07: "ẩn và không còn sử dụng"; ẩn khỏi
+//      menu mà phím tắt vẫn chạy thì giữ). Bộ lọc tìm của danh sách hiện lại
+//      dòng ẩn → xoá hẳn dòng (hành động vẫn còn). Danh sách: REMOVED_SHORTCUTS.
 //  30. Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -258,6 +267,8 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
+#include <QSet>
+#include <QTreeWidget>
 #include <QTimer>
 #include <QToolButton>
 #include <QUrl>
@@ -680,6 +691,49 @@ public:
     }
 };
 
+// Mục 35: hành động không còn dùng được ở Samhie → bỏ khỏi danh sách phím tắt.
+// Đo 2026-10-07 (Dolphin 26.08.1, danh sách đầy đủ in từ hộp thoại).
+const QSet<QString> REMOVED_SHORTCUTS = {
+    // dolphin-ui.sh ẩn (visible=false → phím tắt chết theo)
+    QStringLiteral("compact"), QStringLiteral("toggle_selection_mode"), QStringLiteral("view_properties"),
+    // Selection Mode bản thanh công cụ: cùng tính năng đã bỏ
+    QStringLiteral("toggle_selection_mode_tool_bar"),
+    // Group By / Show Additional Information (dolphin-ui.sh ẩn menu cha)
+    QStringLiteral("group_by_none"), QStringLiteral("group_by_same_as_sort"),
+    QStringLiteral("group_accesstime"), QStringLiteral("group_comment"), QStringLiteral("group_creationtime"),
+    QStringLiteral("group_modificationtime"), QStringLiteral("group_text"), QStringLiteral("group_rating"),
+    QStringLiteral("group_size"), QStringLiteral("group_tags"), QStringLiteral("group_type"),
+    QStringLiteral("show_accesstime"), QStringLiteral("show_comment"), QStringLiteral("show_creationtime"),
+    QStringLiteral("show_modificationtime"), QStringLiteral("show_rating"), QStringLiteral("show_size"),
+    QStringLiteral("show_tags"), QStringLiteral("show_type"),
+    // Panel Information (style mục 24: hành động ẩn, F11 chết)
+    QStringLiteral("show_information_panel"),
+    // Dolphin tự ẩn khi thiếu phần mềm mà image không cài: kio-stash, KFind
+    QStringLiteral("split_stash"), QStringLiteral("open_preferred_search_tool"),
+    // Bỏ cùng tầng Configure của menu ☰ (mục 29)
+    QStringLiteral("window_color_sheme"), QStringLiteral("switch_application_language"),
+    QStringLiteral("options_configure_toolbars"),
+};
+
+// Mục 35: xoá dòng của hành động trong REMOVED_SHORTCUTS, rồi nhóm con rỗng.
+// ObjectRole = Qt::UserRole + 2 (kshortcutsdialog_p.h, KF 6.30) trả QAction.
+void trimShortcutList(QTreeWidgetItem *parent)
+{
+    for (int i = parent->childCount() - 1; i >= 0; --i) {
+        QTreeWidgetItem *it = parent->child(i);
+        auto *a = qobject_cast<QAction *>(it->data(0, Qt::UserRole + 2).value<QObject *>());
+        if (a && REMOVED_SHORTCUTS.contains(a->objectName())) {
+            delete it;
+            continue;
+        }
+        if (!a && it->childCount()) {
+            trimShortcutList(it);
+            if (!it->childCount())
+                delete it;
+        }
+    }
+}
+
 // Mục 30: danh sách dùng KExtendableItemDelegate (ô có dải "›" bên trái).
 const QAbstractItemView *extendableView(const QStyleOption *opt, const QWidget *w)
 {
@@ -1098,6 +1152,18 @@ public:
             w->installEventFilter(&m_popupAnchor);  // mục 26
         if (w->inherits("KDEPrivate::KPageListView"))
             static_cast<QListView *>(w)->setSpacing(PAGE_LIST_GAP);  // mục 32
+        // Mục 35: hộp thoại dựng xong danh sách rồi mới hiện → lúc polish đã đủ.
+        if (auto *tree = qobject_cast<QTreeWidget *>(w);
+            tree && tree->parentWidget() && tree->parentWidget()->inherits("KShortcutsEditor"))
+            trimShortcutList(tree->invisibleRootItem());
+        // Mục 34
+        if (auto *tabs = qobject_cast<QTabWidget *>(w); tabs && tabs->parentWidget()
+            && tabs->parentWidget()->inherits("ViewSettingsPage")) {
+            for (int i = 0; i < tabs->count(); ++i) {
+                if (tabs->tabIcon(i).name() == QLatin1String("view-list-details"))
+                    tabs->setTabVisible(i, false);
+            }
+        }
         if (w->inherits("TabConnectedWidget"))
             w->installEventFilter(&m_noPaint);  // mục 30
         if (isUrlNavigatorButton(w)) {
@@ -1389,6 +1455,17 @@ public:
             }
             QProxyStyle::drawComplexControl(cc, &o, p, w);
             return;
+        }
+        // Mục 33: thanh trượt không khung focus, không sáng khi trỏ.
+        if (cc == CC_Slider) {
+            if (auto *sopt = qstyleoption_cast<const QStyleOptionSlider *>(opt)) {
+                QStyleOptionSlider o(*sopt);
+                o.state &= ~(State_HasFocus | State_MouseOver);
+                if (!(o.state & State_Sunken))  // đang kéo thì núm vẫn sáng
+                    o.activeSubControls = SC_None;
+                QProxyStyle::drawComplexControl(cc, &o, p, w);
+                return;
+            }
         }
         // Mục 20: ô sửa đường dẫn không viền focus cyan. Kvantum (CC_ComboBox,
         // combo_as_lineedit) hỏi thẳng cb->hasFocus() chứ không chỉ đọc state

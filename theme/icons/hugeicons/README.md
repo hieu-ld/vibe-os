@@ -8,7 +8,9 @@
 | Đối chiếu | commit `9c48f3723dfb243909fa83501aa7c6423ab972c0` (2026-09-23), thư mục `icons/` |
 | sha256 | `SHA256SUMS` |
 
-User tải từ trang web 2026-10-06 (lọc chỉ icon free), đặt tên theo chỗ dùng.
+User tải từ trang web 2026-10-06 (lọc chỉ icon free), đặt tên theo chỗ dùng;
+thêm `folder`, `context-menu`, `interface` ngày 2026-10-07 (đối chiếu cùng
+commit, khớp đủ mọi nét).
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
 (icon Pro KHÔNG được đưa vào mã nguồn mở, xem README của repo đó).
@@ -49,6 +51,7 @@ Hai file đã sửa (MIT cho sửa):
 | `bookmark` | `bookmark-02` |
 | `check` | `check` |
 | `close` | `circle-x` |
+| `context-menu` | `mouse-right-click-04` |
 | `copy` | `copy-02` |
 | `cut` | `square-bottom-dashed-scissors` |
 | `dark-mode` | `moon-star` |
@@ -57,8 +60,10 @@ Hai file đã sửa (MIT cho sửa):
 | `download` | `square-arrow-down-03` |
 | `edit` | `pencil-edit-02` |
 | `filter` | `filter` |
+| `folder` | `folder-01` |
 | `folder-new` | `folder-plus` |
 | `icons` | `grid-view` |
+| `interface` | `dashboard-browsing` |
 | `lock` | `lock-keyhole` |
 | `login` | `login-02` |
 | `logout` | `logout-02` |

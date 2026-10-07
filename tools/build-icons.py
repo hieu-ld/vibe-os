@@ -106,7 +106,8 @@ MAP = {
     # Thanh công cụ Dolphin (22px). Tên đo bằng chuỗi trong dolphin,
     # libdolphinprivate và KIO/KF6 của image: Copy Location = edit-copy-path,
     # nút sửa đường dẫn của KUrlNavigator = edit-entry, nút ☰ = application-menu.
-    "icons":      [("actions", "view-list-icons")],
+    "icons":      [("actions", "view-list-icons"),
+                   ("actions", "preferences-desktop-icons")],   # trang View, Configure Dolphin
     # Chế độ Details. Dolphin đặt tên lệch: Details = view-list-TREE,
     # view-list-details là chế độ Compact (Samhie ẩn) — đo
     # dolphinviewactionhandler.cpp 26.08. Hộp thoại mở file của KDE dùng
@@ -148,6 +149,13 @@ MAP = {
     "split":      [("actions", "view-split-left-right")],
     "bookmark":   [("actions", "bookmarks")],
     "settings":   [("actions", "configure")],
+    # Hộp thoại Configure Dolphin (user 2026-10-07; tên đo trong mã Dolphin
+    # 26.08.1): nút chọn thư mục cạnh ô đường dẫn khởi động (16px,
+    # folderstabssettingspage.cpp) và icon trang Context Menu (32px,
+    # dolphinsettingsdialog.cpp). folder-open KHÔNG phải thư mục trong vùng
+    # file (đó là `folder`, tools/build-folder-icons.py).
+    "folder":     [("actions", "folder-open")],
+    "context-menu": [("actions", "preferences-desktop-menu-edit")],
     # Ô quick settings (20px)
     "dark-mode":  [("actions", "samhie-dark-style")],
     "bell-off":   [("actions", "samhie-do-not-disturb")],
@@ -177,7 +185,9 @@ MAP = {
 
 # Có sẵn, chưa lắp. `wifi-lock`: chỉ có bản sóng đầy — danh sách Wi-Fi cần
 # khoá đi cùng cả bốn mức, nên vẫn dùng ổ khoá nhỏ đè góc (WifiPage.qml).
-UNUSED = {"wifi-lock"}
+# `interface`: cho trang Interface của Configure Dolphin — trang đó dùng icon
+# APP (org.kde.dolphin), đổi tên đó là đổi cả icon Dolphin ở dock; user để sau.
+UNUSED = {"wifi-lock", "interface"}
 
 # Cỡ hiển thị CHÍNH của từng hình (đo trong Quickshell/SDDM/Dolphin) — để dò
 # NUDGE. Hình không có ở đây: cỡ 16 (menu, thanh đường dẫn Dolphin).
@@ -191,6 +201,7 @@ SIZE = {
          "bluetooth", "wifi", "wifi-2", "wifi-1", "wifi-0",
          "volume-mute", "volume-35", "volume-70", "volume-full"],
     22: ["icons", "details", "menu", "search", "prev", "next"],
+    32: ["context-menu"],
 }
 
 
@@ -244,6 +255,7 @@ NUDGE = {
     "download": (20, -0.5, -0.5),        # mờ 0.48 → 0.31
     "edit": (16, -0.5, -0.5),            # mờ 0.52 → 0.41
     "filter": (16, 0, -0.5),             # mờ 0.60 → 0.33
+    "folder": (16, 0, -0.375),           # mờ 0.48 → 0.32
     "folder-new": (16, 0.125, -0.375),   # mờ 0.50 → 0.38
     "icons": (22, -0.5, -0.5),           # mờ 0.44 → 0.30
     "logout": (20, 0.25, 0.375),         # mờ 0.40 → 0.30

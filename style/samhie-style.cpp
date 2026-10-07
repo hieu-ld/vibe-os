@@ -197,6 +197,13 @@
 //      KEY_FOCUS_PAD px, lề trái popup bớt đúng ngần ấy (nhãn "Search in:"
 //      thụt theo) → mọi thứ đứng chỗ cũ, ô nền Tab có khoảng trống bên trái
 //      vòng tròn (widget vốn chỉ thừa 2px). Radio/checkbox nơi khác giữ 2px.
+//  29. Menu ☰ Dolphin không có tầng Configure (user 2026-10-07): đưa thẳng
+//      Configure Keyboard Shortcuts… và Configure Dolphin… ra menu ☰ chỗ dòng
+//      Configure, bỏ Window Color Scheme (màu Samhie đi qua Kvantum, đổi ở đây
+//      chỉ lẫn lộn), Configure Language (giao diện đã chốt tiếng Anh),
+//      Configure Toolbars (thanh do style chỉnh, mục 18). Menu con dựng mới
+//      mỗi lần mở (DolphinMainWindow::updateHamburgerMenu, 26.08.1) → làm như
+//      mục 17: lúc polish + mỗi aboutToShow. Nhận ra theo tên hành động.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -904,8 +911,10 @@ public:
             && QCoreApplication::applicationName() == QLatin1String("dolphin")) {
             auto *menu = static_cast<QMenu *>(w);  // mục 17: menu ☰
             removeHamburgerCreateNew(menu);
+            flattenHamburgerConfigure(menu);  // mục 29
             QObject::connect(menu, &QMenu::aboutToShow, menu, [menu] {
                 removeHamburgerCreateNew(menu);
+                flattenHamburgerConfigure(menu);
                 trimPlacesMenu(menu);  // mục 19
             });
         }
@@ -1605,6 +1614,29 @@ private:
         for (QAction *a : menu->actions()) {
             if (a->menu() && createNew.contains(a->menu()))
                 menu->removeAction(a);
+        }
+    }
+
+    static void flattenHamburgerConfigure(QMenu *menu)  // mục 29
+    {
+        for (QAction *a : menu->actions()) {
+            QMenu *sub = a->menu();
+            if (!sub)
+                continue;
+            QAction *keys = nullptr, *prefs = nullptr;
+            for (QAction *s : sub->actions()) {
+                if (s->objectName() == QLatin1String("options_configure_keybinding"))
+                    keys = s;
+                else if (s->objectName() == QLatin1String("options_configure"))
+                    prefs = s;
+            }
+            if (!prefs)
+                continue;
+            if (keys)
+                menu->insertAction(a, keys);
+            menu->insertAction(a, prefs);
+            menu->removeAction(a);
+            return;
         }
     }
 

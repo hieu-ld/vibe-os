@@ -173,6 +173,14 @@
 //      popup Filter của thanh tìm Dolphin). Bấm chuột: không gì cả. Đi bằng
 //      Tab: nền như ô hover bo MENUITEM_RADIUS quanh vòng + chữ (user
 //      2026-10-07) — trên popup/menu màu hover, trên nền cửa sổ sub-secondary.
+//  26. Popup Filter của thanh tìm Dolphin trôi 1px sang phải mỗi lần đổi
+//      radio (user 2026-10-06; đo container: cả style gốc cũng trôi). Đổi
+//      radio → Popup::updateState → WidgetMenu::resizeToFitContents gỡ/gắn
+//      lại nội dung → popup co rồi phình → Qt đặt lại vị trí. Lỗi Qt 6.11
+//      (qwaylandxdgshell.cpp createPositioner): popup không khai loại thì
+//      neo vào GÓC PHẢI ô 1×1 tại chính vị trí hiện tại → mỗi lần đặt lại
+//      +1px (lúc mở cũng đã +1). Khai neo góc trái qua thuộc tính
+//      _q_waylandPopupAnchor của QWindow (Qt đọc mỗi lần tạo positioner).
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -209,6 +217,7 @@
 #include <QTimer>
 #include <QToolButton>
 #include <QUrl>
+#include <QWindow>
 #include <QWidgetAction>
 
 #include <algorithm>
@@ -551,6 +560,23 @@ public:
     {
         if (event->type() == QEvent::ShowToParent)
             QMetaObject::invokeMethod(static_cast<QWidget *>(obj), &QWidget::hide, Qt::QueuedConnection);
+        return false;
+    }
+};
+
+// Mục 26. Popup neo góc trái — đặt lúc Show: cửa sổ nền (QWindow) đã có, Qt
+// chưa gửi vị trí cho compositor (show_sys chạy sau QShowEvent).
+class PopupAnchor : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() == QEvent::Show) {
+            if (QWindow *win = static_cast<QWidget *>(obj)->windowHandle())
+                win->setProperty("_q_waylandPopupAnchor", QVariant::fromValue(Qt::Edges(Qt::TopEdge | Qt::LeftEdge)));
+        }
         return false;
     }
 };
@@ -914,6 +940,8 @@ public:
         if (auto *label = qobject_cast<QLabel *>(w); label && label->window()->inherits("Search::Popup"))
             label->setTextInteractionFlags(label->textInteractionFlags()
                                            & ~(Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByKeyboard));
+        if (w->inherits("Search::Popup"))
+            w->installEventFilter(&m_popupAnchor);  // mục 26
         if (isUrlNavigatorButton(w)) {
             if (w->inherits("KDEPrivate::KUrlNavigatorToggleButton")) {
                 w->setMinimumWidth(TOGGLE_SIDE);  // mục 20: đủ chỗ cho ô vuông
@@ -953,6 +981,7 @@ public:
         w->removeEventFilter(&m_urlHover);
         w->removeEventFilter(&m_noPencil);
         w->removeEventFilter(&m_hideDock);
+        w->removeEventFilter(&m_popupAnchor);
         QProxyStyle::unpolish(w);
     }
     using QProxyStyle::unpolish;
@@ -1431,6 +1460,7 @@ private:
     UrlButtonHover m_urlHover;
     NoEditPencil m_noPencil;
     HideDock m_hideDock;
+    PopupAnchor m_popupAnchor;
     // Mục 14: ô đệm phải của tiêu đề cột, Dolphin vẽ ngay trước cột cuối.
     mutable QRect m_headerEnd;
 };

@@ -4,14 +4,14 @@
 # kdeglobals chọn nó (widgetStyle=samhie). Mã nguồn được containerfile module
 # chép vào /tmp/samhie-style (recipes/common.yml).
 #
-# Đồ build (cmake, gcc, header Qt — kho Fedora) cài rồi GỠ bằng dnf history
+# Đồ build (cmake, gcc, header Qt + KF6WidgetsAddons — kho Fedora) cài rồi GỠ bằng dnf history
 # undo: image chỉ giữ lại đúng file .so. Build lỗi thì build image dừng.
 set -oue pipefail
 
 SRC=/tmp/samhie-style
 DEST=/usr/lib64/qt6/plugins/styles/libsamhie.so
 
-dnf5 -y install --setopt=install_weak_deps=False cmake gcc-c++ qt6-qtbase-devel
+dnf5 -y install --setopt=install_weak_deps=False cmake gcc-c++ qt6-qtbase-devel kf6-kwidgetsaddons-devel
 cmake -S "$SRC" -B "$SRC/build" -DCMAKE_BUILD_TYPE=Release
 cmake --build "$SRC/build"
 install -Dm755 "$SRC/build/libsamhie.so" "$DEST"

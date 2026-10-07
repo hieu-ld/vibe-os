@@ -9,8 +9,8 @@
 | sha256 | `SHA256SUMS` |
 
 User tải từ trang web 2026-10-06 (lọc chỉ icon free), đặt tên theo chỗ dùng;
-thêm `folder`, `context-menu`, `interface` ngày 2026-10-07 (đối chiếu cùng
-commit, khớp đủ mọi nét).
+thêm `folder`, `context-menu`, `interface`, `general`, `content-display`
+ngày 2026-10-07 (đối chiếu cùng commit, khớp đủ mọi nét).
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
 (icon Pro KHÔNG được đưa vào mã nguồn mở, xem README của repo đó).
@@ -51,6 +51,7 @@ Hai file đã sửa (MIT cho sửa):
 | `bookmark` | `bookmark-02` |
 | `check` | `check` |
 | `close` | `circle-x` |
+| `content-display` | `content-writing` |
 | `context-menu` | `mouse-right-click-04` |
 | `copy` | `copy-02` |
 | `cut` | `square-bottom-dashed-scissors` |
@@ -61,6 +62,7 @@ Hai file đã sửa (MIT cho sửa):
 | `edit` | `pencil-edit-02` |
 | `filter` | `filter` |
 | `folder` | `folder-01` |
+| `general` | `left-to-right-list-triangle` |
 | `folder-new` | `folder-plus` |
 | `icons` | `grid-view` |
 | `interface` | `dashboard-browsing` |

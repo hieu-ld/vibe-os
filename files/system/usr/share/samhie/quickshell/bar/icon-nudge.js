@@ -3,6 +3,7 @@
 
 // tên icon → [cỡ px, nửa điểm ảnh dời ngang, dọc]: −1 trái/lên, 1 phải/xuống.
 var NUDGE = {
+    "description": [16, -1, -1],
     "dialog-ok": [16, 0, -1],
     "document-edit": [16, -1, -1],
     "edit-clear": [16, -1, -1],
@@ -34,6 +35,7 @@ var NUDGE = {
     "samhie-user-home": [20, 0, -1],
     "system-log-out": [20, 0, 1],
     "utilities-terminal": [16, -1, -1],
+    "view-choose": [16, -1, 0],
     "view-filter": [16, 0, -1],
     "view-list-icons": [22, -1, -1],
     "view-refresh": [16, -1, 0],

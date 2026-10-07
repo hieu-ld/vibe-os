@@ -156,6 +156,13 @@ MAP = {
     # file (đó là `folder`, tools/build-folder-icons.py).
     "folder":     [("actions", "folder-open")],
     "context-menu": [("actions", "preferences-desktop-menu-edit")],
+    # Tab General / Content Display của trang View (16px, viewsettingspage.cpp).
+    # view-choose còn là "Adjust View Display Style…" — Samhie đã ẩn hành động đó.
+    "general":    [("actions", "description")],
+    "content-display": [("actions", "view-choose")],
+    # Trang Interface: style "samhie" (mục 36) đổi icon của RIÊNG trang đó sang
+    # tên này — trang vốn dùng icon app org.kde.dolphin (icon dock).
+    "interface":  [("actions", "samhie-settings-interface")],
     # Ô quick settings (20px)
     "dark-mode":  [("actions", "samhie-dark-style")],
     "bell-off":   [("actions", "samhie-do-not-disturb")],
@@ -185,9 +192,7 @@ MAP = {
 
 # Có sẵn, chưa lắp. `wifi-lock`: chỉ có bản sóng đầy — danh sách Wi-Fi cần
 # khoá đi cùng cả bốn mức, nên vẫn dùng ổ khoá nhỏ đè góc (WifiPage.qml).
-# `interface`: cho trang Interface của Configure Dolphin — trang đó dùng icon
-# APP (org.kde.dolphin), đổi tên đó là đổi cả icon Dolphin ở dock; user để sau.
-UNUSED = {"wifi-lock", "interface"}
+UNUSED = {"wifi-lock"}
 
 # Cỡ hiển thị CHÍNH của từng hình (đo trong Quickshell/SDDM/Dolphin) — để dò
 # NUDGE. Hình không có ở đây: cỡ 16 (menu, thanh đường dẫn Dolphin).
@@ -201,7 +206,7 @@ SIZE = {
          "bluetooth", "wifi", "wifi-2", "wifi-1", "wifi-0",
          "volume-mute", "volume-35", "volume-70", "volume-full"],
     22: ["icons", "details", "menu", "search", "prev", "next"],
-    32: ["context-menu"],
+    32: ["context-menu", "interface"],
 }
 
 
@@ -255,7 +260,9 @@ NUDGE = {
     "download": (20, -0.5, -0.5),        # mờ 0.48 → 0.31
     "edit": (16, -0.5, -0.5),            # mờ 0.52 → 0.41
     "filter": (16, 0, -0.5),             # mờ 0.60 → 0.33
+    "content-display": (16, -0.5, 0.125),  # mờ 0.51 → 0.39
     "folder": (16, 0, -0.375),           # mờ 0.48 → 0.32
+    "general": (16, -0.5, -0.5),         # mờ 0.58 → 0.44
     "folder-new": (16, 0.125, -0.375),   # mờ 0.50 → 0.38
     "icons": (22, -0.5, -0.5),           # mờ 0.44 → 0.30
     "logout": (20, 0.25, 0.375),         # mờ 0.40 → 0.30

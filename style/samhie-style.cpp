@@ -220,6 +220,20 @@
 //      được ở Samhie (user 2026-10-07: "ẩn và không còn sử dụng"; ẩn khỏi
 //      menu mà phím tắt vẫn chạy thì giữ). Bộ lọc tìm của danh sách hiện lại
 //      dòng ẩn → xoá hẳn dòng (hành động vẫn còn). Danh sách: REMOVED_SHORTCUTS.
+//  36. Trang Interface của Configure Dolphin dùng icon nét riêng
+//      (samhie-settings-interface) thay icon APP org.kde.dolphin — đổi tên đó
+//      trong bộ icon là đổi cả icon Dolphin ở dock. Trang là KPageWidgetItem
+//      KHÔNG có cha → tìm qua KPageWidgetModel::item() (API công khai KF6
+//      WidgetsAddons — style link thư viện này, image đã có sẵn), đổi
+//      Q_PROPERTY icon. Chỉ trong hộp thoại Dolphin.
+//  37. Danh sách trong hộp thoại cài đặt (QListView trong KPageDialog, vd
+//      Context Menu): ô hover cách mép PAGE_LIST_GAP, cách nhau
+//      PAGE_LIST_GAP (user 2026-10-07); bấm dòng không để lại viền chọn (danh
+//      sách tích chọn, "chọn dòng" không có nghĩa gì).
+//  38. Configure Dolphin → Context Menu bớt dòng không dùng được ở Samhie
+//      (CONTEXT_MENU_HIDDEN). ServiceModel không xoá được dòng → chèn một lớp
+//      lọc giữa model gốc và lớp sắp xếp/tìm của trang (trang không dùng
+//      mapToSource; lưu/đặt lại đọc thẳng model gốc → dòng ẩn giữ nguyên).
 //  30. Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -267,11 +281,15 @@
 #include <QLabel>
 #include <QLineEdit>
 #include <QListView>
+#include <QSortFilterProxyModel>
 #include <QSet>
 #include <QTreeWidget>
 #include <QTimer>
 #include <QToolButton>
 #include <QUrl>
+
+#include <KPageView>
+#include <KPageWidgetModel>
 #include <QWindow>
 #include <QWidgetAction>
 
@@ -734,6 +752,40 @@ void trimShortcutList(QTreeWidgetItem *parent)
     }
 }
 
+// Mục 38: dòng trang Context Menu không dùng được ở Samhie (id =
+// ServiceModel::DesktopEntryNameRole, contextmenusettingspage.cpp 26.08.1).
+const QSet<QString> CONTEXT_MENU_HIDDEN = {
+    // Assign Tags: nhãn cần Baloo (image không cài) — kservicemenurc đã tắt
+    QStringLiteral("tagsfileitemaction"),
+    // Link Files to Activities: Activity của Plasma, Hyprland không có
+    QStringLiteral("kactivitymanagerd_fileitem_linking_plugin"),
+    // Dropbox (cần ứng dụng Dropbox), Bazaar (quản lý phiên bản đã ngừng)
+    QStringLiteral("_version_control_Dropbox"),
+    QStringLiteral("_version_control_Bazaar"),
+};
+
+class ContextMenuRowFilter : public QSortFilterProxyModel
+{
+public:
+    using QSortFilterProxyModel::QSortFilterProxyModel;
+
+protected:
+    bool filterAcceptsRow(int row, const QModelIndex &parent) const override
+    {
+        // Dòng mới chèn chưa có id (addRow: insertRow rồi mới setData) →
+        // nhận trước, setData đổi dữ liệu thì lọc lại (dynamicSortFilter).
+        const QString id = sourceModel()->index(row, 0, parent).data(Qt::UserRole).toString();
+        return !CONTEXT_MENU_HIDDEN.contains(id);
+    }
+};
+
+// Mục 37: danh sách trong hộp thoại cài đặt (không tính danh sách trang).
+bool isSettingsList(const QWidget *w)
+{
+    return qobject_cast<const QListView *>(w) && !w->inherits("KDEPrivate::KPageListView")
+        && w->window()->inherits("KPageDialog");
+}
+
 // Mục 30: danh sách dùng KExtendableItemDelegate (ô có dải "›" bên trái).
 const QAbstractItemView *extendableView(const QStyleOption *opt, const QWidget *w)
 {
@@ -1164,6 +1216,34 @@ public:
                     tabs->setTabVisible(i, false);
             }
         }
+        // Mục 38: lớp lọc chèn một lần (model của view là lớp sắp xếp/tìm).
+        if (auto *lv = qobject_cast<QListView *>(w); lv && lv->parentWidget()
+            && lv->parentWidget()->inherits("ContextMenuSettingsPage")) {
+            auto *sort = qobject_cast<QSortFilterProxyModel *>(lv->model());
+            if (sort && sort->sourceModel() && !dynamic_cast<ContextMenuRowFilter *>(sort->sourceModel())) {
+                auto *filter = new ContextMenuRowFilter(sort);
+                filter->setSourceModel(sort->sourceModel());
+                sort->setSourceModel(filter);
+            }
+        }
+        // Mục 36. Danh sách trang được polish ngay lúc KPageView tạo nó (trang
+        // đầu tiên vừa thêm, model còn rỗng — đo container 2026-10-07) → làm
+        // sau một nhịp, khi hộp thoại đã thêm đủ trang.
+        if (w->inherits("KDEPrivate::KPageListView")) {
+            QTimer::singleShot(0, w, [w] {
+                if (!w->window()->inherits("DolphinSettingsDialog"))
+                    return;
+                const QWidget *a = w->parentWidget();
+                while (a && !qobject_cast<const KPageView *>(a))
+                    a = a->parentWidget();
+                auto *model = a ? qobject_cast<KPageWidgetModel *>(static_cast<const KPageView *>(a)->model()) : nullptr;
+                for (int r = 0; model && r < model->rowCount(); ++r) {
+                    KPageWidgetItem *item = model->item(model->index(r, 0));
+                    if (item && item->icon().name() == QLatin1String("org.kde.dolphin"))
+                        item->setIcon(QIcon::fromTheme(QStringLiteral("samhie-settings-interface")));
+                }
+            });
+        }
         if (w->inherits("TabConnectedWidget"))
             w->installEventFilter(&m_noPaint);  // mục 30
         if (isUrlNavigatorButton(w)) {
@@ -1509,7 +1589,16 @@ public:
             if (auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
                 QStyleOptionViewItem o(*vopt);
                 o.state &= ~State_HasFocus;
-                if (const QAbstractItemView *view = extendableView(opt, w); view && o.index.isValid()) {
+                const QAbstractItemView *view = extendableView(opt, w);
+                if (!view && isSettingsList(w) && o.index.isValid()) {  // mục 37
+                    QStyleOptionViewItem panel(o);
+                    panel.viewItemPosition = QStyleOptionViewItem::OnlyOne;
+                    panel.rect.adjust(PAGE_LIST_GAP, PAGE_LIST_GAP / 2, -PAGE_LIST_GAP, -PAGE_LIST_GAP / 2);
+                    panel.state &= ~State_Selected;
+                    QProxyStyle::drawPrimitive(PE_PanelItemViewItem, &panel, p, w);
+                    o.state &= ~(State_Selected | State_MouseOver);
+                    o.viewItemPosition = QStyleOptionViewItem::OnlyOne;
+                } else if (view && o.index.isValid()) {
                     QStyleOptionViewItem panel(o);
                     panel.viewItemPosition = QStyleOptionViewItem::OnlyOne;
                     panel.rect.setLeft(view->visualRect(o.index).left());

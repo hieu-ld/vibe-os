@@ -194,9 +194,10 @@
 //      vốn nổi sẵn, mũi tên đổi tab đang mở). Nhãn dòng trạng thái ("1
 //      folder") và nhãn tiêu đề popup Filter không nhận Tab (Dolphin cho chọn
 //      chữ bằng bàn phím → con trỏ chữ trắng). Radio của popup Filter lùi vào
-//      KEY_FOCUS_PAD px, lề trái popup bớt đúng ngần ấy (nhãn "Search in:"
-//      thụt theo) → mọi thứ đứng chỗ cũ, ô nền Tab có khoảng trống bên trái
-//      vòng tròn (widget vốn chỉ thừa 2px). Radio/checkbox nơi khác giữ 2px.
+//      KEY_FOCUS_PAD px → ô nền Tab có khoảng trống bên trái vòng tròn
+//      (widget vốn chỉ thừa 2px); MỌI radio/checkbox (user 2026-10-07: hộp
+//      thoại Configure Dolphin cũng cần). Popup Filter: lề trái bớt đúng
+//      ngần ấy (nhãn "Search in:" thụt theo) → đứng chỗ cũ, thẳng cột nhãn.
 //  29. Menu ☰ Dolphin không có tầng Configure (user 2026-10-07): đưa thẳng
 //      Configure Keyboard Shortcuts… và Configure Dolphin… ra menu ☰ chỗ dòng
 //      Configure, bỏ Window Color Scheme (màu Samhie đi qua Kvantum, đổi ở đây
@@ -204,13 +205,20 @@
 //      Configure Toolbars (thanh do style chỉnh, mục 18). Menu con dựng mới
 //      mỗi lần mở (DolphinMainWindow::updateHamburgerMenu, 26.08.1) → làm như
 //      mục 17: lúc polish + mỗi aboutToShow. Nhận ra theo tên hành động.
+//  31. Nút chỉ có icon (không chữ) cao bằng nút có chữ, vuông — Kvantum tính
+//      theo icon 16px (nút chọn thư mục Configure Dolphin cao 18px cạnh ô
+//      nhập 40px, máy ảo user 2026-10-07). Như mục 16.
+//  32. Danh sách trang hộp thoại cài đặt (KPageListView: Interface, View…):
+//      ô hover/chọn cách hai mép và cách nhau PAGE_LIST_GAP (user
+//      2026-10-07: đang sát nhau, sát mép).
 //  30. Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
 //      QApplication, KHÔNG kèm widget); cả hai tự đặt vị trí ô đầu/giữa/cuối
 //      → Kvantum coi ô dính nhau, vuông một phía → ô hover hai lớp có khấc.
 //      → dải "›" không vẽ nền; ô nội dung vẽ nền một lần trên CẢ ô (gồm "›"),
-//      đứng riêng, bo đủ góc. Ô hiện tại không khung focus (Kvantum vẽ trong
+//      đứng riêng, bo đủ góc; ô đang chọn = nền hover, không viền (viền chọn
+//      nháy khi bấm ô Action). Ô hiện tại không khung focus (Kvantum vẽ trong
 //      CE_ItemViewItem, không qua PE_FrameFocusRect của style này — áp cho
 //      mọi danh sách). Dải sửa phím tắt mở dưới dòng không còn nét
 //      Highlight dày 6px (TabConnectedWidget::paintEvent tự vẽ) — chặn sự
@@ -249,6 +257,7 @@
 #include <QMainWindow>
 #include <QLabel>
 #include <QLineEdit>
+#include <QListView>
 #include <QTimer>
 #include <QToolButton>
 #include <QUrl>
@@ -267,6 +276,7 @@ constexpr int PANE_RADIUS = 12;    // góc viền vùng file Dolphin (bản vẽ
 constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6px mỗi phía
 constexpr int TOOLBAR_SEPARATOR_HEIGHT = 18;  // icon thanh công cụ cao ~20px (mục 23)
 constexpr int KEY_FOCUS_PAD = 6;   // ô nền focus bàn phím rộng hơn vòng radio + chữ (mục 25, 28)
+constexpr int PAGE_LIST_GAP = 4;   // danh sách trang hộp thoại cài đặt: khe quanh mỗi ô (mục 32)
 constexpr int TERMINAL_PAD = 6;    // panel Terminal Dolphin: lề trong thêm (mục 27)
 constexpr int TERMINAL_GAP = 7;    // khe trên panel Terminal: + vạch ngăn dock 1px = 8 (mục 27)
 constexpr int POPUP_MARGIN = 8;    // thẻ tìm cách mép vùng file
@@ -460,10 +470,16 @@ QColor paneColor()
 }
 
 // Tô vùng nội dung của QTabWidget kiểu document (+ viền ở Dolphin) TRƯỚC khi
+// Mục 28: radio/checkbox (widget) — vẽ lùi vào KEY_FOCUS_PAD.
+bool isToggle(const QWidget *w)
+{
+    return w && (w->inherits("QRadioButton") || w->inherits("QCheckBox"));
+}
+
 // Mục 28: radio/checkbox của popup Filter thanh tìm Dolphin.
 bool isPopupToggle(const QWidget *w)
 {
-    return w && (w->inherits("QRadioButton") || w->inherits("QCheckBox")) && w->window()->inherits("Search::Popup");
+    return isToggle(w) && w->window()->inherits("Search::Popup");
 }
 
 // Mục 28: nhãn không nhận Tab — bỏ chọn chữ / mở liên kết bằng bàn phím; bôi
@@ -1080,6 +1096,8 @@ public:
         }
         if (w->inherits("Search::Popup"))
             w->installEventFilter(&m_popupAnchor);  // mục 26
+        if (w->inherits("KDEPrivate::KPageListView"))
+            static_cast<QListView *>(w)->setSpacing(PAGE_LIST_GAP);  // mục 32
         if (w->inherits("TabConnectedWidget"))
             w->installEventFilter(&m_noPaint);  // mục 30
         if (isUrlNavigatorButton(w)) {
@@ -1286,6 +1304,17 @@ public:
         // máy ảo 2026-10-04). Mũi tên trong Dolphin chọn luôn ô nên vẫn thấy.
         if (pe == PE_FrameFocusRect && isItemView(w))
             return;
+        // Mục 32: ô danh sách trang cách mép phải bằng khe bên trái (setSpacing
+        // chỉ chừa trái/trên/dưới — mục dài hết khung bên phải).
+        if (pe == PE_PanelItemViewItem && w && w->inherits("KDEPrivate::KPageListView")) {
+            if (auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
+                QStyleOptionViewItem o(*vopt);
+                const int right = static_cast<const QAbstractScrollArea *>(w)->viewport()->width() - 1 - PAGE_LIST_GAP;
+                o.rect.setRight(qMin(o.rect.right(), right));
+                QProxyStyle::drawPrimitive(pe, &o, p, w);
+                return;
+            }
+        }
         // Mục 30: dải "›" (gọi không kèm widget) không có nền riêng.
         if (pe == PE_PanelItemViewItem && !w && extendableView(opt, w))
             return;
@@ -1407,7 +1436,17 @@ public:
                     QStyleOptionViewItem panel(o);
                     panel.viewItemPosition = QStyleOptionViewItem::OnlyOne;
                     panel.rect.setLeft(view->visualRect(o.index).left());
-                    QProxyStyle::drawPrimitive(PE_PanelItemViewItem, &panel, p, w);
+                    // Ô đang chọn vẽ như ô hover, không viền: bấm ô Action thì
+                    // ô đó được chọn một khoảnh rồi KDE chuyển sang ô Shortcut
+                    // (mở dải sửa) → viền chọn nháy (máy ảo user 2026-10-07).
+                    // Dải sửa mở ngay dưới đã cho biết dòng nào. Không kèm
+                    // widget: Kvantum hạ "hover" khi chuột ra ngoài danh sách.
+                    const bool selected = panel.state & State_Selected;
+                    if (selected) {
+                        panel.state &= ~State_Selected;
+                        panel.state |= State_MouseOver;
+                    }
+                    QProxyStyle::drawPrimitive(PE_PanelItemViewItem, &panel, p, selected ? nullptr : w);
                     o.state &= ~(State_Selected | State_MouseOver);
                     o.viewItemPosition = QStyleOptionViewItem::OnlyOne;
                 }
@@ -1462,12 +1501,12 @@ public:
         // Mục 25: radio/checkbox không có khung focus cyan quanh chữ. Bấm chuột
         // thì thôi hẳn; đi bằng Tab (State_KeyboardFocusChange) thì ô đang
         // đứng có nền như ô hover — không thì bấm Space không biết chọn ô nào.
-        // Mục 28: radio popup Filter vẽ lùi vào KEY_FOCUS_PAD (Kvantum tự tính
+        // Mục 28: radio/checkbox vẽ lùi vào KEY_FOCUS_PAD (Kvantum tự tính
         // vị trí vòng + chữ từ rect, không hỏi lại style này).
         if ((ce == CE_RadioButton || ce == CE_CheckBox) && button
-            && ((button->state & State_HasFocus) || isPopupToggle(w))) {
+            && ((button->state & State_HasFocus) || isToggle(w))) {
             QStyleOptionButton o(*button);
-            if (isPopupToggle(w))
+            if (isToggle(w))
                 o.rect.setLeft(o.rect.left() + KEY_FOCUS_PAD);
             o.state &= ~State_HasFocus;
             if ((button->state & State_HasFocus) && (button->state & State_KeyboardFocusChange)) {
@@ -1525,8 +1564,8 @@ public:
 
     QRect subElementRect(SubElement se, const QStyleOption *opt, const QWidget *w) const override
     {
-        // Mục 28: vùng bấm/vòng/chữ của radio popup Filter theo chỗ đã lùi.
-        if (isPopupToggle(w) && qstyleoption_cast<const QStyleOptionButton *>(opt)
+        // Mục 28: vùng bấm/vòng/chữ của radio/checkbox theo chỗ đã lùi.
+        if (isToggle(w) && qstyleoption_cast<const QStyleOptionButton *>(opt)
             && (se == SE_RadioButtonIndicator || se == SE_RadioButtonContents || se == SE_RadioButtonFocusRect
                 || se == SE_RadioButtonClickRect || se == SE_CheckBoxIndicator || se == SE_CheckBoxContents
                 || se == SE_CheckBoxFocusRect || se == SE_CheckBoxClickRect)) {
@@ -1591,15 +1630,20 @@ public:
             s.setHeight(s.height() + HEADER_GAP);
         // Mục 16: hỏi Kvantum cỡ của chính nút đó nếu có một chữ — lấy chiều
         // cao (Kvantum tự tính từ chữ/icon trong option, không theo size).
+        // Mục 31: mọi nút chỉ có icon cũng vậy (nút chọn thư mục của Configure
+        // Dolphin cao 18px cạnh ô nhập 40px — máy ảo user 2026-10-07), và
+        // vuông nếu không có menu.
         auto *pbopt = qstyleoption_cast<const QStyleOptionButton *>(opt);
-        if (ct == CT_PushButton && pbopt && pbopt->text.isEmpty() && isMenuRowButton(w)) {
+        if (ct == CT_PushButton && pbopt && pbopt->text.isEmpty() && (isMenuRowButton(w) || !pbopt->icon.isNull())) {
             QStyleOptionButton o(*pbopt);
             o.text = QStringLiteral("X");
             const QSize withText = QProxyStyle::sizeFromContents(
                 ct, &o, size.expandedTo(QSize(0, o.fontMetrics.height())), w);
             s.setHeight(qMax(s.height(), withText.height()));
+            if (!isMenuRowButton(w) && !(pbopt->features & QStyleOptionButton::HasMenu))
+                s.setWidth(s.height());
         }
-        if ((ct == CT_RadioButton || ct == CT_CheckBox) && isPopupToggle(w))
+        if ((ct == CT_RadioButton || ct == CT_CheckBox) && isToggle(w))
             s.setWidth(s.width() + KEY_FOCUS_PAD);  // mục 28
         auto *mopt = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
         if (ct == CT_MenuItem && mopt && mopt->menuItemType != QStyleOptionMenuItem::Separator)

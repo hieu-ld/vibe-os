@@ -162,7 +162,8 @@
 //      vẫn chạy), 🔒 + Aᴮ của thanh lọc, dòng KFind và nhóm "Search using:"
 //      (Simple search / File Indexing — image không có Baloo) trong popup
 //      Filter của thanh tìm, hai dòng "Focus … Panel" trong Show Panels
-//      (phím tắt vẫn chạy) cùng dòng Folders (F7 vẫn chạy), panel
+//      (phím tắt vẫn chạy) cùng dòng Folders (F7 vẫn chạy), Rating / Tags /
+//      Comment trong ▦ → Sort By (2026-10-07, cần Baloo), panel
 //      Information (F11) ẩn hẳn. Thanh lọc (F10 → Filter) cũng không viền
 //      focus cyan, ô hover vuông như thanh tìm (mục 20, 21), cách đáy 8px.
 //  23. Vạch ngăn thanh công cụ (giữa ⊙→ và ▦ của Dolphin): 1px màu
@@ -231,7 +232,9 @@
 //      Context Menu): ô hover cách mép PAGE_LIST_GAP, cách nhau
 //      PAGE_LIST_GAP (user 2026-10-07); danh sách tích chọn không có viền
 //      chọn ("chọn dòng" vô nghĩa), danh sách chọn (Trash: thùng rác từng ổ)
-//      có nền + viền chọn như danh sách trang.
+//      có nền + viền chọn như danh sách trang. Ô tích/icon/chữ lùi theo nội
+//      dung cả lúc dò cú bấm (subElementRect) — không thì vùng bấm ô tích
+//      lệch trái 8px, bấm giữa ô không ăn (user 2026-10-07).
 //  38. Configure Dolphin → Context Menu bớt dòng không dùng được ở Samhie
 //      (CONTEXT_MENU_HIDDEN). ServiceModel không xoá được dòng → chèn một lớp
 //      lọc giữa model gốc và lớp sắp xếp/tìm của trang (trang không dùng
@@ -1133,7 +1136,9 @@ public:
         // — gỡ khỏi menu, hành động vẫn gắn cửa sổ (KXmlGui) nên Ctrl+P /
         // Ctrl+Shift+F4 vẫn chạy; ẩn hành động thì Qt tắt luôn phím tắt.
         // Cũng vậy: "Folders" (cây thư mục — trùng sidebar Places + thanh
-        // đường dẫn; user 2026-10-06), F7 vẫn mở.
+        // đường dẫn; user 2026-10-06), F7 vẫn mở. Và Rating / Tags / Comment
+        // trong ▦ → Sort By (user 2026-10-07): dữ liệu Baloo, Samhie không có
+        // chỗ gắn — cùng lý do bỏ khỏi danh sách phím tắt (REMOVED_SHORTCUTS).
         if (auto *menu = qobject_cast<QMenu *>(w); menu && QCoreApplication::applicationName() == QLatin1String("dolphin")
                                                    && !menu->property("samhieNoZoom").toBool()) {
             menu->setProperty("samhieNoZoom", true);
@@ -1143,7 +1148,10 @@ public:
                     if (a->objectName() == QLatin1String("zoom")
                         || a->objectName() == QLatin1String("focus_places_panel")
                         || a->objectName() == QLatin1String("focus_terminal_panel")
-                        || a->objectName() == QLatin1String("show_folders_panel"))
+                        || a->objectName() == QLatin1String("show_folders_panel")
+                        || a->objectName() == QLatin1String("sort_by_rating")
+                        || a->objectName() == QLatin1String("sort_by_tags")
+                        || a->objectName() == QLatin1String("sort_by_comment"))
                         menu->removeAction(a);
                 }
             });
@@ -1796,6 +1804,20 @@ public:
             QStyleOptionButton o(*qstyleoption_cast<const QStyleOptionButton *>(opt));
             o.rect.setLeft(o.rect.left() + KEY_FOCUS_PAD);
             return QProxyStyle::subElementRect(se, &o, w);
+        }
+        // Mục 37: nội dung ô danh sách cài đặt vẽ lùi 2 × PAGE_LIST_GAP mỗi
+        // bên → ô tích / icon / chữ tính theo chỗ đã lùi. Delegate dò cú bấm
+        // vào ô tích bằng SE_ItemViewItemCheckIndicator: tính theo chỗ cũ thì
+        // vùng bấm lệch trái 8px so với ô vẽ ra — bấm giữa ô không ăn, phải
+        // bấm mép trái (trang Context Menu, user 2026-10-07; đo container).
+        if ((se == SE_ItemViewItemCheckIndicator || se == SE_ItemViewItemDecoration
+             || se == SE_ItemViewItemText || se == SE_ItemViewItemFocusRect)
+            && isSettingsList(w) && !extendableView(opt, w)) {
+            if (auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt); vopt && vopt->index.isValid()) {
+                QStyleOptionViewItem o(*vopt);
+                o.rect.adjust(2 * PAGE_LIST_GAP, 0, -2 * PAGE_LIST_GAP, 0);
+                return QProxyStyle::subElementRect(se, &o, w);
+            }
         }
         QRect r = QProxyStyle::subElementRect(se, opt, w);
         // Ô góc (nút + của Konsole) cao bằng dải tab, nút tự căn icon giữa.

@@ -242,6 +242,14 @@
 //  39. Trang Context Menu: icon nét riêng cho Compress, Extract, Makefile,
 //      Mount ISO, Git, 'Copy To'/'Move To', Run In Konsole, Set Folder Icon
 //      (CONTEXT_MENU_ICONS) — lớp lọc mục 38 trả icon khác.
+//  40. Menu ☰ Dolphin không có More, Help chỉ còn Find Action… và About
+//      Dolphin (user 2026-10-07). More (KHamburgerMenu dựng: Show Menubar +
+//      bản chép File/Edit/View/Go/Tools/Settings) trùng menu chuột phải, ▦,
+//      phím tắt — và lộ lại Group By / Show Additional Information mà
+//      dolphin-ui.sh đã ẩn, Show Toolbar, Bookmarks. Nhận ra More theo hành
+//      động options_show_menubar đứng đầu (chữ đổi theo ngôn ngữ). Help là
+//      menu thật của thanh menu (dùng chung) → gỡ hành động trong HELP_HIDDEN
+//      khỏi nó. Làm như mục 17: lúc polish + mỗi aboutToShow.
 //  30. Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -756,6 +764,21 @@ const QSet<QString> REMOVED_SHORTCUTS = {
     // công cụ; "Change View Mode" là nút chọn chế độ xem mà thanh của Samhie
     // không dùng (có ▦, Icons Ctrl+1, Details Ctrl+2)
     QStringLiteral("url_navigators"), QStringLiteral("view_mode"),
+    // Mục 40: menu ☰ bỏ More và bớt Help (user 2026-10-07); dolphin-ui.sh xoá
+    // luôn phím tắt Ctrl+M, Ctrl+B, F1, Shift+F1
+    QStringLiteral("options_show_menubar"),
+    QStringLiteral("add_bookmark"), QStringLiteral("add_bookmarks_list"), QStringLiteral("edit_bookmarks"),
+    QStringLiteral("help_contents"), QStringLiteral("help_whats_this"), QStringLiteral("help_report_bug"),
+    QStringLiteral("help_donate"), QStringLiteral("help_about_kde"),
+};
+
+// Mục 40: dòng bỏ khỏi menu Help (tên hành động của KHelpMenu, KF 6.30).
+const QSet<QString> HELP_HIDDEN = {
+    QStringLiteral("help_contents"),    // Dolphin Handbook: tài liệu theo giao diện Dolphin gốc
+    QStringLiteral("help_whats_this"),  // What's This?: đã có tooltip
+    QStringLiteral("help_report_bug"),  // Report Bug / Donate: tới KDE, không phải Samhie
+    QStringLiteral("help_donate"),
+    QStringLiteral("help_about_kde"),   // About KDE: Samhie không dùng Plasma
 };
 
 // Mục 35: xoá dòng của hành động trong REMOVED_SHORTCUTS, rồi nhóm con rỗng.
@@ -1120,9 +1143,11 @@ public:
             auto *menu = static_cast<QMenu *>(w);  // mục 17: menu ☰
             removeHamburgerCreateNew(menu);
             flattenHamburgerConfigure(menu);  // mục 29
+            trimHamburgerMoreHelp(menu);      // mục 40
             QObject::connect(menu, &QMenu::aboutToShow, menu, [menu] {
                 removeHamburgerCreateNew(menu);
                 flattenHamburgerConfigure(menu);
+                trimHamburgerMoreHelp(menu);
                 trimPlacesMenu(menu);  // mục 19
             });
         }
@@ -1960,6 +1985,27 @@ private:
         for (QAction *a : menu->actions()) {
             if (a->menu() && createNew.contains(a->menu()))
                 menu->removeAction(a);
+        }
+    }
+
+    static void trimHamburgerMoreHelp(QMenu *menu)  // mục 40
+    {
+        for (QAction *a : menu->actions()) {
+            QMenu *sub = a->menu();
+            if (!sub)
+                continue;
+            const QList<QAction *> subActions = sub->actions();
+            // More: menu KHamburgerMenu dựng, mở đầu bằng Show Menubar.
+            if (std::any_of(subActions.begin(), subActions.end(), [](QAction *s) {
+                    return s->objectName() == QLatin1String("options_show_menubar");
+                })) {
+                menu->removeAction(a);
+                continue;
+            }
+            for (QAction *s : subActions) {
+                if (HELP_HIDDEN.contains(s->objectName()))
+                    sub->removeAction(s);
+            }
         }
     }
 

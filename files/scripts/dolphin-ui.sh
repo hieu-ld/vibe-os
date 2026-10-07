@@ -41,6 +41,8 @@
 #   basic_actions    "Actions for Current View" (☰): Cut/Copy/Paste/Select
 #                    All… trùng menu chuột phải; phím tắt vẫn chạy (ẩn MENU
 #                    con, không ẩn từng hành động).
+#   Phím tắt của Show Menubar / Add Bookmark / Handbook / What's This xoá
+#   rỗng (shortcut="") — menu ☰ đã bỏ More và bớt Help (style mục 40).
 #
 # Thanh công cụ theo bản vẽ của user (2026-10-03):
 #   ← → | ▦  [đường dẫn ✎]  🔍  ☰
@@ -135,6 +137,26 @@ for a in hidden:
 for a, icon in (("go_back", "samhie-go-back"), ("go_forward", "samhie-go-forward")):
     tail, n = re.subn(rf'(<Action priority="0" name="{a}")', rf'\1 icon="{icon}"', tail, count=1)
     assert n == 1, f'no ActionProperties entry for "{a}"'
+# Xoá phím tắt của thứ Samhie đã bỏ khỏi menu ☰ (style mục 40, user
+# 2026-10-07) — chỉ phím tắt, hành động vẫn còn (Find Action… vẫn gọi được):
+#   options_show_menubar  Ctrl+M  thanh menu KDE cũ, phá bố cục
+#   add_bookmark          Ctrl+B  thêm vào menu Bookmarks — không còn chỗ xem
+#   help_contents         F1      tài liệu theo giao diện Dolphin gốc
+#   help_whats_this       Shift+F1
+# Tên là của KF (KStandardAction / KHelpMenu / KBookmarkMenu) → kiểm trong
+# thư viện KF6, chuỗi UTF-16 như trên.
+kf = b"".join(open(f"/usr/lib64/lib{l}.so.6", "rb").read()
+              for l in ("KF6ConfigGui", "KF6XmlGui", "KF6BookmarksWidgets"))
+for a in ("options_show_menubar", "add_bookmark", "help_contents", "help_whats_this"):
+    assert a.encode("utf-16-le") + b"\0\0" in kf, f'unknown action "{a}"'
+    props_part = tail.split("</ActionProperties>")[0]
+    m = re.search(rf'<Action\b[^>]*\bname="{a}"[^>]*>', props_part)
+    if m and "shortcut=" in m.group(0):
+        tail = tail.replace(m.group(0), re.sub(r'shortcut="[^"]*"', 'shortcut=""', m.group(0)), 1)
+    elif m:
+        tail, n = re.subn(rf'(<Action\b[^>]*\bname="{a}")', r'\1 shortcut=""', tail, count=1)
+    else:
+        tail = tail.replace(">", f'>\n        <Action name="{a}" shortcut=""/>', 1)
 
 ui = head + sep + tail
 
@@ -144,12 +166,12 @@ ui = ui.replace("<gui ", note + "<gui ", 1)
 
 # Lần sửa của Samhie: tăng mỗi khi đổi file này theo cách tài khoản cũ cần
 # nhận (xem đầu file). Bản nhúng 49 + 1 + SAMHIE_REV.
-SAMHIE_REV = 0
+SAMHIE_REV = 1   # 1: xoá phím tắt Ctrl+M, Ctrl+B, F1, Shift+F1 (2026-10-07)
 version = int(re.search(r'<gui name="dolphin" version="(\d+)"', ui).group(1)) + 1 + SAMHIE_REV
 ui, n = re.subn(r'(<gui name="dolphin" version=")\d+"', rf'\g<1>{version}"', ui, count=1)
 assert n == 1, "no version in dolphinui.rc"
 os.makedirs("/usr/share/kxmlgui5/dolphin", exist_ok=True)
 with open("/usr/share/kxmlgui5/dolphin/dolphinui.rc", "w") as f:
     f.write(ui)
-print(f"dolphinui.rc version {version}: patched compact, details, view_settings, toolbar")
+print(f"dolphinui.rc version {version}: patched compact, details, view_settings, toolbar, shortcuts")
 EOF

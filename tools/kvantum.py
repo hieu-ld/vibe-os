@@ -175,10 +175,12 @@ FRAMES = [
         "toggled":  ("text@0.12", None),
         "disabled": (None, None),
     }, False),
-    # Ô nhập: ô đường dẫn, ô tìm. Focus = viền cyan (màu nhấn cho thứ đang focus).
+    # Ô nhập: ô đường dẫn, ô tìm. Focus KHÔNG đổi viền (user 2026-10-07: hết
+    # cyan ở ô tìm hộp thoại phím tắt / Configure Dolphin, như ô tìm Dolphin —
+    # style mục 20); con trỏ chữ nhấp nháy đã báo đang gõ ở đâu.
     ("lineedit", {
         "normal":   ("card", "sub-secondary"),
-        "focused":  ("card", "accent"),
+        "focused":  ("card", "sub-secondary"),
         "disabled": ("card@0.5", "sub-secondary@0.5"),
     }, False),
     # Tab: tab đang mở = card liền với nội dung; tab khác trong suốt.

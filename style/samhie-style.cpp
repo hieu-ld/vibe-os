@@ -204,6 +204,17 @@
 //      Configure Toolbars (thanh do style chỉnh, mục 18). Menu con dựng mới
 //      mỗi lần mở (DolphinMainWindow::updateHamburgerMenu, 26.08.1) → làm như
 //      mục 17: lúc polish + mỗi aboutToShow. Nhận ra theo tên hành động.
+//  30. Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
+//      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
+//      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
+//      QApplication, KHÔNG kèm widget); cả hai tự đặt vị trí ô đầu/giữa/cuối
+//      → Kvantum coi ô dính nhau, vuông một phía → ô hover hai lớp có khấc.
+//      → dải "›" không vẽ nền; ô nội dung vẽ nền một lần trên CẢ ô (gồm "›"),
+//      đứng riêng, bo đủ góc. Ô hiện tại không khung focus (Kvantum vẽ trong
+//      CE_ItemViewItem, không qua PE_FrameFocusRect của style này — áp cho
+//      mọi danh sách). Dải sửa phím tắt mở dưới dòng không còn nét
+//      Highlight dày 6px (TabConnectedWidget::paintEvent tự vẽ) — chặn sự
+//      kiện vẽ của nó; các con vẫn tự vẽ.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -640,6 +651,27 @@ public:
 // Mục 24. Panel Information của Dolphin (F11) luôn ẩn: Dolphin dựng lại nó
 // theo trạng thái lưu lần trước (QMainWindow::restoreState — ai đã mở nó ở
 // bản cũ thì nó tự hiện) → hễ được hiện là ẩn lại, ngay vòng sự kiện sau.
+// Mục 30: dải sửa phím tắt (ShortcutEditWidget : TabConnectedWidget) không vẽ
+// nét Highlight — paintEvent của nó chỉ có nét đó.
+class NoPaint : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *, QEvent *event) override
+    {
+        return event->type() == QEvent::Paint;
+    }
+};
+
+// Mục 30: danh sách dùng KExtendableItemDelegate (ô có dải "›" bên trái).
+const QAbstractItemView *extendableView(const QStyleOption *opt, const QWidget *w)
+{
+    auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt);
+    auto *view = qobject_cast<const QAbstractItemView *>(w ? w : (vopt ? vopt->widget : nullptr));
+    return view && view->itemDelegate() && view->itemDelegate()->inherits("KExtendableItemDelegate") ? view : nullptr;
+}
+
 class HideDock : public QObject
 {
 public:
@@ -1048,6 +1080,8 @@ public:
         }
         if (w->inherits("Search::Popup"))
             w->installEventFilter(&m_popupAnchor);  // mục 26
+        if (w->inherits("TabConnectedWidget"))
+            w->installEventFilter(&m_noPaint);  // mục 30
         if (isUrlNavigatorButton(w)) {
             if (w->inherits("KDEPrivate::KUrlNavigatorToggleButton")) {
                 w->setMinimumWidth(TOGGLE_SIDE);  // mục 20: đủ chỗ cho ô vuông
@@ -1106,6 +1140,7 @@ public:
         w->removeEventFilter(&m_noPencil);
         w->removeEventFilter(&m_hideDock);
         w->removeEventFilter(&m_popupAnchor);
+        w->removeEventFilter(&m_noPaint);
         QProxyStyle::unpolish(w);
     }
     using QProxyStyle::unpolish;
@@ -1251,6 +1286,9 @@ public:
         // máy ảo 2026-10-04). Mũi tên trong Dolphin chọn luôn ô nên vẫn thấy.
         if (pe == PE_FrameFocusRect && isItemView(w))
             return;
+        // Mục 30: dải "›" (gọi không kèm widget) không có nền riêng.
+        if (pe == PE_PanelItemViewItem && !w && extendableView(opt, w))
+            return;
         // Mục 15. Dolphin tô nền ô (drawRoundedRect) rồi gọi PE_Frame — vẽ lại
         // viền trái vùng file ở cột 0 của ô (cùng cột với viền PanePainter).
         // Mục 27: vùng file khép đáy (Terminal mở) thì ô còn đè góc bo dưới-
@@ -1355,6 +1393,24 @@ public:
             if (auto *mopt = qstyleoption_cast<const QStyleOptionMenuItem *>(opt)) {
                 QStyleOptionMenuItem o(*mopt);
                 o.state &= ~(State_MouseOver | State_Selected);
+                QProxyStyle::drawControl(ce, &o, p, w);
+                return;
+            }
+        }
+        // Mục 30: ô danh sách không khung focus; ô của KExtendableItemDelegate
+        // vẽ nền một lần trên cả ô (gồm dải "›"), đứng riêng.
+        if (ce == CE_ItemViewItem) {
+            if (auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
+                QStyleOptionViewItem o(*vopt);
+                o.state &= ~State_HasFocus;
+                if (const QAbstractItemView *view = extendableView(opt, w); view && o.index.isValid()) {
+                    QStyleOptionViewItem panel(o);
+                    panel.viewItemPosition = QStyleOptionViewItem::OnlyOne;
+                    panel.rect.setLeft(view->visualRect(o.index).left());
+                    QProxyStyle::drawPrimitive(PE_PanelItemViewItem, &panel, p, w);
+                    o.state &= ~(State_Selected | State_MouseOver);
+                    o.viewItemPosition = QStyleOptionViewItem::OnlyOne;
+                }
                 QProxyStyle::drawControl(ce, &o, p, w);
                 return;
             }
@@ -1670,6 +1726,7 @@ private:
     NoEditPencil m_noPencil;
     HideDock m_hideDock;
     PopupAnchor m_popupAnchor;
+    NoPaint m_noPaint;
     // Mục 14: ô đệm phải của tiêu đề cột, Dolphin vẽ ngay trước cột cuối.
     mutable QRect m_headerEnd;
 };

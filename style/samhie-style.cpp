@@ -1387,8 +1387,10 @@ public:
         if (ce == CE_PushButton && button && (button->state & State_HasFocus)) {  // mục 16, 28
             QStyleOptionButton o(*button);
             o.state &= ~State_HasFocus;
-            if (o.state & State_KeyboardFocusChange)
+            if (o.state & State_KeyboardFocusChange) {
                 o.state |= State_MouseOver;
+                o.styleObject = nullptr;  // xem CC_ToolButton: Kvantum hạ hover khi chuột ở ngoài
+            }
             QProxyStyle::drawControl(ce, &o, p, w);
             return;
         }

@@ -307,6 +307,10 @@ def indicators(roles):
     out.append(_icon("header-separator", 16,
                      f'<rect x="7.5" y="3" width="1" height="10" fill="{sub}"/>'))
     out.append(_icon("toolbar-handle", 16, ""))
+    # Không tam giác "nút mặc định" ở góc nút (OK của hộp thoại — Qt cho nút
+    # đang focus làm mặc định nên tam giác chạy theo Tab; user 2026-10-07).
+    # Thiếu phần tử thì Kvantum lấy của theme mặc định → khai phần tử rỗng.
+    out.append(_icon("button-default-indicator", 16, ""))
     out.append(_icon("toolbar-separator", 16, f'<rect x="7.5" y="2" width="1" height="12" fill="{sub}"/>'))
     out.append(_icon("menu-separator", 16, f'<rect x="0" y="7.5" width="16" height="1" fill="{sub}"/>'))
     out.append(_icon("tree-plus", 16, line("text-muted", chevrons["right"])))

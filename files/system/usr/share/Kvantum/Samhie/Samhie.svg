@@ -816,8 +816,9 @@
 <g transform="translate(456,226)"><g id="slidercursor-disabled"><rect width="16" height="16" fill="#000" fill-opacity="0"/><circle cx="8" cy="8" r="6" fill="#8f8f8f" stroke="#393939"/></g></g>
 <g transform="translate(480,226)"><g id="header-separator"><rect width="16" height="16" fill="#000" fill-opacity="0"/><rect x="7.5" y="3" width="1" height="10" fill="#393939"/></g></g>
 <g transform="translate(504,226)"><g id="toolbar-handle"><rect width="16" height="16" fill="#000" fill-opacity="0"/></g></g>
-<g transform="translate(528,226)"><g id="toolbar-separator"><rect width="16" height="16" fill="#000" fill-opacity="0"/><rect x="7.5" y="2" width="1" height="12" fill="#393939"/></g></g>
-<g transform="translate(552,226)"><g id="menu-separator"><rect width="16" height="16" fill="#000" fill-opacity="0"/><rect x="0" y="7.5" width="16" height="1" fill="#393939"/></g></g>
-<g transform="translate(576,226)"><g id="tree-plus"><rect width="16" height="16" fill="#000" fill-opacity="0"/><path d="M6,4 10,8 6,12" fill="none" stroke="#8f8f8f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g></g>
-<g transform="translate(600,226)"><g id="tree-minus"><rect width="16" height="16" fill="#000" fill-opacity="0"/><path d="M4,6 8,10 12,6" fill="none" stroke="#8f8f8f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g></g>
+<g transform="translate(528,226)"><g id="button-default-indicator"><rect width="16" height="16" fill="#000" fill-opacity="0"/></g></g>
+<g transform="translate(552,226)"><g id="toolbar-separator"><rect width="16" height="16" fill="#000" fill-opacity="0"/><rect x="7.5" y="2" width="1" height="12" fill="#393939"/></g></g>
+<g transform="translate(576,226)"><g id="menu-separator"><rect width="16" height="16" fill="#000" fill-opacity="0"/><rect x="0" y="7.5" width="16" height="1" fill="#393939"/></g></g>
+<g transform="translate(600,226)"><g id="tree-plus"><rect width="16" height="16" fill="#000" fill-opacity="0"/><path d="M6,4 10,8 6,12" fill="none" stroke="#8f8f8f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g></g>
+<g transform="translate(624,226)"><g id="tree-minus"><rect width="16" height="16" fill="#000" fill-opacity="0"/><path d="M4,6 8,10 12,6" fill="none" stroke="#8f8f8f" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g></g>
 </svg>

@@ -242,6 +242,9 @@
 //  39. Trang Context Menu: icon nét riêng cho Compress, Extract, Makefile,
 //      Mount ISO, Git, 'Copy To'/'Move To', Run In Konsole, Set Folder Icon
 //      (CONTEXT_MENU_ICONS) — lớp lọc mục 38 trả icon khác.
+//  41. Find Action… (Ctrl+Alt+I, KCommandBar) không liệt kê hành động đã bỏ
+//      (REMOVED_SHORTCUTS), hành động ẩn, Show Toolbar (user 2026-10-07: gõ
+//      "menubar" vẫn ra Show Menubar). Lớp lọc chèn như mục 38.
 //  40. Menu ☰ Dolphin không có More, Help chỉ còn Find Action… và About
 //      Dolphin (user 2026-10-07). More (KHamburgerMenu dựng: Show Menubar +
 //      bản chép File/Edit/View/Go/Tools/Settings) trùng menu chuột phải, ▦,
@@ -272,6 +275,7 @@
 #include <QtMath>
 #include <QAbstractItemView>
 #include <QAction>
+#include <QActionGroup>
 #include <QDir>
 #include <QAbstractScrollArea>
 #include <QEvent>
@@ -299,6 +303,7 @@
 #include <QListView>
 #include <QHash>
 #include <QSortFilterProxyModel>
+#include <QPointer>
 #include <QSet>
 #include <QTreeWidget>
 #include <QTimer>
@@ -856,6 +861,81 @@ protected:
     }
 };
 
+// Mục 41: Find Action… (KCommandBar) không liệt kê hành động Samhie đã bỏ.
+// KCommandBarModel (KF 6.30) trả QAction ở Qt::UserRole, chỉ bỏ hành động
+// TẮT, và lấy cả hành động con trong menu của hành động đã ẩn (đo container
+// 2026-10-07: Group By > Audio…, Window Color Scheme: Breeze…).
+class CommandBarFilter : public QSortFilterProxyModel
+{
+public:
+    CommandBarFilter(QWidget *window, QObject *parent)
+        : QSortFilterProxyModel(parent)
+        , m_window(window)
+    {
+    }
+
+protected:
+    bool filterAcceptsRow(int row, const QModelIndex &parent) const override
+    {
+        return !hidden(sourceModel()->index(row, 0, parent).data(Qt::UserRole).value<QAction *>());
+    }
+
+private:
+    static bool removed(const QAction *a)
+    {
+        return !a->isVisible() || REMOVED_SHORTCUTS.contains(a->objectName())
+            || a->objectName() == QLatin1String("new_bookmark_folder")  // menu Bookmarks (mục 40)
+            || a->inherits("KToggleToolBarAction");                     // Show Toolbar (More → Settings)
+    }
+
+    bool hidden(const QAction *a, int depth = 0) const
+    {
+        if (!a)
+            return false;
+        if (removed(a))
+            return true;
+        // Nhóm vai trò của Group By / Show Additional Information: mọi
+        // hành động có tên (trừ menu con Audio, Image…) đều đã bỏ. Dòng con
+        // của menu con: nhóm của nó thuộc hành động menu con → xét lên.
+        if (const QActionGroup *g = a->actionGroup(); g && depth < 3) {
+            bool any = false, all = true;
+            for (const QAction *m : g->actions()) {
+                if (m->objectName().isEmpty() || m->menu())
+                    continue;
+                any = true;
+                all = all && removed(m);
+            }
+            if (any && all)
+                return true;
+            if (hidden(qobject_cast<const QAction *>(g->parent()), depth + 1))
+                return true;
+        }
+        // Dòng chỉ nằm trong menu của hành động đã bỏ — Window Color Scheme
+        // (mục 29): Dolphin gắn menu của KColorSchemeMenu vào một QAction
+        // con của cửa sổ (dolphinmainwindow.cpp 26.08.1).
+        if (!m_scanned) {
+            m_scanned = true;
+            for (const QAction *w : m_window ? m_window->findChildren<QAction *>() : QList<QAction *>()) {
+                if (w->menu() && removed(w))
+                    m_hiddenMenus.insert(w->menu());
+            }
+        }
+        bool inMenu = false;
+        for (const QObject *o : a->associatedObjects()) {
+            if (auto *menu = qobject_cast<const QMenu *>(o)) {
+                if (!m_hiddenMenus.contains(menu))
+                    return false;
+                inMenu = true;
+            }
+        }
+        return inMenu;
+    }
+
+    QPointer<QWidget> m_window;
+    mutable bool m_scanned = false;
+    mutable QSet<const QMenu *> m_hiddenMenus;
+};
+
 // Mục 37: danh sách trong hộp thoại cài đặt (không tính danh sách trang).
 bool isSettingsList(const QWidget *w)
 {
@@ -1299,6 +1379,24 @@ public:
                 if (tabs->tabIcon(i).name() == QLatin1String("view-list-details"))
                     tabs->setTabVisible(i, false);
             }
+        }
+        // Mục 41: như mục 38 — lớp lọc chèn giữa model và lớp tìm/xếp hạng.
+        // Chèn SAU một nhịp: danh sách được polish giữa lúc KCommandBar còn
+        // dựng (setModel chưa xong) — chèn ngay thì ô "current" cũ của view
+        // không được xoá, setActions chọn dòng đầu là Dolphin crash (gdb,
+        // container 2026-10-07). Nhịp đó KDE đã nạp danh sách và chọn dòng
+        // đầu → chọn lại dòng đầu sau khi lọc (như reselectFirst của KDE).
+        if (auto *tv = qobject_cast<QTreeView *>(w); tv && tv->parentWidget()
+            && tv->parentWidget()->inherits("KCommandBar")) {
+            QTimer::singleShot(0, tv, [tv] {
+                auto *rank = qobject_cast<QSortFilterProxyModel *>(tv->model());
+                if (!rank || !rank->sourceModel() || dynamic_cast<CommandBarFilter *>(rank->sourceModel()))
+                    return;
+                auto *filter = new CommandBarFilter(tv->window(), rank);
+                filter->setSourceModel(rank->sourceModel());
+                rank->setSourceModel(filter);
+                tv->setCurrentIndex(rank->index(0, 0));
+            });
         }
         // Mục 38: lớp lọc chèn một lần (model của view là lớp sắp xếp/tìm).
         if (auto *lv = qobject_cast<QListView *>(w); lv && lv->parentWidget()

@@ -188,6 +188,15 @@
 //      trên-trái PANE_RADIUS (PanePainter vẽ trên dock "terminalDock"); vùng
 //      file lúc đó khép đáy + bo góc dưới-trái. Chữ Konsole lùi thêm
 //      TERMINAL_PAD px so với viền (cộng TerminalMargin của profile Samhie).
+//  28. Đi bằng Tab không còn khung/sọc cyan nào trong Dolphin (máy ảo user
+//      2026-10-07): nút công cụ (▦, kính lúp, ☰) và nút bấm có focus bàn
+//      phím → nền hover như mục 16, 25; tab đang mở bỏ khung focus (tab đó
+//      vốn nổi sẵn, mũi tên đổi tab đang mở). Nhãn dòng trạng thái ("1
+//      folder") và nhãn tiêu đề popup Filter không nhận Tab (Dolphin cho chọn
+//      chữ bằng bàn phím → con trỏ chữ trắng). Radio của popup Filter lùi vào
+//      KEY_FOCUS_PAD px, lề trái popup bớt đúng ngần ấy (nhãn "Search in:"
+//      thụt theo) → mọi thứ đứng chỗ cũ, ô nền Tab có khoảng trống bên trái
+//      vòng tròn (widget vốn chỉ thừa 2px). Radio/checkbox nơi khác giữ 2px.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -239,6 +248,7 @@ constexpr int SIDEBAR_INDENT = 8;  // bản vẽ: icon sidebar cách mép ~16px 
 constexpr int PANE_RADIUS = 12;    // góc viền vùng file Dolphin (bản vẽ ~12) = góc cửa sổ
 constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6px mỗi phía
 constexpr int TOOLBAR_SEPARATOR_HEIGHT = 18;  // icon thanh công cụ cao ~20px (mục 23)
+constexpr int KEY_FOCUS_PAD = 6;   // ô nền focus bàn phím rộng hơn vòng radio + chữ (mục 25, 28)
 constexpr int TERMINAL_PAD = 6;    // panel Terminal Dolphin: lề trong thêm (mục 27)
 constexpr int TERMINAL_GAP = 7;    // khe trên panel Terminal: + vạch ngăn dock 1px = 8 (mục 27)
 constexpr int POPUP_MARGIN = 8;    // thẻ tìm cách mép vùng file
@@ -432,6 +442,20 @@ QColor paneColor()
 }
 
 // Tô vùng nội dung của QTabWidget kiểu document (+ viền ở Dolphin) TRƯỚC khi
+// Mục 28: radio/checkbox của popup Filter thanh tìm Dolphin.
+bool isPopupToggle(const QWidget *w)
+{
+    return w && (w->inherits("QRadioButton") || w->inherits("QCheckBox")) && w->window()->inherits("Search::Popup");
+}
+
+// Mục 28: nhãn không nhận Tab — bỏ chọn chữ / mở liên kết bằng bàn phím; bôi
+// chữ bằng chuột vẫn giữ (QLabel tự hạ focus xuống ClickFocus).
+void dropKeyboardSelection(QLabel *label)
+{
+    label->setTextInteractionFlags(label->textInteractionFlags()
+                                   & ~(Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByKeyboard));
+}
+
 // (Cạnh đáy + góc bo dưới-trái nếu bottomRad > 0) + cạnh trái + góc bo
 // trên-trái (topRad, 0 = vuông) + cạnh trên; closed = khép thành vùng tô.
 QPainterPath leftOutline(const QRectF &r, qreal topRad, qreal bottomRad, bool closed)
@@ -991,13 +1015,28 @@ public:
                 label->hide();
             }
         }
-        // Mục 25: Tab trong popup Filter không dừng ở nhãn tiêu đề ("Search
-        // in:"…) — Dolphin cho nhãn chọn chữ bằng bàn phím (popup.cpp 26.08.1)
-        // nên Tab đậu ở đó, hiện con trỏ nhập chữ trên dòng không gõ được.
-        // Bôi chữ bằng chuột vẫn giữ (QLabel tự hạ focus xuống ClickFocus).
-        if (auto *label = qobject_cast<QLabel *>(w); label && label->window()->inherits("Search::Popup"))
-            label->setTextInteractionFlags(label->textInteractionFlags()
-                                           & ~(Qt::TextSelectableByKeyboard | Qt::LinksAccessibleByKeyboard));
+        // Mục 28: Tab không dừng ở nhãn tiêu đề popup Filter ("Search in:"…,
+        // popup.cpp 26.08.1) và nhãn dòng trạng thái ("1 folder",
+        // dolphinstatusbar.cpp) — hiện con trỏ chữ trên dòng không gõ được.
+        if (auto *label = qobject_cast<QLabel *>(w)) {
+            bool inStatusBar = false;  // nhãn nằm trong khung trượt của dòng trạng thái
+            for (const QWidget *a = label->parentWidget(); a && !inStatusBar; a = a->parentWidget())
+                inStatusBar = a->inherits("DolphinStatusBar");
+            if (inStatusBar || label->window()->inherits("Search::Popup"))
+                dropKeyboardSelection(label);
+            if (label->window()->inherits("Search::Popup"))
+                label->setIndent(KEY_FOCUS_PAD);
+        }
+        // Mục 28: radio popup Filter lùi vào KEY_FOCUS_PAD → lề trái khung chứa
+        // bớt đúng ngần ấy (một lần cho mỗi khung).
+        if ((isPopupToggle(w) || (qobject_cast<QLabel *>(w) && w->window()->inherits("Search::Popup")))
+            && w->parentWidget() && !w->parentWidget()->property("samhieFocusPad").toBool()) {
+            QWidget *box = w->parentWidget();
+            QMargins m = box->contentsMargins();
+            m.setLeft(qMax(0, m.left() - KEY_FOCUS_PAD));
+            box->setContentsMargins(m);
+            box->setProperty("samhieFocusPad", true);
+        }
         if (w->inherits("Search::Popup"))
             w->installEventFilter(&m_popupAnchor);  // mục 26
         if (isUrlNavigatorButton(w)) {
@@ -1252,13 +1291,26 @@ public:
         // Mục 21: ô hover vuông ở giữa nút (icon giữ nguyên chỗ: Kvantum đặt
         // icon giữa rect, rect mới cùng tâm).
         auto *tbopt = qstyleoption_cast<const QStyleOptionToolButton *>(opt);
-        if (cc == CC_ToolButton && tbopt && w && tbopt->toolButtonStyle == Qt::ToolButtonIconOnly
-            && (w->objectName() == QLatin1String("samhie-new-tab")
-                || (inDolphinLocationOrSearch(w) && !qobject_cast<QLineEdit *>(w->parentWidget()))
-                || (qobject_cast<QToolBar *>(w->parentWidget()) && w->window()->inherits("DolphinMainWindow")))) {
+        if (cc == CC_ToolButton && tbopt) {
             QStyleOptionToolButton o(*tbopt);
-            const int side = qMax(o.iconSize.width(), o.iconSize.height()) + 2 * TOOL_PADDING;
-            o.rect = centeredSquare(o.rect, side);
+            // Mục 28: không khung focus cyan; đi bằng Tab → nền hover. Kvantum
+            // hạ "hover" về thường khi chuột không nằm trên nút (chống lỗi
+            // hover kẹt của Qt, PE_PanelButtonTool) — chỉ khi option có
+            // styleObject, nên bỏ nó đi (styleObject chỉ dùng cho hiệu ứng).
+            if (o.state & State_HasFocus) {
+                o.state &= ~State_HasFocus;
+                if (o.state & State_KeyboardFocusChange) {
+                    o.state |= State_MouseOver;
+                    o.styleObject = nullptr;
+                }
+            }
+            if (w && tbopt->toolButtonStyle == Qt::ToolButtonIconOnly
+                && (w->objectName() == QLatin1String("samhie-new-tab")
+                    || (inDolphinLocationOrSearch(w) && !qobject_cast<QLineEdit *>(w->parentWidget()))
+                    || (qobject_cast<QToolBar *>(w->parentWidget()) && w->window()->inherits("DolphinMainWindow")))) {
+                const int side = qMax(o.iconSize.width(), o.iconSize.height()) + 2 * TOOL_PADDING;
+                o.rect = centeredSquare(o.rect, side);
+            }
             QProxyStyle::drawComplexControl(cc, &o, p, w);
             return;
         }
@@ -1305,6 +1357,13 @@ public:
         // phần tử "tab" của Kvantum: khe trên TAB_INSET, bo trên TAB_RADIUS.
         auto *tab = qstyleoption_cast<const QStyleOptionTab *>(opt);
         auto *bar = qobject_cast<const QTabBar *>(w);
+        // Mục 28: tab không khung focus (hai sọc cyan quanh chữ tab đang mở).
+        if ((ce == CE_TabBarTab || ce == CE_TabBarTabLabel) && tab && (tab->state & State_HasFocus)) {
+            QStyleOptionTab o(*tab);
+            o.state &= ~State_HasFocus;
+            drawControl(ce, &o, p, w);
+            return;
+        }
         if (ce == CE_TabBarTabShape && tab && bar && bar->documentMode()
             && tab->shape == QTabBar::RoundedNorth && (tab->state & State_Selected)) {
             const QRectF r = QRectF(tab->rect).adjusted(0, samhie::TAB_INSET, 0, 0);
@@ -1325,8 +1384,7 @@ public:
             return;
         }
         auto *button = qstyleoption_cast<const QStyleOptionButton *>(opt);
-        if (ce == CE_PushButton && button && isMenuRowButton(w)
-            && (button->state & State_HasFocus)) {  // mục 16
+        if (ce == CE_PushButton && button && (button->state & State_HasFocus)) {  // mục 16, 28
             QStyleOptionButton o(*button);
             o.state &= ~State_HasFocus;
             if (o.state & State_KeyboardFocusChange)
@@ -1337,15 +1395,20 @@ public:
         // Mục 25: radio/checkbox không có khung focus cyan quanh chữ. Bấm chuột
         // thì thôi hẳn; đi bằng Tab (State_KeyboardFocusChange) thì ô đang
         // đứng có nền như ô hover — không thì bấm Space không biết chọn ô nào.
-        if ((ce == CE_RadioButton || ce == CE_CheckBox) && button && (button->state & State_HasFocus)) {
+        // Mục 28: radio popup Filter vẽ lùi vào KEY_FOCUS_PAD (Kvantum tự tính
+        // vị trí vòng + chữ từ rect, không hỏi lại style này).
+        if ((ce == CE_RadioButton || ce == CE_CheckBox) && button
+            && ((button->state & State_HasFocus) || isPopupToggle(w))) {
             QStyleOptionButton o(*button);
+            if (isPopupToggle(w))
+                o.rect.setLeft(o.rect.left() + KEY_FOCUS_PAD);
             o.state &= ~State_HasFocus;
-            if (button->state & State_KeyboardFocusChange) {
+            if ((button->state & State_HasFocus) && (button->state & State_KeyboardFocusChange)) {
                 o.state |= State_MouseOver;  // vòng/ô vuông sáng lên như lúc trỏ chuột
                 const bool radio = ce == CE_RadioButton;
-                const QRect ind = subElementRect(radio ? SE_RadioButtonIndicator : SE_CheckBoxIndicator, button, w);
-                const QRect txt = subElementRect(radio ? SE_RadioButtonFocusRect : SE_CheckBoxFocusRect, button, w);
-                const QRect box = ind.united(txt).adjusted(-6, -3, 6, 3) & button->rect;
+                const QRect ind = QProxyStyle::subElementRect(radio ? SE_RadioButtonIndicator : SE_CheckBoxIndicator, &o, w);
+                const QRect txt = QProxyStyle::subElementRect(radio ? SE_RadioButtonFocusRect : SE_CheckBoxFocusRect, &o, w);
+                const QRect box = ind.united(txt).adjusted(-KEY_FOCUS_PAD, -3, KEY_FOCUS_PAD, 3) & button->rect;
                 const bool onCard = w && w->window() && w->window()->inherits("QMenu");
                 p->save();
                 p->setRenderHint(QPainter::Antialiasing);
@@ -1395,6 +1458,15 @@ public:
 
     QRect subElementRect(SubElement se, const QStyleOption *opt, const QWidget *w) const override
     {
+        // Mục 28: vùng bấm/vòng/chữ của radio popup Filter theo chỗ đã lùi.
+        if (isPopupToggle(w) && qstyleoption_cast<const QStyleOptionButton *>(opt)
+            && (se == SE_RadioButtonIndicator || se == SE_RadioButtonContents || se == SE_RadioButtonFocusRect
+                || se == SE_RadioButtonClickRect || se == SE_CheckBoxIndicator || se == SE_CheckBoxContents
+                || se == SE_CheckBoxFocusRect || se == SE_CheckBoxClickRect)) {
+            QStyleOptionButton o(*qstyleoption_cast<const QStyleOptionButton *>(opt));
+            o.rect.setLeft(o.rect.left() + KEY_FOCUS_PAD);
+            return QProxyStyle::subElementRect(se, &o, w);
+        }
         QRect r = QProxyStyle::subElementRect(se, opt, w);
         // Ô góc (nút + của Konsole) cao bằng dải tab, nút tự căn icon giữa.
         auto *twf = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt);
@@ -1460,6 +1532,8 @@ public:
                 ct, &o, size.expandedTo(QSize(0, o.fontMetrics.height())), w);
             s.setHeight(qMax(s.height(), withText.height()));
         }
+        if ((ct == CT_RadioButton || ct == CT_CheckBox) && isPopupToggle(w))
+            s.setWidth(s.width() + KEY_FOCUS_PAD);  // mục 28
         auto *mopt = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
         if (ct == CT_MenuItem && mopt && mopt->menuItemType != QStyleOptionMenuItem::Separator)
             s.setHeight(qMin(s.height(), mopt->fontMetrics.height() + 2 * MENUITEM_FRAME));

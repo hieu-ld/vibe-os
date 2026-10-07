@@ -181,6 +181,13 @@
 //      neo vào GÓC PHẢI ô 1×1 tại chính vị trí hiện tại → mỗi lần đặt lại
 //      +1px (lúc mở cũng đã +1). Khai neo góc trái qua thuộc tính
 //      _q_waylandPopupAnchor của QWindow (Qt đọc mỗi lần tạo positioner).
+//  27. Panel Terminal của Dolphin (F4) chỉ nằm dưới vùng file (user
+//      2026-10-07): góc dưới cửa sổ giao cho vùng dock trái/phải
+//      (QMainWindow::setCorner) → sidebar kéo xuống tận đáy. Panel trông như
+//      vùng file: thẻ thứ hai cách 8px, nền card, viền trên + trái, bo góc
+//      trên-trái PANE_RADIUS (PanePainter vẽ trên dock "terminalDock"); vùng
+//      file lúc đó khép đáy + bo góc dưới-trái. Chữ Konsole lùi thêm
+//      TERMINAL_PAD px so với viền (cộng TerminalMargin của profile Samhie).
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -212,6 +219,7 @@
 #include <QTabWidget>
 #include <QToolBar>
 #include <QDockWidget>
+#include <QMainWindow>
 #include <QLabel>
 #include <QLineEdit>
 #include <QTimer>
@@ -231,6 +239,8 @@ constexpr int SIDEBAR_INDENT = 8;  // bản vẽ: icon sidebar cách mép ~16px 
 constexpr int PANE_RADIUS = 12;    // góc viền vùng file Dolphin (bản vẽ ~12) = góc cửa sổ
 constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6px mỗi phía
 constexpr int TOOLBAR_SEPARATOR_HEIGHT = 18;  // icon thanh công cụ cao ~20px (mục 23)
+constexpr int TERMINAL_PAD = 6;    // panel Terminal Dolphin: lề trong thêm (mục 27)
+constexpr int TERMINAL_GAP = 7;    // khe trên panel Terminal: + vạch ngăn dock 1px = 8 (mục 27)
 constexpr int POPUP_MARGIN = 8;    // thẻ tìm cách mép vùng file
 constexpr int POPUP_PADDING = 10;  // nội dung cách mép thẻ
 constexpr int POPUP_RADIUS = 12;
@@ -422,6 +432,46 @@ QColor paneColor()
 }
 
 // Tô vùng nội dung của QTabWidget kiểu document (+ viền ở Dolphin) TRƯỚC khi
+// (Cạnh đáy + góc bo dưới-trái nếu bottomRad > 0) + cạnh trái + góc bo
+// trên-trái (topRad, 0 = vuông) + cạnh trên; closed = khép thành vùng tô.
+QPainterPath leftOutline(const QRectF &r, qreal topRad, qreal bottomRad, bool closed)
+{
+    // Không khép đáy thì kéo quá mép 1px: nét/vùng tô chạm hẳn mép widget.
+    const qreal bottom = bottomRad > 0 ? r.bottom() : r.bottom() + 1;
+    QPainterPath path;
+    if (bottomRad > 0) {
+        path.moveTo(r.right() + 1, bottom);
+        path.lineTo(r.left() + bottomRad, bottom);
+        path.arcTo(QRectF(r.left(), bottom - 2 * bottomRad, 2 * bottomRad, 2 * bottomRad), 270, -90);
+    } else {
+        path.moveTo(r.left(), bottom);
+    }
+    path.lineTo(r.left(), r.top() + topRad);
+    if (topRad > 0)
+        path.arcTo(QRectF(r.left(), r.top(), 2 * topRad, 2 * topRad), 180, -90);
+    path.lineTo(r.right() + 1, r.top());
+    if (closed) {
+        path.lineTo(r.right() + 1, bottom);
+        path.closeSubpath();
+    }
+    return path;
+}
+
+// Mục 27: dưới vùng file Dolphin còn panel (Terminal) thì vùng file khép đáy
+// + bo góc dưới-trái — hai thẻ chồng nhau; không thì đáy là mép cửa sổ.
+int paneBottomRadius(const QTabWidget *tw)
+{
+    const QWidget *win = tw->window();
+    return tw->mapTo(win, QPoint(0, tw->height())).y() < win->height() ? PANE_RADIUS : 0;
+}
+
+// Nét viền vùng file Dolphin (trên + trái, + đáy nếu khép), toạ độ của tw.
+QPainterPath paneBorder(const QTabWidget *tw)
+{
+    const int bottomRad = paneBottomRadius(tw);
+    return leftOutline(QRectF(tw->rect()).adjusted(0.5, 0.5, 0, bottomRad ? -0.5 : 0), PANE_RADIUS, bottomRad, false);
+}
+
 // QTabWidget và con của nó tự vẽ — con có nền trong suốt nên thấy lớp này.
 class PanePainter : public QObject
 {
@@ -430,12 +480,33 @@ public:
 
     bool eventFilter(QObject *obj, QEvent *event) override
     {
-        if (event->type() == QEvent::Paint)
-            paint(static_cast<QTabWidget *>(obj));
+        if (event->type() == QEvent::Paint) {
+            if (auto *tw = qobject_cast<QTabWidget *>(obj))
+                paint(tw);
+            else
+                paintTerminalDock(static_cast<QWidget *>(obj));
+        }
         return false;
     }
 
 private:
+    // Mục 27: dock Terminal là thẻ thứ hai dưới vùng file, cách TERMINAL_GAP
+    // (phần trên dock để trống — nền cửa sổ): nền card bo góc trên-trái, viền
+    // trên + trái. Konsole tô nền cùng màu (Samhie.colorscheme) trong phần
+    // lùi vào, góc bo nằm ngoài nó.
+    static void paintTerminalDock(QWidget *dock)
+    {
+        const QRect all = dock->rect().adjusted(0, TERMINAL_GAP, 0, 0);
+        QPainter p(dock);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setCompositionMode(QPainter::CompositionMode_Source);
+        p.fillPath(leftOutline(QRectF(all), PANE_RADIUS, 0, true), paneColor());
+        p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        p.setPen(QPen(QColor(samhie::FRAME_LINE), 1));
+        p.setBrush(Qt::NoBrush);
+        p.drawPath(leftOutline(QRectF(all).adjusted(0.5, 0.5, 0, 0), PANE_RADIUS, 0, false));
+    }
+
     static void paint(QTabWidget *tw)
     {
         const bool dolphin = tw->inherits("DolphinTabWidget");
@@ -446,23 +517,25 @@ private:
         if (bar && bar->isVisible() && tw->tabPosition() == QTabWidget::North)
             pane.setTop(bar->geometry().bottom() + 1);
 
+        const int bottomRad = dolphin ? paneBottomRadius(tw) : 0;
+
         QPainter p(tw);
         p.setRenderHint(QPainter::Antialiasing);
         // Dolphin: góc bo ở ĐỈNH khung. Có dải tab thì dải nằm trong khung,
-        // giữ nền cửa sổ — vùng file khi đó vuông góc.
-        const QPainterPath fill = dolphin && pane.top() == all.top()
-            ? topLeftRounded(QRectF(pane), true)
+        // giữ nền cửa sổ — vùng file khi đó vuông góc ở trên.
+        const QPainterPath fill = dolphin
+            ? leftOutline(QRectF(pane), pane.top() == all.top() ? PANE_RADIUS : 0, bottomRad, true)
             : rectPath(QRectF(pane));
         p.setCompositionMode(QPainter::CompositionMode_Source);
         p.fillPath(fill, paneColor());
         p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
         if (dolphin) {
-            // Viền trên + trái, nét 1px rơi đúng giữa hàng điểm ảnh. Không
-            // khép đáy/phải: đó là mép cửa sổ.
+            // Viền trên + trái (+ đáy), nét 1px rơi đúng giữa hàng điểm ảnh.
+            // Không khép phải: đó là mép cửa sổ.
             p.setPen(QPen(QColor(samhie::FRAME_LINE), 1));
             p.setBrush(Qt::NoBrush);
-            p.drawPath(topLeftRounded(QRectF(all).adjusted(0.5, 0.5, 0, 0), false));
+            p.drawPath(paneBorder(tw));
         }
     }
 
@@ -473,21 +546,6 @@ private:
         return path;
     }
 
-    // Cạnh trái + góc bo + cạnh trên; closed = khép thành vùng tô.
-    static QPainterPath topLeftRounded(const QRectF &r, bool closed)
-    {
-        const qreal rad = PANE_RADIUS, d = 2 * rad;
-        QPainterPath path;
-        path.moveTo(r.left(), r.bottom() + 1);
-        path.lineTo(r.left(), r.top() + rad);
-        path.arcTo(QRectF(r.left(), r.top(), d, d), 180, -90);
-        path.lineTo(r.right() + 1, r.top());
-        if (closed) {
-            path.lineTo(r.right() + 1, r.bottom() + 1);
-            path.closeSubpath();
-        }
-        return path;
-    }
 };
 
 // Thẻ popup sau nội dung thanh tìm (vẽ trước các con của khung nội dung).
@@ -961,6 +1019,24 @@ public:
             if (!dock->isHidden())
                 QMetaObject::invokeMethod(dock, &QWidget::hide, Qt::QueuedConnection);
         }
+        // Mục 27. Góc đặt theo cửa sổ (dock được polish khi chưa nằm trong cửa
+        // sổ), và SAU một nhịp: ngay sau style, KMainWindow nạp lại trạng thái
+        // đã lưu (QMainWindow::restoreState, gồm cả góc) — đặt ngay thì bị đè
+        // về mặc định (đo container 2026-10-07).
+        if (auto *win = qobject_cast<QMainWindow *>(w); win && win->inherits("DolphinMainWindow")) {
+            QTimer::singleShot(0, win, [win] {
+                win->setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
+                win->setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+            });
+        }
+        // TerminalPanel đặt lề bố cục 0 lúc dựng (terminalpanel.cpp 26.08.1),
+        // không đặt lại.
+        if (auto *dock = qobject_cast<QDockWidget *>(w);
+            dock && dock->objectName() == QLatin1String("terminalDock")) {
+            if (dock->widget() && dock->widget()->layout())
+                dock->widget()->layout()->setContentsMargins(TERMINAL_PAD, TERMINAL_GAP + TERMINAL_PAD, 0, 0);
+            dock->installEventFilter(&m_pane);
+        }
         if (qobject_cast<QToolBar *>(w) && w->window()->inherits("DolphinMainWindow"))
             w->setContextMenuPolicy(Qt::PreventContextMenu);  // mục 18
         if (w->inherits("DolphinStatusBar")) {
@@ -1129,12 +1205,37 @@ public:
             return;
         // Mục 15. Dolphin tô nền ô (drawRoundedRect) rồi gọi PE_Frame — vẽ lại
         // viền trái vùng file ở cột 0 của ô (cùng cột với viền PanePainter).
+        // Mục 27: vùng file khép đáy (Terminal mở) thì ô còn đè góc bo dưới-
+        // trái + viền đáy → tô lại nền cửa sổ ngoài góc bo, vẽ lại viền vùng
+        // file (cùng nét PanePainter, đổi sang toạ độ của ô).
         if (pe == PE_Frame && w && w->inherits("DolphinStatusBar")) {
             QProxyStyle::drawPrimitive(pe, opt, p, w);
             if (w->layoutDirection() == Qt::LeftToRight) {
+                const QWidget *a = w->parentWidget();
+                while (a && !a->inherits("DolphinTabWidget"))
+                    a = a->parentWidget();
+                const auto *tw = static_cast<const QTabWidget *>(a);
                 p->save();
-                p->setPen(QPen(QColor(samhie::FRAME_LINE), 1));
-                p->drawLine(QPointF(0.5, 0), QPointF(0.5, w->height()));
+                p->setRenderHint(QPainter::Antialiasing);
+                if (tw && paneBottomRadius(tw)) {
+                    p->translate(-w->mapTo(tw, QPoint(0, 0)));
+                    const QRectF all(tw->rect());
+                    QPainterPath outside;
+                    outside.addRect(all);
+                    outside = outside.subtracted(leftOutline(all, PANE_RADIUS, PANE_RADIUS, true));
+                    QColor bg(samhie::WINDOW);
+                    bg.setAlphaF(samhie::WINDOW_OPACITY);
+                    p->setCompositionMode(QPainter::CompositionMode_Source);
+                    p->fillPath(outside, bg);
+                    p->setCompositionMode(QPainter::CompositionMode_SourceOver);
+                    p->setPen(QPen(QColor(samhie::FRAME_LINE), 1));
+                    p->setBrush(Qt::NoBrush);
+                    p->drawPath(paneBorder(tw));
+                } else {
+                    p->setRenderHint(QPainter::Antialiasing, false);
+                    p->setPen(QPen(QColor(samhie::FRAME_LINE), 1));
+                    p->drawLine(QPointF(0.5, 0), QPointF(0.5, w->height()));
+                }
                 p->restore();
             }
             return;

@@ -374,6 +374,7 @@ def style_colors_h(pal):
         ("HOVER_ACCENT", d["accent-text"], "thanh đường dẫn Dolphin: tên thư mục đang trỏ — chữ cyan, không nền"),
         ("PANE", d["card"], "vùng nội dung (file Dolphin, chữ Konsole) trên nền cửa sổ secondary"),
         ("FRAME_LINE", d["sub-secondary"], "viền trên + trái vùng file Dolphin"),
+        ("WINDOW", d["secondary"], "nền cửa sổ (window.color Kvantum) — vẽ lại chỗ app tô đè"),
         ("POPUP", d["secondary"], "thẻ thanh tìm Dolphin (dạng popup, đục)"),
         ("POPUP_BORDER", d["sub-secondary"], "viền thẻ thanh tìm"),
         # #AARRGGBB — QColor đọc được; cùng màu khung focus của theme Kvantum.

@@ -273,8 +273,9 @@
 //      vào user-places.xbel (icon thư mục ở vùng file giữ nguyên); Add Entry
 //      mở với icon nét; hộp chọn icon của Add/Edit Entry chỉ có icon nét.
 //  46. Sidebar: vạch ngang 1px màu FRAME_LINE giữa mục mặc định (… Recycle
-//      Bin) và thư mục người dùng ghim thêm, hai đầu cách viền như icon
-//      (user 2026-10-08). Chỉ hiện khi có mục ghim.
+//      Bin) và thư mục người dùng ghim thêm, hai đầu cách viền như icon, trên
+//      dưới thoáng bằng khe giữa hai mục (user 2026-10-08). Chỉ có khi có mục
+//      ghim. Delegate riêng cho dòng Recycle Bin (PinnedGapDelegate).
 //  30.Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -1060,37 +1061,114 @@ QString strokePlaceIcon(const QString &icon)
 }
 
 // Mục 46: vạch ngăn mục mặc định của sidebar (Home … Recycle Bin) với thư mục
-// người dùng ghim thêm (user 2026-10-08). Mục ghim mới luôn nằm SAU Recycle
-// Bin trong nhóm Places (KIO thêm vào cuối; mục mặc định của Samhie kết thúc
-// bằng trash:/ — user-places.xbel.in) → vạch ở đáy dòng Recycle Bin khi ngay
-// sau nó còn một dòng hiện cùng nhóm. Vẽ TRONG ô của dòng đó (hàng điểm ảnh
-// cuối): rê chuột dòng dưới chỉ vẽ lại ô dòng dưới, vạch không bị xoá. Lề
-// trái thẳng icon (KIO s_lateralMargin 4, kfileplacesview.cpp 6.30), lề phải
-// cách mép sidebar bằng lề trái (viewport đã lùi SIDEBAR_INDENT).
-void drawPinnedDivider(const QStyleOptionViewItem *vopt, QPainter *p)
+// người dùng ghim thêm, trên dưới thoáng bằng khe giữa hai mục (user
+// 2026-10-08). Mục ghim mới luôn nằm SAU Recycle Bin trong nhóm Places (KIO
+// thêm vào cuối; mục mặc định của Samhie kết thúc bằng trash:/ —
+// user-places.xbel.in). Khe thêm chia đôi: dòng Recycle Bin cao thêm ở dưới,
+// dòng ghim đầu tiên cao thêm ở trên, vạch ở ranh giới — rê chuột/bấm vào
+// nửa khe nào thì trúng dòng gần nó, như phần đệm của các dòng khác.
+// Qt hỏi cỡ dòng KHÔNG kèm số dòng (QListViewPrivate::itemSize, qtbase
+// 6.11) nên style không nới được một dòng → gắn delegate riêng cho đúng hai
+// dòng đó (setItemDelegateForRow). Delegate chung của KIO giữ nguyên — KIO ép
+// kiểu nó ở nhiều chỗ (xem mục 2) — và vẫn vẽ nội dung dòng.
+class PinnedGapDelegate : public QAbstractItemDelegate
 {
-    constexpr int URL_ROLE = 0x069CD12B, GROUP_ROLE = 0x0a5b64ee, LATERAL_MARGIN = 4;  // kfileplacesmodel.h
-    // Bản sao option của KIO không mang chỉ số dòng → tìm theo vị trí ô.
-    auto *view = qobject_cast<const QListView *>(vopt->widget);
-    const QModelIndex index = view ? view->indexAt(vopt->rect.center()) : QModelIndex();
-    if (!index.isValid() || index.data(URL_ROLE).toUrl().scheme() != QLatin1String("trash"))
-        return;
-    const QAbstractItemModel *model = index.model();
-    int next = index.row() + 1;
-    while (next < model->rowCount() && view->isRowHidden(next))
-        ++next;
-    if (next >= model->rowCount() || model->index(next, 0).data(GROUP_ROLE) != index.data(GROUP_ROLE))
-        return;
-    const QRect r = vopt->rect;
-    p->save();
-    p->setPen(Qt::NoPen);
-    p->setBrush(QColor(samhie::FRAME_LINE));
-    // Phải bớt 1: khung sidebar 1px nằm ngoài ô bên trái nhưng trong ô bên
-    // phải → hai đầu vạch cùng cách viền 12px (đo container 2026-10-08).
-    p->drawRect(QRect(QPoint(r.left() + LATERAL_MARGIN, r.bottom()),
-                      QPoint(r.right() - LATERAL_MARGIN - SIDEBAR_INDENT + 1, r.bottom())));
-    p->restore();
-}
+public:
+    explicit PinnedGapDelegate(QListView *view)
+        : QAbstractItemDelegate(view)
+        , m_view(view)
+    {
+        setObjectName(QStringLiteral("samhie-pinned-gap"));
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        return base()->sizeHint(option, index) + QSize(0, HALF_GAP);
+    }
+
+    void paint(QPainter *p, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        constexpr int LATERAL_MARGIN = 4;  // KIO s_lateralMargin, kfileplacesview.cpp 6.30
+        const bool above = index.row() == m_above;  // dòng Recycle Bin: khe ở dưới
+        QStyleOptionViewItem o(option);
+        if (above)
+            o.rect.setBottom(o.rect.bottom() - HALF_GAP);
+        else
+            o.rect.setTop(o.rect.top() + HALF_GAP);
+        base()->paint(p, o, index);
+        if (!above)
+            return;
+        // Lề trái thẳng icon; phải bớt 1: khung sidebar 1px nằm ngoài ô bên
+        // trái nhưng trong ô bên phải → hai đầu cùng cách viền 12px (đo
+        // container 2026-10-08; viewport đã lùi SIDEBAR_INDENT). Hàng điểm
+        // ảnh cuối của dòng: rê chuột dòng dưới không xoá vạch.
+        const int y = option.rect.bottom();
+        p->save();
+        p->setPen(Qt::NoPen);
+        p->setBrush(QColor(samhie::FRAME_LINE));
+        p->drawRect(QRect(QPoint(o.rect.left() + LATERAL_MARGIN, y),
+                          QPoint(o.rect.right() - LATERAL_MARGIN - SIDEBAR_INDENT + 1, y)));
+        p->restore();
+    }
+
+    bool editorEvent(QEvent *e, QAbstractItemModel *m, const QStyleOptionViewItem &o, const QModelIndex &i) override
+    {
+        return base()->editorEvent(e, m, o, i);
+    }
+
+    bool helpEvent(QHelpEvent *e, QAbstractItemView *v, const QStyleOptionViewItem &o, const QModelIndex &i) override
+    {
+        return base()->helpEvent(e, v, o, i);
+    }
+
+    // Tìm dòng Recycle Bin có ngay sau nó một dòng hiện cùng nhóm, gắn
+    // delegate cho hai dòng đó; gỡ khỏi dòng cũ (dòng xê dịch khi thêm/bớt/
+    // kéo mục, KIO ẩn/hiện dòng).
+    void update()
+    {
+        constexpr int URL_ROLE = 0x069CD12B, GROUP_ROLE = 0x0a5b64ee;  // kfileplacesmodel.h
+        const QAbstractItemModel *model = m_view->model();
+        if (!model)
+            return;
+        int above = -1, below = -1;
+        for (int r = 0; r < model->rowCount() && above < 0; ++r) {
+            const QModelIndex i = model->index(r, 0);
+            if (m_view->isRowHidden(r) || i.data(URL_ROLE).toUrl().scheme() != QLatin1String("trash"))
+                continue;
+            int next = r + 1;
+            while (next < model->rowCount() && m_view->isRowHidden(next))
+                ++next;
+            if (next < model->rowCount() && model->index(next, 0).data(GROUP_ROLE) == i.data(GROUP_ROLE)) {
+                above = r;
+                below = next;
+            }
+        }
+        if (above == m_above && below == m_below)
+            return;
+        for (int r : {m_above, m_below}) {
+            if (r >= 0 && m_view->itemDelegateForRow(r) == this)
+                m_view->setItemDelegateForRow(r, nullptr);
+        }
+        m_above = above;
+        m_below = below;
+        for (int r : {above, below}) {
+            if (r >= 0)
+                m_view->setItemDelegateForRow(r, this);
+        }
+    }
+
+private:
+    // Mỗi dòng thêm 12px → vạch cách icon trên/dưới 23–24px trống, bằng khe
+    // giữa hai mục (dòng 41, icon 20 — hình icon nét không kín khung; đo
+    // container 2026-10-08).
+    static constexpr int HALF_GAP = 12;
+
+    QAbstractItemDelegate *base() const { return m_view->itemDelegate(); }
+
+    QListView *m_view;
+    int m_above = -1;
+    int m_below = -1;
+};
 
 // Mục 43: hộp chọn icon (KIconDialog) chỉ liệt kê icon của bộ đang dùng
 // (Samhie, user 2026-10-07), không lấy Breeze/hicolor mà bộ đó thừa kế.
@@ -1704,7 +1782,23 @@ public:
         if (isPlacesView(w)) {
             QTimer::singleShot(0, w, [w] {
                 QAbstractItemModel *model = static_cast<QAbstractItemView *>(w)->model();
-                if (!model || !model->inherits("KFilePlacesModel") || model->property("_samhie_stroke").toBool())
+                if (!model || !model->inherits("KFilePlacesModel"))
+                    return;
+                // Mục 46: mỗi view một delegate khe (model có thể dùng chung).
+                // Xét lại sau một nhịp mỗi khi danh sách đổi — KIO ẩn/hiện
+                // dòng (setRowHidden) ngay sau khi model báo.
+                if (!w->findChild<QObject *>(QStringLiteral("samhie-pinned-gap"), Qt::FindDirectChildrenOnly)) {
+                    auto *gap = new PinnedGapDelegate(static_cast<QListView *>(w));
+                    auto later = [gap] { QTimer::singleShot(0, gap, [gap] { gap->update(); }); };
+                    QObject::connect(model, &QAbstractItemModel::rowsInserted, gap, later);
+                    QObject::connect(model, &QAbstractItemModel::rowsRemoved, gap, later);
+                    QObject::connect(model, &QAbstractItemModel::rowsMoved, gap, later);
+                    QObject::connect(model, &QAbstractItemModel::modelReset, gap, later);
+                    QObject::connect(model, &QAbstractItemModel::layoutChanged, gap, later);
+                    QObject::connect(model, &QAbstractItemModel::dataChanged, gap, later);
+                    gap->update();
+                }
+                if (model->property("_samhie_stroke").toBool())
                     return;
                 model->setProperty("_samhie_stroke", true);
                 // Sau một nhịp: editPlace ngay trong lúc model đang báo thêm
@@ -2025,7 +2119,6 @@ public:
                     pal.setColor(QPalette::Text, fg);
                     pal.setColor(QPalette::WindowText, fg);
                 }
-                drawPinnedDivider(vopt, p);  // mục 46
                 return;  // không tô nền
             }
         }

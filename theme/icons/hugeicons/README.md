@@ -25,10 +25,13 @@ hiển thị và bảng NUDGE khác nhau.
 `open-with` (dòng "Other Application…" của menu Open With, 2026-10-08,
 user nhờ tìm): Claude lấy `dashboard-square-add` từ repo, đổi `#141B34` →
 `currentColor`.
+`txt` (file .txt) và `star` (sao Rating) user tải 2026-10-08 cho hộp
+Properties, đối chiếu cùng commit: trùng nét `txt-02` và `star`.
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
 (icon Pro KHÔNG được đưa vào mã nguồn mở, xem README của repo đó).
-Hai file đã sửa (MIT cho sửa):
+Ba file đã sửa (MIT cho sửa):
+- `star-full`: `star` tô kín (fill `currentColor`) — sao Rating đã chọn.
 - `trash-full`: `waste` thêm ba vạch dọc user tự vẽ.
 - `volume-35`: user tải `volume` (thân loa đứng giữa khung, đuôi loa vẽ
   khác), Claude thay bằng đúng thân loa của `volume-full` (`volume-high`),
@@ -147,6 +150,8 @@ Hai file đã sửa (MIT cho sửa):
 | `smart-home` | `home-02` |
 | `sort` | `arrow-data-transfer-vertical` |
 | `split` | `square-split-horizontal` |
+| `star` | `star` |
+| `star-full` | `star` (tô kín) |
 | `stop` | `stop-circle` |
 | `storage` | `hdd` |
 | `swap` | `arrow-data-transfer-horizontal` |
@@ -169,6 +174,7 @@ Hai file đã sửa (MIT cho sửa):
 | `trash-delete` | `delete-01` |
 | `trash-empty` | `waste` |
 | `trash-full` | `waste` (+ 3 vạch dọc user thêm) |
+| `txt` | `txt-02` |
 | `undo` | `undo-03` |
 | `unlock` | `lock-keyhole-open` |
 | `up-2` | `arrow-up-02` |

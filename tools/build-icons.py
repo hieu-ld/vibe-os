@@ -243,6 +243,15 @@ MAP = {
     # 16px — style "samhie" mục 50 hiện icon ở menu đó). Tên chung: ở đâu
     # khác cũng là "chạy/chọn chương trình".
     "open-with":  [("actions", "system-run")],
+    # Hộp Properties (user 2026-10-08). File .txt (mime text/plain): icon ở
+    # tab General (48px) và vùng file Dolphin. Chỉ text-plain — loại chữ khác
+    # (markdown, log…) có tên riêng, vẫn lấy Breeze trước khi rơi về đây.
+    "txt":        [("mimetypes", "text-plain")],
+    # Sao Rating, tab Details (KRatingPainter, KF 6.30): sao đã chọn = `rating`,
+    # chưa chọn = `rating-unrated` (thiếu thì KDE làm mờ `rating` — sao rỗng
+    # và sao chọn chỉ khác độ mờ). star-full = star tô kín.
+    "star":       [("actions", "rating-unrated")],
+    "star-full":  [("actions", "rating")],
     # Ký hiệu thư mục (user 2026-10-08): menu Symbol của hàng màu thư mục
     # Dolphin (style "samhie" mục 47, 16px) — cùng file là ký hiệu ghép vào
     # thư mục tô màu (tools/build-folder-icons.py đọc symbol-*.svg ở đây).

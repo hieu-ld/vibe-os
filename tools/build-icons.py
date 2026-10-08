@@ -239,6 +239,12 @@ MAP = {
     "stop":       [("actions", "process-stop")],
     "cancel":     [("actions", "dialog-cancel")],
     "print":      [("actions", "document-print")],
+    # Ký hiệu thư mục (user 2026-10-08): menu Symbol của hàng màu thư mục
+    # Dolphin (style "samhie" mục 47, 16px) — cùng file là ký hiệu ghép vào
+    # thư mục tô màu (tools/build-folder-icons.py đọc symbol-*.svg ở đây).
+    **{f"symbol-{n}": [("actions", f"samhie-symbol-{n}")] for n in (
+        "cloud", "design", "development", "documents", "download", "important",
+        "library", "mail", "music", "pictures", "print", "tar", "temp", "videos")},
     # Ô quick settings (20px)
     "dark-mode":  [("actions", "samhie-dark-style")],
     "bell-off":   [("actions", "samhie-do-not-disturb")],
@@ -384,6 +390,10 @@ NUDGE = {
     "sidebar": (16, -0.5, -0.5),         # mờ 0.71 → 0.16
     "swap": (16, 0.125, -0.5),           # mờ 0.76 → 0.17
     "undo": (16, -0.25, 0.125),          # mờ 0.46 → 0.35
+    # Menu Symbol (2026-10-08)
+    "symbol-download": (16, -0.5, 0.25),  # mờ 0.52 → 0.44
+    "symbol-mail": (16, 0.125, -0.5),    # mờ 0.50 → 0.37
+    "symbol-music": (16, -0.5, -0.125),  # mờ 0.55 → 0.33
 }
 
 

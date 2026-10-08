@@ -1,0 +1,15 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Samhie — vỏ thư mục user vẽ, ký hiệu theme/icons/hugeicons/symbol-videos.svg, màu [folders].orange của
+     theme/palette.toml. Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <path d="M4 14C4 9.58172 7.58172 6 12 6H28.3944C30.647 6 32.7505 7.12577 34 9C35.2495 10.8742 37.353 12 39.6056 12H52C56.4183 12 60 15.5817 60 20V26H4V14Z" stroke="#87512a" stroke-width="2" fill="#87512a" />
+  <path d="M4 25C4 20.5817 7.58172 17 12 17H32H52C56.4183 17 60 20.5817 60 25V50C60 54.4183 56.4183 58 52 58H12C7.58172 58 4 54.4183 4 50V25Z" stroke="#b26d3a" stroke-width="2" fill="#b26d3a" />
+  <g transform="translate(16 21) scale(1.333333)" fill="none" stroke="#87512a" stroke-width="1.5">
+    <path d="M2.5 12C2.5 7.52166 2.5 5.28249 3.89124 3.89124C5.28249 2.5 7.52166 2.5 12 2.5C16.4783 2.5 18.7175 2.5 20.1088 3.89124C21.5 5.28249 21.5 7.52166 21.5 12C21.5 16.4783 21.5 18.7175 20.1088 20.1088C18.7175 21.5 16.4783 21.5 12 21.5C7.52166 21.5 5.28249 21.5 3.89124 20.1088C2.5 18.7175 2.5 16.4783 2.5 12Z" />
+    <path d="M2.5 7H21.5" stroke-linejoin="round" />
+    <path d="M2.5 17H21.5" stroke-linejoin="round" />
+    <path d="M12 17L12 7" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M8 7L8 3M16 7L16 3" stroke-linecap="round" stroke-linejoin="round" />
+    <path d="M8 21L8 17M16 21L16 17" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

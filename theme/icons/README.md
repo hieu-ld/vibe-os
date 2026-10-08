@@ -8,7 +8,7 @@ Ba bộ, ba script:
   `python3 tools/build-icons.py`; giấy phép, nguồn và cách thêm hình: xem
   `hugeicons/README.md`. Bộ vẽ tay cũ còn trong lịch sử git (commit `4805dac`).
 - **Icon app nhiều màu** (`apps/`) — user vẽ, mục bên dưới.
-- **Thư mục Dolphin tô màu** (`folders/`) — user vẽ, mục bên dưới.
+- **Thư mục Dolphin tô màu** — vỏ user vẽ + ký hiệu Hugeicons, mục bên dưới.
 
 ## Icon app (`apps/`) — nhiều màu, KHÔNG qua build-icons.py
 
@@ -26,32 +26,16 @@ sáng kiểu bản 1.0 — giải thích đủ ở đầu script. CI chạy `--c
 | `apps/utilities-terminal.svg` (hover-2) | `utilities-terminal` (Konsole) |
 | `apps/preferences-system.svg` (hover-1) | `preferences-system` — chưa app nào dùng, dock tạm ẩn |
 
-## Bộ thư mục Dolphin (`folders/`) — tô màu, KHÔNG qua build-icons.py
+## Thư mục Dolphin tô màu — KHÔNG qua build-icons.py
 
-User vẽ 2026-10-04 (khung 64, chỉ viền `#A1A1A1`: nắp + thân thư mục giống
-nhau ở mọi hình, ký hiệu ở giữa). Lưu ở đây theo tên icon bỏ `folder-`, rồi
-chạy `python3 tools/build-folder-icons.py` → `Samhie/places/scalable/`. Script
-tô kín nắp/thân, ký hiệu một màu tối hơn nắp; màu ở `theme/palette.toml` `[folders]`.
-Ký hiệu user vẽ trong ô 24×24 (tâm 32, 37); script phóng lên 32 (nét 1,5 → 2,
-user 2026-10-05) — vẽ ký hiệu mới thì vẫn vẽ trong ô 24 như cũ. `important`
-tô màu riêng (`[folder-symbols]` trong palette) thay vì màu nắp.
-**Bản vẽ khung 16** (`folders/16/<tên>.svg`, chỉ ký hiệu, nét 1): menu Other
-dùng nguyên hình đó ở 16px thay vì thu nhỏ hình 64. Hiện có `important` (user
-vẽ lại 2026-10-05); hình 64 của nó là cùng hình đó ×1,5 đặt vào ô 24 (tâm 32,
-37, nét 1,5) — vẽ lại thì sửa cả hai. Chỉnh so với bản user: chấm + thân dấu
-than là ô vuông bo 0,5 (bản gốc bo tròn hẳn → mờ ở 16px).
-Thư mục trơn (`folder`, 9 màu) sinh từ vỏ thư mục, không cần file riêng.
-
-**Sửa so với bản xuất Figma:** `details.svg` (2026-10-05) — ba chấm tròn
-r 0,5 thành ô vuông 1px: chấm tròn chỉ phủ ~78% điểm ảnh, mờ hơn các vạch.
-`music.svg` (2026-10-04) — bản xuất mất hai
-nét chân nốt nhạc (có trong ảnh Figma user chụp). Thêm lại hai nét dọc dày
-1,5 ở x = 25,25 (40,5 → 46) và 31,25 (39,5 → 45,25), đo trên ảnh Figma: nối
-cạnh thanh ngang xuống tới đầu nốt.
-
-| Hình | Bản xuất của user | Tên icon |
-|---|---|---|
-| `documents` `download` `music` `pictures` `videos` | `folder-1` `-0` `-2` `-3` `-4` | `folder-<tên>` (thư mục XDG) |
-| `bookmark` `cloud` `development` `games` `mail` | `folder-13` `-5` `-12` `-11` `-10` | `folder-<tên>` (menu màu → Other) |
-| `print` `tar` `temp` `important` | `folder-9` `-8` `-6` `-7` | `folder-<tên>` (`tar` = nén, `temp` = tạm) |
-| `home` | `folder-14` | `user-home` (thư mục home, xem dạng to) |
+Vỏ thư mục user vẽ 2026-10-04 (khung 64, ghi thẳng trong
+`tools/build-folder-icons.py`); ký hiệu ở giữa là Hugeicons
+`hugeicons/symbol-<tên>.svg` (2026-10-08, thay bộ ký hiệu user tự vẽ — bản cũ
+còn trong lịch sử git, thư mục `theme/icons/folders/`). Chạy
+`python3 tools/build-folder-icons.py` → `Samhie/places/scalable/`: tô kín
+nắp/thân, ký hiệu phóng 32/24 (nét 2), màu ở `theme/palette.toml` `[folders]`
+(ký hiệu `important` màu riêng `[folder-symbols]`). Sinh `folder-<ký hiệu>`,
+`folder-<ký hiệu>-<màu>` (đổi màu giữ ký hiệu — style "samhie" mục 47),
+`folder-<màu>`, `user-home` (hình `smart-home`). Thêm ký hiệu: thêm file
+`symbol-<tên>.svg` + tên vào `SYMBOLS` của script, `MAP` của build-icons.py và
+`FOLDER_SYMBOLS` của `style/samhie-style.cpp`.

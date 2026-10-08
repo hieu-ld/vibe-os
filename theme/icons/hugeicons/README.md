@@ -17,6 +17,11 @@ user nhờ tìm): Claude lấy thẳng từ thư mục `icons/` của repo ở c
 chỉ đổi màu `#141B34` của repo thành `currentColor` (như bản tải từ web).
 `browse` (nút Browse… của hộp chọn icon) user tải 2026-10-07, đối chiếu cùng
 commit: trùng nét `folder-search`.
+Mười bốn `symbol-*` (ký hiệu thư mục + menu Symbol, 2026-10-08): user tải
+mười ba, `symbol-tar` Claude lấy `file-zip` từ repo (đổi `#141B34` →
+`currentColor`); đối chiếu cùng commit, trùng nét. Vài hình trùng file khác
+(`symbol-download` = `download`, `symbol-print` = `print`) — để riêng vì cỡ
+hiển thị và bảng NUDGE khác nhau.
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
 (icon Pro KHÔNG được đưa vào mã nguồn mở, xem README của repo đó).
@@ -141,6 +146,20 @@ Hai file đã sửa (MIT cho sửa):
 | `stop` | `stop-circle` |
 | `storage` | `hdd` |
 | `swap` | `arrow-data-transfer-horizontal` |
+| `symbol-cloud` | `cloudy` |
+| `symbol-design` | `palette` |
+| `symbol-development` | `code-xml` |
+| `symbol-documents` | `doc-01` |
+| `symbol-download` | `square-arrow-down-03` |
+| `symbol-important` | `alert-circle` |
+| `symbol-library` | `libraries` |
+| `symbol-mail` | `mailbox-01` |
+| `symbol-music` | `music-02` |
+| `symbol-pictures` | `image-02` |
+| `symbol-print` | `printer` |
+| `symbol-tar` | `file-zip` |
+| `symbol-temp` | `file-clock` |
+| `symbol-videos` | `film-01` |
 | `terminal` | `square-terminal` |
 | `terminal-panel` | `command-line` |
 | `trash-delete` | `delete-01` |

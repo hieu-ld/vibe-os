@@ -276,6 +276,12 @@
 //      Bin) và thư mục người dùng ghim thêm, hai đầu cách viền như icon, trên
 //      dưới thoáng bằng khe giữa hai mục (user 2026-10-08). Chỉ có khi có mục
 //      ghim. Delegate riêng cho dòng Recycle Bin (PinnedGapDelegate).
+//  47. Hàng màu thư mục (menu chuột phải thư mục, user 2026-10-08):
+//      [Default] [Red] [Yellow] [Teal] [Grey] [Symbol ▾]; Symbol = No Symbol +
+//      14 ký hiệu (FOLDER_SYMBOLS). Màu và ký hiệu đổi độc lập: plugin
+//      Dolphin vẫn ghi .directory, FolderChangeWatcher (nghe KDirNotify qua
+//      D-Bus) sửa lại Icon=folder-<ký hiệu>-<màu> và lưu hai khoá
+//      X-Samhie-FolderSymbol / X-Samhie-FolderColor.
 //  30.Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -307,6 +313,7 @@
 #include <QPainter>
 #include <QPainterPath>
 #include <QLayout>
+#include <QBoxLayout>
 #include <QMenu>
 #include <QMouseEvent>
 #include <QCoreApplication>
@@ -323,6 +330,9 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QSettings>
+#include <QSaveFile>
+#include <QDBusConnection>
+#include <QDBusMessage>
 #include <QSlider>
 #include <QFile>
 #include <QFileInfo>
@@ -350,6 +360,16 @@
 #include <climits>
 
 #include "colors.h"  // sinh từ theme/palette.toml (tools/gen-theme.py)
+
+// Mục 47 (định nghĩa cuối file — lớp có Q_OBJECT, không đặt được trong
+// namespace vô danh): bấm một ô của hàng màu thư mục → ghi nhớ ý định, đổi
+// .directory khi plugin của Dolphin báo thư mục nào vừa đổi.
+enum class FolderChange { Color, Symbol };
+void armFolderChange(FolderChange kind, const QString &value);
+// Đăng ký nghe KDirNotify TRƯỚC cú bấm đầu tiên: đăng ký là việc bất đồng bộ
+// với dbus-daemon — đăng ký lúc bấm thì thông báo của plugin (phát ngay
+// trong cú bấm đó) đi trước, bị lỡ (container 2026-10-08).
+void watchFolderChanges();
 
 namespace {
 
@@ -1261,6 +1281,110 @@ void strokePlaceIcons(QAbstractItemModel *model, int first, int last)
     }
 }
 
+// Mục 47: ký hiệu của menu Symbol — tên (theme/icons/hugeicons/symbol-<tên>,
+// tools/build-folder-icons.py SYMBOLS) → chữ, theo bảng chữ cái của chữ.
+const QList<QPair<QString, QString>> FOLDER_SYMBOLS = {
+    {QStringLiteral("cloud"), QStringLiteral("Cloud")},
+    {QStringLiteral("tar"), QStringLiteral("Compressed")},
+    {QStringLiteral("design"), QStringLiteral("Design")},
+    {QStringLiteral("development"), QStringLiteral("Development")},
+    {QStringLiteral("documents"), QStringLiteral("Documents")},
+    {QStringLiteral("download"), QStringLiteral("Downloads")},
+    {QStringLiteral("important"), QStringLiteral("Important")},
+    {QStringLiteral("library"), QStringLiteral("Library")},
+    {QStringLiteral("mail"), QStringLiteral("Mail")},
+    {QStringLiteral("music"), QStringLiteral("Music")},
+    {QStringLiteral("pictures"), QStringLiteral("Pictures")},
+    {QStringLiteral("print"), QStringLiteral("Print")},
+    {QStringLiteral("temp"), QStringLiteral("Temporary")},
+    {QStringLiteral("videos"), QStringLiteral("Videos")},
+};
+// Màu bỏ khỏi hàng (user 2026-10-08: còn Default, Red, Yellow, Teal, Grey).
+const QSet<QString> FOLDER_COLORS_DROPPED = {QStringLiteral("orange"), QStringLiteral("green")};
+
+// Mục 47: hàng màu thư mục trong menu chuột phải của Dolphin
+// (setfoldericonitemaction.cpp 26.08.1 — 5 nút màu + nút Other mở menu gồm
+// Default, 4 màu nữa và các ký hiệu). User 2026-10-08:
+//   [Default] [Red] [Yellow] [Teal] [Grey]  [Symbol ▾]
+// Symbol mở menu No Symbol + ký hiệu; màu và ký hiệu đổi độc lập (đổi màu giữ
+// ký hiệu…). Plugin chỉ ghi Icon=<tên icon của nút> vào .directory rồi báo
+// KDirNotify.FilesChanged(url thư mục); đường dẫn thư mục nằm trong biến
+// riêng của plugin → mỗi cú bấm: ghi nhớ ý định (armFolderChange), để plugin
+// làm việc của nó (nút ta thêm bấm hộ hành động Default của plugin — chỉ
+// cần plugin báo url), rồi FolderChangeWatcher sửa .directory theo ý định.
+// Nút tự thêm/gỡ ở đây; bấm hành động của plugin (trigger) là menu tự đóng
+// như khi bấm nút của nó (plugin nối triggered → QWidgetAction).
+void setupFolderColorRow(QMenu *menu)
+{
+    for (QAction *a : menu->actions()) {
+        auto *wa = qobject_cast<QWidgetAction *>(a);
+        if (!wa)
+            continue;
+        for (QWidget *row : static_cast<WidgetActionAccess *>(wa)->createdWidgets()) {
+            const QList<QPushButton *> buttons = row->findChildren<QPushButton *>(Qt::FindDirectChildrenOnly);
+            auto other = std::find_if(buttons.begin(), buttons.end(), [](QPushButton *b) { return b->menu(); });
+            auto *layout = qobject_cast<QBoxLayout *>(row->layout());
+            if (other == buttons.end() || !layout)
+                continue;
+            QMenu *sub = (*other)->menu();
+            QPointer<QAction> carrier;  // hành động Default của plugin
+            QAction *grey = nullptr;
+            for (QAction *s : sub->actions()) {
+                if (s->icon().name() == QLatin1String("inode-directory"))
+                    carrier = s;
+                else if (s->icon().name() == QLatin1String("folder-grey"))
+                    grey = s;
+            }
+            if (!carrier)
+                return;  // plugin đổi — để nguyên hàng của KDE
+            watchFolderChanges();
+            for (QPushButton *b : buttons) {
+                const QString name = b->icon().name();
+                if (b == *other || !name.startsWith(QLatin1String("folder-")))
+                    continue;
+                const QString color = name.mid(7);
+                if (FOLDER_COLORS_DROPPED.contains(color)) {
+                    b->hide();
+                    continue;
+                }
+                b->setChecked(false);  // plugin chỉ tích khi trùng tên — với bản có ký hiệu thì không
+                QObject::connect(b, &QPushButton::clicked, b, [color] { armFolderChange(FolderChange::Color, color); });
+            }
+            auto addButton = [&](const QString &icon, const QString &color, const QString &tip, int at) {
+                auto *b = new QPushButton(QIcon::fromTheme(icon), QString(), row);
+                b->setToolTip(tip);
+                QObject::connect(b, &QPushButton::clicked, b, [color, carrier] {
+                    armFolderChange(FolderChange::Color, color);
+                    if (carrier)
+                        carrier->trigger();
+                });
+                layout->insertWidget(at, b);
+            };
+            addButton(QStringLiteral("inode-directory"), QString(), QStringLiteral("Set folder color to Default"), 0);
+            if (grey)
+                addButton(QStringLiteral("folder-grey"), QStringLiteral("grey"), QStringLiteral("Set folder color to Grey"),
+                          layout->indexOf(*other));
+            (*other)->setText(QStringLiteral("Symbol"));
+            (*other)->setToolTip(QStringLiteral("Folder symbol"));
+            for (QAction *s : sub->actions())
+                sub->removeAction(s);  // hành động vẫn còn (con của menu), Default làm cầu
+            auto addSymbol = [&](const QString &symbol, const QString &text, const QIcon &icon) {
+                QAction *s = sub->addAction(icon, text);
+                QObject::connect(s, &QAction::triggered, sub, [symbol, carrier] {
+                    armFolderChange(FolderChange::Symbol, symbol);
+                    if (carrier)
+                        carrier->trigger();
+                });
+            };
+            addSymbol(QString(), QStringLiteral("No Symbol"), QIcon());
+            sub->addSeparator();
+            for (const auto &[symbol, text] : FOLDER_SYMBOLS)
+                addSymbol(symbol, text, QIcon::fromTheme(QStringLiteral("samhie-symbol-") + symbol));
+            return;
+        }
+    }
+}
+
 // Mục 37: danh sách trong hộp thoại cài đặt (không tính danh sách trang).
 bool isSettingsList(const QWidget *w)
 {
@@ -1542,6 +1666,7 @@ public:
         if (w->inherits("DolphinContextMenu")) {
             hideItemCreateNew(static_cast<QMenu *>(w));
             hideViewportFolderColors(static_cast<QMenu *>(w));
+            setupFolderColorRow(static_cast<QMenu *>(w));  // mục 47
         }
         if (qobject_cast<QMenu *>(w) && !w->parentWidget() && !w->inherits("DolphinContextMenu")
             && QCoreApplication::applicationName() == QLatin1String("dolphin")) {
@@ -2671,6 +2796,174 @@ private:
 };
 
 }  // namespace
+
+// Mục 47: sửa .directory của thư mục vừa được hàng màu đổi icon.
+// Lưu riêng màu và ký hiệu (X-Samhie-FolderColor / X-Samhie-FolderSymbol)
+// cạnh Icon: plugin ghi đè Icon mỗi lần bấm, nên trạng thái trước đó phải nằm
+// ở khoá riêng. Ký hiệu "tự nhiên" của thư mục XDG (Music → music…) là cái KIO
+// tự gán khi .directory không có Icon (KFileItem, KIO 6.30).
+class FolderChangeWatcher : public QObject
+{
+    Q_OBJECT
+
+public:
+    static FolderChangeWatcher *instance()
+    {
+        static auto *watcher = [] {
+            auto *w = new FolderChangeWatcher(qApp);
+            QDBusConnection::sessionBus().connect(QString(), QString(), QStringLiteral("org.kde.KDirNotify"),
+                                                  QStringLiteral("FilesChanged"), w,
+                                                  SLOT(filesChanged(QStringList)));
+            w->m_timeout.setSingleShot(true);
+            w->m_timeout.setInterval(3000);  // plugin báo gần như ngay — quá lâu thì bỏ ý định
+            return w;
+        }();
+        return watcher;
+    }
+
+    void arm(FolderChange kind, const QString &value)
+    {
+        m_kind = kind;
+        m_value = value;
+        m_armed = true;
+        m_timeout.start();
+    }
+
+public Q_SLOTS:
+    void filesChanged(const QStringList &urls)
+    {
+        if (!m_armed || !m_timeout.isActive())
+            return;
+        for (const QString &u : urls) {
+            const QUrl url(u);
+            if (!url.isLocalFile() || !QFileInfo(url.toLocalFile()).isDir())
+                continue;
+            m_armed = false;
+            apply(url.toLocalFile());
+            // Báo lại để Dolphin đọc .directory mới (thông báo của plugin có
+            // thể đã tới Dolphin trước khi ta sửa).
+            QDBusMessage msg = QDBusMessage::createSignal(QStringLiteral("/"), QStringLiteral("org.kde.KDirNotify"),
+                                                          QStringLiteral("FilesChanged"));
+            msg << QStringList{u};
+            QDBusConnection::sessionBus().send(msg);
+            return;
+        }
+    }
+
+private:
+    using QObject::QObject;
+
+    static QString naturalSymbol(const QString &dir)
+    {
+        static const QList<QPair<QStandardPaths::StandardLocation, QString>> xdg = {
+            {QStandardPaths::MusicLocation, QStringLiteral("music")},
+            {QStandardPaths::PicturesLocation, QStringLiteral("pictures")},
+            {QStandardPaths::MoviesLocation, QStringLiteral("videos")},
+            {QStandardPaths::DocumentsLocation, QStringLiteral("documents")},
+            {QStandardPaths::DownloadLocation, QStringLiteral("download")},
+        };
+        const QString path = QFileInfo(dir).canonicalFilePath();
+        for (const auto &[location, symbol] : xdg) {
+            const QString x = QStandardPaths::writableLocation(location);
+            if (!x.isEmpty() && QFileInfo(x).canonicalFilePath() == path && path != QDir::homePath())
+                return symbol;
+        }
+        return QString();
+    }
+
+    void apply(const QString &dir)
+    {
+        const QString group = QStringLiteral("[Desktop Entry]");
+        const QString iconKey = QStringLiteral("Icon"), symbolKey = QStringLiteral("X-Samhie-FolderSymbol"),
+                      colorKey = QStringLiteral("X-Samhie-FolderColor");
+        QFile file(dir + QStringLiteral("/.directory"));
+        QStringList lines;
+        if (file.open(QIODevice::ReadOnly | QIODevice::Text))
+            lines = QString::fromUtf8(file.readAll()).split(QLatin1Char('\n'));
+        file.close();
+        while (!lines.isEmpty() && lines.last().isEmpty())
+            lines.removeLast();
+
+        // Đọc khoá trong [Desktop Entry]; gỡ ba khoá của ta để ghi lại.
+        QHash<QString, QString> keys;
+        int start = lines.indexOf(group), end = lines.size();
+        if (start >= 0) {
+            for (int i = start + 1; i < lines.size(); ++i) {
+                if (lines[i].startsWith(QLatin1Char('['))) {
+                    end = i;
+                    break;
+                }
+            }
+            for (int i = end - 1; i > start; --i) {
+                const int eq = lines[i].indexOf(QLatin1Char('='));
+                const QString key = lines[i].left(eq).trimmed();
+                if (eq > 0 && (key == iconKey || key == symbolKey || key == colorKey)) {
+                    keys.insert(key, lines[i].mid(eq + 1).trimmed());
+                    lines.removeAt(i);
+                    --end;
+                }
+            }
+        }
+
+        const QString natural = naturalSymbol(dir);
+        QString symbol = keys.contains(symbolKey) ? keys.value(symbolKey) : natural;
+        if (symbol == QLatin1String("none"))
+            symbol.clear();
+        QString color = keys.value(colorKey);
+        if (m_kind == FolderChange::Color)
+            color = m_value;
+        else
+            symbol = m_value;
+
+        QString icon = symbol.isEmpty() ? QStringLiteral("folder") : QStringLiteral("folder-") + symbol;
+        if (!color.isEmpty())
+            icon += QLatin1Char('-') + color;
+        const QString naturalIcon = natural.isEmpty() ? QStringLiteral("folder") : QStringLiteral("folder-") + natural;
+
+        QStringList add;
+        if (icon != naturalIcon)
+            add << iconKey + QLatin1Char('=') + icon;
+        if (symbol != natural)
+            add << symbolKey + QLatin1Char('=') + (symbol.isEmpty() ? QStringLiteral("none") : symbol);
+        if (!color.isEmpty())
+            add << colorKey + QLatin1Char('=') + color;
+        if (start < 0 && !add.isEmpty()) {
+            lines << group;
+            start = lines.size() - 1;
+            end = lines.size();
+        }
+        for (const QString &line : add)
+            lines.insert(end++, line);
+        // Nhóm rỗng (chỉ còn tiêu đề) và không còn gì khác → xoá file như plugin.
+        if (start >= 0 && end == start + 1)
+            lines.removeAt(start);
+        bool empty = std::all_of(lines.begin(), lines.end(), [](const QString &l) { return l.trimmed().isEmpty(); });
+        if (empty) {
+            QFile::remove(file.fileName());
+            return;
+        }
+        QSaveFile out(file.fileName());
+        if (out.open(QIODevice::WriteOnly | QIODevice::Text)) {
+            out.write((lines.join(QLatin1Char('\n')) + QLatin1Char('\n')).toUtf8());
+            out.commit();
+        }
+    }
+
+    bool m_armed = false;
+    FolderChange m_kind = FolderChange::Color;
+    QString m_value;
+    QTimer m_timeout;
+};
+
+void armFolderChange(FolderChange kind, const QString &value)
+{
+    FolderChangeWatcher::instance()->arm(kind, value);
+}
+
+void watchFolderChanges()
+{
+    FolderChangeWatcher::instance();
+}
 
 class SamhieStylePlugin : public QStylePlugin
 {

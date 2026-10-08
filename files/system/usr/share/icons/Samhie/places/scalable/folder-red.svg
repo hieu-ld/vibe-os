@@ -1,5 +1,5 @@
 <?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — thư mục user vẽ, vỏ thư mục, màu [folders].red của
+<!-- Samhie — vỏ thư mục user vẽ, màu [folders].red của
      theme/palette.toml. Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
   <path d="M4 14C4 9.58172 7.58172 6 12 6H28.3944C30.647 6 32.7505 7.12577 34 9C35.2495 10.8742 37.353 12 39.6056 12H52C56.4183 12 60 15.5817 60 20V26H4V14Z" stroke="#82413d" stroke-width="2" fill="#82413d" />

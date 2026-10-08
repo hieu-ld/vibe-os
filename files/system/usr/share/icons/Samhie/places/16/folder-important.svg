@@ -1,8 +1,0 @@
-<?xml version='1.0' encoding='utf-8'?>
-<!-- Samhie — ký hiệu thư mục cỡ 16 (menu màu thư mục), theme/icons/folders/16/important.svg.
-     Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" fill="none">
-  <circle cx="8" cy="8" r="6.5" style="stroke:#c25d5c" />
-  <rect x="7" y="4" width="2" height="5" rx="0.5" style="fill:#c25d5c" />
-  <rect x="7" y="10" width="2" height="2" rx="0.5" style="fill:#c25d5c" />
-</svg>

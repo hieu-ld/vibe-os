@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Samhie — vỏ thư mục user vẽ, ký hiệu theme/icons/hugeicons/symbol-important.svg, màu [folders].red của
+     theme/palette.toml. Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <path d="M4 14C4 9.58172 7.58172 6 12 6H28.3944C30.647 6 32.7505 7.12577 34 9C35.2495 10.8742 37.353 12 39.6056 12H52C56.4183 12 60 15.5817 60 20V26H4V14Z" stroke="#82413d" stroke-width="2" fill="#82413d" />
+  <path d="M4 25C4 20.5817 7.58172 17 12 17H32H52C56.4183 17 60 20.5817 60 25V50C60 54.4183 56.4183 58 52 58H12C7.58172 58 4 54.4183 4 50V25Z" stroke="#ac5853" stroke-width="2" fill="#ac5853" />
+  <g transform="translate(16 21) scale(1.333333)" fill="none" stroke="#82413d" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+    <circle cx="12" cy="12" r="10" />
+    <path d="M12 8V12" />
+    <path d="M12.125 15.75H12M12.25 15.75C12.25 15.8881 12.1381 16 12 16C11.8619 16 11.75 15.8881 11.75 15.75C11.75 15.6119 11.8619 15.5 12 15.5C12.1381 15.5 12.25 15.6119 12.25 15.75Z" />
+  </g>
+</svg>

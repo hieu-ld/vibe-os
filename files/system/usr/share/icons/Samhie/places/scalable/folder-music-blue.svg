@@ -1,0 +1,12 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Samhie — vỏ thư mục user vẽ, ký hiệu theme/icons/hugeicons/symbol-music.svg, màu [folders].blue của
+     theme/palette.toml. Sinh bằng tools/build-folder-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <path d="M4 14C4 9.58172 7.58172 6 12 6H28.3944C30.647 6 32.7505 7.12577 34 9C35.2495 10.8742 37.353 12 39.6056 12H52C56.4183 12 60 15.5817 60 20V26H4V14Z" stroke="#345681" stroke-width="2" fill="#345681" />
+  <path d="M4 25C4 20.5817 7.58172 17 12 17H32H52C56.4183 17 60 20.5817 60 25V50C60 54.4183 56.4183 58 52 58H12C7.58172 58 4 54.4183 4 50V25Z" stroke="#4773ab" stroke-width="2" fill="#4773ab" />
+  <g transform="translate(16 21) scale(1.333333)" fill="none" stroke="#345681" stroke-width="1.5">
+    <circle cx="17.9922" cy="15.75" r="3" />
+    <circle cx="5.99219" cy="17.75" r="3" />
+    <path d="M8.99219 17.75V9.66559M8.99219 9.66559V8.77944C8.99219 7.26371 8.99219 6.50585 9.41578 5.9576C9.83937 5.40936 10.5669 5.22555 12.022 4.85793L16.022 3.84738C18.3099 3.26938 19.4538 2.98038 20.223 3.58727C20.859 4.08907 20.9691 4.99061 20.9882 6.63495M8.99219 9.66559L20.9882 6.63495M20.9922 15.7289V7.76889C20.9922 7.35623 20.9922 6.9793 20.9882 6.63495M20.9882 6.63495L20.9922 6.63394" stroke-linecap="round" stroke-linejoin="round" />
+  </g>
+</svg>

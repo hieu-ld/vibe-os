@@ -184,16 +184,15 @@ violet  = ["#7b63a3", "#5c4a7b", "#5c4a7b"]   # H 300
 brown   = ["#80593f", "#60422e", "#60422e"]   # H 55
 grey    = ["#6e767b", "#53585c", "#53585c"]   # H 240
 
-# Ký hiệu thư mục có màu riêng (thay màu [folders]) — tên hình trong
-# theme/icons/folders → màu. Dùng cho cả thư mục to lẫn bản 16px của menu
-# Other; bộ icon Samhie chỉ dùng ở bản tối. tools/build-folder-icons.py đòi
-# ≥ 3:1 trên dark.card (nền menu).
-#   important: từng là dark.danger #e26767 — user thấy chói trong menu
-#              (2026-10-05) → cùng sắc, L 0,664 → 0,60, C 0,154 → 0,13
-#              (4,1:1 trên card). Trên thân thư mục mặc định chỉ 1,3:1 độ
-#              sáng (danger cũng chỉ 1,7) — đọc được nhờ khác sắc đỏ/xanh.
+# Ký hiệu thư mục có màu riêng (thay màu [2] của [folders]) — tên ký hiệu
+# (theme/icons/hugeicons/symbol-<tên>.svg) → màu, chỉ trên thân thư mục (icon
+# menu Symbol một màu theo chữ như mọi icon menu). Trên thư mục cùng tông
+# (important trên thư mục đỏ) script dùng màu [2] của thư mục.
+#   important: từng là dark.danger #e26767, rồi #c25d5c (2026-10-05). Sậm hơn
+#              2026-10-08 (user: giờ có thư mục đỏ) — L thấp hơn, độ sáng
+#              chênh thân default 1,14:1, vàng 2:1; đọc được nhờ khác sắc.
 [folder-symbols]
-important = "#c25d5c"
+important = "#9e4443"
 
 [window]
 opacity = 0.90

@@ -292,6 +292,13 @@
 //      dùng chung với menu Symbol).
 //  49. Ô đổi tên tại chỗ (F2) thấp vừa chữ: khung, vùng chọn, dấu nháy theo
 //      dải chữ thay vì hộp dòng cao 1,45 em của Dongle (user 2026-10-08).
+//  51. Thanh đường dẫn không có mũi tên › ở đầu (chỗ không có thư mục cha:
+//      Recycle Bin, /) thì chữ lùi bằng bề ngang mũi tên — đứng cùng chỗ với
+//      "Home" (user 2026-10-08: "Recycle Bin" dính mép trái).
+//  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
+//      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
+//      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
+//      2026-10-08).
 //  30.Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -1710,6 +1717,55 @@ public:
     }
 };
 
+// Mục 51. KUrlNavigator (KIO 6.30, updateButtonVisibility) chỉ hiện mũi tên
+// đầu thanh (KUrlNavigatorDropDownButton) khi còn thư mục cha → thiếu nó thì
+// tên thư mục đầu dính mép khung. Lề trái của layout thanh = bề ngang mũi
+// tên (sizeHint: nửa chiều cao) khi mũi tên ẩn và đang ở dạng nút (ô sửa
+// đường dẫn KUrlComboBox ẩn). Nghe Show/Hide của mũi tên và ô sửa; xét sau
+// một nhịp vì KIO đổi hai cái lần lượt.
+class CrumbIndent : public QObject
+{
+public:
+    using QObject::QObject;
+
+    static bool watches(const QWidget *w)
+    {
+        return w && w->parentWidget() && w->parentWidget()->inherits("KUrlNavigator")
+            && (w->inherits("KDEPrivate::KUrlNavigatorDropDownButton") || w->inherits("KUrlComboBox"));
+    }
+
+    static void schedule(QWidget *nav)
+    {
+        QTimer::singleShot(0, nav, [nav] {
+            QWidget *dropDown = nullptr, *pathBox = nullptr;
+            for (QWidget *c : nav->findChildren<QWidget *>(QString(), Qt::FindDirectChildrenOnly)) {
+                if (c->inherits("KDEPrivate::KUrlNavigatorDropDownButton"))
+                    dropDown = c;
+                else if (c->inherits("KUrlComboBox"))
+                    pathBox = c;
+            }
+            if (!dropDown || !nav->layout())
+                return;
+            const int indent = dropDown->isHidden() && (!pathBox || pathBox->isHidden())
+                ? dropDown->sizeHint().width() : 0;
+            QMargins m = nav->layout()->contentsMargins();
+            if (nav->layoutDirection() == Qt::RightToLeft)
+                m.setRight(indent);
+            else
+                m.setLeft(indent);
+            if (m != nav->layout()->contentsMargins())
+                nav->layout()->setContentsMargins(m);
+        });
+    }
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() == QEvent::Show || event->type() == QEvent::Hide)
+            schedule(static_cast<QWidget *>(obj)->parentWidget());
+        return false;
+    }
+};
+
 // Mục 22. Vị trí lấy từ ImCursorRectangle (toạ độ ô nhập): đỉnh = đỉnh hộp
 // dòng; Qt nới ô đó 5px mỗi bên quanh dấu nháy (rectForPos) → lấy giữa ô. Nhấp nháy theo nhịp hệ thống, hiện lại ngay khi
 // gõ / dời con trỏ như Qt.
@@ -2078,6 +2134,7 @@ public:
         if (w->inherits("DolphinContextMenu")) {
             hideItemCreateNew(static_cast<QMenu *>(w));
             hideViewportFolderColors(static_cast<QMenu *>(w));
+            hideGitClone(static_cast<QMenu *>(w));  // mục 52
             setupFolderColorRow(static_cast<QMenu *>(w));  // mục 47
         }
         if (qobject_cast<QMenu *>(w) && !w->parentWidget() && !w->inherits("DolphinContextMenu")
@@ -2377,6 +2434,10 @@ public:
         }
         if (w->inherits("TabConnectedWidget"))
             w->installEventFilter(&m_noPaint);  // mục 30
+        if (CrumbIndent::watches(w)) {  // mục 51
+            w->installEventFilter(&m_crumbIndent);
+            CrumbIndent::schedule(w->parentWidget());
+        }
         if (isUrlNavigatorButton(w)) {
             if (w->inherits("KDEPrivate::KUrlNavigatorToggleButton")) {
                 w->setMinimumWidth(TOGGLE_SIDE);  // mục 20: đủ chỗ cho ô vuông
@@ -2515,6 +2576,7 @@ public:
         w->removeEventFilter(&m_hideDock);
         w->removeEventFilter(&m_popupAnchor);
         w->removeEventFilter(&m_noPaint);
+        w->removeEventFilter(&m_crumbIndent);
         QProxyStyle::unpolish(w);
     }
     using QProxyStyle::unpolish;
@@ -3241,6 +3303,19 @@ private:
         }
     }
 
+    // Mục 52. Hành động không có objectName; con của FileViewGitPlugin
+    // (dolphin-plugins 26.08.1: m_cloneAction = new QAction(this), chữ
+    // "<application>Git</application> Clone..."). Hành động khác của plugin
+    // (Commit, Push… trong repo) cũng là con của nó → lọc thêm theo chữ.
+    static void hideGitClone(QMenu *menu)
+    {
+        for (QAction *a : menu->actions()) {
+            if (a->parent() && a->parent()->inherits("FileViewGitPlugin")
+                && a->text().contains(QLatin1String("Clone")))
+                a->setVisible(false);
+        }
+    }
+
     PanePainter m_pane;
     PopupPainter m_popup;
     MenuButtonForwarder m_menuForwarder;
@@ -3249,6 +3324,7 @@ private:
     HideDock m_hideDock;
     PopupAnchor m_popupAnchor;
     NoPaint m_noPaint;
+    CrumbIndent m_crumbIndent;
     // Mục 14: ô đệm phải của tiêu đề cột, Dolphin vẽ ngay trước cột cuối.
     mutable QRect m_headerEnd;
 };

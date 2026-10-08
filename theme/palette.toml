@@ -186,11 +186,13 @@ grey    = ["#6e767b", "#53585c", "#53585c"]   # H 240
 
 # Ký hiệu thư mục có màu riêng (thay màu [2] của [folders]) — tên ký hiệu
 # (theme/icons/hugeicons/symbol-<tên>.svg) → màu, chỉ trên thân thư mục (icon
-# menu Symbol một màu theo chữ như mọi icon menu). Trên thư mục cùng tông
-# (important trên thư mục đỏ) script dùng màu [2] của thư mục.
+# menu Symbol một màu theo chữ như mọi icon menu). Chỉ dùng trên thư mục ghi
+# trong OWN_COLOR_ON của tools/build-folder-icons.py (important: chỉ vàng —
+# trên đỏ thì chìm, trên default/teal/xám thì chói; nơi khác màu [2]).
 #   important: từng là dark.danger #e26767, rồi #c25d5c (2026-10-05). Sậm hơn
 #              2026-10-08 (user: giờ có thư mục đỏ) — L thấp hơn, độ sáng
 #              chênh thân default 1,14:1, vàng 2:1; đọc được nhờ khác sắc.
+#              Cùng ngày user thấy chói trên default/teal/xám → chỉ còn vàng.
 [folder-symbols]
 important = "#9e4443"
 

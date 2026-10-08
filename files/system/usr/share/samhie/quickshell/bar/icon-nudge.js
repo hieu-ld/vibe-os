@@ -56,6 +56,7 @@ var NUDGE = {
     "show-menu": [16, -1, -1],
     "swap-panels": [16, 0, -1],
     "system-log-out": [20, 0, 1],
+    "system-run": [16, -1, -1],
     "tools-report-bug": [16, -1, 0],
     "utilities-terminal": [16, -1, -1],
     "view-choose": [16, -1, 0],

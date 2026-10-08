@@ -18,8 +18,8 @@ KÝ HIỆU (2026-10-08, thay bộ user tự vẽ): Hugeicons bản free, khung 2
 cùng file sinh icon menu Symbol qua tools/build-icons.py). Ô 24 đặt vào
 thân thư mục phóng 32/24 (x 16..48, y 21..53 — thân 17..58), nét 1,5 → 2 như
 bản vẽ tay cũ (user chọn 2026-10-05). Màu ký hiệu = màu [2] của thư mục đó,
-trừ ký hiệu có màu riêng ([folder-symbols], vd important đỏ) — riêng trên thư
-mục cùng tông (SAME_HUE) thì dùng màu [2] của thư mục, không thì chìm.
+trừ ký hiệu có màu riêng ([folder-symbols], vd important đỏ) — màu riêng chỉ
+dùng trên thư mục ghi trong OWN_COLOR_ON, còn lại vẫn màu [2] của thư mục.
 
 TÊN ICON: folder-<ký hiệu> (màu default — trùng tên KDE dùng cho thư mục XDG
 và menu Other), folder-<ký hiệu>-<màu> (Samhie riêng: hàng màu thư mục của
@@ -64,8 +64,10 @@ SYMBOLS = ["cloud", "design", "development", "documents", "download", "important
 EXTRA = {"smart-home": "user-home"}
 # Ô 24 của Hugeicons → x 16..48, y 21..53 trong khung 64.
 SYMBOL_TRANSFORM = "translate(16 21) scale(1.333333)"
-# Ký hiệu có màu riêng không dùng màu đó trên thư mục cùng tông.
-SAME_HUE = {"important": {"red"}}
+# Thư mục mà ký hiệu có màu riêng mới dùng màu đó. important đỏ chỉ trên
+# vàng (user 2026-10-08): trên đỏ thì chìm (cùng tông); trên default, teal,
+# xám thì chói — đỏ cạnh xanh ngọc là cặp màu đối nhau, "rung" ở nét mảnh.
+OWN_COLOR_ON = {"important": {"yellow"}}
 # Màu trong file Hugeicons (trang web ghi currentColor, repo ghi #141B34).
 INK = {"currentcolor", "#141b34", "black", "#000000"}
 
@@ -147,7 +149,7 @@ def outputs():
         out[OUT / f"folder-{color}.svg"] = folder(color, folders[color])
     for name in SYMBOLS:
         for color in ["default", *COLORS]:
-            ink = None if color in SAME_HUE.get(name, ()) else own.get(name)
+            ink = own.get(name) if color in OWN_COLOR_ON.get(name, ()) else None
             icon = f"folder-{name}" if color == "default" else f"folder-{name}-{color}"
             out[OUT / f"{icon}.svg"] = folder(color, folders[color], f"symbol-{name}", ink)
     for src, icon in EXTRA.items():

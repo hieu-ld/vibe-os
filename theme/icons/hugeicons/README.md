@@ -22,6 +22,9 @@ mười ba, `symbol-tar` Claude lấy `file-zip` từ repo (đổi `#141B34` →
 `currentColor`); đối chiếu cùng commit, trùng nét. Vài hình trùng file khác
 (`symbol-download` = `download`, `symbol-print` = `print`) — để riêng vì cỡ
 hiển thị và bảng NUDGE khác nhau.
+`open-with` (dòng "Other Application…" của menu Open With, 2026-10-08,
+user nhờ tìm): Claude lấy `dashboard-square-add` từ repo, đổi `#141B34` →
+`currentColor`.
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
 (icon Pro KHÔNG được đưa vào mã nguồn mở, xem README của repo đó).
@@ -114,6 +117,7 @@ Hai file đã sửa (MIT cho sửa):
 | `next-2` | `arrow-right-02` |
 | `night-light` | `sun-moon` |
 | `noti-off` | `bell-off` |
+| `open-with` | `dashboard-square-add` |
 | `open-folder` | `folder-open` |
 | `paste` | `file-paste` |
 | `pin` | `pin` |

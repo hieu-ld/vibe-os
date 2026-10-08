@@ -239,6 +239,10 @@ MAP = {
     "stop":       [("actions", "process-stop")],
     "cancel":     [("actions", "dialog-cancel")],
     "print":      [("actions", "document-print")],
+    # Dòng "Other Application…" cuối menu Open With (KIO KFileItemActions,
+    # 16px — style "samhie" mục 50 hiện icon ở menu đó). Tên chung: ở đâu
+    # khác cũng là "chạy/chọn chương trình".
+    "open-with":  [("actions", "system-run")],
     # Ký hiệu thư mục (user 2026-10-08): menu Symbol của hàng màu thư mục
     # Dolphin (style "samhie" mục 47, 16px) — cùng file là ký hiệu ghép vào
     # thư mục tô màu (tools/build-folder-icons.py đọc symbol-*.svg ở đây).
@@ -384,6 +388,7 @@ NUDGE = {
     "menubar": (16, -0.5, -0.5),         # mờ 0.60 → 0.37
     "preview": (16, -0.5, 0.375),        # mờ 0.51 → 0.44
     "properties": (16, -0.5, 0.25),      # mờ 0.57 → 0.46
+    "open-with": (16, -0.5, -0.5),   # mờ 0.61 → 0.35
     "quit": (16, -0.5, -0.5),            # mờ 0.66 → 0.29
     "redo": (16, 0.25, 0.125),           # mờ 0.46 → 0.34
     "restore": (16, -0.5, 0.375),        # mờ 0.54 → 0.42

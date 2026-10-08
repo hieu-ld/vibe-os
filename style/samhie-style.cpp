@@ -282,6 +282,13 @@
 //      Dolphin vẫn ghi .directory, FolderChangeWatcher (nghe KDirNotify qua
 //      D-Bus) sửa lại Icon=folder-<ký hiệu>-<màu> và lưu hai khoá
 //      X-Samhie-FolderSymbol / X-Samhie-FolderColor.
+//      Menu Symbol có icon (vẽ tay — Samhie tắt icon menu) + ô tròn, nút màu
+//      được tích theo thư mục đang chuột phải (đọc qua giao diện trợ năng
+//      của vùng file Dolphin, folderUnderCursor).
+//  48. Hộp Create Folder: hàng 5 màu + ô ký hiệu như mục 47, thay lưới 20
+//      ô + Choose Icon… của KIO.
+//  49. Ô đổi tên tại chỗ (F2) thấp vừa chữ: khung, vùng chọn, dấu nháy theo
+//      dải chữ thay vì hộp dòng cao 1,45 em của Dongle (user 2026-10-08).
 //  30.Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -330,6 +337,21 @@
 #include <QComboBox>
 #include <QDialogButtonBox>
 #include <QSettings>
+#include <QTextCursor>
+#include <QAbstractTextDocumentLayout>
+#include <QTextLayout>
+#include <QTextBlock>
+#include <QTextDocument>
+#include <QScrollBar>
+#include <QTextEdit>
+#include <memory>
+#include <functional>
+#include <QGridLayout>
+#include <QDialog>
+#include <QButtonGroup>
+#include <cmath>
+#include <QCursor>
+#include <QAccessible>
 #include <QSaveFile>
 #include <QDBusConnection>
 #include <QDBusMessage>
@@ -369,7 +391,7 @@ void armFolderChange(FolderChange kind, const QString &value);
 // Đăng ký nghe KDirNotify TRƯỚC cú bấm đầu tiên: đăng ký là việc bất đồng bộ
 // với dbus-daemon — đăng ký lúc bấm thì thông báo của plugin (phát ngay
 // trong cú bấm đó) đi trước, bị lỡ (container 2026-10-08).
-void watchFolderChanges();
+void watchFolderChanges(const QString &dir, const QString &symbol, const QString &color);
 
 namespace {
 
@@ -1299,8 +1321,122 @@ const QList<QPair<QString, QString>> FOLDER_SYMBOLS = {
     {QStringLiteral("temp"), QStringLiteral("Temporary")},
     {QStringLiteral("videos"), QStringLiteral("Videos")},
 };
+constexpr int SYMBOL_MENU_ICON = 16;  // icon menu Symbol (samhie-symbol-*, căn lưới 16)
+constexpr int SYMBOL_MENU_GAP = 8;    // icon → chữ
 // Màu bỏ khỏi hàng (user 2026-10-08: còn Default, Red, Yellow, Teal, Grey).
 const QSet<QString> FOLDER_COLORS_DROPPED = {QStringLiteral("orange"), QStringLiteral("green")};
+
+// Mục 47: khoá trong [Desktop Entry] của <thư mục>/.directory.
+const QString FOLDER_SYMBOL_KEY = QStringLiteral("X-Samhie-FolderSymbol");
+const QString FOLDER_COLOR_KEY = QStringLiteral("X-Samhie-FolderColor");
+const QStringList FOLDER_COLORS = {
+    QStringLiteral("red"), QStringLiteral("yellow"), QStringLiteral("orange"), QStringLiteral("green"),
+    QStringLiteral("cyan"), QStringLiteral("blue"), QStringLiteral("violet"), QStringLiteral("brown"),
+    QStringLiteral("grey"),
+};
+
+// Ký hiệu KIO tự gán cho thư mục XDG khi .directory không có Icon
+// (KFileItem, KIO 6.30): Music → music…; Home thì không tính.
+QString naturalFolderSymbol(const QString &dir)
+{
+    static const QList<QPair<QStandardPaths::StandardLocation, QString>> xdg = {
+        {QStandardPaths::MusicLocation, QStringLiteral("music")},
+        {QStandardPaths::PicturesLocation, QStringLiteral("pictures")},
+        {QStandardPaths::MoviesLocation, QStringLiteral("videos")},
+        {QStandardPaths::DocumentsLocation, QStringLiteral("documents")},
+        {QStandardPaths::DownloadLocation, QStringLiteral("download")},
+    };
+    const QString path = QFileInfo(dir).canonicalFilePath();
+    for (const auto &[location, symbol] : xdg) {
+        const QString x = QStandardPaths::writableLocation(location);
+        if (!x.isEmpty() && QFileInfo(x).canonicalFilePath() == path && path != QDir::homePath())
+            return symbol;
+    }
+    return QString();
+}
+
+// Khoá → giá trị trong [Desktop Entry] (đọc tay: QSettings đổi tên nhóm có
+// dấu cách, KConfig thì style không link).
+QHash<QString, QString> folderDesktopEntry(const QString &dir)
+{
+    QHash<QString, QString> keys;
+    QFile file(dir + QStringLiteral("/.directory"));
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return keys;
+    bool inGroup = false;
+    for (const QString &line : QString::fromUtf8(file.readAll()).split(QLatin1Char('\n'))) {
+        if (line.startsWith(QLatin1Char('[')))
+            inGroup = line.trimmed() == QLatin1String("[Desktop Entry]");
+        else if (const int eq = line.indexOf(QLatin1Char('=')); inGroup && eq > 0)
+            keys.insert(line.left(eq).trimmed(), line.mid(eq + 1).trimmed());
+    }
+    return keys;
+}
+
+// (ký hiệu, màu) hiện tại của thư mục; "" = không ký hiệu / màu default.
+// Không có khoá của Samhie (thư mục tô màu trước 2026-10-08) thì đoán từ Icon.
+QPair<QString, QString> folderLook(const QString &dir)
+{
+    const QHash<QString, QString> keys = folderDesktopEntry(dir);
+    QString symbol = naturalFolderSymbol(dir), color;
+    if (keys.contains(FOLDER_SYMBOL_KEY) || keys.contains(FOLDER_COLOR_KEY)) {
+        if (keys.contains(FOLDER_SYMBOL_KEY))
+            symbol = keys.value(FOLDER_SYMBOL_KEY);
+        color = keys.value(FOLDER_COLOR_KEY);
+    } else if (keys.contains(QStringLiteral("Icon"))) {
+        QString icon = keys.value(QStringLiteral("Icon"));
+        symbol.clear();
+        if (icon.startsWith(QLatin1String("folder-"))) {
+            icon = icon.mid(7);
+            for (const QString &c : FOLDER_COLORS) {
+                if (icon == c || icon.endsWith(QLatin1Char('-') + c)) {
+                    color = c;
+                    icon.chop(icon == c ? icon.size() : c.size() + 1);
+                    break;
+                }
+            }
+            symbol = icon;
+        }
+    }
+    if (symbol == QLatin1String("none"))
+        symbol.clear();
+    return {symbol, color};
+}
+
+// Thư mục vừa được chuột phải trong vùng file Dolphin, lấy qua giao diện trợ
+// năng của Dolphin (cài sẵn — QAccessible::installFactory trong
+// kitemlistview.cpp 26.08.1): mục dưới chuột (KItemListViewAccessible::
+// childAt nhận toạ độ SCENE, không phải toạ độ màn hình) cho tên, mô tả của
+// view kết thúc bằng "… location <đường dẫn thư mục đang xem>" (giao diện
+// tiếng Anh). Gọi lúc menu polish — chuột còn ở chỗ vừa bấm; mục phải đang
+// được chọn (chuột phải chọn mục), không thì coi như không biết.
+QString folderUnderCursor()
+{
+    const QPoint global = QCursor::pos();
+    QGraphicsView *gv = nullptr;
+    QWidget *container = nullptr;
+    for (QWidget *p = QApplication::widgetAt(global); p && !container; p = p->parentWidget()) {
+        if (!gv)
+            gv = qobject_cast<QGraphicsView *>(p);
+        if (p->inherits("KItemListContainer"))
+            container = p;
+    }
+    QAccessibleInterface *c = container ? QAccessible::queryAccessibleInterface(container) : nullptr;
+    QAccessibleInterface *view = c && gv && c->childCount() > 0 ? c->child(0) : nullptr;
+    if (!view)
+        return QString();
+    const QPointF scene = gv->mapToScene(gv->viewport()->mapFromGlobal(global));
+    QAccessibleInterface *cell = view->childAt(int(scene.x()), int(scene.y()));
+    const QString description = view->text(QAccessible::Description);
+    const int at = description.lastIndexOf(QLatin1String("location "));
+    if (!cell || !cell->state().selected || at < 0)
+        return QString();
+    const QUrl dir = QUrl::fromUserInput(description.mid(at + 9));
+    if (!dir.isLocalFile())
+        return QString();
+    const QString path = dir.toLocalFile() + QLatin1Char('/') + cell->text(QAccessible::Name);
+    return QFileInfo(path).isDir() ? path : QString();
+}
 
 // Mục 47: hàng màu thư mục trong menu chuột phải của Dolphin
 // (setfoldericonitemaction.cpp 26.08.1 — 5 nút màu + nút Other mở menu gồm
@@ -1337,7 +1473,14 @@ void setupFolderColorRow(QMenu *menu)
             }
             if (!carrier)
                 return;  // plugin đổi — để nguyên hàng của KDE
-            watchFolderChanges();
+            // Đánh dấu màu + ký hiệu đang dùng (user 2026-10-08) — biết được
+            // thư mục thì mới đánh dấu; plugin tự tích chỉ khi trùng tên icon.
+            // Trạng thái này cũng là "trước khi bấm" cho FolderChangeWatcher:
+            // plugin ghi đè Icon trước khi ta đọc được.
+            const QString dir = folderUnderCursor();
+            const auto [currentSymbol, currentColor] = dir.isEmpty() ? QPair<QString, QString>() : folderLook(dir);
+            const bool known = !dir.isEmpty();
+            watchFolderChanges(dir, currentSymbol, currentColor);
             for (QPushButton *b : buttons) {
                 const QString name = b->icon().name();
                 if (b == *other || !name.startsWith(QLatin1String("folder-")))
@@ -1347,12 +1490,14 @@ void setupFolderColorRow(QMenu *menu)
                     b->hide();
                     continue;
                 }
-                b->setChecked(false);  // plugin chỉ tích khi trùng tên — với bản có ký hiệu thì không
+                b->setChecked(known && color == currentColor);
                 QObject::connect(b, &QPushButton::clicked, b, [color] { armFolderChange(FolderChange::Color, color); });
             }
             auto addButton = [&](const QString &icon, const QString &color, const QString &tip, int at) {
                 auto *b = new QPushButton(QIcon::fromTheme(icon), QString(), row);
                 b->setToolTip(tip);
+                b->setCheckable(true);
+                b->setChecked(known && color == currentColor);
                 QObject::connect(b, &QPushButton::clicked, b, [color, carrier] {
                     armFolderChange(FolderChange::Color, color);
                     if (carrier)
@@ -1368,21 +1513,117 @@ void setupFolderColorRow(QMenu *menu)
             (*other)->setToolTip(QStringLiteral("Folder symbol"));
             for (QAction *s : sub->actions())
                 sub->removeAction(s);  // hành động vẫn còn (con của menu), Default làm cầu
-            auto addSymbol = [&](const QString &symbol, const QString &text, const QIcon &icon) {
-                QAction *s = sub->addAction(icon, text);
+            // Menu có icon dù Samhie tắt icon menu (iconless_menu): chữ lùi
+            // bằng dấu cách, icon vẽ vào chỗ đó (drawControl, CE_MenuItem).
+            // Ô tròn (radio) đánh dấu ký hiệu đang dùng.
+            sub->setProperty("_samhie_symbol_menu", true);
+            const int space = qMax(1, sub->fontMetrics().horizontalAdvance(QLatin1Char(' ')));
+            const QString indent(int(std::ceil(double(SYMBOL_MENU_ICON + SYMBOL_MENU_GAP) / space)), QLatin1Char(' '));
+            auto *group = new QActionGroup(sub);
+            auto addSymbol = [&](const QString &symbol, const QString &text) {
+                QAction *s = sub->addAction(symbol.isEmpty() ? text : indent + text);
+                s->setCheckable(true);
+                s->setChecked(known && symbol == currentSymbol);
+                s->setData(symbol);
+                group->addAction(s);
                 QObject::connect(s, &QAction::triggered, sub, [symbol, carrier] {
                     armFolderChange(FolderChange::Symbol, symbol);
                     if (carrier)
                         carrier->trigger();
                 });
             };
-            addSymbol(QString(), QStringLiteral("No Symbol"), QIcon());
+            addSymbol(QString(), QStringLiteral("No Symbol"));
             sub->addSeparator();
             for (const auto &[symbol, text] : FOLDER_SYMBOLS)
-                addSymbol(symbol, text, QIcon::fromTheme(QStringLiteral("samhie-symbol-") + symbol));
+                addSymbol(symbol, text);
             return;
         }
     }
+}
+
+// Tên icon cho (ký hiệu, màu): "" = không ký hiệu / màu default.
+QString folderIconName(const QString &symbol, const QString &color)
+{
+    if (symbol.isEmpty() && color.isEmpty())
+        return QStringLiteral("inode-directory");  // KIO: icon mặc định — không ghi .directory
+    QString name = QStringLiteral("folder");
+    if (!symbol.isEmpty())
+        name += QLatin1Char('-') + symbol;
+    if (!color.isEmpty())
+        name += QLatin1Char('-') + color;
+    return name;
+}
+
+// Mục 48: hộp thoại Create Folder (KNewFileMenu, knewfilemenu.cpp KIO 6.30)
+// chọn màu/ký hiệu như hàng màu của menu chuột phải (mục 47, user
+// 2026-10-08): lưới 20 ô của KIO (9 màu + 10 ký hiệu cũ, có cả bookmark/games
+// Samhie đã bỏ) và nút Choose Icon… thay bằng một hàng 5 màu + ô ký hiệu
+// (No Symbol + FOLDER_SYMBOLS). KIO lấy tên icon từ thuộc tính iconName của
+// nhãn xem trước (iconLabel) lúc bấm OK rồi ghi .directory → chỉ cần cập
+// nhật nhãn đó. Thư mục mới không có khoá X-Samhie-*: đổi sau bằng menu thì
+// folderLook đoán lại từ Icon.
+void setupNewFolderDialog(QWidget *dialog)
+{
+    auto *preview = dialog->findChild<QLabel *>(QStringLiteral("iconLabel"));
+    auto *choose = dialog->findChild<QPushButton *>(QStringLiteral("chooseIconButton"));
+    auto *grid = dialog->findChild<QGridLayout *>(QStringLiteral("folderIconGrid"));
+    if (!preview || !choose || !grid || dialog->property("_samhie_folder_picker").toBool())
+        return;
+    dialog->setProperty("_samhie_folder_picker", true);
+    while (QLayoutItem *item = grid->takeAt(0)) {
+        if (item->widget())
+            item->widget()->hide();
+        delete item;
+    }
+    choose->hide();
+    if (QWidget *box = dialog->findChild<QWidget *>(QStringLiteral("chooseIconBox")))
+        box->setProperty("title", QStringLiteral("Choose color or symbol"));  // KCollapsibleGroupBox
+    constexpr int PICKER_CELL = 40;
+
+    auto state = std::make_shared<QPair<QString, QString>>();  // (ký hiệu, màu)
+    auto update = [preview, state] {
+        const QString name = folderIconName(state->first, state->second);
+        preview->setProperty("iconName", name);
+        preview->setPixmap(QIcon::fromTheme(name).pixmap(QSize(64, 64), preview->devicePixelRatioF()));
+    };
+    auto addButton = [&](const QString &icon, int iconSize, const QString &tip, int row, int column,
+                         QButtonGroup *buttons, std::function<void()> pick) {
+        auto *b = new QToolButton(dialog);
+        b->setIcon(QIcon::fromTheme(icon));
+        b->setIconSize(QSize(iconSize, iconSize));
+        b->setToolTip(tip);
+        b->setCheckable(true);
+        b->setChecked(buttons->buttons().isEmpty());  // ô đầu nhóm: Default / No Symbol
+        b->setFixedSize(PICKER_CELL, PICKER_CELL);    // ô vuông như nhau → cột màu thẳng cột ký hiệu
+        buttons->addButton(b);
+        QObject::connect(b, &QToolButton::clicked, b, [pick, update] {
+            pick();
+            update();
+        });
+        grid->addWidget(b, row, column);
+    };
+    auto *colors = new QButtonGroup(dialog);
+    const QList<QPair<QString, QString>> colorList = {
+        {QString(), QStringLiteral("Default")}, {QStringLiteral("red"), QStringLiteral("Red")},
+        {QStringLiteral("yellow"), QStringLiteral("Yellow")}, {QStringLiteral("cyan"), QStringLiteral("Teal")},
+        {QStringLiteral("grey"), QStringLiteral("Grey")},
+    };
+    for (int i = 0; i < colorList.size(); ++i) {
+        const QString color = colorList[i].first;
+        addButton(color.isEmpty() ? QStringLiteral("inode-directory") : QStringLiteral("folder-") + color, 32,
+                  colorList[i].second, 0, i, colors, [state, color] { state->second = color; });
+    }
+    auto *symbols = new QButtonGroup(dialog);
+    constexpr int PER_ROW = 8;
+    addButton(QStringLiteral("dialog-cancel"), 24, QStringLiteral("No Symbol"), 1, 0, symbols,
+              [state] { state->first.clear(); });
+    for (int i = 0; i < FOLDER_SYMBOLS.size(); ++i) {
+        const QString symbol = FOLDER_SYMBOLS[i].first;
+        const int n = i + 1;
+        addButton(QStringLiteral("samhie-symbol-") + symbol, 24, FOLDER_SYMBOLS[i].second, 1 + n / PER_ROW,
+                  n % PER_ROW, symbols, [state, symbol] { state->first = symbol; });
+    }
+    update();
 }
 
 // Mục 37: danh sách trong hộp thoại cài đặt (không tính danh sách trang).
@@ -1533,6 +1774,133 @@ private:
     bool m_on = true;
 };
 
+// Mục 49: ô đổi tên tại chỗ của Dolphin (KItemListRoleEditor — QTextEdit,
+// kitemlistroleeditor.cpp 26.08.1). Dolphin đặt ô bằng hộp dòng của chữ
+// (Dongle: cao 1,45 em, chữ hoa 0,4 em) → ô cao gấp mấy lần chữ, sát icon
+// thư mục (user 2026-10-08). Giữ nguyên khung Dolphin đặt (chữ đứng đúng chỗ
+// nhãn cũ), nền trong suốt; style vẽ ô bo góc ôm các dòng chữ + RENAME_PAD.
+constexpr qreal RENAME_UP = 1.45;   // trên chân chữ: chữ hoa có dấu (Ố, Ẫ)
+constexpr qreal RENAME_DOWN = 0.4;  // dưới chân chữ: chân g, y
+constexpr int RENAME_PAD = 6;
+
+bool isRenameEditor(const QWidget *w)
+{
+    return w && w->inherits("KItemListRoleEditor") && qobject_cast<const QTextEdit *>(w);
+}
+
+// Dải chữ (theo chân chữ) của từng dòng, toạ độ ô đổi tên: (dòng, x1, x2,
+// chân chữ). Dòng = QTextLine trong khối đầu (tên file là một khối).
+struct RenameLine {
+    qreal x1, x2, baseline;
+};
+
+QList<RenameLine> renameLines(const QTextEdit *te, int from = -1, int to = -1)
+{
+    QList<RenameLine> out;
+    const QTextBlock block = te->document()->firstBlock();
+    const QTextLayout *layout = block.layout();
+    if (!layout)
+        return out;
+    const QPointF origin = QPointF(te->frameWidth() - te->horizontalScrollBar()->value(),
+                                   te->frameWidth() - te->verticalScrollBar()->value())
+        + te->document()->documentLayout()->blockBoundingRect(block).topLeft() + layout->position();
+    for (int i = 0; i < layout->lineCount(); ++i) {
+        const QTextLine line = layout->lineAt(i);
+        int a = line.textStart(), b = a + line.textLength();
+        if (from >= 0) {
+            a = qMax(a, from);
+            b = qMin(b, to);
+            if (a >= b)
+                continue;
+        }
+        out.append({origin.x() + line.cursorToX(a), origin.x() + line.cursorToX(b),
+                    origin.y() + line.y() + line.ascent()});
+    }
+    return out;
+}
+
+QRect renameBox(const QWidget *w)
+{
+    auto *te = static_cast<const QTextEdit *>(w);
+    const QFontMetricsF fm(te->font());
+    const QList<RenameLine> lines = renameLines(te);
+    const qreal top = lines.isEmpty() ? te->frameWidth() + fm.ascent() : lines.first().baseline;
+    const qreal bottom = lines.isEmpty() ? top : lines.last().baseline;
+    const int y0 = qRound(top - RENAME_UP * fm.capHeight()) - RENAME_PAD;
+    const int y1 = qRound(bottom + RENAME_DOWN * fm.capHeight()) + RENAME_PAD;
+    return QRect(0, y0, w->width(), y1 - y0).intersected(w->rect());
+}
+
+// Dấu nháy ngắn cho ô đổi tên (như ShortCaret của ô nhập một dòng): Qt vẽ
+// cao bằng hộp dòng → cursorWidth 0, lớp con trên viewport vẽ vạch theo chữ.
+class TextEditCaret : public QWidget
+{
+public:
+    explicit TextEditCaret(QTextEdit *edit)
+        : QWidget(edit->viewport())
+        , m_edit(edit)
+    {
+        setObjectName(QStringLiteral("samhie-text-caret"));
+        setAttribute(Qt::WA_TransparentForMouseEvents);
+        setAttribute(Qt::WA_NoSystemBackground);
+        setFocusPolicy(Qt::NoFocus);
+        edit->setCursorWidth(0);
+        const int flash = QApplication::cursorFlashTime();
+        m_timer.setInterval(flash > 0 ? flash / 2 : 0);
+        QObject::connect(&m_timer, &QTimer::timeout, this, [this] {
+            m_on = !m_on;
+            update();
+        });
+        QObject::connect(edit, &QTextEdit::cursorPositionChanged, this, [this] { restart(); });
+        QObject::connect(edit, &QTextEdit::textChanged, this, [this] { restart(); });
+        edit->viewport()->installEventFilter(this);
+        edit->installEventFilter(this);
+        setGeometry(edit->viewport()->rect());
+        raise();
+        restart();
+    }
+
+protected:
+    bool eventFilter(QObject *o, QEvent *event) override
+    {
+        if (event->type() == QEvent::Resize && o == m_edit->viewport())
+            setGeometry(m_edit->viewport()->rect());
+        else if (event->type() == QEvent::FocusIn)
+            restart();
+        else if (event->type() == QEvent::FocusOut) {
+            m_timer.stop();
+            update();
+        }
+        return false;
+    }
+
+    void paintEvent(QPaintEvent *) override
+    {
+        if (!m_on || !m_edit->hasFocus())
+            return;
+        const QRect line = m_edit->cursorRect();
+        const QFontMetricsF fm(m_edit->font());
+        const qreal base = line.top() + fm.ascent();
+        QPainter p(this);
+        p.fillRect(QRectF(line.left(), qRound(base - 1.3 * fm.capHeight()), 1,
+                          qRound(base + 0.4 * fm.capHeight()) - qRound(base - 1.3 * fm.capHeight())),
+                   m_edit->palette().color(QPalette::Text));
+    }
+
+private:
+    void restart()
+    {
+        m_on = true;
+        if (m_edit->hasFocus() && m_timer.interval() > 0)
+            m_timer.start();
+        update();
+    }
+
+    QTextEdit *m_edit;
+    QTimer m_timer;
+    bool m_on = true;
+};
+
 // Mục 12. Gửi bằng postEvent (hàng đợi giữ thứ tự bấm → thả): nút có thể mở
 // danh sách bằng exec() — không chạy vòng lặp lồng trong lúc menu con còn
 // đang xử lý cú bấm của chính nó.
@@ -1663,6 +2031,27 @@ public:
         // DolphinStatusBar::paintEvent: drawRoundedRect(palette().window()).
         if (qobject_cast<QMenu *>(w))
             w->installEventFilter(&m_menuForwarder);  // mục 12
+        if (isRenameEditor(w)) {  // mục 49
+            auto *te = static_cast<QTextEdit *>(w);
+            te->viewport()->setAutoFillBackground(false);
+            if (!w->property("_samhie_highlight").isValid()) {
+                QPalette pal = te->palette();
+                w->setProperty("_samhie_highlight", pal.color(QPalette::Highlight));
+                for (auto group : {QPalette::Active, QPalette::Inactive})
+                    pal.setColor(group, QPalette::Highlight, Qt::transparent);
+                te->setPalette(pal);
+            }
+            // Đổi vùng chọn / chữ → vẽ lại lớp nền (khung) chứ không chỉ viewport.
+            QObject::connect(te, &QTextEdit::selectionChanged, te, [te] { te->update(); });
+            QObject::connect(te, &QTextEdit::textChanged, te, [te] { te->update(); });
+            if (!te->findChild<QWidget *>(QStringLiteral("samhie-text-caret")))
+                new TextEditCaret(te);
+        }
+        // Mục 48: hộp Create Folder. Lưới được KIO điền sau khi dựng hộp —
+        // polish có thể tới sớm hơn (tính cỡ lúc dựng) → làm sau một nhịp.
+        if (qobject_cast<QDialog *>(w) && w->findChild<QWidget *>(QStringLiteral("chooseIconBox"))) {
+            QTimer::singleShot(0, w, [w] { setupNewFolderDialog(w); });
+        }
         if (w->inherits("DolphinContextMenu")) {
             hideItemCreateNew(static_cast<QMenu *>(w));
             hideViewportFolderColors(static_cast<QMenu *>(w));
@@ -2165,6 +2554,29 @@ public:
             drawToolBarSeparator(opt->rect, p, w);  // mục 23
             return;
         }
+        // Mục 49: khung + nền ô đổi tên = ô nhập thường ôm sát dòng chữ.
+        if (isRenameEditor(w) && (pe == PE_Frame || pe == PE_FrameLineEdit || pe == PE_PanelLineEdit)) {
+            QStyleOptionFrame f;
+            f.QStyleOption::operator=(*opt);
+            f.rect = renameBox(w);
+            f.state &= ~State_HasFocus;
+            f.lineWidth = 1;
+            baseStyle()->drawPrimitive(PE_PanelLineEdit, &f, p, nullptr);
+            // Vùng chọn: Qt tô cao bằng cả hộp dòng (Highlight của ô đã đặt
+            // trong suốt lúc polish) → tô lại ở lớp nền này, cao bằng dải chữ.
+            auto *te = static_cast<const QTextEdit *>(w);
+            const QTextCursor c = te->textCursor();
+            if (c.hasSelection()) {
+                const QFontMetricsF fm(te->font());
+                const QColor hl = w->property("_samhie_highlight").value<QColor>();
+                for (const RenameLine &l : renameLines(te, c.selectionStart(), c.selectionEnd())) {
+                    const qreal top = qRound(l.baseline - RENAME_UP * fm.capHeight()) - 2;
+                    const qreal bottom = qRound(l.baseline + RENAME_DOWN * fm.capHeight()) + 2;
+                    p->fillRect(QRectF(l.x1, top, l.x2 - l.x1, bottom - top), hl);
+                }
+            }
+            return;
+        }
         // Mục 42: Kvantum chỉ xét widget để nhận ra "ô sửa tên trong danh
         // sách" → vẽ không kèm widget là ra ô nhập thường.
         if (pe == PE_PanelLineEdit && isFakeItemEditor(w)) {
@@ -2372,6 +2784,31 @@ public:
 
     void drawControl(ControlElement ce, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
     {
+        // Mục 47: icon ký hiệu trong menu Symbol, vẽ vào khoảng chữ đã lùi
+        // (dấu cách đầu chữ). Chữ bắt đầu ở mép ô + khung 4 + lề chữ 4
+        // (tools/kvantum.py MenuItem) + cột ô tròn (Kvantum CE_MenuItem:
+        // min(16, PM_IndicatorWidth) + PM_CheckBoxLabelSpacing).
+        if (ce == CE_MenuItem && w && w->property("_samhie_symbol_menu").toBool()) {
+            auto *mi = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
+            QProxyStyle::drawControl(ce, opt, p, w);
+            if (!mi || mi->menuItemType != QStyleOptionMenuItem::Normal)
+                return;
+            const QString label = mi->text.trimmed();
+            for (const auto &[symbol, text] : FOLDER_SYMBOLS) {
+                if (text != label)
+                    continue;
+                const int check = qMin(16, baseStyle()->pixelMetric(PM_IndicatorWidth, opt, w))
+                    + baseStyle()->pixelMetric(PM_CheckBoxLabelSpacing);
+                QRect icon(0, 0, SYMBOL_MENU_ICON, SYMBOL_MENU_ICON);
+                icon.moveCenter(mi->rect.center());
+                icon.moveLeft(mi->direction == Qt::RightToLeft ? mi->rect.right() - 8 - check - SYMBOL_MENU_ICON + 1
+                                                               : mi->rect.left() + 8 + check);
+                QIcon::fromTheme(QStringLiteral("samhie-symbol-") + symbol)
+                    .paint(p, icon, Qt::AlignCenter, (mi->state & State_Enabled) ? QIcon::Normal : QIcon::Disabled);
+                break;
+            }
+            return;
+        }
         // Mục 21: dòng widget trong menu (dòng Zoom của Dolphin tự vẽ nền
         // bằng CE_MenuItem, state lấy từ chính nó) không vẽ trạng thái trỏ.
         // Trỏ vào nút ⊖ ⟲ ⊕ thì dòng vẽ lại ĐÚNG ô dưới nút, đang "trỏ" →
@@ -2821,6 +3258,13 @@ public:
         return watcher;
     }
 
+    void remember(const QString &dir, const QString &symbol, const QString &color)
+    {
+        m_prevDir = dir.isEmpty() ? QString() : QFileInfo(dir).canonicalFilePath();
+        m_prevSymbol = symbol;
+        m_prevColor = color;
+    }
+
     void arm(FolderChange kind, const QString &value)
     {
         m_kind = kind;
@@ -2853,29 +3297,10 @@ public Q_SLOTS:
 private:
     using QObject::QObject;
 
-    static QString naturalSymbol(const QString &dir)
-    {
-        static const QList<QPair<QStandardPaths::StandardLocation, QString>> xdg = {
-            {QStandardPaths::MusicLocation, QStringLiteral("music")},
-            {QStandardPaths::PicturesLocation, QStringLiteral("pictures")},
-            {QStandardPaths::MoviesLocation, QStringLiteral("videos")},
-            {QStandardPaths::DocumentsLocation, QStringLiteral("documents")},
-            {QStandardPaths::DownloadLocation, QStringLiteral("download")},
-        };
-        const QString path = QFileInfo(dir).canonicalFilePath();
-        for (const auto &[location, symbol] : xdg) {
-            const QString x = QStandardPaths::writableLocation(location);
-            if (!x.isEmpty() && QFileInfo(x).canonicalFilePath() == path && path != QDir::homePath())
-                return symbol;
-        }
-        return QString();
-    }
-
     void apply(const QString &dir)
     {
         const QString group = QStringLiteral("[Desktop Entry]");
-        const QString iconKey = QStringLiteral("Icon"), symbolKey = QStringLiteral("X-Samhie-FolderSymbol"),
-                      colorKey = QStringLiteral("X-Samhie-FolderColor");
+        const QString iconKey = QStringLiteral("Icon"), symbolKey = FOLDER_SYMBOL_KEY, colorKey = FOLDER_COLOR_KEY;
         QFile file(dir + QStringLiteral("/.directory"));
         QStringList lines;
         if (file.open(QIODevice::ReadOnly | QIODevice::Text))
@@ -2905,11 +3330,15 @@ private:
             }
         }
 
-        const QString natural = naturalSymbol(dir);
+        const QString natural = naturalFolderSymbol(dir);
         QString symbol = keys.contains(symbolKey) ? keys.value(symbolKey) : natural;
         if (symbol == QLatin1String("none"))
             symbol.clear();
         QString color = keys.value(colorKey);
+        if (!m_prevDir.isEmpty() && QFileInfo(dir).canonicalFilePath() == m_prevDir) {
+            symbol = m_prevSymbol;  // đọc lúc menu mở, trước khi plugin ghi đè
+            color = m_prevColor;
+        }
         if (m_kind == FolderChange::Color)
             color = m_value;
         else
@@ -2949,6 +3378,7 @@ private:
         }
     }
 
+    QString m_prevDir, m_prevSymbol, m_prevColor;
     bool m_armed = false;
     FolderChange m_kind = FolderChange::Color;
     QString m_value;
@@ -2960,9 +3390,9 @@ void armFolderChange(FolderChange kind, const QString &value)
     FolderChangeWatcher::instance()->arm(kind, value);
 }
 
-void watchFolderChanges()
+void watchFolderChanges(const QString &dir, const QString &symbol, const QString &color)
 {
-    FolderChangeWatcher::instance();
+    FolderChangeWatcher::instance()->remember(dir, symbol, color);
 }
 
 class SamhieStylePlugin : public QStylePlugin

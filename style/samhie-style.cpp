@@ -272,6 +272,9 @@
 //      Places, kéo thả) mang icon thư mục màu → đổi sang icon nét, lưu luôn
 //      vào user-places.xbel (icon thư mục ở vùng file giữ nguyên); Add Entry
 //      mở với icon nét; hộp chọn icon của Add/Edit Entry chỉ có icon nét.
+//  46. Sidebar: vạch ngang 1px màu FRAME_LINE giữa mục mặc định (… Recycle
+//      Bin) và thư mục người dùng ghim thêm, hai đầu cách viền như icon
+//      (user 2026-10-08). Chỉ hiện khi có mục ghim.
 //  30.Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
 //      2026-10-07). KExtendableItemDelegate (KF 6.30) vẽ mỗi ô HAI lần: ô nội
 //      dung đã cắt bớt bên trái chỗ cho "›", rồi riêng dải "›" (style của
@@ -1054,6 +1057,39 @@ QString strokePlaceIcon(const QString &icon)
     if (icon == QLatin1String("folder-download"))
         return QStringLiteral("samhie-folder-download");
     return QStringLiteral("samhie-folder");
+}
+
+// Mục 46: vạch ngăn mục mặc định của sidebar (Home … Recycle Bin) với thư mục
+// người dùng ghim thêm (user 2026-10-08). Mục ghim mới luôn nằm SAU Recycle
+// Bin trong nhóm Places (KIO thêm vào cuối; mục mặc định của Samhie kết thúc
+// bằng trash:/ — user-places.xbel.in) → vạch ở đáy dòng Recycle Bin khi ngay
+// sau nó còn một dòng hiện cùng nhóm. Vẽ TRONG ô của dòng đó (hàng điểm ảnh
+// cuối): rê chuột dòng dưới chỉ vẽ lại ô dòng dưới, vạch không bị xoá. Lề
+// trái thẳng icon (KIO s_lateralMargin 4, kfileplacesview.cpp 6.30), lề phải
+// cách mép sidebar bằng lề trái (viewport đã lùi SIDEBAR_INDENT).
+void drawPinnedDivider(const QStyleOptionViewItem *vopt, QPainter *p)
+{
+    constexpr int URL_ROLE = 0x069CD12B, GROUP_ROLE = 0x0a5b64ee, LATERAL_MARGIN = 4;  // kfileplacesmodel.h
+    // Bản sao option của KIO không mang chỉ số dòng → tìm theo vị trí ô.
+    auto *view = qobject_cast<const QListView *>(vopt->widget);
+    const QModelIndex index = view ? view->indexAt(vopt->rect.center()) : QModelIndex();
+    if (!index.isValid() || index.data(URL_ROLE).toUrl().scheme() != QLatin1String("trash"))
+        return;
+    const QAbstractItemModel *model = index.model();
+    int next = index.row() + 1;
+    while (next < model->rowCount() && view->isRowHidden(next))
+        ++next;
+    if (next >= model->rowCount() || model->index(next, 0).data(GROUP_ROLE) != index.data(GROUP_ROLE))
+        return;
+    const QRect r = vopt->rect;
+    p->save();
+    p->setPen(Qt::NoPen);
+    p->setBrush(QColor(samhie::FRAME_LINE));
+    // Phải bớt 1: khung sidebar 1px nằm ngoài ô bên trái nhưng trong ô bên
+    // phải → hai đầu vạch cùng cách viền 12px (đo container 2026-10-08).
+    p->drawRect(QRect(QPoint(r.left() + LATERAL_MARGIN, r.bottom()),
+                      QPoint(r.right() - LATERAL_MARGIN - SIDEBAR_INDENT + 1, r.bottom())));
+    p->restore();
 }
 
 // Mục 43: hộp chọn icon (KIconDialog) chỉ liệt kê icon của bộ đang dùng
@@ -1989,6 +2025,7 @@ public:
                     pal.setColor(QPalette::Text, fg);
                     pal.setColor(QPalette::WindowText, fg);
                 }
+                drawPinnedDivider(vopt, p);  // mục 46
                 return;  // không tô nền
             }
         }

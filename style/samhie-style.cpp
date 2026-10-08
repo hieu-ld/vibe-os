@@ -303,6 +303,8 @@
 //        thẳng cột với Owner/Group/Others.
 //      - Details: cột giá trị thẳng cột General, ô Comment to (dòng thừa của
 //        tab bỏ bằng /etc/xdg/baloofileinformationrc).
+//      - Checksums (chỉ hộp của file): nhãn MD5… canh phải, nút Calculate /
+//        ô mã + Copy bắt đầu thẳng cột General.
 //      - Chữ có "&" trong ô chọn ("Can View & Modify Content") — Kvantum
 //        coi "&" là phím tắt, nuốt mất.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
@@ -1977,6 +1979,40 @@ void alignDetails(QWidget *meta)
     }
 }
 
+// Tab Checksums (checksumswidget.ui, KIO 6.30): QFormLayout trong
+// calculateWidget, nhãn MD5/SHA… | Calculate (bấm xong thành ô mã + Copy).
+// Nới cột nhãn cho ô bên phải bắt đầu đúng chỗ giá trị trang General — ô mã
+// hẹp lại (chữ dài vẫn cuộn trong ô), nút Copy giữ nguyên.
+void alignChecksums(QWidget *calc)
+{
+    QWidget *dialog = calc->window();
+    auto *form = qobject_cast<QFormLayout *>(calc->layout());
+    auto *general = dialog->findChild<QWidget *>(QStringLiteral("mimeCommentLabel"));
+    if (!calc->isVisible() || !form || !general || !dialog->inherits("KPropertiesDialog"))
+        return;
+    QWidget *label = nullptr, *field = nullptr;
+    for (const char *name : {"md5Button", "md5LineEdit"}) {
+        if (auto *f = calc->findChild<QWidget *>(QLatin1String(name)); f && !f->isHidden())
+            field = f;
+    }
+    if (QLayoutItem *item = form->itemAt(0, QFormLayout::LabelRole))
+        label = item->widget();
+    if (!label || !field)
+        return;
+    form->setLabelAlignment(Qt::AlignRight | Qt::AlignVCenter);
+    const int delta = general->mapTo(dialog, QPoint()).x() - field->mapTo(dialog, QPoint()).x();
+    const int width = qMax(0, field->mapTo(calc, QPoint()).x() - label->x() - form->horizontalSpacing() + delta);
+    for (int r = 0; r < form->rowCount(); ++r) {
+        QLayoutItem *item = form->itemAt(r, QFormLayout::LabelRole);
+        auto *l = item ? qobject_cast<QLabel *>(item->widget()) : nullptr;
+        if (!l)
+            continue;
+        l->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+        if (delta != 0)
+            l->setMinimumWidth(width);
+    }
+}
+
 class DetailsAlign : public QObject
 {
 public:
@@ -1989,7 +2025,12 @@ public:
         case QEvent::LayoutRequest:
         case QEvent::Show:
         case QEvent::Resize:
-            QTimer::singleShot(0, w, [w] { alignDetails(w); });
+            QTimer::singleShot(0, w, [w] {
+                if (w->objectName() == QLatin1String("calculateWidget"))
+                    alignChecksums(w);
+                else
+                    alignDetails(w);
+            });
             break;
         default:
             break;
@@ -2691,7 +2732,9 @@ public:
             w->installEventFilter(&m_noPaint);  // mục 30
         if (w->inherits("KPropertiesDialog"))  // mục 53
             w->installEventFilter(&m_propsSetup);
-        if (w->inherits("Baloo::FileMetaDataWidget"))
+        if (w->inherits("Baloo::FileMetaDataWidget")
+            || (w->objectName() == QLatin1String("calculateWidget") && w->parentWidget()
+                && w->parentWidget()->objectName() == QLatin1String("ChecksumsWidget")))
             w->installEventFilter(&m_detailsAlign);
         if (qobject_cast<QPlainTextEdit *>(w) && w->parentWidget() && w->parentWidget()->inherits("KCommentWidget"))
             w->installEventFilter(&m_commentHeight);

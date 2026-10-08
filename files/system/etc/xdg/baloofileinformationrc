@@ -1,0 +1,58 @@
+# Samhie — dòng hiện ở tab Details của hộp Properties (Dolphin Alt+Return,
+# baloo-widgets 26.08.1 MetadataFilter). false = ẩn. Đọc cascade: người dùng
+# bật lại được trong ~/.config/baloofileinformationrc.
+#
+# Ẩn thêm (user 2026-10-08): Type, Size và ba dòng ngày đã có ở tab General;
+# Tags không dùng. Còn lại Rating, Comment và metadata riêng của từng loại
+# file (cỡ ảnh, thời lượng nhạc/phim, nguồn tải về…).
+#
+# [Misc] version = 13 (currentVersion của baloo-widgets): thiếu nó thì lần
+# đầu baloo-widgets xoá cả nhóm [Show] trong file người dùng (deleteGroup —
+# che luôn file này) rồi ghi lại danh sách mặc định của nó. Vì vậy danh sách
+# mặc định đó (initMetaInformationSettings) phải chép vào đây. Lên version mới
+# thì so lại danh sách.
+
+[Misc]
+version=13
+
+[Show]
+# Mặc định của baloo-widgets
+width=false
+height=false
+comment=false
+contentSize=false
+depends=false
+lastModified=false
+created=false
+contentCreated=false
+mimeType=false
+url=false
+channels=false
+fileName=false
+fileSize=false
+kfileitem#owner=false
+kfileitem#group=false
+kfileitem#permissions=false
+replayGainAlbumPeak=false
+replayGainAlbumGain=false
+replayGainTrackPeak=false
+replayGainTrackGain=false
+embeddedRating=false
+lyrics=false
+photoWhiteBalance=false
+photoMeteringMode=false
+photoSharpness=false
+photoSaturation=false
+photoPixelXDimension=false
+photoPixelYDimension=false
+photoGpsLongitude=false
+photoGpsLatitude=false
+# Samhie
+kfileitem#type=false
+kfileitem#size=false
+kfileitem#totalSize=false
+kfileitem#hiddenItems=false
+kfileitem#modified=false
+kfileitem#accessed=false
+kfileitem#created=false
+tags=false

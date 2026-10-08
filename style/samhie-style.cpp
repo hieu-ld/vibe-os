@@ -287,6 +287,9 @@
 //      của vùng file Dolphin, folderUnderCursor).
 //  48. Hộp Create Folder: hàng 5 màu + ô ký hiệu như mục 47, thay lưới 20
 //      ô + Choose Icon… của KIO.
+//  50. Menu Open With / Open Folder With có icon app (user 2026-10-08) —
+//      Samhie tắt icon menu, nên chữ lùi + style tự vẽ icon (enableMenuIcons,
+//      dùng chung với menu Symbol).
 //  49. Ô đổi tên tại chỗ (F2) thấp vừa chữ: khung, vùng chọn, dấu nháy theo
 //      dải chữ thay vì hộp dòng cao 1,45 em của Dongle (user 2026-10-08).
 //  30.Danh sách phím tắt (Configure Keyboard Shortcuts, máy ảo user
@@ -1321,8 +1324,25 @@ const QList<QPair<QString, QString>> FOLDER_SYMBOLS = {
     {QStringLiteral("temp"), QStringLiteral("Temporary")},
     {QStringLiteral("videos"), QStringLiteral("Videos")},
 };
-constexpr int SYMBOL_MENU_ICON = 16;  // icon menu Symbol (samhie-symbol-*, căn lưới 16)
+constexpr int SYMBOL_MENU_ICON = 16;  // icon trong menu có icon (samhie-symbol-* căn lưới 16)
 constexpr int SYMBOL_MENU_GAP = 8;    // icon → chữ
+
+// Menu có icon dù Samhie tắt icon menu (Kvantum iconless_menu, kdeglobals
+// ShowIconsInMenuItems=false — QMenu không đưa icon vào option nữa): chữ của
+// dòng có icon lùi bằng dấu cách, drawControl (CE_MenuItem) vẽ icon của
+// chính QAction vào chỗ đó. Dòng không icon giữ nguyên chữ.
+void enableMenuIcons(QMenu *menu)
+{
+    menu->setProperty("_samhie_menu_icons", true);
+    const int space = qMax(1, menu->fontMetrics().horizontalAdvance(QLatin1Char(' ')));
+    const QString indent(int(std::ceil(double(SYMBOL_MENU_ICON + SYMBOL_MENU_GAP) / space)), QLatin1Char(' '));
+    for (QAction *a : menu->actions()) {
+        if (a->isSeparator() || a->icon().isNull() || a->property("_samhie_indented").toBool())
+            continue;
+        a->setProperty("_samhie_indented", true);
+        a->setText(indent + a->text());
+    }
+}
 // Màu bỏ khỏi hàng (user 2026-10-08: còn Default, Red, Yellow, Teal, Grey).
 const QSet<QString> FOLDER_COLORS_DROPPED = {QStringLiteral("orange"), QStringLiteral("green")};
 
@@ -1513,15 +1533,11 @@ void setupFolderColorRow(QMenu *menu)
             (*other)->setToolTip(QStringLiteral("Folder symbol"));
             for (QAction *s : sub->actions())
                 sub->removeAction(s);  // hành động vẫn còn (con của menu), Default làm cầu
-            // Menu có icon dù Samhie tắt icon menu (iconless_menu): chữ lùi
-            // bằng dấu cách, icon vẽ vào chỗ đó (drawControl, CE_MenuItem).
-            // Ô tròn (radio) đánh dấu ký hiệu đang dùng.
-            sub->setProperty("_samhie_symbol_menu", true);
-            const int space = qMax(1, sub->fontMetrics().horizontalAdvance(QLatin1Char(' ')));
-            const QString indent(int(std::ceil(double(SYMBOL_MENU_ICON + SYMBOL_MENU_GAP) / space)), QLatin1Char(' '));
+            // Có icon (enableMenuIcons); ô tròn (radio) đánh dấu ký hiệu đang dùng.
             auto *group = new QActionGroup(sub);
             auto addSymbol = [&](const QString &symbol, const QString &text) {
-                QAction *s = sub->addAction(symbol.isEmpty() ? text : indent + text);
+                QAction *s = symbol.isEmpty() ? sub->addAction(text)
+                                              : sub->addAction(QIcon::fromTheme(QStringLiteral("samhie-symbol-") + symbol), text);
                 s->setCheckable(true);
                 s->setChecked(known && symbol == currentSymbol);
                 s->setData(symbol);
@@ -1536,6 +1552,7 @@ void setupFolderColorRow(QMenu *menu)
             sub->addSeparator();
             for (const auto &[symbol, text] : FOLDER_SYMBOLS)
                 addSymbol(symbol, text);
+            enableMenuIcons(sub);
             return;
         }
     }
@@ -2047,6 +2064,12 @@ public:
             if (!te->findChild<QWidget *>(QStringLiteral("samhie-text-caret")))
                 new TextEditCaret(te);
         }
+        // Mục 50: menu Open With / Open Folder With (KFileItemActions, KIO
+        // 6.30: menuAction "openWith_submenu") hiện icon app (user
+        // 2026-10-08). Polish lúc mở lần đầu — KIO đã điền đủ app.
+        if (auto *menu = qobject_cast<QMenu *>(w);
+            menu && menu->menuAction()->objectName() == QLatin1String("openWith_submenu"))
+            enableMenuIcons(menu);
         // Mục 48: hộp Create Folder. Lưới được KIO điền sau khi dựng hộp —
         // polish có thể tới sớm hơn (tính cỡ lúc dựng) → làm sau một nhịp.
         if (qobject_cast<QDialog *>(w) && w->findChild<QWidget *>(QStringLiteral("chooseIconBox"))) {
@@ -2784,29 +2807,27 @@ public:
 
     void drawControl(ControlElement ce, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
     {
-        // Mục 47: icon ký hiệu trong menu Symbol, vẽ vào khoảng chữ đã lùi
-        // (dấu cách đầu chữ). Chữ bắt đầu ở mép ô + khung 4 + lề chữ 4
-        // (tools/kvantum.py MenuItem) + cột ô tròn (Kvantum CE_MenuItem:
-        // min(16, PM_IndicatorWidth) + PM_CheckBoxLabelSpacing).
-        if (ce == CE_MenuItem && w && w->property("_samhie_symbol_menu").toBool()) {
+        // Mục 47, 50: icon trong menu có icon (enableMenuIcons), vẽ vào
+        // khoảng chữ đã lùi. Chữ bắt đầu ở mép ô + khung 4 + lề chữ 4
+        // (tools/kvantum.py MenuItem) + cột ô tích nếu menu có ô tích (Kvantum
+        // CE_MenuItem: min(16, PM_IndicatorWidth) + PM_CheckBoxLabelSpacing).
+        if (ce == CE_MenuItem && w && w->property("_samhie_menu_icons").toBool()) {
             auto *mi = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
             QProxyStyle::drawControl(ce, opt, p, w);
-            if (!mi || mi->menuItemType != QStyleOptionMenuItem::Normal)
+            QAction *action = mi && mi->menuItemType == QStyleOptionMenuItem::Normal
+                ? static_cast<const QMenu *>(w)->actionAt(mi->rect.center())
+                : nullptr;
+            if (!action || !action->property("_samhie_indented").toBool())
                 return;
-            const QString label = mi->text.trimmed();
-            for (const auto &[symbol, text] : FOLDER_SYMBOLS) {
-                if (text != label)
-                    continue;
-                const int check = qMin(16, baseStyle()->pixelMetric(PM_IndicatorWidth, opt, w))
-                    + baseStyle()->pixelMetric(PM_CheckBoxLabelSpacing);
-                QRect icon(0, 0, SYMBOL_MENU_ICON, SYMBOL_MENU_ICON);
-                icon.moveCenter(mi->rect.center());
-                icon.moveLeft(mi->direction == Qt::RightToLeft ? mi->rect.right() - 8 - check - SYMBOL_MENU_ICON + 1
-                                                               : mi->rect.left() + 8 + check);
-                QIcon::fromTheme(QStringLiteral("samhie-symbol-") + symbol)
-                    .paint(p, icon, Qt::AlignCenter, (mi->state & State_Enabled) ? QIcon::Normal : QIcon::Disabled);
-                break;
-            }
+            const int check = (mi->menuHasCheckableItems || mi->checkType != QStyleOptionMenuItem::NotCheckable)
+                ? qMin(16, baseStyle()->pixelMetric(PM_IndicatorWidth, opt, w))
+                    + baseStyle()->pixelMetric(PM_CheckBoxLabelSpacing)
+                : 0;
+            QRect icon(0, 0, SYMBOL_MENU_ICON, SYMBOL_MENU_ICON);
+            icon.moveCenter(mi->rect.center());
+            icon.moveLeft(mi->direction == Qt::RightToLeft ? mi->rect.right() - 8 - check - SYMBOL_MENU_ICON + 1
+                                                           : mi->rect.left() + 8 + check);
+            action->icon().paint(p, icon, Qt::AlignCenter, (mi->state & State_Enabled) ? QIcon::Normal : QIcon::Disabled);
             return;
         }
         // Mục 21: dòng widget trong menu (dòng Zoom của Dolphin tự vẽ nền

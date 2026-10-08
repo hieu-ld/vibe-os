@@ -15,10 +15,11 @@
 
 local M = {}
 
--- Cỡ cửa sổ nổi theo phần màn hình (cả rộng lẫn cao). Dolphin 60%, Konsole
--- 50% (user 2026-10-05); app khác khi Super+↓ dùng `default`.
+-- Cỡ cửa sổ nổi theo phần màn hình (cả rộng lẫn cao). Dolphin 80% (user
+-- 2026-10-08; trước 60%), Konsole 50% (user 2026-10-05); app khác khi
+-- Super+↓ dùng `default`.
 M.float = {
-    ["org.kde.dolphin"] = 0.6,
+    ["org.kde.dolphin"] = 0.8,
     ["org.kde.konsole"] = 0.5,
 }
 M.default = 0.6

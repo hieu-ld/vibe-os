@@ -353,6 +353,20 @@ ALIGN = {
     "volume-70": (-2, 0),
 }
 
+# Icon loại file (vùng file Dolphin 48–64px, hộp Properties): đo ảnh máy ảo
+# 2026-10-09, TXT cỡ 64 cao 58px, nét 4px — to và đậm hơn thư mục bên cạnh
+# (khối màu 58×54). User chọn: thu còn 88% (khung giữ 24, phóng viewBox quanh
+# tâm) và nét 1,25 thay 1,5 → cao ~51px, nét ~3,3px.
+FILE_SCALE, FILE_STROKE = 0.88, "1.25"
+
+
+def is_file_icon(name):
+    return name == "files" or any(g == "mimetypes" for g, _ in MAP.get(name, []))
+
+
+def thin(name, svg):
+    return svg.replace('stroke-width="1.5"', f'stroke-width="{FILE_STROKE}"') if is_file_icon(name) else svg
+
 
 # Hình thay nhau ở CÙNG một chỗ phải dời giống nhau, không thì đổi trạng thái
 # (kéo âm lượng, sóng Wi-Fi, bật Do not disturb) là hình nhảy nửa điểm ảnh.
@@ -478,6 +492,9 @@ def view_box(name, original, nudge=None):
     """viewBox cuối của hình: dịch theo ALIGN, rồi dời theo NUDGE (hoặc theo
     `nudge` khi đang dò)."""
     vb = [float(v) for v in original.split()]
+    if is_file_icon(name):
+        grow = vb[2] / FILE_SCALE - vb[2]
+        vb = [vb[0] - grow / 2, vb[1] - grow / 2, vb[2] + grow, vb[3] + grow]
     ax, ay = ALIGN.get(name, (0, 0))
     vb[0] -= ax
     vb[1] -= ay
@@ -540,7 +557,7 @@ def convert(name, text, nudge=None):
     root.insert(0, defs)
 
     ET.indent(root, space="  ")
-    body = ET.tostring(root, encoding="unicode")
+    body = thin(name, ET.tostring(root, encoding="unicode"))
     return (
         "<?xml version='1.0' encoding='utf-8'?>\n"
         f"<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/{name}.svg.\n"
@@ -634,7 +651,7 @@ def compare(name, dest):
     head, tail = src.split(">", 1)
     vb = view_box(name, re.search(r'viewBox="([^"]*)"', head).group(1))
     head = re.sub(r'viewBox="[^"]*"', f'viewBox="{vb}"', head)
-    src = re.sub(r'(?i)"(currentColor|black|#000000)"', '"#a1a1a1"', head + ">" + tail)
+    src = thin(name, re.sub(r'(?i)"(currentColor|black|#000000)"', '"#a1a1a1"', head + ">" + tail))
     new = dest.read_text().replace(FALLBACK, "#a1a1a1")
     a, b = render(src, 128, "#0a0a0a"), render(new, 128, "#0a0a0a")
     diff = ImageChops.difference(a, b).convert("L")

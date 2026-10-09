@@ -14,9 +14,10 @@
 // ba nút, vẫn bấm xổ danh sách được (cách lấy lại cửa sổ đã thu nhỏ). Không
 // còn cửa sổ nào cả → ẩn hết.
 //
-// Trạng thái phóng to đọc từ lastIpcObject.fullscreen (1 = maximized) — chỉ
-// mới sau khi hỏi lại Hyprland, nên hỏi lại mỗi lần có sự kiện "fullscreen"
-// hoặc đổi cửa sổ.
+// Trạng thái phóng to: thẻ `samhie-maximized` (snap.lua gắn — phóng to là cửa
+// sổ nổi kéo kín, không phải fullscreen) hoặc fullscreen 1 (app tự xin). Đọc
+// từ lastIpcObject — chỉ mới sau khi hỏi lại Hyprland, nên hỏi lại mỗi lần
+// có sự kiện "fullscreen", "custom>>samhie-maximize" hoặc đổi cửa sổ.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -39,7 +40,8 @@ Item {
     readonly property string appId: window && window.wayland ? window.wayland.appId : ""
     readonly property var entry: appId !== "" ? DesktopEntries.heuristicLookup(appId) : null
     readonly property bool maximized: window !== null && window.lastIpcObject
-        && (window.lastIpcObject.fullscreen ?? 0) === 1
+        && ((window.lastIpcObject.fullscreen ?? 0) === 1
+            || (window.lastIpcObject.tags ?? []).indexOf("samhie-maximized") >= 0)
 
     readonly property int iconSize: 18
     readonly property int pad: 8
@@ -57,7 +59,8 @@ Item {
     Connections {
         target: Hyprland
         function onRawEvent(event) {
-            if (event.name === "fullscreen" || event.name === "activewindowv2")
+            if (event.name === "fullscreen" || event.name === "activewindowv2"
+                    || (event.name === "custom" && event.data === "samhie-maximize"))
                 refresh.restart()
         }
     }

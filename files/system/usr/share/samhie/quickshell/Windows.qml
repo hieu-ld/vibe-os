@@ -102,12 +102,12 @@ Singleton {
             Hyprland.dispatch("hl.dsp.window.close({ window = " + sel(t) + " })")
     }
 
-    // Phóng to = fullscreen kiểu "maximized": kín vùng làm việc, thanh trên
-    // vẫn thấy.
+    // Phóng to / thu về: cửa sổ nổi kéo kín vùng làm việc, thanh trên vẫn
+    // thấy — cùng hàm với Super+↑ / ↓ (snap.lua, lý do không dùng fullscreen
+    // "maximized" ghi ở đó).
     function toggleMaximize(t) {
         if (t)
-            Hyprland.dispatch("hl.dsp.window.fullscreen({ window = " + sel(t)
-                + ', mode = "maximized", action = "toggle" })')
+            Hyprland.dispatch('function() samhie_snap.toggle_maximize("' + t.address + '") end')
     }
 
     // Cửa sổ của một app (file .desktop) — app id của cửa sổ không phải lúc

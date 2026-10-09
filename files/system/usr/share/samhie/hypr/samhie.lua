@@ -17,6 +17,9 @@
 local color = require("/usr/share/samhie/hypr/colors")
 -- Chia đôi màn hình kiểu Windows (Super + mũi tên) + cỡ cửa sổ nổi mặc định.
 local snap = require("/usr/share/samhie/hypr/snap")
+-- Toàn cục để Quickshell gọi được qua hl.dispatch (nút ⤢ thanh trên,
+-- Windows.qml: `function() samhie_snap.toggle_maximize("…") end`).
+samhie_snap = snap
 
 -------------------
 ---- TUỲ CHỌN ----
@@ -345,33 +348,47 @@ hl.window_rule({
     suppress_event = "maximize",
 })
 
--- Dolphin và Konsole mở NỔI giữa màn hình, cỡ theo phần trăm màn hình (user
--- 2026-10-05: Dolphin xếp kín cả màn thì cột Name dài quá; cỡ ở snap.lua
--- M.float) — app khác vẫn xếp kín. Super+↑ / ← / → đưa về xếp kín.
--- `float = false`: hộp thoại của app (Properties của Dolphin cùng class)
--- Hyprland đã cho nổi sẵn → không bị kéo giãn theo (container 2026-10-05:
--- thiếu điều kiện này, Properties rộng 1152px).
-for class, fraction in pairs(snap.float) do
+-- MỌI app mở NỔI giữa màn hình, cỡ theo phần trăm màn hình (snap.lua:
+-- M.default, riêng từng app ở M.float) — chồng lên nhau như Windows/Ubuntu,
+-- app mở sau / vừa chọn nằm trên (user 2026-10-09). Super+← / → / ↑ chia
+-- đôi / phóng to (snap.lua).
+-- `float = false`: hộp thoại của app Hyprland đã cho nổi sẵn với cỡ riêng →
+-- không bị kéo giãn theo (container 2026-10-05: thiếu điều kiện này,
+-- Properties của Dolphin rộng 1152px).
+--
+-- Hộp thoại KDE chạy thành chương trình RIÊNG (không phải hộp thoại con nên
+-- Hyprland không tự cho nổi) thì nổi với cỡ APP TỰ CHỌN, không 80%:
+--   org.kde.keditfiletype: nút "Change…" của Properties (KMimeTypeEditor) —
+--   user 2026-10-09: xếp kín thì nằm dưới Dolphin; nổi cỡ riêng 620×755 gọn.
+local helpers = { "org.kde.keditfiletype" }
+
+local function class_regex(classes)
+    local parts = {}
+    for _, c in ipairs(classes) do parts[#parts + 1] = (c:gsub("%.", "\\.")) end
+    return "^(" .. table.concat(parts, "|") .. ")$"
+end
+
+local function float_rule(name, class, fraction)
     hl.window_rule({
-        name   = "float-" .. class,
-        match  = { class = "^" .. class:gsub("%.", "\\.") .. "$", float = false },
+        name   = name,
+        match  = { class = class, float = false },
         float  = true,
-        size   = { "monitor_w * " .. fraction, "monitor_h * " .. fraction },
+        size   = fraction and { "monitor_w * " .. fraction, "monitor_h * " .. fraction } or nil,
         center = true,
     })
 end
 
--- Hộp thoại KDE chạy thành chương trình RIÊNG (không phải hộp thoại con nên
--- Hyprland không tự cho nổi): xếp kín cả màn thì nằm DƯỚI Dolphin đang nổi —
--- user bấm Properties → Change… không thấy cửa sổ (máy ảo 2026-10-09).
--- Cho nổi giữa màn, cỡ do app tự chọn.
---   org.kde.keditfiletype: nút "Change…" của Properties (KMimeTypeEditor).
-hl.window_rule({
-    name   = "float-kde-helpers",
-    match  = { class = "^(org\\.kde\\.keditfiletype)$" },
-    float  = true,
-    center = true,
-})
+-- Luật chung KHÔNG khớp app có luật riêng (`negative:` của Hyprland) — hai
+-- luật cùng khớp thì không phải lo luật nào thắng.
+local special = {}
+for _, class in ipairs(helpers) do special[#special + 1] = class end
+for class in pairs(snap.float) do special[#special + 1] = class end
+table.sort(special)
+float_rule("float-all", "negative:" .. class_regex(special), snap.default)
+for class, fraction in pairs(snap.float) do
+    float_rule("float-" .. class, class_regex({ class }), fraction)
+end
+float_rule("float-kde-helpers", class_regex(helpers), nil)
 
 -- Sửa lỗi kéo thả của app XWayland (cũng lấy từ mẫu upstream).
 hl.window_rule({

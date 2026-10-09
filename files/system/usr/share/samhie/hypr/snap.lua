@@ -6,27 +6,30 @@
 --                - Chỉ có mình nó: NỔI, chiếm đúng nửa màn, nửa kia trống. Mở
 --                  app xếp kín sau đó thì cửa sổ này vào xếp kín ở phía của
 --                  nó, app mới lấp nửa còn lại (như Snap của Windows).
---   Super+↑      phóng kín cả màn (đang chia đôi thì phóng to đè lên).
---   Super+↓      đang phóng to → về chia đôi; đang xếp kín → về cửa sổ nổi cỡ
---                mặc định, giữa màn.
+--   Super+↑      phóng kín vùng làm việc, vẫn là cửa sổ nổi (xem maximize).
+--   Super+↓      đang phóng to → về chỗ cũ (đang chia đôi thì về chia đôi);
+--                đang xếp kín / nửa màn → về cửa sổ nổi cỡ mặc định, giữa màn.
 --
 -- Nạp từ samhie.lua. Cỡ nổi mặc định của từng app (float) cũng dùng cho luật
 -- cửa sổ trong samhie.lua — một chỗ khai.
 
 local M = {}
 
--- Cỡ cửa sổ nổi theo phần màn hình (cả rộng lẫn cao). Dolphin 80% (user
--- 2026-10-08; trước 60%), Konsole 50% (user 2026-10-05); app khác khi
--- Super+↓ dùng `default`.
+-- Cỡ cửa sổ nổi theo phần màn hình (cả rộng lẫn cao). MỌI app mở nổi (user
+-- 2026-10-09: app mở sau / vừa chọn phải đè lên app trước — Hyprland luôn vẽ
+-- cửa sổ nổi TRÊN cửa sổ xếp kín, trộn hai loại thì VS Code/Edge xếp kín
+-- không bao giờ lên trên Dolphin/Konsole nổi). Mặc định 80% (= Dolphin, user
+-- 2026-10-08); Konsole 60% (user 2026-10-09; trước 50%).
 M.float = {
-    ["org.kde.dolphin"] = 0.8,
-    ["org.kde.konsole"] = 0.5,
+    ["org.kde.konsole"] = 0.6,
 }
-M.default = 0.6
+M.default = 0.8
 
 -- Cửa sổ đang "nổi nửa màn" (bấm khi chỉ có mình nó): address → { side, x, y, w, h }.
 -- Người dùng kéo/đổi cỡ nó rồi thì toạ độ khác → coi như hết chia đôi.
 local snapped = {}
+-- Cửa sổ đang phóng to: address → { x, y, w, h } chỗ trước khi phóng to.
+local maximized = {}
 
 local function side_value(v, key)
     if type(v) == "table" then return v[key] or 0 end
@@ -107,6 +110,28 @@ local function float_at(win, x, y, w, h)
     hl.dispatch(hl.dsp.window.move({ window = win, x = x, y = y }))
 end
 
+local MAX_TAG = "samhie-maximized"
+
+local function full_rect(mon)
+    local r = mon.reserved or {}
+    local scale = mon.scale or 1
+    local border = hl.get_config("general.border_size") or 0
+    local x = mon.x + side_value(r, "left") + border
+    local y = mon.y + side_value(r, "top") + border
+    local w = mon.width / scale - side_value(r, "left") - side_value(r, "right") - 2 * border
+    local h = mon.height / scale - side_value(r, "top") - side_value(r, "bottom") - 2 * border
+    return x, y, w, h
+end
+
+-- Gắn/gỡ dấu phóng to: thẻ cho thanh trên + góc vuông lúc phóng to (bo 12
+-- thì lộ hình nền ở hai góc dưới — container 2026-10-09; fullscreen cũ và
+-- Windows 11 đều vuông khi phóng to).
+local function set_max_tag(win, on)
+    hl.dispatch(hl.dsp.window.tag({ tag = (on and "+" or "-") .. MAX_TAG, window = win }))
+    hl.dispatch(hl.dsp.window.set_prop({ prop = "rounding", value = on and "0" or "unset", window = win }))
+    hl.dispatch(hl.dsp.event("samhie-maximize"))
+end
+
 function M.snap(side)
     local win = hl.get_active_window()
     if not win or not win.monitor then return end
@@ -114,6 +139,10 @@ function M.snap(side)
         unfullscreen(win)
     end
     snapped[win.address] = nil
+    if maximized[win.address] then
+        maximized[win.address] = nil
+        set_max_tag(win, false)
+    end
 
     local others = tiled_others(win)
     if #others == 0 then
@@ -137,15 +166,58 @@ function M.snap(side)
     end
 end
 
-function M.maximize()
-    local win = hl.get_active_window()
-    if not win then return end
-    snapped[win.address] = nil
-    if win.floating then
-        hl.dispatch(hl.dsp.window.float({ action = "unset", window = win }))
+-- Phóng to = cửa sổ NỔI kéo kín vùng làm việc (dưới thanh trên, như Windows),
+-- không dùng fullscreen "maximized" của Hyprland: cửa sổ nổi nào đã từng lên
+-- trên cửa sổ fullscreen thì Hyprland vẫn vẽ nó trên mãi, chọn lại app phóng
+-- to cũng không đè lại được (container 2026-10-09). Cũng không bỏ nổi cho xếp
+-- kín: cửa sổ xếp kín luôn nằm DƯỚI cửa sổ nổi.
+-- Thanh trên biết cửa sổ đang phóng to qua thẻ `samhie-maximized`
+-- (WindowControls.qml), báo đọc lại bằng sự kiện "custom>>samhie-maximize".
+-- Còn phóng to không: người dùng kéo/đổi cỡ cửa sổ rồi thì thôi (Hyprland
+-- không báo sự kiện kéo — xét lúc cần).
+local function is_maximized(win)
+    if not maximized[win.address] then return false end
+    local x, y, w, h = full_rect(win.monitor)
+    if same_rect(win, { x = x, y = y, w = w, h = h }) then return true end
+    maximized[win.address] = nil
+    set_max_tag(win, false)
+    return false
+end
+
+local function maximize(win)
+    if not win or not win.monitor then return end
+    if win.fullscreen ~= 0 then
+        unfullscreen(win)
     end
-    if #tiled_others(win) > 0 then
-        hl.dispatch(hl.dsp.window.fullscreen({ window = win, action = "set", mode = "maximized" }))
+    if is_maximized(win) then return end
+    local x, y, w, h = pos(win)
+    maximized[win.address] = { x = x, y = y, w = w, h = h }   -- chỗ cũ để thu về
+    snapped[win.address] = nil
+    float_at(win, full_rect(win.monitor))
+    hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top", window = win }))
+    set_max_tag(win, true)
+end
+
+-- Thu về đúng chỗ trước khi phóng to (đang chia đôi thì về chia đôi).
+local function unmaximize(win)
+    local m = maximized[win.address]
+    maximized[win.address] = nil
+    float_at(win, m.x, m.y, m.w, m.h)
+    set_max_tag(win, false)
+end
+
+function M.maximize()
+    maximize(hl.get_active_window())
+end
+
+-- Nút ⤢ / ⧉ ở thanh trên (Windows.qml gọi qua hl.dispatch). `address` như
+-- Quickshell ghi: hex không có "0x".
+function M.toggle_maximize(address)
+    for _, win in ipairs(hl.get_windows()) do
+        if win.address == "0x" .. address then
+            if is_maximized(win) then unmaximize(win) else maximize(win) end
+            return
+        end
     end
 end
 
@@ -154,6 +226,10 @@ function M.restore()
     if not win or not win.monitor then return end
     if win.fullscreen ~= 0 then
         unfullscreen(win)
+        return
+    end
+    if is_maximized(win) then
+        unmaximize(win)
         return
     end
     if win.floating and not snapped[win.address] then return end
@@ -189,6 +265,7 @@ end)
 
 hl.on("window.close", function(win)
     snapped[win.address] = nil
+    maximized[win.address] = nil
 end)
 
 return M

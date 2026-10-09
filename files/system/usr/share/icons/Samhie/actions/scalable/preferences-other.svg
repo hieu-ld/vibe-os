@@ -1,0 +1,17 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!-- Samhie — Hugeicons (MIT, xem LICENSE.hugeicons), nguồn theme/icons/hugeicons/konsole-advanced.svg.
+     Sinh bằng tools/build-icons.py, đừng sửa tay. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+  <defs>
+    <style id="current-color-scheme" type="text/css">.ColorScheme-Text { color: #fcfcfc; }</style>
+  </defs>
+  <path d="M3.99963 5.00055L9.99963 5.00031" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M12.9996 5.00031L19.9996 5.00031" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M15.9996 9.00031L15.9996 15.0003" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M9.99963 2.00031L9.99963 8.00031" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M11.9996 16.0003L11.9996 22.0003" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M15.9996 12.0001L19.9996 12.0003" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M3.99963 12.0005L12.9996 12.0003" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M11.9996 19.0003L19.9996 19.0003" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+  <path d="M3.99963 19.0005L8.99963 19.0003" stroke-width="1.5" stroke-linecap="round" style="stroke:currentColor;fill:none" class="ColorScheme-Text" />
+</svg>

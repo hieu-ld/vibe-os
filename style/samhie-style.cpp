@@ -335,6 +335,10 @@
 //      file) — nên gán tên riêng samhie-konsole-*; ba trang còn lại (memory,
 //      preferences-desktop-theme, preferences-tabs) vẽ thẳng theo tên gốc
 //      trong bộ icon. Cùng cách mục 36.
+//      Hộp Edit Profile / Create New Profile (Profiles → New…, Edit…) cũng
+//      vậy: utilities-terminal, kcolorchooser (icon app — Appearance dùng
+//      chung hình trang Profiles), input-keyboard / input-mouse (icon thiết
+//      bị); Tabs, Scrolling, Advanced vẽ theo tên gốc.
 //  57. Find Action… (KCommandBar) bấm từ MENU không hiện (máy ảo user
 //      2026-10-09; Ctrl+Alt+I thì hiện): hành động chạy lúc menu còn là
 //      popup; ô gõ nhận focus rồi FocusOut lý do ActiveWindowFocusReason —
@@ -344,6 +348,11 @@
 //      trên ô gõ nuốt FocusOut vì popup / mất kích hoạt trong 1 s đầu sau khi
 //      hiện, lấy lại focus ở vòng sự kiện sau; sau đó chuyển cửa sổ khác thì
 //      nó vẫn tự đóng như cũ.
+//  58. Nút icon trong hộp thoại (QToolButton chỉ icon): ô hover vuông như
+//      mục 21. App dựng nút cao bằng icon — nút chọn thư mục "Initial
+//      directory" của Edit Profile ô hover 24×16, ▶ "Play a sound" của
+//      Configure Notifications (user 2026-10-09: "ô hover vẫn bị lùn").
+//      Nút trong ô nhập, trên thanh công cụ, mũi tên cuộn dải tab giữ nguyên.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -2528,6 +2537,15 @@ public:
             const int side = qMax(tb->iconSize().width(), tb->iconSize().height()) + 2 * TOOL_PADDING;
             tb->setMinimumSize(side, side);  // mục 21: nút × thanh tìm
         }
+        if (auto *tb = qobject_cast<QToolButton *>(w); tb && tb->toolButtonStyle() == Qt::ToolButtonIconOnly
+                                                       && tb->arrowType() == Qt::NoArrow
+                                                       && qobject_cast<QDialog *>(w->window())
+                                                       && !qobject_cast<QLineEdit *>(w->parentWidget())
+                                                       && !qobject_cast<QToolBar *>(w->parentWidget())
+                                                       && !qobject_cast<QTabBar *>(w->parentWidget())) {
+            const int side = qMax(tb->iconSize().width(), tb->iconSize().height()) + 2 * TOOL_PADDING;
+            tb->setMinimumSize(qMax(side, tb->minimumWidth()), qMax(side, tb->minimumHeight()));  // mục 58
+        }
         // Mục 24: thanh lọc không có 🔒 "Keep Filter When Changing Folders" và
         // Aᴮ "Match case" (user 2026-10-06: cho gọn). Nhận theo icon — nút
         // không có tên (filterbar.cpp 26.08.1). Ẩn lúc polish: con được polish
@@ -2762,9 +2780,16 @@ public:
                     {QStringLiteral("utilities-terminal"), QStringLiteral("samhie-konsole-general")},
                     {QStringLiteral("folder-temp"), QStringLiteral("samhie-konsole-tempfiles")},
                     {QStringLiteral("image-jpeg"), QStringLiteral("samhie-konsole-thumbnails")}};
-                const QHash<QString, QString> *icons = w->window()->inherits("DolphinSettingsDialog") ? &dolphin
-                    : w->window()->inherits("Konsole::ConfigurationDialog")                            ? &konsole
-                                                                                                        : nullptr;
+                static const QHash<QString, QString> profile = {
+                    {QStringLiteral("utilities-terminal"), QStringLiteral("samhie-konsole-general")},
+                    {QStringLiteral("kcolorchooser"), QStringLiteral("preferences-desktop-theme")},
+                    {QStringLiteral("input-keyboard"), QStringLiteral("preferences-desktop-keyboard")},
+                    {QStringLiteral("input-mouse"), QStringLiteral("samhie-konsole-mouse")}};
+                const QWidget *win = w->window();
+                const QHash<QString, QString> *icons = win->inherits("DolphinSettingsDialog")  ? &dolphin
+                    : win->inherits("Konsole::ConfigurationDialog")                            ? &konsole
+                    : win->inherits("Konsole::EditProfileDialog")                              ? &profile
+                                                                                               : nullptr;
                 if (!icons)
                     return;
                 const QWidget *a = w->parentWidget();

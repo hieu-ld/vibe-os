@@ -94,6 +94,9 @@ MAP = {
     # Nút "+" trên thanh tab Konsole/Dolphin (tên đo trong
     # libkonsoleprivate/libkonsoleapp của image, 2026-09-30)
     "plus":       [("actions", "tab-new")],
+    # Nút New… (Konsole: Profiles, Appearance, Keyboard) — + trơn, cạnh chữ
+    # thì ⊕ của nút tab nặng quá.
+    "add":        [("actions", "list-add")],
     # Sidebar Dolphin (20px, tên lấy từ usr/share/samhie/user-places.xbel.in).
     # Nhà và tải về mang tên RIÊNG: user-home/folder-download là thư mục TO
     # (tools/build-folder-icons.py) — bộ scalable chỉ có một file cho mọi cỡ.
@@ -135,7 +138,8 @@ MAP = {
     # (libKF6KIOFileWidgets), × đóng thanh tìm = dialog-close (dolphin), ⌫
     # trong ô nhập = edit-clear-locationbar-* của QLineEdit (libQt6Widgets),
     # rơi về edit-clear (KF6Completion).
-    "check":      [("actions", "dialog-ok")],
+    "check":      [("actions", "dialog-ok"),
+                   ("actions", "dialog-ok-apply")],   # nút Apply của mọi hộp thoại
     "x":          [("actions", "dialog-close")],
     "backspace":  [("actions", "edit-clear-locationbar-rtl"),
                    ("actions", "edit-clear-locationbar-ltr"),
@@ -263,6 +267,17 @@ MAP = {
     "tab-bar":    [("actions", "preferences-tabs")],
     "temp-files": [("actions", "samhie-konsole-tempfiles")],
     "thumbnails": [("actions", "samhie-konsole-thumbnails")],
+    # Hộp Edit Profile / Create New Profile (EditProfileDialog.cpp 26.08.1,
+    # trang 32px). Tên gốc input-keyboard / input-mouse là icon thiết bị,
+    # kcolorchooser là icon app → style "samhie" mục 56 gán tên riêng (trang
+    # Appearance dùng chung hình Profiles, Keyboard chung hình danh sách Key
+    # bindings — cũng 32px); General cũng như hộp Configure.
+    "konsole-scrolling": [("actions", "preferences-scroll")],
+    "keyboard":   [("actions", "preferences-desktop-keyboard")],
+    "konsole-mouse": [("actions", "samhie-konsole-mouse")],
+    "konsole-advanced": [("actions", "preferences-other")],
+    # Nút Choose… (font) của trang Appearance, 16px
+    "text-font":  [("actions", "preferences-desktop-font")],
     # Hành động Konsole (danh sách phím tắt, Find Action…)
     "info":       [("actions", "help-about"),            # About Konsole
                    # cột State + dòng "Show a message in a popup" của
@@ -375,7 +390,8 @@ SIZE = {
          "volume-mute", "volume-35", "volume-70", "volume-full"],
     22: ["icons", "details", "menu", "search", "prev", "next"],
     32: ["context-menu", "interface", "konsole-general", "konsole-profiles", "memory",
-         "tab-bar", "temp-files", "thumbnails"],
+         "tab-bar", "temp-files", "thumbnails",
+         "konsole-scrolling", "keyboard", "konsole-mouse", "konsole-advanced"],
 }
 
 
@@ -499,6 +515,8 @@ NUDGE = {
     "select-text": (16, 0.125, 0.375),   # mờ 0.46 → 0.37
     "split-auto": (16, -0.5, -0.5),      # mờ 0.61 → 0.31
     "split-top-bottom": (16, -0.375, -0.5),  # mờ 0.59 → 0.37
+    "add": (16, -0.5, -0.5),             # mờ 0.87 → 0.09
+    "keyboard": (32, 0.375, -0.375),     # mờ 0.29 → 0.22
     "temp-files": (32, 0.25, 0.375),     # mờ 0.27 → 0.20
     "thumbnails": (32, -0.5, -0.5),      # mờ 0.29 → 0.19
     "swap": (16, 0.125, -0.5),           # mờ 0.76 → 0.17

@@ -38,6 +38,12 @@ Claude đề xuất): Claude lấy thẳng từ repo ở commit trên, đổi `#
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
 (icon Pro KHÔNG được đưa vào mã nguồn mở, xem README của repo đó).
+Konsole (2026-10-09, user nhờ tìm): hai mươi mốt icon cho hộp Configure
+Konsole, Configure Keyboard Shortcuts, Configure Notifications và sáu icon
+cho hộp Edit Profile (`add`, `keyboard`, `konsole-scrolling`,
+`konsole-mouse`, `konsole-advanced`, `text-font`) — Claude lấy thẳng từ repo
+ở commit trên, đổi `#141B34` → `currentColor`. `konsole-mouse` trùng nét
+`mouse` (cỡ 32 thay 16, bảng NUDGE khác).
 Ba file đã sửa (MIT cho sửa):
 - `star-full`: `star` tô kín (fill `currentColor`) — sao Rating đã chọn.
 - `trash-full`: `waste` thêm ba vạch dọc user tự vẽ.
@@ -65,6 +71,7 @@ Ba file đã sửa (MIT cho sửa):
 
 | File | Hugeicons |
 |---|---|
+| `add` | `add-01` |
 | `ar-bottom` | `chevron-down` |
 | `ar-left` | `chevron-left` |
 | `ar-right` | `chevron-right` |
@@ -73,12 +80,13 @@ Ba file đã sửa (MIT cho sửa):
 | `bell` | `bell` |
 | `bell-off` | `bell-off` |
 | `bluetooth` | `bluetooth-connected` |
-| `browse` | `folder-search` |
 | `bookmark` | `bookmark-02` |
 | `bookmark-plus` | `bookmark-add-02` |
+| `browse` | `folder-search` |
 | `bug` | `bug-01` |
 | `cancel` | `cancel-circle` |
 | `check` | `check` |
+| `clear-history` | `eraser` |
 | `close` | `circle-x` |
 | `close-tab` | `cancel-square` |
 | `compare` | `file-diff` |
@@ -89,6 +97,7 @@ Ba file đã sửa (MIT cho sửa):
 | `copy-link` | `copy-link` |
 | `cut` | `square-bottom-dashed-scissors` |
 | `dark-mode` | `moon-star` |
+| `detach` | `square-arrow-up-right` |
 | `details` | `list` |
 | `disk-image` | `software` |
 | `disk-usage` | `pie-chart` |
@@ -98,6 +107,8 @@ Ba file đã sửa (MIT cho sửa):
 | `download-service` | `download-04` |
 | `duplicate` | `copy-01` |
 | `edit` | `pencil-edit-02` |
+| `encoding` | `language-square` |
+| `exchange` | `arrow-data-transfer-horizontal` |
 | `extract` | `folder-archive` |
 | `file-new` | `file-add` |
 | `filter` | `filter` |
@@ -105,35 +116,48 @@ Ba file đã sửa (MIT cho sửa):
 | `folder-edit` | `folder-edit` |
 | `folder-export` | `folder-export` |
 | `folder-new` | `folder-plus` |
+| `fullscreen` | `full-screen` |
 | `general` | `left-to-right-list-triangle` |
 | `git` | `git-branch` |
 | `handbook` | `book-open-01` |
 | `help` | `help-circle` |
 | `hide` | `eye-closed` |
 | `icons` | `grid-view` |
+| `info` | `information-circle` |
 | `interface` | `dashboard-browsing` |
 | `invert-selection` | `contrast` |
+| `keyboard` | `keyboard` |
+| `konsole-advanced` | `sliders-horizontal` |
+| `konsole-general` | `computer-terminal-01` |
+| `konsole-mouse` | `mouse-01` |
+| `konsole-profiles` | `paint-board` |
+| `konsole-scrolling` | `scroll-vertical` |
 | `lock` | `lock-keyhole` |
 | `login` | `login-02` |
 | `logout` | `logout-02` |
 | `makefile-action` | `gears` |
 | `max` | `circle-arrow-expand-01` |
+| `memory` | `ram-memory` |
 | `menu` | `menu` |
 | `menubar` | `layout-top` |
 | `min` | `circle-arrow-shrink-01` |
 | `minus` | `circle-minus` |
+| `monitor` | `view` |
+| `mouse` | `mouse-01` |
 | `network` | `house-wifi` |
 | `new-windows` | `layer-add` |
 | `next` | `circle-arrow-right-02` |
 | `next-2` | `arrow-right-02` |
 | `night-light` | `sun-moon` |
 | `noti-off` | `bell-off` |
-| `open-with` | `dashboard-square-add` |
 | `open-folder` | `folder-open` |
+| `open-with` | `dashboard-square-add` |
 | `paste` | `file-paste` |
 | `pin` | `pin` |
 | `place-folder` | `folder-01` (bản chép của `folder`, căn lưới cỡ 20) |
+| `play` | `play-circle` |
 | `play-square` | `play-square` |
+| `plugins` | `puzzle` |
 | `plus` | `circle-plus` |
 | `power` | `power` |
 | `prev` | `circle-arrow-left-02` |
@@ -141,6 +165,7 @@ Ba file đã sửa (MIT cho sửa):
 | `preview` | `image-01` |
 | `print` | `printer` |
 | `properties` | `information-square` |
+| `quick-commands` | `command` |
 | `quit` | `logout-04` |
 | `recent` | `history` |
 | `redo` | `redo-03` |
@@ -150,6 +175,7 @@ Ba file đã sửa (MIT cho sửa):
 | `restore` | `undo` |
 | `search` | `search-01` |
 | `select-all` | `tick-double-02` |
+| `select-text` | `cursor-text` |
 | `settings` | `settings-01` |
 | `show-hidden` | `view` |
 | `shut-down` | `shut-down` |
@@ -158,6 +184,8 @@ Ba file đã sửa (MIT cho sửa):
 | `smart-home` | `home-02` |
 | `sort` | `arrow-data-transfer-vertical` |
 | `split` | `square-split-horizontal` |
+| `split-auto` | `layout-grid` |
+| `split-top-bottom` | `layout-2-row` |
 | `star` | `star` |
 | `star-full` | `star` (tô kín) |
 | `stop` | `stop-circle` |
@@ -177,8 +205,12 @@ Ba file đã sửa (MIT cho sửa):
 | `symbol-tar` | `file-zip` |
 | `symbol-temp` | `file-clock` |
 | `symbol-videos` | `film-01` |
+| `tab-bar` | `browser` |
+| `temp-files` | `folder-clock` |
 | `terminal` | `square-terminal` |
 | `terminal-panel` | `command-line` |
+| `text-font` | `text-font` |
+| `thumbnails` | `image-01` |
 | `trash-delete` | `delete-01` |
 | `trash-empty` | `waste` |
 | `trash-full` | `waste` (+ 3 vạch dọc user thêm) |
@@ -190,6 +222,7 @@ Ba file đã sửa (MIT cho sửa):
 | `volume-70` | `volume-01` |
 | `volume-full` | `volume-high` |
 | `volume-mute` | `volume-mute-02` |
+| `web-search` | `global-search` |
 | `wifi` | `wifi-02` |
 | `wifi-0` | `wifi-zero` |
 | `wifi-1` | `wifi-low` |

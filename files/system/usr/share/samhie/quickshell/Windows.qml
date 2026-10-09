@@ -91,6 +91,10 @@ Singleton {
                 + ", workspace = " + ws + ", follow = true })")
         }
         Hyprland.dispatch("hl.dsp.focus({ window = " + sel(t) + " })")
+        // focus KHÔNG đưa cửa sổ nổi lên trên (Hyprland 0.56: fullWindowFocus
+        // chỉ đổi tab trong nhóm) — bấm Konsole trên dock mà nó vẫn nằm dưới
+        // Dolphin (user 2026-10-09). Bấm chuột vào cửa sổ thì Hyprland tự đưa lên.
+        Hyprland.dispatch('hl.dsp.window.alter_zorder({ mode = "top", window = ' + sel(t) + " })")
     }
 
     function close(t) {

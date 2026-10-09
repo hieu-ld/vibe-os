@@ -208,6 +208,7 @@ modules:
       - plymouth.sh
       - cursors.sh
       - dolphin-ui.sh
+      - konsole-ui.sh
       - samhie-style.sh
 
   # ── 6. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────

@@ -308,6 +308,12 @@
 //        bên trái nhãn MD5… trống một khoảng lớn).
 //      - Chữ có "&" trong ô chọn ("Can View & Modify Content") — Kvantum
 //        coi "&" là phím tắt, nuốt mất.
+//  54. Menu chuột phải trên tab Konsole không có "Configure or Rename Tab…"
+//      (user 2026-10-09): tên tab do shell đặt mỗi dấu nhắc
+//      (/etc/profile.d/samhie-title.sh, OSC 30) nên tên tự đặt bị đè ngay.
+//      Menu do mã Konsole dựng (TabbedViewContainer, cha là dải tab), mục có
+//      objectName "edit-rename" — bỏ lúc polish (menu hiện lần đầu, đã đủ
+//      mục). Bấm đúp tab vẫn mở hộp đó (còn đổi được màu tab).
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -2447,6 +2453,13 @@ public:
         }
         if (qobject_cast<QMenu *>(w) && w->parentWidget() && w->parentWidget()->inherits("DolphinTabBar"))
             trimTabMenu(static_cast<QMenu *>(w));  // mục 19
+        if (auto *menu = qobject_cast<QMenu *>(w); menu && qobject_cast<QTabBar *>(w->parentWidget())
+            && w->parentWidget()->parentWidget() && w->parentWidget()->parentWidget()->inherits("Konsole::TabbedViewContainer")) {
+            for (QAction *a : menu->actions()) {  // mục 54
+                if (a->objectName() == QLatin1String("edit-rename"))
+                    menu->removeAction(a);
+            }
+        }
         if (auto *edit = qobject_cast<QLineEdit *>(w); edit && edit->font().family() == QLatin1String("Dongle")
                                                        && !edit->property("samhieShortCaret").toBool())
             new ShortCaret(edit);  // mục 22 (polish lại: đã có thì thôi)

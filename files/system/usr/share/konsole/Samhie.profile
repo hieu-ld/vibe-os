@@ -13,9 +13,11 @@ CustomCursorColor=0,192,232
 UseCustomCursorColor=true
 
 [General]
+Directory=~
 LocalTabTitleFormat=%w
 Name=Samhie
 Parent=FALLBACK/
+StartInCurrentSessionDir=false
 TerminalMargin=10
 
 [Scrolling]

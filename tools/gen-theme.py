@@ -353,7 +353,14 @@ def konsole_profile(pal):
         # 2026-09-28). %w = tiêu đề do shell đặt: đường dẫn rút gọn kiểu
         # "Duchieu/Download" do /etc/profile.d/samhie-title.sh tính (user
         # 2026-10-09; trước là %d — chỉ tên thư mục, home thành "~").
-        ("General", dict(LocalTabTitleFormat="%w", Name="Samhie", Parent="FALLBACK/",
+        # Tab mới (Ctrl+Shift+T, nút +, menu) và ô chia đôi mở ở HOME, như tab
+        # mới của Dolphin (user 2026-10-09) — mặc định Konsole theo thư mục của
+        # tab đang mở. Directory=~ chứ không để trống: trống thì Konsole lấy
+        # thư mục của chính tiến trình nó (mở từ Dolphin thì là thư mục đó).
+        # "Open Terminal Here" của Dolphin vẫn đúng chỗ: KIO gọi `konsole
+        # --workdir`, Konsole áp nó SAU profile (Application.cpp 26.08.1).
+        ("General", dict(Directory="~", LocalTabTitleFormat="%w", Name="Samhie",
+                         Parent="FALLBACK/", StartInCurrentSessionDir="false",
                          TerminalMargin="10")),
         ("Scrolling", dict(HighlightScrolledLines="false", HistorySize="10000",
                            ScrollBarPosition="2")),

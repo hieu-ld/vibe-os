@@ -5,19 +5,22 @@
 // (Dolphin, Konsole) không có nút đóng nào; Edge/VS Code tự vẽ nút của chúng
 // (user gặp trong máy ảo 2026-09-28, chọn làm trên thanh trên 2026-10-02).
 //
+// Ba nút CHỈ HIỆN khi rê chuột vào cụm (user 2026-10-09: cho thanh gọn; mỗi
+// dòng trong danh sách cửa sổ cũng có đủ ba nút). Lúc ẩn vẫn giữ chỗ — hiện
+// ra không đẩy gì, và rê thẳng tới chỗ nút cũng làm chúng hiện.
+//
 // Ô tên RỘNG CỐ ĐỊNH (vừa "Microsoft Edge") để tên dài/ngắn không làm ba nút
 // nhảy chỗ (user 2026-10-02); tên dài hơn thì cắt "…".
 //
 // Chỉ coi là "đang focus" khi cửa sổ nằm ở màn ảo đang xem của màn hình này:
 // sang màn ảo trống thì Hyprland có thể vẫn giữ cửa sổ cũ là active. Không có
-// cửa sổ nào đang focus (màn trống, hoặc thu nhỏ hết) → ô ghi "Desktop", ẩn
+// cửa sổ nào đang focus (màn trống, hoặc thu nhỏ hết) → ô ghi "Desktop", bỏ
 // ba nút, vẫn bấm xổ danh sách được (cách lấy lại cửa sổ đã thu nhỏ). Không
 // còn cửa sổ nào cả → ẩn hết.
 //
-// Trạng thái phóng to: thẻ `samhie-maximized` (snap.lua gắn — phóng to là cửa
-// sổ nổi kéo kín, không phải fullscreen) hoặc fullscreen 1 (app tự xin). Đọc
-// từ lastIpcObject — chỉ mới sau khi hỏi lại Hyprland, nên hỏi lại mỗi lần
-// có sự kiện "fullscreen", "custom>>samhie-maximize" hoặc đổi cửa sổ.
+// Trạng thái phóng to (Windows.isMaximized) đọc từ lastIpcObject — chỉ mới
+// sau khi hỏi lại Hyprland, nên hỏi lại mỗi lần có sự kiện "fullscreen",
+// "custom>>samhie-maximize" hoặc đổi cửa sổ. Danh sách cửa sổ cũng nhờ đây.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -39,9 +42,7 @@ Item {
     }
     readonly property string appId: window && window.wayland ? window.wayland.appId : ""
     readonly property var entry: appId !== "" ? DesktopEntries.heuristicLookup(appId) : null
-    readonly property bool maximized: window !== null && window.lastIpcObject
-        && ((window.lastIpcObject.fullscreen ?? 0) === 1
-            || (window.lastIpcObject.tags ?? []).indexOf("samhie-maximized") >= 0)
+    readonly property bool maximized: Windows.isMaximized(window)
 
     readonly property int iconSize: 18
     readonly property int pad: 8
@@ -75,6 +76,9 @@ Item {
     visible: Windows.windows.length > 0
     implicitWidth: row.implicitWidth
     implicitHeight: bar.height
+
+    // Cả cụm (ô tên + ba nút, kể cả khe giữa chúng): rê chuột vào là hiện nút.
+    HoverHandler { id: clusterHover }
 
     Row {
         id: row
@@ -157,9 +161,15 @@ Item {
         property string iconName
         signal clicked()
 
+        readonly property bool shown: clusterHover.hovered
+
         visible: root.window !== null
         width: 30
         height: 26
+        opacity: shown ? 1 : 0
+        Behavior on opacity {
+            NumberAnimation { duration: 100 }
+        }
 
         HoverBox {
             bar: root.bar
@@ -177,6 +187,9 @@ Item {
         }
 
         HoverHandler { id: hover }
-        TapHandler { onTapped: btn.clicked() }
+        TapHandler {
+            enabled: btn.shown
+            onTapped: btn.clicked()
+        }
     }
 }

@@ -2,7 +2,10 @@
 // User chốt 2026-10-02: mọi cửa sổ trên mọi màn ảo, chia nhóm "Workspace N";
 // cửa sổ đã thu nhỏ hiện MỜ trong nhóm của màn nó đến từ (không rõ thì nhóm
 // "Minimized" cuối danh sách). Bấm dòng = nhảy tới cửa sổ (đang thu nhỏ thì
-// hiện lại); rê chuột thì hiện nút X nhỏ để đóng nhanh — danh sách vẫn mở.
+// hiện lại). Rê chuột lên dòng thì hiện ⊖ ⤢ ⊗ như trên thanh (user
+// 2026-10-09): ⊖ và ⊗ làm tại chỗ, danh sách vẫn mở; ⤢ nhảy tới cửa sổ rồi
+// phóng to / thu về (phóng to cửa sổ không nhìn thấy thì chẳng để làm gì).
+// Dòng đã thu nhỏ không có ⊖.
 // Cửa sổ đang focus có vạch nhấn bên trái.
 //
 // Thẻ như menu nguồn: nền Card, viền Sub Secondary, bo 8, dòng 40, chữ Dongle
@@ -34,6 +37,8 @@ Item {
     }
 
     visible: open
+    // Icon ⤢ / thu về của từng dòng cần lastIpcObject mới.
+    onOpenChanged: if (open) Hyprland.refreshToplevels()
     width: card.width
     height: card.height
 
@@ -119,7 +124,7 @@ Item {
                                 Text {
                                     anchors.verticalCenter: parent.verticalCenter
                                     x: icon.x + icon.width + 10
-                                    width: (closeBtn.visible ? closeBtn.x - 6 : row.width - 12) - x
+                                    width: (buttons.visible ? buttons.x - 6 : row.width - 12) - x
                                     elide: Text.ElideRight
                                     text: row.modelData.title !== "" ? row.modelData.title
                                         : row.entry ? row.entry.name : row.appId
@@ -138,33 +143,68 @@ Item {
                                     }
                                 }
 
-                                // X nhỏ khi rê chuột: đóng cửa sổ, danh sách vẫn mở.
-                                Rectangle {
-                                    id: closeBtn
+                                Row {
+                                    id: buttons
                                     visible: rowHover.hovered
                                     anchors.right: parent.right
                                     anchors.rightMargin: 6
                                     anchors.verticalCenter: parent.verticalCenter
-                                    width: 28
-                                    height: 28
-                                    radius: 6
-                                    color: closeHover.hovered ? Theme.c.subSecondary : "transparent"
+                                    spacing: 2
 
-                                    SamhieIcon {
-                                        anchors.centerIn: parent
-                                        iconName: "window-close-symbolic"
-                                        size: 18
-                                        color: Theme.c.text
+                                    RowButton {
+                                        visible: !row.minimized
+                                        iconName: "window-minimize-symbolic"
+                                        onClicked: Windows.minimize(row.modelData)
                                     }
-
-                                    HoverHandler { id: closeHover }
-                                    TapHandler { onTapped: Windows.close(row.modelData) }
+                                    RowButton {
+                                        iconName: Windows.isMaximized(row.modelData)
+                                            ? "window-restore-symbolic" : "window-maximize-symbolic"
+                                        onClicked: {
+                                            root.bar.popup = ""
+                                            Windows.activate(row.modelData)
+                                            Windows.toggleMaximize(row.modelData)
+                                        }
+                                    }
+                                    RowButton {
+                                        iconName: "window-close-symbolic"
+                                        onClicked: Windows.close(row.modelData)
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+        }
+    }
+
+    // Nút vuông nhỏ trong dòng: nền Sub Secondary khi rê chuột (dòng đã là
+    // Secondary).
+    component RowButton: Rectangle {
+        id: btn
+        property string iconName
+        signal clicked()
+
+        width: 28
+        height: 28
+        radius: 6
+        color: hover.hovered ? Theme.c.subSecondary : "transparent"
+
+        SamhieIcon {
+            anchors.centerIn: parent
+            iconName: btn.iconName
+            size: 18
+            color: Theme.c.text
+        }
+
+        HoverHandler { id: hover }
+        // MouseArea, KHÔNG TapHandler: TapHandler chỉ nghe ké cú bấm, nên
+        // TapHandler của dòng cũng chạy → bấm ⊖ mà danh sách đóng và cửa sổ
+        // vừa thu nhỏ lại được focus (container 2026-10-09). MouseArea nhận
+        // cú bấm là dòng không thấy nữa.
+        MouseArea {
+            anchors.fill: parent
+            onClicked: btn.clicked()
         }
     }
 }

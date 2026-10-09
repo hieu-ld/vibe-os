@@ -110,6 +110,14 @@ Singleton {
             Hyprland.dispatch('function() samhie_snap.toggle_maximize("' + t.address + '") end')
     }
 
+    // Đang phóng to: thẻ `samhie-maximized` (snap.lua gắn) hoặc fullscreen 1
+    // (app tự xin). Đọc từ lastIpcObject — chỉ mới sau Hyprland.refreshToplevels()
+    // (WindowControls hỏi lại mỗi khi có sự kiện liên quan).
+    function isMaximized(t) {
+        const o = t ? t.lastIpcObject : null
+        return !!o && ((o.fullscreen ?? 0) === 1 || (o.tags ?? []).indexOf("samhie-maximized") >= 0)
+    }
+
     // Cửa sổ của một app (file .desktop) — app id của cửa sổ không phải lúc
     // nào cũng trùng tên file (.desktop của VS Code là com.microsoft.VSCode,
     // cửa sổ là "code") nên tra qua heuristicLookup. Dùng gần đây nhất trước.

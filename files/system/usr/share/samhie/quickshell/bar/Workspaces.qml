@@ -4,6 +4,10 @@
 // màn khác thì bấm ô bên trái trong tổng quan. Lăn chuột trên cụm để đi
 // tới/lui.
 //
+// Cả cụm là MỘT nút như "Activities" của Ubuntu (user 2026-10-09): rê chuột
+// lên (hoặc màn tổng quan đang mở) thì hiện ô nền bo góc ôm mọi chấm — cùng
+// cỡ/màu với ô hover các nút khác trên thanh (cao 26, bo 6, hoverFill).
+//
 // Workspace ĐỘNG như Ubuntu/GNOME (user chốt 2026-10-01): các workspace
 // đang có + LUÔN một màn trống ở cuối, ít nhất 2 chấm (workspaceSlots()
 // trong shell.qml).
@@ -27,6 +31,9 @@ Item {
     readonly property int dot: 8
     readonly property int pill: 26
     readonly property int gap: 5
+    // Lề trong ô hover hai bên chấm: 9 = lề trên/dưới ((26 − 8) / 2), chấm
+    // nằm giữa ô đều bốn phía.
+    readonly property int pad: 9
 
     readonly property HyprlandMonitor monitor: Hyprland.monitorFor(bar.screen)
     // Danh sách chung với màn tổng quan — xem workspaceSlots() trong shell.qml.
@@ -45,10 +52,19 @@ Item {
         Hyprland.dispatch("hl.dsp.focus({ workspace = " + JSON.stringify(target) + " })")
     }
 
-    implicitWidth: row.implicitWidth
+    implicitWidth: row.implicitWidth + 2 * pad
     implicitHeight: bar.height
 
     HoverHandler { id: clusterHover }
+
+    Rectangle {
+        anchors.verticalCenter: parent.verticalCenter
+        width: parent.width
+        height: 26
+        radius: 6
+        color: clusterHover.hovered || (root.monitor && root.shell.overviewMonitor === root.monitor.name)
+            ? root.bar.hoverFill : "transparent"
+    }
 
     MouseArea {
         anchors.fill: parent
@@ -62,7 +78,9 @@ Item {
 
     Row {
         id: row
+        x: root.pad
         anchors.verticalCenter: parent.verticalCenter
+        spacing: root.gap
 
         Repeater {
             // Model là SỐ chấm, không phải mảng: mảng mới mỗi lần đổi sẽ dựng
@@ -76,7 +94,7 @@ Item {
                 readonly property var ws: root.shown[index]
                 readonly property bool current: ws ? ws.active : false
 
-                width: mark.width + root.gap
+                width: mark.width
                 height: root.height
 
                 Rectangle {

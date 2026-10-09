@@ -82,16 +82,19 @@ PanelWindow {
         bar: bar
         shell: bar.shell
         anchors.left: parent.left
-        anchors.leftMargin: 14
+        // Mép ô hover. 8 + lề trong 9 → viên thuốc ở x 17 như trước khi có ô
+        // (trước là 16,5 — mỗi chấm giữa ô rộng hơn nó 5px — nay thẳng pixel).
+        anchors.leftMargin: 8
         anchors.verticalCenter: parent.verticalCenter
     }
 
     // Cửa sổ đang focus: tên app (bấm ra danh sách cửa sổ) + nút thu nhỏ,
-    // phóng to, đóng.
+    // phóng to, đóng (chỉ hiện khi rê chuột).
     WindowControls {
         bar: bar
         anchors.left: workspaces.right
-        anchors.leftMargin: 16
+        // Ô tên app giữ nguyên x như trước khi có ô hover (đo container: 74).
+        anchors.leftMargin: 9
         anchors.verticalCenter: parent.verticalCenter
     }
 

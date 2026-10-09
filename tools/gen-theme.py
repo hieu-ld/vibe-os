@@ -349,9 +349,11 @@ def konsole_profile(pal):
         # gạch dưới thì thành một vạch cyan dưới cả từ — đúng dáng bộ gõ quen.
         ("Cursor Options", dict(CursorShape="2", CustomCursorColor=rgb(t["cursor"]),
                                 UseCustomCursorColor="true")),
-        # %d = tên thư mục hiện tại: bù cho phần đường dẫn đã bỏ khỏi dấu nhắc
-        # (user chốt 2026-09-28).
-        ("General", dict(LocalTabTitleFormat="%d", Name="Samhie", Parent="FALLBACK/",
+        # Tên tab bù cho phần đường dẫn đã bỏ khỏi dấu nhắc (user chốt
+        # 2026-09-28). %w = tiêu đề do shell đặt: đường dẫn rút gọn kiểu
+        # "Duchieu/Download" do /etc/profile.d/samhie-title.sh tính (user
+        # 2026-10-09; trước là %d — chỉ tên thư mục, home thành "~").
+        ("General", dict(LocalTabTitleFormat="%w", Name="Samhie", Parent="FALLBACK/",
                          TerminalMargin="10")),
         ("Scrolling", dict(HighlightScrolledLines="false", HistorySize="10000",
                            ScrollBarPosition="2")),
@@ -404,7 +406,7 @@ def bash_prompt(pal):
 # {HEADER}
 # Dấu nhắc lệnh của Samhie: chỉ còn "$ " màu cyan (user chốt 2026-09-28: bỏ cả
 # user@host lẫn đường dẫn — tên tab Konsole hiện thư mục hiện tại thay, xem
-# LocalTabTitleFormat trong /usr/share/konsole/Samhie.profile).
+# samhie-title.sh cùng thư mục).
 #
 # \\$ chứ không phải chữ $: bash in "$" cho người thường và "#" cho root. Đăng
 # nhập root mà vẫn thấy "$" là một cách hỏng nguy hiểm (bản 1.0).

@@ -146,8 +146,9 @@
 //      nháy nhưng không vẽ gì) và một lớp con trong suốt (ShortCaret) vẽ dấu
 //      nháy theo chiều cao chữ: CARET_UP × cap trên chân chữ, CARET_DOWN ×
 //      cap dưới. Chỉ ô nhập dùng Dongle (font giao diện).
-//  21. Ô hover vuông, icon + TOOL_PADDING mỗi phía, ở giữa nút: nút + của dải
-//      tab Dolphin (cao bằng dải tab — mục 5) và nút icon trên thanh công cụ
+//  21. Ô hover vuông, icon + TOOL_PADDING mỗi phía, ở giữa nút: nút ở góc dải
+//      tab (+ của Dolphin lẫn Konsole — user 2026-10-09; cao bằng dải tab, mục
+//      5 — Konsole trước đó ô hover cao bằng dải) và nút icon trên thanh công cụ
 //      Dolphin (☰ do KHamburgerMenu dựng cao bằng thanh, 34×42 — container),
 //      nút × của thanh tìm (Dolphin xếp nó lùn hơn icon: ô hover 26×14 —
 //      container) — nút đó được nới tối thiểu bằng ô vuông. Nút ⊖ ⟲ ⊕ dòng
@@ -464,6 +465,13 @@ public:
 bool isUrlNavigatorButton(const QWidget *w)
 {
     return w && w->inherits("KDEPrivate::KUrlNavigatorButtonBase");
+}
+
+// Nút ở góc dải tab: + của Dolphin (Samhie thêm) và của Konsole (mục 21).
+bool isTabCornerButton(const QWidget *w)
+{
+    auto *tw = w ? qobject_cast<const QTabWidget *>(w->parentWidget()) : nullptr;
+    return tw && (tw->cornerWidget(Qt::TopLeftCorner) == w || tw->cornerWidget(Qt::TopRightCorner) == w);
 }
 
 // Trong thanh đường dẫn, thanh tìm hoặc thanh lọc (F10 → Filter) của Dolphin
@@ -3094,7 +3102,7 @@ public:
                 }
             }
             if (w && tbopt->toolButtonStyle == Qt::ToolButtonIconOnly
-                && (w->objectName() == QLatin1String("samhie-new-tab")
+                && (isTabCornerButton(w)
                     || (inDolphinLocationOrSearch(w) && !qobject_cast<QLineEdit *>(w->parentWidget()))
                     || (qobject_cast<QToolBar *>(w->parentWidget()) && w->window()->inherits("DolphinMainWindow")))) {
                 const int side = qMax(o.iconSize.width(), o.iconSize.height()) + 2 * TOOL_PADDING;

@@ -2,7 +2,7 @@
 # SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay.
 # Dấu nhắc lệnh của Samhie: chỉ còn "$ " màu cyan (user chốt 2026-09-28: bỏ cả
 # user@host lẫn đường dẫn — tên tab Konsole hiện thư mục hiện tại thay, xem
-# LocalTabTitleFormat trong /usr/share/konsole/Samhie.profile).
+# samhie-title.sh cùng thư mục).
 #
 # \$ chứ không phải chữ $: bash in "$" cho người thường và "#" cho root. Đăng
 # nhập root mà vẫn thấy "$" là một cách hỏng nguy hiểm (bản 1.0).

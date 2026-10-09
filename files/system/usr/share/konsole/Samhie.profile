@@ -13,7 +13,7 @@ CustomCursorColor=0,192,232
 UseCustomCursorColor=true
 
 [General]
-LocalTabTitleFormat=%d
+LocalTabTitleFormat=%w
 Name=Samhie
 Parent=FALLBACK/
 TerminalMargin=10

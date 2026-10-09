@@ -410,6 +410,12 @@ def kvconfig(pal):
             "scrollbar_in_view": "true", "scroll_width": 6, "scroll_min_extent": 36,
             "slider_width": 4, "slider_handle_width": 16, "slider_handle_length": 16,
             "check_size": 16, "progressbar_thickness": 6,
+            # Phần đã chạy phủ trọn bề dày thanh. Không bật: Kvantum lấy 6 trừ
+            # viền trên+dưới (3+3) = 0 → không vẽ phần đã chạy (CE_ProgressBar-
+            # Contents, V1.1.6) — hộp chép file 42% chỉ thấy rãnh xám (đo
+            # 2026-10-09). Thanh Free space (style mục 53) vẽ đúng cao 6 nên
+            # Kvantum đã tự "spread" — giờ mọi thanh giống nó.
+            "spread_progressbar": "true",
             "splitter_width": 1,
             "small_icon_size": 16, "large_icon_size": 32,
             # Icon thanh công cụ 24 như bản vẽ (icon user vẽ khung 16 nét 1 → nét

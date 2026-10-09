@@ -35,6 +35,7 @@ slider_handle_width=16
 slider_handle_length=16
 check_size=16
 progressbar_thickness=6
+spread_progressbar=true
 splitter_width=1
 small_icon_size=16
 large_icon_size=32

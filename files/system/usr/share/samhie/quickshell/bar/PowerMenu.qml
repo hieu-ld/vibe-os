@@ -3,8 +3,12 @@
 //
 // Lock và Sleep làm ngay (quay lại được, Windows cũng vậy). Ba mục còn lại
 // làm mất việc đang mở nên phải bấm HAI lần: lần đầu dòng đổi sang chữ đỏ
-// "Click again to …", lần hai mới chạy; để yên 4 giây thì tự về như cũ.
+// "Click again", lần hai mới chạy; để yên 4 giây thì tự về như cũ.
 // (Bản 1.0 có màn hình xác nhận của KDE; Hyprland không có.)
+//
+// Rộng VỪA CHỮ (user 2026-10-09: trước 250, thấy dài): lề phải sau chữ dài
+// nhất bằng lề trái trước icon. Chữ xác nhận vì vậy rút từ "Click again to
+// shut down" (167px) còn "Click again" — vừa bằng "Shut Down".
 //
 // Lệnh: logind cho phép phiên đang ngồi trước máy tự tắt/khởi động lại/ngủ
 // mà không hỏi mật khẩu. Đăng xuất = thoát Hyprland, giống phím Win+Shift+M.
@@ -23,9 +27,9 @@ Item {
     readonly property var actions: [
         { label: "Lock",      icon: "system-lock-screen", confirm: "",                         cmd: ["loginctl", "lock-session"] },
         { label: "Sleep",     icon: "system-suspend",     confirm: "",                         cmd: ["systemctl", "suspend"] },
-        { label: "Restart",   icon: "system-reboot",      confirm: "Click again to restart",   cmd: ["systemctl", "reboot"] },
-        { label: "Shut Down", icon: "system-shutdown",    confirm: "Click again to shut down", cmd: ["systemctl", "poweroff"] },
-        { label: "Log Out",   icon: "system-log-out",     confirm: "Click again to log out",   cmd: [] }
+        { label: "Restart",   icon: "system-reboot",      confirm: "Click again",              cmd: ["systemctl", "reboot"] },
+        { label: "Shut Down", icon: "system-shutdown",    confirm: "Click again",              cmd: ["systemctl", "poweroff"] },
+        { label: "Log Out",   icon: "system-log-out",     confirm: "Click again",              cmd: [] }
     ]
 
     // Dòng đang chờ bấm lần hai (-1 = không có).
@@ -50,6 +54,19 @@ Item {
             Hyprland.dispatch("hl.dsp.exit()")
     }
 
+    // Chữ rộng nhất trong menu, kể cả chữ xác nhận.
+    TextMetrics { id: m1; text: "Shut Down"; font: probe.font }
+    TextMetrics { id: m2; text: "Click again"; font: probe.font }
+    Text {
+        id: probe
+        visible: false
+        font.family: Colors.fonts.ui
+        font.weight: Colors.fonts.uiWeight
+        font.pixelSize: 24
+    }
+    // Mép thẻ → icon: 6 (lề thẻ) + 12 (lề dòng) = 18; icon 20 + khe 10.
+    readonly property int edge: 18
+
     visible: open
     width: card.width
     height: card.height
@@ -58,7 +75,7 @@ Item {
     // popup của fcitx5.
     Rectangle {
         id: card
-        width: 250
+        width: root.edge + 20 + 10 + Math.ceil(Math.max(m1.advanceWidth, m2.advanceWidth)) + root.edge
         height: list.implicitHeight + 12
         radius: 8
         color: Theme.c.card

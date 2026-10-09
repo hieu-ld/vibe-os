@@ -329,6 +329,21 @@
 //      Menu ☰ dựng lại mỗi lần mở (MainWindow::updateHamburgerMenu,
 //      26.08.1) → như mục 17: lúc polish + mỗi aboutToShow. Phím tắt Ctrl+Shift+M
 //      / Ctrl+Shift+B xoá ở konsole-ui.sh.
+//  56. Hộp Configure Konsole: icon trang nét Hugeicons (user 2026-10-09).
+//      Ba trang xin tên mà đổi chung là đổi chỗ khác — utilities-terminal
+//      (icon app), folder-temp (thư mục /tmp trong Dolphin), image-jpeg (loại
+//      file) — nên gán tên riêng samhie-konsole-*; ba trang còn lại (memory,
+//      preferences-desktop-theme, preferences-tabs) vẽ thẳng theo tên gốc
+//      trong bộ icon. Cùng cách mục 36.
+//  57. Find Action… (KCommandBar) bấm từ MENU không hiện (máy ảo user
+//      2026-10-09; Ctrl+Alt+I thì hiện): hành động chạy lúc menu còn là
+//      popup; ô gõ nhận focus rồi FocusOut lý do ActiveWindowFocusReason —
+//      popup đóng, cửa sổ thoáng mất kích hoạt trên Wayland (log container:
+//      FocusIn lý do 7 → FocusOut lý do 3, không còn popup nào) — và
+//      KCommandBar::eventFilter tự đóng (kcommandbar.cpp, KF 6.30). Lớp lọc
+//      trên ô gõ nuốt FocusOut vì popup / mất kích hoạt trong 1 s đầu sau khi
+//      hiện, lấy lại focus ở vòng sự kiện sau; sau đó chuyển cửa sổ khác thì
+//      nó vẫn tự đóng như cũ.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -417,6 +432,7 @@
 #include <QSet>
 #include <QTreeWidget>
 #include <QTimer>
+#include <QDateTime>
 #include <QToolButton>
 #include <QUrl>
 
@@ -877,6 +893,29 @@ public:
     bool eventFilter(QObject *, QEvent *event) override
     {
         return event->type() == QEvent::Paint;
+    }
+};
+
+// Mục 57: ô gõ của KCommandBar không đóng vì popup (menu) vừa đóng. Lọc này
+// cài SAU lọc của KCommandBar nên chạy TRƯỚC nó.
+class KeepCommandBarFocus : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() == QEvent::Show)
+            obj->setProperty("samhieShownAt", QDateTime::currentMSecsSinceEpoch());
+        if (event->type() != QEvent::FocusOut)
+            return false;
+        const Qt::FocusReason reason = static_cast<QFocusEvent *>(event)->reason();
+        const qint64 age = QDateTime::currentMSecsSinceEpoch() - obj->property("samhieShownAt").toLongLong();
+        if (reason != Qt::PopupFocusReason && !(reason == Qt::ActiveWindowFocusReason && age < 1000))
+            return false;
+        auto *w = static_cast<QWidget *>(obj);
+        QTimer::singleShot(0, w, [w] { w->setFocus(Qt::OtherFocusReason); });
+        return true;
     }
 };
 
@@ -2716,7 +2755,17 @@ public:
         // sau một nhịp, khi hộp thoại đã thêm đủ trang.
         if (w->inherits("KDEPrivate::KPageListView")) {
             QTimer::singleShot(0, w, [w] {
-                if (!w->window()->inherits("DolphinSettingsDialog"))
+                // Mục 36 (Dolphin) và 56 (Konsole): tên gốc → tên riêng.
+                static const QHash<QString, QString> dolphin = {
+                    {QStringLiteral("org.kde.dolphin"), QStringLiteral("samhie-settings-interface")}};
+                static const QHash<QString, QString> konsole = {
+                    {QStringLiteral("utilities-terminal"), QStringLiteral("samhie-konsole-general")},
+                    {QStringLiteral("folder-temp"), QStringLiteral("samhie-konsole-tempfiles")},
+                    {QStringLiteral("image-jpeg"), QStringLiteral("samhie-konsole-thumbnails")}};
+                const QHash<QString, QString> *icons = w->window()->inherits("DolphinSettingsDialog") ? &dolphin
+                    : w->window()->inherits("Konsole::ConfigurationDialog")                            ? &konsole
+                                                                                                        : nullptr;
+                if (!icons)
                     return;
                 const QWidget *a = w->parentWidget();
                 while (a && !qobject_cast<const KPageView *>(a))
@@ -2724,13 +2773,15 @@ public:
                 auto *model = a ? qobject_cast<KPageWidgetModel *>(static_cast<const KPageView *>(a)->model()) : nullptr;
                 for (int r = 0; model && r < model->rowCount(); ++r) {
                     KPageWidgetItem *item = model->item(model->index(r, 0));
-                    if (item && item->icon().name() == QLatin1String("org.kde.dolphin"))
-                        item->setIcon(QIcon::fromTheme(QStringLiteral("samhie-settings-interface")));
+                    if (item && icons->contains(item->icon().name()))
+                        item->setIcon(QIcon::fromTheme(icons->value(item->icon().name())));
                 }
             });
         }
         if (w->inherits("TabConnectedWidget"))
             w->installEventFilter(&m_noPaint);  // mục 30
+        if (qobject_cast<QLineEdit *>(w) && w->parentWidget() && w->parentWidget()->inherits("KCommandBar"))
+            w->installEventFilter(&m_keepCommandBarFocus);  // mục 57
         if (w->inherits("KPropertiesDialog"))  // mục 53
             w->installEventFilter(&m_propsSetup);
         if (w->inherits("Baloo::FileMetaDataWidget"))
@@ -2879,6 +2930,7 @@ public:
         w->removeEventFilter(&m_hideDock);
         w->removeEventFilter(&m_popupAnchor);
         w->removeEventFilter(&m_noPaint);
+        w->removeEventFilter(&m_keepCommandBarFocus);
         w->removeEventFilter(&m_crumbIndent);
         w->removeEventFilter(&m_propsSetup);
         w->removeEventFilter(&m_detailsAlign);
@@ -3664,6 +3716,7 @@ private:
     HideDock m_hideDock;
     PopupAnchor m_popupAnchor;
     NoPaint m_noPaint;
+    KeepCommandBarFocus m_keepCommandBarFocus;
     CrumbIndent m_crumbIndent;
     PropertiesDialogSetup m_propsSetup;
     DetailsAlign m_detailsAlign;

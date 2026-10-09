@@ -143,8 +143,10 @@ MAP = {
     "filter":     [("actions", "view-filter")],
     # Zoom (Dolphin ẩn dòng Zoom trong menu ▦ — style mục 24 — nhưng tên chuẩn
     # còn hiện ở app khác: trình xem ảnh/PDF).
-    "zoom-in":    [("actions", "zoom-in")],
-    "zoom-out":   [("actions", "zoom-out")],
+    "zoom-in":    [("actions", "zoom-in"),
+                   ("actions", "format-font-size-more")],   # Enlarge Font (Konsole)
+    "zoom-out":   [("actions", "zoom-out"),
+                   ("actions", "format-font-size-less")],   # Shrink Font (Konsole)
     "zoom-default": [("actions", "zoom-original")],
     # Hành động KDE (menu chỉ có chữ từ 2026-10-06, nhưng tên vẫn hiện ở
     # thanh công cụ, hộp thoại, nút bấm).
@@ -159,13 +161,17 @@ MAP = {
     "refresh":    [("actions", "view-refresh")],
     "split":      [("actions", "view-split-left-right")],
     "bookmark":   [("actions", "bookmarks")],
-    "settings":   [("actions", "configure")],
+    "settings":   [("actions", "configure"),
+                   # Configure Konsole… (Konsole xin settings-configure trước,
+                   # Breeze có tên đó nên không rơi về configure)
+                   ("actions", "settings-configure")],
     # Hộp thoại Configure Dolphin (user 2026-10-07; tên đo trong mã Dolphin
     # 26.08.1): nút chọn thư mục cạnh ô đường dẫn khởi động (16px,
     # folderstabssettingspage.cpp) và icon trang Context Menu (32px,
     # dolphinsettingsdialog.cpp). folder-open KHÔNG phải thư mục trong vùng
     # file (đó là `folder`, tools/build-folder-icons.py).
-    "folder":     [("actions", "folder-open")],
+    "folder":     [("actions", "folder-open"),
+                   ("actions", "system-file-manager-symbolic")],  # Open File Manager (Konsole)
     "context-menu": [("actions", "preferences-desktop-menu-edit")],
     # Tab General / Content Display của trang View (16px, viewsettingspage.cpp).
     # view-choose còn là "Adjust View Display Style…" — Samhie đã ẩn hành động đó.
@@ -177,7 +183,8 @@ MAP = {
     # Danh sách Configure Dolphin → Context Menu (16px). Tên chung (icon hành
     # động, đổi ở đâu cũng hợp) …
     "bookmark-plus": [("actions", "bookmark-new")],      # Add to Places, Add Bookmark
-    "duplicate":  [("actions", "edit-duplicate")],
+    "duplicate":  [("actions", "edit-duplicate"),
+                   ("actions", "tab-duplicate")],          # Clone Tab (Konsole)
     "new-windows": [("actions", "window-new")],
     "sort":       [("actions", "view-sort")],
     "hide":       [("actions", "hide_table_row"),        # tên của plugin Hide (KIO)
@@ -243,6 +250,38 @@ MAP = {
     # 16px — style "samhie" mục 50 hiện icon ở menu đó). Tên chung: ở đâu
     # khác cũng là "chạy/chọn chương trình".
     "open-with":  [("actions", "system-run")],
+    # Konsole (user 2026-10-09, nhờ Claude tìm): hộp Configure Konsole (trang,
+    # 32px) và Configure Keyboard Shortcuts / Notifications (16px). Tên đo
+    # trong mã Konsole 26.08.1 (MainWindow, SessionController, ViewManager)
+    # và KNotifyConfig — chỉ những tên còn rơi về Breeze.
+    # Trang: tên gốc utilities-terminal (icon app), folder-temp (thư mục
+    # /tmp trong Dolphin), image-jpeg (loại file JPEG) đổi chung là đổi chỗ
+    # khác → style "samhie" mục 56 gán tên riêng cho đúng trang.
+    "konsole-general": [("actions", "samhie-konsole-general")],
+    "konsole-profiles": [("actions", "preferences-desktop-theme")],
+    "memory":     [("actions", "memory")],
+    "tab-bar":    [("actions", "preferences-tabs")],
+    "temp-files": [("actions", "samhie-konsole-tempfiles")],
+    "thumbnails": [("actions", "samhie-konsole-thumbnails")],
+    # Hành động Konsole (danh sách phím tắt, Find Action…)
+    "info":       [("actions", "help-about"),            # About Konsole
+                   # cột State + dòng "Show a message in a popup" của
+                   # Configure Notifications; hộp thông báo QMessageBox
+                   ("status", "dialog-information")],
+    "play":       [("actions", "media-playback-start")], # "Play a sound"
+    "encoding":   [("actions", "character-set")],        # Set Encoding
+    "clear-history": [("actions", "edit-clear-history")],  # Clear Scrollback
+    "select-text": [("actions", "edit-select")],          # Select Mode
+    "exchange":   [("actions", "exchange-positions")],   # Swap panes
+    "mouse":      [("actions", "input-mouse-symbolic")], # Allow Mouse Tracking
+    "plugins":    [("actions", "plugins")],
+    "web-search": [("actions", "preferences-web-browser-shortcuts")],  # Search for … with
+    "quick-commands": [("actions", "quickopen")],
+    "detach":     [("actions", "tab-detach")],
+    "fullscreen": [("actions", "view-fullscreen")],
+    "split-top-bottom": [("actions", "view-split-top-bottom")],
+    "split-auto": [("actions", "view-split-auto")],
+    "monitor":    [("actions", "visibility")],           # menu View (Monitor for …)
     # Icon loại file (user 2026-10-08/09): vùng file Dolphin, tab General hộp
     # Properties (48px). Mỗi hình ra MỘT tên chính ở đây; mọi tên loại file
     # khác của Breeze (~500) là liên kết tới tên chính, do
@@ -335,7 +374,8 @@ SIZE = {
          "bluetooth", "wifi", "wifi-2", "wifi-1", "wifi-0",
          "volume-mute", "volume-35", "volume-70", "volume-full"],
     22: ["icons", "details", "menu", "search", "prev", "next"],
-    32: ["context-menu", "interface"],
+    32: ["context-menu", "interface", "konsole-general", "konsole-profiles", "memory",
+         "tab-bar", "temp-files", "thumbnails"],
 }
 
 
@@ -450,6 +490,17 @@ NUDGE = {
     "redo": (16, 0.25, 0.125),           # mờ 0.46 → 0.34
     "restore": (16, -0.5, 0.375),        # mờ 0.54 → 0.42
     "sidebar": (16, -0.5, -0.5),         # mờ 0.71 → 0.16
+    # Konsole (2026-10-09)
+    "detach": (16, -0.5, -0.5),          # mờ 0.54 → 0.43
+    "exchange": (16, 0.125, -0.5),       # mờ 0.76 → 0.17
+    "fullscreen": (16, -0.5, -0.5),      # mờ 0.73 → 0.42
+    "mouse": (16, -0.5, 0),              # mờ 0.56 → 0.33
+    "quick-commands": (16, -0.5, -0.5),  # mờ 0.62 → 0.23
+    "select-text": (16, 0.125, 0.375),   # mờ 0.46 → 0.37
+    "split-auto": (16, -0.5, -0.5),      # mờ 0.61 → 0.31
+    "split-top-bottom": (16, -0.375, -0.5),  # mờ 0.59 → 0.37
+    "temp-files": (32, 0.25, 0.375),     # mờ 0.27 → 0.20
+    "thumbnails": (32, -0.5, -0.5),      # mờ 0.29 → 0.19
     "swap": (16, 0.125, -0.5),           # mờ 0.76 → 0.17
     "undo": (16, -0.25, 0.125),          # mờ 0.46 → 0.35
     # Menu Symbol (2026-10-08)

@@ -314,6 +314,21 @@
 //      Menu do mã Konsole dựng (TabbedViewContainer, cha là dải tab), mục có
 //      objectName "edit-rename" — bỏ lúc polish (menu hiện lần đầu, đã đủ
 //      mục). Bấm đúp tab vẫn mở hộp đó (còn đổi được màu tab).
+//  55. Menu ☰ Konsole ("Menu" ở cuối menu chuột phải; thanh menu ẩn) gọn như
+//      ☰ Dolphin (user 2026-10-09): bỏ More (Show Menubar + bản chép
+//      File/Edit/View/Settings — hiện thanh menu KDE cũ là vỡ bố cục, và lộ lại
+//      Read-Only / Mouse Tracking / Set Encoding mà konsole-ui.sh đã gỡ khỏi
+//      menu chuột phải), Bookmarks, Switch Profile, Create New Profile; tầng
+//      Settings phẳng ra (mục 29: Configure Keyboard Shortcuts… + Configure
+//      Notifications… + Configure Konsole…, bỏ Toolbars Shown / Configure
+//      Toolbars / Configure Language); Help như mục 40. Profile "Built-in"
+//      (giao diện gốc Konsole, bấm nhầm mất theme) bỏ khỏi mọi danh sách
+//      profile (New Tab ›, nút + giữ chuột) — Konsole luôn tự thêm nó
+//      (ProfileManager), không có cấu hình ẩn; nhận theo chữ (giao diện chốt
+//      tiếng Anh). Configure Konsole → Profiles vẫn quản lý được profile.
+//      Menu ☰ dựng lại mỗi lần mở (MainWindow::updateHamburgerMenu,
+//      26.08.1) → như mục 17: lúc polish + mỗi aboutToShow. Phím tắt Ctrl+Shift+M
+//      / Ctrl+Shift+B xoá ở konsole-ui.sh.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -2451,6 +2466,10 @@ public:
                 }
             });
         }
+        if (auto *menu = qobject_cast<QMenu *>(w); menu && QCoreApplication::applicationName() == QLatin1String("konsole")) {
+            trimKonsoleMenu(menu);  // mục 55 — chỉ gỡ khi menu có đúng các mục đó
+            QObject::connect(menu, &QMenu::aboutToShow, menu, [menu] { trimKonsoleMenu(menu); });
+        }
         if (qobject_cast<QMenu *>(w) && w->parentWidget() && w->parentWidget()->inherits("DolphinTabBar"))
             trimTabMenu(static_cast<QMenu *>(w));  // mục 19
         if (auto *menu = qobject_cast<QMenu *>(w); menu && qobject_cast<QTabBar *>(w->parentWidget())
@@ -3534,6 +3553,18 @@ private:
         }
     }
 
+    static void trimKonsoleMenu(QMenu *menu)  // mục 55
+    {
+        for (QAction *a : menu->actions()) {
+            if (a->objectName() == QLatin1String("bookmark") || a->objectName() == QLatin1String("switch-profile")
+                || a->objectName() == QLatin1String("edit-current-profile")
+                || QString(a->text()).remove(QLatin1Char('&')) == QLatin1String("Built-in"))
+                menu->removeAction(a);
+        }
+        flattenHamburgerConfigure(menu);
+        trimHamburgerMoreHelp(menu);
+    }
+
     static void trimHamburgerMoreHelp(QMenu *menu)  // mục 40
     {
         for (QAction *a : menu->actions()) {
@@ -3561,17 +3592,28 @@ private:
             QMenu *sub = a->menu();
             if (!sub)
                 continue;
-            QAction *keys = nullptr, *prefs = nullptr;
+            QAction *keys = nullptr, *notify = nullptr, *prefs = nullptr;
+            bool language = false;
             for (QAction *s : sub->actions()) {
                 if (s->objectName() == QLatin1String("options_configure_keybinding"))
                     keys = s;
+                else if (s->objectName() == QLatin1String("options_configure_notifications"))
+                    notify = s;  // Konsole (mục 55); ☰ Dolphin không có
                 else if (s->objectName() == QLatin1String("options_configure"))
                     prefs = s;
+                else if (s->objectName() == QLatin1String("switch_application_language"))
+                    language = true;
             }
-            if (!prefs)
+            // Dấu nhận tầng Configure: có Configure Language. Không có dấu này
+            // thì "Menu ›" cuối menu chuột phải Konsole (= ☰ ĐÃ phẳng, chứa
+            // thẳng Configure Konsole…) bị làm phẳng nhầm vào menu chuột phải
+            // (container 2026-10-09).
+            if (!prefs || !language)
                 continue;
             if (keys)
                 menu->insertAction(a, keys);
+            if (notify)
+                menu->insertAction(a, notify);
             menu->insertAction(a, prefs);
             menu->removeAction(a);
             return;

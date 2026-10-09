@@ -243,10 +243,44 @@ MAP = {
     # 16px — style "samhie" mục 50 hiện icon ở menu đó). Tên chung: ở đâu
     # khác cũng là "chạy/chọn chương trình".
     "open-with":  [("actions", "system-run")],
-    # Hộp Properties (user 2026-10-08). File .txt (mime text/plain): icon ở
-    # tab General (48px) và vùng file Dolphin. Chỉ text-plain — loại chữ khác
-    # (markdown, log…) có tên riêng, vẫn lấy Breeze trước khi rơi về đây.
+    # Icon loại file (user 2026-10-08/09): vùng file Dolphin, tab General hộp
+    # Properties (48px). Mỗi hình ra MỘT tên chính ở đây; mọi tên loại file
+    # khác của Breeze (~500) là liên kết tới tên chính, do
+    # tools/build-mime-icons.py xếp nhóm. Loại phổ biến có nhãn chữ (kiểu
+    # Hugeicons *-02), còn lại theo nhóm (file-*).
     "txt":        [("mimetypes", "text-plain")],
+    "pdf":        [("mimetypes", "application-pdf")],
+    "doc":        [("mimetypes", "x-office-document")],
+    "xls":        [("mimetypes", "x-office-spreadsheet")],
+    "ppt":        [("mimetypes", "x-office-presentation")],
+    "csv":        [("mimetypes", "text-csv")],
+    "zip":        [("mimetypes", "application-zip")],
+    "rar":        [("mimetypes", "application-vnd.rar")],
+    "jpg":        [("mimetypes", "image-jpeg")],
+    "png":        [("mimetypes", "image-png")],
+    "svg":        [("mimetypes", "image-svg+xml")],
+    "gif":        [("mimetypes", "image-gif")],
+    "html":       [("mimetypes", "text-html")],
+    "css":        [("mimetypes", "text-css")],
+    "xml":        [("mimetypes", "application-xml")],
+    "wav":        [("mimetypes", "audio-x-wav")],
+    "file-text":  [("mimetypes", "text-x-generic")],
+    "file-code":  [("mimetypes", "text-x-script")],
+    "file-terminal": [("mimetypes", "application-x-shellscript")],
+    "file-braces": [("mimetypes", "application-json")],
+    "file-cog":   [("mimetypes", "application-x-desktop")],
+    "file-image": [("mimetypes", "image-x-generic")],
+    "file-video": [("mimetypes", "video-x-generic")],
+    "file-music": [("mimetypes", "audio-x-generic")],
+    "file-zip":   [("mimetypes", "package-x-generic")],
+    "file-box":   [("mimetypes", "application-x-rpm")],
+    "file-database": [("mimetypes", "application-vnd.sqlite3")],
+    "file-type":  [("mimetypes", "font-x-generic")],
+    "file-key":   [("mimetypes", "application-pgp-keys")],
+    "file-digit": [("mimetypes", "application-octet-stream")],
+    "file-question-mark": [("mimetypes", "unknown")],
+    # Chọn nhiều file → hộp Properties (KIO, 48px).
+    "files":      [("actions", "document-multiple")],
     # Sao Rating, tab Details (KRatingPainter, KF 6.30): sao đã chọn = `rating`,
     # chưa chọn = `rating-unrated` (thiếu thì KDE làm mờ `rating` — sao rỗng
     # và sao chọn chỉ khác độ mờ). star-full = star tô kín.

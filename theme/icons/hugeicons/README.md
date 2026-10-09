@@ -27,6 +27,14 @@ user nhờ tìm): Claude lấy `dashboard-square-add` từ repo, đổi `#141B34
 `currentColor`.
 `txt` (file .txt) và `star` (sao Rating) user tải 2026-10-08 cho hộp
 Properties, đối chiếu cùng commit: trùng nét `txt-02` và `star`.
+Ba mươi icon LOẠI FILE (2026-10-09, user chọn kiểu "nhãn + nhóm" từ bảng
+Claude đề xuất): Claude lấy thẳng từ repo ở commit trên, đổi `#141B34` →
+`currentColor`. Có nhãn: `pdf` `doc` `xls` `ppt` `csv` `zip` `rar` `jpg`
+`png` `svg` `gif` `wav` `xml` = `<tên>-02`; `html` = `html-file-02`, `css` =
+`css-file-02`. Theo nhóm (giữ tên gốc): `file-text` `file-code`
+`file-terminal` `file-braces` `file-cog` `file-image` `file-video`
+`file-music` `file-zip` `file-box` `file-database` `file-type` `file-key`
+`file-digit` `file-question-mark`; `files` = `files-01` (chọn nhiều file).
 Mỗi file đã đối chiếu với thư mục `icons/` của repo ở commit trên: nét vẽ
 (`d`, toạ độ) trùng khớp một icon free — nên không có icon Pro nào lọt vào
 (icon Pro KHÔNG được đưa vào mã nguồn mở, xem README của repo đó).

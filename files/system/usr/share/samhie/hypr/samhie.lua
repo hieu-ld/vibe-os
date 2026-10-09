@@ -361,6 +361,18 @@ for class, fraction in pairs(snap.float) do
     })
 end
 
+-- Hộp thoại KDE chạy thành chương trình RIÊNG (không phải hộp thoại con nên
+-- Hyprland không tự cho nổi): xếp kín cả màn thì nằm DƯỚI Dolphin đang nổi —
+-- user bấm Properties → Change… không thấy cửa sổ (máy ảo 2026-10-09).
+-- Cho nổi giữa màn, cỡ do app tự chọn.
+--   org.kde.keditfiletype: nút "Change…" của Properties (KMimeTypeEditor).
+hl.window_rule({
+    name   = "float-kde-helpers",
+    match  = { class = "^(org\\.kde\\.keditfiletype)$" },
+    float  = true,
+    center = true,
+})
+
 -- Sửa lỗi kéo thả của app XWayland (cũng lấy từ mẫu upstream).
 hl.window_rule({
     name  = "fix-xwayland-drags",

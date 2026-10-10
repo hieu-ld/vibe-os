@@ -353,6 +353,11 @@
 //      directory" của Edit Profile ô hover 24×16, ▶ "Play a sound" của
 //      Configure Notifications (user 2026-10-09: "ô hover vẫn bị lùn").
 //      Nút trong ô nhập, trên thanh công cụ, mũi tên cuộn dải tab giữ nguyên.
+//  59. Ô chọn dự án đầu khung Projects của Kate vẽ phẳng thành tên dự án (bản
+//      phác Figma của user 2026-10-10): không khung, không icon; nền hover
+//      như nút công cụ (vẫn bấm được để chuyển dự án); mũi tên ▾ chỉ hiện
+//      khi đang mở từ 2 dự án — một dự án thì danh sách chỉ có chính nó.
+//      Plugin Kate (kate/) đánh dấu ô bằng thuộc tính samhieFlatCombo.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -3231,6 +3236,25 @@ public:
                 return;
             }
         }
+        // Mục 59: ô chọn dự án của Kate — tên phẳng, ▾ khi có từ 2 dự án
+        if (cc == CC_ComboBox && w && w->property("samhieFlatCombo").toBool()) {
+            if (auto *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
+                if (cb->state & (State_MouseOver | State_On)) {
+                    QStyleOptionToolButton panel;
+                    panel.QStyleOption::operator=(*cb);
+                    panel.state = (cb->state & (State_Enabled | State_MouseOver | State_On)) | State_AutoRaise | State_Raised;
+                    proxy()->drawPrimitive(PE_PanelButtonTool, &panel, p, w);
+                }
+                auto *combo = qobject_cast<const QComboBox *>(w);
+                if (combo && combo->count() >= 2) {
+                    QStyleOption arrow(*cb);
+                    arrow.rect = proxy()->subControlRect(CC_ComboBox, cb, SC_ComboBoxArrow, w);
+                    arrow.state &= ~(State_MouseOver | State_On | State_Sunken);
+                    proxy()->drawPrimitive(PE_IndicatorArrowDown, &arrow, p, w);
+                }
+                return;
+            }
+        }
         // Mục 20: ô sửa đường dẫn không viền focus cyan. Kvantum (CC_ComboBox,
         // combo_as_lineedit) hỏi thẳng cb->hasFocus() chứ không chỉ đọc state
         // → bỏ cờ focus VÀ không đưa widget (chỉ dùng để hỏi focus / ô nhập
@@ -3254,6 +3278,16 @@ public:
     {
         // Mục 53: "&" trong chữ ô chọn là chữ thật (QComboBox không có phím
         // tắt trong chữ) — Kvantum vẽ như nhãn nút, "&" thành gạch phím tắt.
+        if (ce == CE_ComboBoxLabel && w && w->property("samhieFlatCombo").toBool()) {
+            if (auto *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
+                QStyleOptionComboBox o(*cb);  // mục 59: không icon
+                o.currentIcon = QIcon();
+                o.iconSize = QSize();
+                o.currentText.replace(QLatin1Char('&'), QLatin1String("&&"));
+                QProxyStyle::drawControl(ce, &o, p, w);
+                return;
+            }
+        }
         if (ce == CE_ComboBoxLabel) {
             if (auto *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt);
                 cb && cb->currentText.contains(QLatin1Char('&'))) {

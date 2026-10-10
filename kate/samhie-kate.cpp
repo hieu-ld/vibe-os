@@ -34,7 +34,8 @@
 //      trên thanh hamburgerBar, thanh đó ẩn cùng mainToolBar. Mỗi view space
 //      (khi chia đôi) có hàng tab riêng; nút chỉ nằm ở view space trên cùng
 //      bên phải, góc cửa sổ như VS Code. Thanh hamburgerBar (giờ trống) ẩn.
-//    - Đầu khung Projects: bỏ nút ✕ (đóng dự án), thêm « thu khung lại. Đóng
+//    - Đầu khung Projects: ô chọn dự án vẽ phẳng thành tên (style samhie mục
+//      59 — plugin chỉ đánh dấu), bỏ nút ✕ (đóng dự án), thêm « thu khung. Đóng
 //      dự án (hiếm dùng) còn ở Ctrl+Alt+I › "Close Project" — menu Projects
 //      đã ẩn ở mục 2.
 
@@ -308,6 +309,8 @@ private:
     void fixProjectHeader(QHBoxLayout *row, QWidget *toolView)
     {
         row->itemAt(2)->widget()->hide();
+        // Ô chọn dự án vẽ phẳng thành tên (style samhie, mục 59)
+        row->itemAt(0)->widget()->setProperty("samhieFlatCombo", true);
         auto *collapse = new QToolButton(toolView);
         collapse->setAutoRaise(true);
         collapse->setIcon(QIcon::fromTheme(QStringLiteral("sidebar-collapse-left")));

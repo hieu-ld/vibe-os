@@ -26,6 +26,17 @@
 // 3. Ẩn ô "Filter…" dưới cây thư mục Projects (VS Code không có; tìm file
 //    dùng Ctrl+Alt+O hoặc Search). Ô này là KLineEdit con trực tiếp của
 //    KateProjectView (kateprojectview.cpp), mỗi dự án mở ra một cái.
+//
+// 4. Bố cục theo bản phác Figma của user (2026-10-10):
+//    - Nút ☰ ở cuối hàng tab, sau quick open + split. Thanh menu ẩn hẳn bằng
+//      khoá của chính Kate (Show Menu Bar=false, /etc/xdg/katerc); nút là hành
+//      động "hamburger_menu" có sẵn của Kate (KHamburgerMenu) — Kate đặt nó
+//      trên thanh hamburgerBar, thanh đó ẩn cùng mainToolBar. Mỗi view space
+//      (khi chia đôi) có hàng tab riêng; nút chỉ nằm ở view space trên cùng
+//      bên phải, góc cửa sổ như VS Code. Thanh hamburgerBar (giờ trống) ẩn.
+//    - Đầu khung Projects: bỏ nút ✕ (đóng dự án), thêm « thu khung lại. Đóng
+//      dự án (hiếm dùng) còn ở Ctrl+Alt+I › "Close Project" — menu Projects
+//      đã ẩn ở mục 2.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -38,12 +49,16 @@
 #include <KTextEditor/View>
 #include <KXMLGUIClient>
 #include <KXMLGUIFactory>
+#include <KXmlGuiWindow>
 #include <kde_terminal_interface.h>
 
 #include <QAction>
 #include <QApplication>
+#include <QComboBox>
 #include <QDir>
 #include <QFileInfo>
+#include <QGridLayout>
+#include <QHBoxLayout>
 #include <QIcon>
 #include <QKeyEvent>
 #include <QLineEdit>
@@ -54,8 +69,10 @@
 #include <QStackedWidget>
 #include <QTabWidget>
 #include <QTimer>
+#include <QToolButton>
 #include <QTreeView>
 #include <QVBoxLayout>
+#include <QWidgetAction>
 
 namespace
 {
@@ -88,6 +105,28 @@ bool isProjectFilter(QLineEdit *edit)
     QLayout *layout = view ? view->layout() : nullptr;
     return layout && layout->count() == 2 && qobject_cast<QTreeView *>(layout->itemAt(0)->widget())
         && layout->itemAt(1)->widget() == edit && qobject_cast<QStackedWidget *>(view->parentWidget());
+}
+
+// Hàng [ô chọn dự án, ⟳, ✕] đầu khung Projects (kateprojectpluginview.cpp):
+// một QHBoxLayout trong layout của khung, ô chọn đứng đầu. Sau khi plugin sửa,
+// hàng có 4 mục nên không khớp lần hai.
+QHBoxLayout *projectHeader(QComboBox *combo)
+{
+    QWidget *toolView = combo->parentWidget();
+    QLayout *outer = toolView ? toolView->layout() : nullptr;
+    for (int i = 0; outer && i < outer->count(); ++i) {
+        auto *row = qobject_cast<QHBoxLayout *>(outer->itemAt(i)->layout());
+        if (row && row->count() == 3 && row->itemAt(0)->widget() == combo && qobject_cast<QToolButton *>(row->itemAt(1)->widget())
+            && qobject_cast<QToolButton *>(row->itemAt(2)->widget())) {
+            return row;
+        }
+    }
+    return nullptr;
+}
+
+bool isViewSpace(const QObject *obj)
+{
+    return obj->inherits("KateViewSpace");
 }
 
 void trimMenuBar(QMenuBar *bar)
@@ -202,6 +241,9 @@ public:
         // nạp sau, đổi view thì phần editor gỡ ra lắp vào).
         if (auto *win = qobject_cast<QMainWindow *>(m_mw->window())) {
             m_menuBar = win->menuBar();
+            if (auto *xmlWin = dynamic_cast<KXmlGuiWindow *>(win)) {
+                m_showMenuBar = xmlWin->actionCollection()->action(QStringLiteral("options_show_menubar"));
+            }
             m_menuBar->installEventFilter(this);
             trimMenuBar(m_menuBar);
         }
@@ -219,8 +261,34 @@ public:
             }
             break;
         case QEvent::Show:
+            // Kate ẩn thanh menu theo Show Menu Bar=false rồi có thứ hiện lại
+            // (đo container: khoá false mà thanh vẫn hiện; chưa rõ ai — nghi
+            // KXmlGui dựng lại thanh khi plugin thêm menu). Giữ đúng ý khoá.
+            if (obj == m_menuBar && m_showMenuBar && !m_showMenuBar->isChecked()) {
+                QTimer::singleShot(0, m_menuBar, &QWidget::hide);
+            }
+            // Thanh hamburgerBar của Kate (kateui.rc) chỉ chứa nút ☰ — nút đã
+            // về hàng tab, thanh này để lại một dải trống trên cùng cửa sổ.
+            // Trạng thái hiện/ẩn thanh được nhớ trong katestaterc nên bắt ở đây
+            // thay vì sửa file .rc (tài khoản cũ không nhận).
+            if (obj->objectName() == QLatin1String("hamburgerBar") && obj->inherits("KToolBar")) {
+                QTimer::singleShot(0, static_cast<QWidget *>(obj), &QWidget::hide);
+            }
             if (auto *edit = qobject_cast<QLineEdit *>(obj); edit && isProjectFilter(edit)) {
                 edit->hide();
+            } else if (auto *combo = qobject_cast<QComboBox *>(obj)) {
+                if (QHBoxLayout *row = projectHeader(combo)) {
+                    fixProjectHeader(row, combo->parentWidget());
+                }
+            }
+            if (isViewSpace(obj)) {
+                schedulePlaceMenuButton();
+            }
+            break;
+        case QEvent::Hide:
+        case QEvent::Resize:
+            if (isViewSpace(obj)) {
+                schedulePlaceMenuButton();
             }
             break;
         default:
@@ -235,6 +303,95 @@ public:
     }
 
 private:
+    // ✕ ẩn, thêm « thu khung (hideToolView nhận đúng widget mà createToolView
+    // trả về — ô chọn dự án là con trực tiếp của nó)
+    void fixProjectHeader(QHBoxLayout *row, QWidget *toolView)
+    {
+        row->itemAt(2)->widget()->hide();
+        auto *collapse = new QToolButton(toolView);
+        collapse->setAutoRaise(true);
+        collapse->setIcon(QIcon::fromTheme(QStringLiteral("sidebar-collapse-left")));
+        collapse->setToolTip(QStringLiteral("Hide Sidebar"));
+        connect(collapse, &QToolButton::clicked, this, [this, toolView] {
+            m_mw->hideToolView(toolView);
+        });
+        row->addWidget(collapse);
+    }
+
+    // Đổi bố cục (chia đôi, đóng view space, kéo khung) sinh cả loạt sự kiện —
+    // gom lại, xếp một lần sau vòng sự kiện
+    void schedulePlaceMenuButton()
+    {
+        if (!m_placePending) {
+            m_placePending = true;
+            QTimer::singleShot(0, this, &SamhieKateView::placeMenuButton);
+        }
+    }
+
+    void placeMenuButton()
+    {
+        m_placePending = false;
+        QWidget *win = m_mw->window();
+        QWidget *target = nullptr;
+        QPoint best;
+        for (QWidget *vs : win->findChildren<QWidget *>()) {
+            if (!isViewSpace(vs) || !vs->isVisible()) {
+                continue;
+            }
+            const QPoint corner = vs->mapTo(win, QPoint(vs->width(), 0));
+            if (!target || corner.y() < best.y() || (corner.y() == best.y() && corner.x() > best.x())) {
+                target = vs;
+                best = corner;
+            }
+        }
+        auto *grid = target ? qobject_cast<QGridLayout *>(target->layout()) : nullptr;
+        if (!grid || (m_menuButton && m_menuButton->parentWidget() == target)) {
+            return;
+        }
+        if (!m_menuButton) {
+            auto *xmlWin = dynamic_cast<KXmlGuiWindow *>(win);
+            auto *action = xmlWin ? qobject_cast<QWidgetAction *>(xmlWin->actionCollection()->action(QStringLiteral("hamburger_menu"))) : nullptr;
+            m_menuButton = action ? action->requestWidget(target) : nullptr;
+            if (!m_menuButton) {
+                return;
+            }
+        } else if (auto *oldGrid = qobject_cast<QGridLayout *>(m_menuButton->parentWidget()->layout())) {
+            oldGrid->removeWidget(m_menuButton);
+            m_menuButton->setParent(target);
+        }
+        if (auto *button = qobject_cast<QToolButton *>(m_menuButton.data())) {
+            button->setAutoRaise(true);
+        }
+        grid->addWidget(m_menuButton, 0, menuColumn(target, grid));
+        m_menuButton->show();
+    }
+
+    // Cột cho nút ☰: thêm một cột sau nút split và nới hàng breadcrumb + vùng
+    // editor (đang trải hết số cột cũ) sang cả cột mới — không thì editor hụt
+    // đúng bề ngang nút. Mỗi view space chỉ nới một lần (nút đi rồi quay lại).
+    static int menuColumn(QWidget *viewSpace, QGridLayout *grid)
+    {
+        static const char *const key = "samhieMenuColumn";
+        if (const QVariant col = viewSpace->property(key); col.isValid()) {
+            return col.toInt();
+        }
+        const int col = grid->columnCount();
+        QList<std::tuple<QWidget *, int, int>> wide; // widget, hàng, số hàng — trải từ cột 0 tới hết
+        for (int i = 0; i < grid->count(); ++i) {
+            int r, c, rs, cs;
+            grid->getItemPosition(i, &r, &c, &rs, &cs);
+            if (c == 0 && cs == col && grid->itemAt(i)->widget()) {
+                wide.append({grid->itemAt(i)->widget(), r, rs});
+            }
+        }
+        for (auto [w, r, rs] : wide) {
+            grid->removeWidget(w);
+            grid->addWidget(w, r, 0, rs, col + 1);
+        }
+        viewSpace->setProperty(key, col);
+        return col;
+    }
+
     // Thư mục mở terminal: gốc dự án đang mở → thư mục của file đang xem → home
     QString startDirectory()
     {
@@ -345,6 +502,9 @@ private Q_SLOTS:
 private:
     KTextEditor::MainWindow *m_mw;
     QPointer<QMenuBar> m_menuBar;
+    QPointer<QAction> m_showMenuBar; // Ctrl+M của Kate
+    QPointer<QWidget> m_menuButton;
+    bool m_placePending = false;
     QPointer<TerminalTab> m_lastTerminal;
     QPointer<QWidget> m_lastEditor;
 };

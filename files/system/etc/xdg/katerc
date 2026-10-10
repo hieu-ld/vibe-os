@@ -12,3 +12,7 @@
 # user thấy nó mở sẵn, đầy cảnh báo "không tìm thấy pylsp/clangd"). Số đếm
 # lỗi vẫn hiện trên nút Diagnostics. 0 = Never (kateconfigdialog.cpp).
 Show output view for message type=0
+
+# Thanh menu ẩn — mọi menu nằm trong nút ☰ cuối hàng tab (plugin samhiekate,
+# bản phác Figma của user 2026-10-10). Ctrl+M hiện lại. Tài khoản cũ: user-setup 0i.
+Show Menu Bar=false

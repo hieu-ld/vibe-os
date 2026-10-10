@@ -254,6 +254,21 @@ if [ ! -e "$kate_marker" ] && command -v kwriteconfig6 >/dev/null; then
     echo "Set up Kate's VS Code-like layout"
 fi
 
+# ── 0i. Kate: ẩn thanh menu (thay bằng nút ☰ của plugin samhiekate) ─────────
+# Mặc định nằm trong /etc/xdg/katerc (Show Menu Bar=false), nhưng Kate ghi
+# khoá này vào ~/.config/katerc mỗi lần thoát (KateMainWindow::saveOptions)
+# — tài khoản đã mở Kate có sẵn "true" che mặc định. Xoá MỘT lần; sau đó
+# người dùng bật lại bằng Ctrl+M thì Kate tự nhớ.
+kate_menu_marker=$state_dir/kate-menubar-1
+if [ ! -e "$kate_menu_marker" ] && command -v kwriteconfig6 >/dev/null; then
+    if [ -e "$config_home/katerc" ]; then
+        kwriteconfig6 --file "$config_home/katerc" --group General --key 'Show Menu Bar' --delete
+    fi
+    mkdir -p -- "$state_dir"
+    touch -- "$kate_menu_marker"
+    echo "Hid Kate's menu bar"
+fi
+
 done_version=0
 if [ -r "$marker" ]; then
     read -r done_version < "$marker" || true

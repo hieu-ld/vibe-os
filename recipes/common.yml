@@ -46,6 +46,13 @@ modules:
         - konsole
         - ark
         - kwrite                  # mở nhanh file chữ; VS Code cho việc code
+        # Kate: đang thử thay VS Code (2026-10-10). Đo trong image: +33 MB
+        # (kate + kate-plugins + 3 thư viện KF6; kate-libs đã có nhờ kwrite) —
+        # VS Code chiếm 1,06 GB. Đo RAM máy ảo, cùng dự án: Kate 108 MB, VS Code
+        # 873 MB. kate-plugins ghi rõ vì nó chỉ là weak dep mà cây dự án,
+        # terminal nhúng, Git, LSP đều nằm trong đó.
+        - kate
+        - kate-plugins
 
         # Giao diện ứng dụng Qt: Kvantum vẽ widget bằng SVG (giai đoạn 4).
         # plasma-integration cài ở khối riêng ngay dưới (không kéo weak deps).
@@ -94,9 +101,11 @@ modules:
       #   cpp     43 MB — xrdb gợi ý (sddm → xorg-x11-xinit → xrdb), chỉ để
       #           xrdb chạy bộ tiền xử lý C; SDDM của Samhie chạy Wayland.
       #   catdoc  0,6 MB + tk 3,8 MB — kfilemetadata gợi ý, trích chữ file .doc.
+      #   kate-krunner-plugin — kate gợi ý; Samhie không chạy KRunner.
       exclude:
         - cpp
         - catdoc
+        - kate-krunner-plugin
 
   # Platform theme "kde" cho app Qt ngoài Plasma: Dolphin/Konsole đọc màu, icon,
   # font, widget style từ kdeglobals — gồm cả /etc/xdg/kdeglobals của image —

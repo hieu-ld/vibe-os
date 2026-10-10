@@ -21,7 +21,7 @@ theme/icons/apps/<tên icon>.svg. Màu giữ nguyên (icon app, không tô lại
     Dùng <mask>, KHÔNG dùng clipPath: QtSvg 6.11 (thứ Quickshell và KDE vẽ
     icon) bỏ qua clipPath — viền ra dày 2px lấn ra ngoài; mask thì Qt vẽ khớp
     rsvg (đo 2026-10-01: lệch ≤ 10 điểm ảnh, chỉ ở mép khử răng cưa).
-  * VIỀN BẮT SÁNG như bản 1.0 (~/Projects/Distro, theme/icons/Samhie/apps):
+  * VIỀN BẮT SÁNG như bản 1.0 (~/Storage/Archive/Distro, theme/icons/Samhie/apps):
     nét gradient trắng phủ lên viền ngoài — sáng ở góc trên-trái (ánh sáng
     -35°), mờ ở giữa, sáng lại nhẹ ở góc dưới-phải (phản xạ) — cộng một vệt
     "dày mép" trắng rất nhạt ngay phía trong.

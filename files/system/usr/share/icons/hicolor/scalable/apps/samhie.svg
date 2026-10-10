@@ -3,7 +3,7 @@
        Hai nửa là hai hình chữ nhật bo góc lồng nhau, mỗi nửa một gradient
        dọc từ #00819C (mép ngoài) về #006175 (chỗ hai nửa gặp nhau).
 
-       Mang nguyên từ Samhie 1.0 (~/Projects/Distro/branding/logo.svg). Là
+       Mang nguyên từ Samhie 1.0 (~/Storage/Archive/Distro/branding/logo.svg). Là
        icon `samhie` của hệ thống — os-release khai LOGO=samhie. Chữ ghép
        "Samhie" ở đáy màn hình khởi động (plymouth/themes/samhie/watermark.png)
        cũng dựng từ file này, bằng scripts/build-logo.sh của bản 1.0. -->

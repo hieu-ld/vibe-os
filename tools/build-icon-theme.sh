@@ -69,7 +69,7 @@ license_file="$THEME_DIR/LICENSE"
 if [[ ! -f $license_file ]]; then
     echo "THIẾU $THEME_DIR/LICENSE" >&2
     echo "Chép file LICENSE của bộ icon gốc vào đó (Tabler: MIT)." >&2
-    echo "Xem ~/Projects/Distro/docs/icons-wanted.md (bản 1.0), mục Giấy phép." >&2
+    echo "Xem ~/Storage/Archive/Distro/docs/icons-wanted.md (bản 1.0), mục Giấy phép." >&2
     exit 1
 fi
 
@@ -98,7 +98,7 @@ fi
 
 if [[ ${#dir_list[@]} -eq 0 ]]; then
     echo "Chưa có icon nào. Bỏ file SVG vào files/system/usr/share/icons/Samhie/<nhóm>/scalable/," >&2
-    echo "đặt tên theo tên chuẩn freedesktop — xem ~/Projects/Distro/docs/icons-wanted.md (bản 1.0)." >&2
+    echo "đặt tên theo tên chuẩn freedesktop — xem ~/Storage/Archive/Distro/docs/icons-wanted.md (bản 1.0)." >&2
     exit 1
 fi
 

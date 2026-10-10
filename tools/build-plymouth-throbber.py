@@ -3,7 +3,7 @@
 Sinh vòng xoay của màn hình khởi động (Plymouth) — kiểu 5 chấm đuổi nhau quanh
 vòng tròn như lúc Windows khởi động. User chọn kiểu này ở bản 1.0 (2026-09-24)
 trong ba bản thử (chấm trắng / vòng cung cyan / vòng cung trắng). Mang nguyên
-từ ~/Projects/Distro/scripts/build-plymouth-throbber.py (commit a47f18e): hình
+từ ~/Storage/Archive/Distro/scripts/build-plymouth-throbber.py (commit a47f18e): hình
 chấm giữ nguyên (độ đục trùng từng điểm ảnh), đổi chỗ lấy màu, chỗ ghi file,
 và màu giờ phẳng đúng mã (xem frame()).
 

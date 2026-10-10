@@ -24,4 +24,4 @@ grep -q "Samhie's VS Code-style Kate" "$SRC/meta.bin" || { echo "samhiekateplugi
 
 dnf5 -y history undo last
 rm -rf "$SRC"
-echo "samhie Kate terminal plugin: $DEST ($(rpm -q kate))"
+echo "samhie Kate plugin: $DEST ($(rpm -q kate))"

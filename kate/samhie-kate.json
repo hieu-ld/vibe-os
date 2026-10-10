@@ -1,0 +1,7 @@
+{
+    "KPlugin": {
+        "Name": "Samhie",
+        "Description": "Samhie's VS Code-style Kate: terminals as tabs next to your files, a shorter menu bar",
+        "Icon": "utilities-terminal"
+    }
+}

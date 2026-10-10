@@ -1,6 +1,6 @@
 <!DOCTYPE RCC>
 <RCC version="1.0">
-  <qresource prefix="/kxmlgui5/samhieterminal">
+  <qresource prefix="/kxmlgui5/samhiekate">
     <file>ui.rc</file>
   </qresource>
 </RCC>

@@ -1,7 +1,0 @@
-{
-    "KPlugin": {
-        "Name": "Terminal Tabs",
-        "Description": "Open terminals as tabs next to your files, like VS Code (Samhie)",
-        "Icon": "utilities-terminal"
-    }
-}

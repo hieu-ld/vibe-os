@@ -1,20 +1,31 @@
-// Plugin Kate "samhieterminal" — terminal làm TAB trong vùng editor, cạnh các
-// file đang mở, như VS Code (user 2026-10-10: mở IDE việc đầu tiên là mở
-// terminal gõ lệnh chạy Claude CLI).
+// Plugin Kate "samhiekate" — Kate kiểu VS Code của Samhie (user 2026-10-10).
+// Bật cho từng tài khoản ở user-setup bước 0h (Kate chỉ tự bật plugin trong
+// danh sách viết cứng của nó).
 //
-// Plugin terminal có sẵn của Kate (katekonsoleplugin) chỉ đặt terminal ở khung
-// dưới. Kate 26.08 cho plugin đặt một widget bất kỳ thành tab trong vùng
-// editor: KTextEditor::MainWindow::addWidget (Compiler Explorer, kết quả Search
-// dùng đường này — đọc mã Kate 26.08.1). Tab tự đổi tên theo windowTitle của
-// widget, và Kate gọi Q_INVOKABLE shouldClose() trước khi đóng tab / thoát.
+// 1. Terminal làm TAB trong vùng editor, cạnh các file đang mở, như VS Code
+//    (user: mở IDE việc đầu tiên là mở terminal gõ lệnh chạy Claude CLI).
+//    Plugin terminal có sẵn của Kate (katekonsoleplugin) chỉ đặt terminal ở
+//    khung dưới. Kate 26.08 cho plugin đặt một widget bất kỳ thành tab trong
+//    vùng editor: KTextEditor::MainWindow::addWidget (Compiler Explorer, kết
+//    quả Search dùng đường này — đọc mã Kate 26.08.1). Tab tự đổi tên theo
+//    windowTitle của widget, và Kate gọi Q_INVOKABLE shouldClose() trước khi
+//    đóng tab / thoát.
+//    Terminal là KonsolePart (kf6/parts/konsolepart) — cùng Konsole của Samhie:
+//    không có DefaultProfile trong katerc thì Konsole lấy DefaultProfile của
+//    konsolerc (ProfileManager.cpp) → profile Samhie, tên tab từ samhie-title.sh.
+//      Ctrl+`        mở/về terminal; đang ở terminal thì quay lại file trước đó
+//      Ctrl+Shift+`  terminal mới
+//    Shell thoát (gõ exit) thì tab tự đóng.
 //
-// Terminal là KonsolePart (kf6/parts/konsolepart) — cùng Konsole của Samhie:
-// không có DefaultProfile trong katerc thì Konsole lấy DefaultProfile của
-// konsolerc (ProfileManager.cpp) → profile Samhie, tên tab từ samhie-title.sh.
+// 2. Thanh menu gọn như VS Code (user chọn): ẩn Projects, LSP Client,
+//    Sessions, Tools. Chỉ ẩn mục trên thanh menu — hành động vẫn còn, phím tắt
+//    vẫn chạy, tìm được bằng Ctrl+Alt+I. Làm ở đây chứ không vá file menu: Tools
+//    gom từ 5 nguồn (kateui.rc, katepart5ui.rc dùng chung với KWrite, 3 plugin)
+//    — xoá ở một nơi thì nơi khác lại dựng menu Tools mới.
 //
-//   Ctrl+`        mở/về terminal; đang ở terminal thì quay lại file trước đó
-//   Ctrl+Shift+`  terminal mới
-// Shell thoát (gõ exit) thì tab tự đóng.
+// 3. Ẩn ô "Filter…" dưới cây thư mục Projects (VS Code không có; tìm file
+//    dùng Ctrl+Alt+O hoặc Search). Ô này là KLineEdit con trực tiếp của
+//    KateProjectView (kateprojectview.cpp), mỗi dự án mở ra một cái.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -35,9 +46,15 @@
 #include <QFileInfo>
 #include <QIcon>
 #include <QKeyEvent>
+#include <QLineEdit>
+#include <QMainWindow>
+#include <QMenu>
+#include <QMenuBar>
 #include <QPointer>
+#include <QStackedWidget>
 #include <QTabWidget>
 #include <QTimer>
+#include <QTreeView>
 #include <QVBoxLayout>
 
 namespace
@@ -48,6 +65,38 @@ KPluginFactory *konsoleFactory()
 {
     static KPluginFactory *factory = KPluginFactory::loadFactory(KPluginMetaData(QStringLiteral("kf6/parts/konsolepart"))).plugin;
     return factory;
+}
+
+// Mục ẩn khỏi thanh menu: tên <Menu name> trong file .rc = objectName của
+// QMenu (KXMLGUIBuilder); Sessions là một hành động (KActionMenu) đặt thẳng
+// lên thanh menu, objectName = tên hành động.
+bool isHiddenMenu(const QAction *a)
+{
+    static const QStringList menus{QStringLiteral("projects"), QStringLiteral("LSPClient Menubar"), QStringLiteral("tools")};
+    // Sessions (KActionMenu) cũng có menu() — xét tên hành động trước
+    return a->objectName() == QLatin1String("sessions") || (a->menu() && menus.contains(a->menu()->objectName()));
+}
+
+// Ô Filter… của KateProjectView. Lớp đó (và KateProjectViewTree) không có
+// Q_OBJECT nên không nhận ra bằng tên lớp — nhận theo bố cục trong
+// kateprojectview.cpp: layout đúng hai mục [cây, ô lọc], và KateProjectView
+// nằm trong QStackedWidget của khung Projects. Ô lọc của panel Git có ba mục
+// (hàng nút, cây, ô lọc) nên không dính.
+bool isProjectFilter(QLineEdit *edit)
+{
+    QWidget *view = edit->parentWidget();
+    QLayout *layout = view ? view->layout() : nullptr;
+    return layout && layout->count() == 2 && qobject_cast<QTreeView *>(layout->itemAt(0)->widget())
+        && layout->itemAt(1)->widget() == edit && qobject_cast<QStackedWidget *>(view->parentWidget());
+}
+
+void trimMenuBar(QMenuBar *bar)
+{
+    for (QAction *a : bar->actions()) {
+        if (a->isVisible() && isHiddenMenu(a)) {
+            a->setVisible(false);
+        }
+    }
 }
 
 // Phím để lại cho Kate thay vì gửi xuống shell. Mọi phím khác thuộc về
@@ -115,27 +164,27 @@ private:
     QPointer<KParts::ReadOnlyPart> m_part;
 };
 
-class SamhieTerminalView : public QObject, public KXMLGUIClient
+class SamhieKateView : public QObject, public KXMLGUIClient
 {
     Q_OBJECT
 public:
-    explicit SamhieTerminalView(KTextEditor::MainWindow *mw)
+    explicit SamhieKateView(KTextEditor::MainWindow *mw)
         : QObject(mw)
         , m_mw(mw)
     {
-        setComponentName(QStringLiteral("samhieterminal"), kTitle);
+        setComponentName(QStringLiteral("samhiekate"), kTitle);
         setXMLFile(QStringLiteral("ui.rc"));
 
         QAction *a = actionCollection()->addAction(QStringLiteral("samhie_terminal_new"));
         a->setText(QStringLiteral("New Terminal"));
         a->setIcon(QIcon::fromTheme(QStringLiteral("utilities-terminal")));
         actionCollection()->setDefaultShortcut(a, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_QuoteLeft));
-        connect(a, &QAction::triggered, this, &SamhieTerminalView::newTerminal);
+        connect(a, &QAction::triggered, this, &SamhieKateView::newTerminal);
 
         a = actionCollection()->addAction(QStringLiteral("samhie_terminal_toggle"));
         a->setText(QStringLiteral("Switch Between Terminal and File"));
         actionCollection()->setDefaultShortcut(a, QKeySequence(Qt::CTRL | Qt::Key_QuoteLeft));
-        connect(a, &QAction::triggered, this, &SamhieTerminalView::toggleTerminal);
+        connect(a, &QAction::triggered, this, &SamhieKateView::toggleTerminal);
 
         // Nhớ tab terminal dùng gần nhất (bấm chuột vào tab cũng tính)
         connect(qApp, &QApplication::focusChanged, this, [this](QWidget *, QWidget *now) {
@@ -148,9 +197,39 @@ public:
         });
 
         m_mw->guiFactory()->addClient(this);
+
+        // Thanh menu: ẩn ngay, và ẩn lại mỗi khi KXmlGui thêm/sửa mục (plugin
+        // nạp sau, đổi view thì phần editor gỡ ra lắp vào).
+        if (auto *win = qobject_cast<QMainWindow *>(m_mw->window())) {
+            m_menuBar = win->menuBar();
+            m_menuBar->installEventFilter(this);
+            trimMenuBar(m_menuBar);
+        }
+        // Ô Filter… của mỗi dự án: bắt lúc nó sắp hiện
+        qApp->installEventFilter(this);
     }
 
-    ~SamhieTerminalView() override
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        switch (event->type()) {
+        case QEvent::ActionAdded:
+        case QEvent::ActionChanged:
+            if (obj == m_menuBar) {
+                trimMenuBar(m_menuBar);
+            }
+            break;
+        case QEvent::Show:
+            if (auto *edit = qobject_cast<QLineEdit *>(obj); edit && isProjectFilter(edit)) {
+                edit->hide();
+            }
+            break;
+        default:
+            break;
+        }
+        return QObject::eventFilter(obj, event);
+    }
+
+    ~SamhieKateView() override
     {
         m_mw->guiFactory()->removeClient(this);
     }
@@ -265,25 +344,26 @@ private Q_SLOTS:
 
 private:
     KTextEditor::MainWindow *m_mw;
+    QPointer<QMenuBar> m_menuBar;
     QPointer<TerminalTab> m_lastTerminal;
     QPointer<QWidget> m_lastEditor;
 };
 
-class SamhieTerminalPlugin : public KTextEditor::Plugin
+class SamhieKatePlugin : public KTextEditor::Plugin
 {
     Q_OBJECT
 public:
-    explicit SamhieTerminalPlugin(QObject *parent, const QVariantList & = QVariantList())
+    explicit SamhieKatePlugin(QObject *parent, const QVariantList & = QVariantList())
         : KTextEditor::Plugin(parent)
     {
     }
 
     QObject *createView(KTextEditor::MainWindow *mw) override
     {
-        return new SamhieTerminalView(mw);
+        return new SamhieKateView(mw);
     }
 };
 
-K_PLUGIN_FACTORY_WITH_JSON(SamhieTerminalPluginFactory, "samhie-terminal.json", registerPlugin<SamhieTerminalPlugin>();)
+K_PLUGIN_FACTORY_WITH_JSON(SamhieKatePluginFactory, "samhie-kate.json", registerPlugin<SamhieKatePlugin>();)
 
-#include "samhie-terminal.moc"
+#include "samhie-kate.moc"

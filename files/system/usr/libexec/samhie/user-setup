@@ -220,18 +220,21 @@ fi
 # (katepluginmanager.cpp) không bao giờ tự bật — nên ghi cho từng tài khoản.
 # Chỉ đổi đúng các khoá dưới, giữ mọi thứ khác Kate đã lưu. Mốc riêng: chạy
 # một lần; sau đó người dùng kéo panel đi đâu Kate tự nhớ.
-#   samhieterminalplugin  terminal làm tab cạnh file, Ctrl+` (kate/)
+#   samhiekateplugin      terminal làm tab cạnh file (Ctrl+`), thanh menu gọn,
+#                         ẩn ô Filter… của Projects (kate/)
 #   katekonsoleplugin     tắt terminal ở khung dưới — trùng với cái trên
 #   cột trái  = Projects (Explorer), Search, Git, Outline như VS Code; Search
 #               dời từ khung dưới lên; Documents (danh sách file mở — trùng
 #               dải tab) ẩn nút
 #   khung dưới = Diagnostics (Problems), Output; ẩn nút Project (thông tin dự án)
-kate_marker=$state_dir/kate-layout
+# Mốc "-2": plugin đổi tên samhieterminal → samhiekate (2026-10-10) — tài
+# khoản đã chạy bản đầu phải bật lại plugin dưới tên mới.
+kate_marker=$state_dir/kate-layout-2
 kate_session=$data_home/kate/anonymous.katesession
 if [ ! -e "$kate_marker" ] && command -v kwriteconfig6 >/dev/null; then
     mkdir -p -- "${kate_session%/*}"
     kate_set() { kwriteconfig6 --file "$kate_session" --group "$1" --key "$2" "$3"; }
-    kate_set 'Kate Plugins' samhieterminalplugin true
+    kate_set 'Kate Plugins' samhiekateplugin true
     kate_set 'Kate Plugins' katekonsoleplugin false
     mdi=Kate-MDI
     kate_set MainWindow0 $mdi-Sidebar-0-Bar-0-TvList \

@@ -1,5 +1,5 @@
 <!DOCTYPE gui SYSTEM "kpartgui.dtd">
-<gui name="samhieterminal" library="samhieterminalplugin" version="1">
+<gui name="samhiekate" library="samhiekateplugin" version="1">
   <MenuBar>
     <Menu name="samhie_terminal">
       <text>&amp;Terminal</text>

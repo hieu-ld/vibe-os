@@ -213,6 +213,44 @@ if [ -f "$places" ] && awk '
     echo "Repaired the comment before <xbel> in $places"
 fi
 
+# ── 0h. Kate: bố cục kiểu VS Code + terminal làm tab ────────────────────────
+# Kate cất danh sách plugin bật và chỗ của từng panel trong file PHIÊN
+# (anonymous.katesession, KConfig::SimpleConfig — không có bản mặc định toàn
+# máy, đọc mã Kate 26.08.1). Plugin ngoài danh sách viết cứng của Kate
+# (katepluginmanager.cpp) không bao giờ tự bật — nên ghi cho từng tài khoản.
+# Chỉ đổi đúng các khoá dưới, giữ mọi thứ khác Kate đã lưu. Mốc riêng: chạy
+# một lần; sau đó người dùng kéo panel đi đâu Kate tự nhớ.
+#   samhieterminalplugin  terminal làm tab cạnh file, Ctrl+` (kate/)
+#   katekonsoleplugin     tắt terminal ở khung dưới — trùng với cái trên
+#   cột trái  = Projects (Explorer), Search, Git, Outline như VS Code; Search
+#               dời từ khung dưới lên; Documents (danh sách file mở — trùng
+#               dải tab) ẩn nút
+#   khung dưới = Diagnostics (Problems), Output; ẩn nút Project (thông tin dự án)
+kate_marker=$state_dir/kate-layout
+kate_session=$data_home/kate/anonymous.katesession
+if [ ! -e "$kate_marker" ] && command -v kwriteconfig6 >/dev/null; then
+    mkdir -p -- "${kate_session%/*}"
+    kate_set() { kwriteconfig6 --file "$kate_session" --group "$1" --key "$2" "$3"; }
+    kate_set 'Kate Plugins' samhieterminalplugin true
+    kate_set 'Kate Plugins' katekonsoleplugin false
+    mdi=Kate-MDI
+    kate_set MainWindow0 $mdi-Sidebar-0-Bar-0-TvList \
+        kateproject,kate_plugin_katesearch,kateprojectgit,lspclient_symbol_outline,kate_private_plugin_katefiletreeplugin
+    kate_set MainWindow0 $mdi-Sidebar-3-Bar-0-TvList diagnostics,output,kateprojectinfo
+    # Danh sách trên chỉ được dùng để GIỮ CHỖ theo thứ tự khi có khoá Splitter
+    # (số phần tử = số khu trong cột; Sidebar::startRestoreSession) — thiếu
+    # thì panel xếp theo thứ tự plugin nạp, Search lên đầu.
+    kate_set MainWindow0 $mdi-Sidebar-0-Splitter 100
+    kate_set MainWindow0 $mdi-Sidebar-3-Splitter 100
+    kate_set MainWindow0 $mdi-ToolView-kate_plugin_katesearch-Position 0
+    kate_set MainWindow0 $mdi-ToolView-kateproject-Visible true
+    kate_set MainWindow0 $mdi-ToolView-kate_private_plugin_katefiletreeplugin-Show-Button-In-Sidebar false
+    kate_set MainWindow0 $mdi-ToolView-kateprojectinfo-Show-Button-In-Sidebar false
+    mkdir -p -- "$state_dir"
+    touch -- "$kate_marker"
+    echo "Set up Kate's VS Code-like layout"
+fi
+
 done_version=0
 if [ -r "$marker" ]; then
     read -r done_version < "$marker" || true

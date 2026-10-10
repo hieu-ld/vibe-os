@@ -1,0 +1,14 @@
+# Mặc định toàn máy của Kate (Fedora không có file này). Người dùng đè trong
+# ~/.config/katerc (Kate tự ghi vào đó). Bố cục kiểu VS Code (user 2026-10-10)
+# chia ba chỗ vì Kate cất mỗi thứ một nơi:
+#   - file này: tuỳ chọn chung (khoá đọc ở mã Kate 26.08.1, ghi chú từng dòng)
+#   - files/scripts/kate-ui.sh: thanh công cụ (file menu kateui.rc)
+#   - user-setup bước 0h: panel nào nằm bên nào + bật plugin terminal-thành-tab
+#     — nằm trong file PHIÊN (~/.local/share/kate/anonymous.katesession), loại
+#     file không có bản mặc định toàn máy (KConfig::SimpleConfig).
+
+[General]
+# Khung Output dưới đáy KHÔNG tự bật lên (mặc định: bật khi có lỗi — máy ảo
+# user thấy nó mở sẵn, đầy cảnh báo "không tìm thấy pylsp/clangd"). Số đếm
+# lỗi vẫn hiện trên nút Diagnostics. 0 = Never (kateconfigdialog.cpp).
+Show output view for message type=0

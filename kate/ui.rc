@@ -1,0 +1,10 @@
+<!DOCTYPE gui SYSTEM "kpartgui.dtd">
+<gui name="samhieterminal" library="samhieterminalplugin" version="1">
+  <MenuBar>
+    <Menu name="samhie_terminal">
+      <text>&amp;Terminal</text>
+      <Action name="samhie_terminal_new"/>
+      <Action name="samhie_terminal_toggle"/>
+    </Menu>
+  </MenuBar>
+</gui>

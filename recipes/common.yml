@@ -205,6 +205,8 @@ modules:
   - type: containerfile
     snippets:
       - COPY style /tmp/samhie-style
+      # Plugin Kate "samhieterminal" (kate/) cho script kate-terminal.sh — cùng lý do
+      - COPY kate /tmp/samhie-kate
 
   - type: script
     snippets:
@@ -218,7 +220,9 @@ modules:
       - cursors.sh
       - dolphin-ui.sh
       - konsole-ui.sh
+      - kate-ui.sh
       - samhie-style.sh
+      - kate-terminal.sh
 
   # ── 6. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────
   # Edge cài bằng Flatpak chứ không đưa bản RPM vào image: image là công khai,

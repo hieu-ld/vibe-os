@@ -38,6 +38,10 @@
 //      59 — plugin chỉ đánh dấu), bỏ nút ✕ (đóng dự án), thêm « thu khung. Đóng
 //      dự án (hiếm dùng) còn ở Ctrl+Alt+I › "Close Project" — menu Projects
 //      đã ẩn ở mục 2.
+//    - Cây Projects và vùng code (breadcrumb + editor) là hai thẻ bo góc trên
+//      nền cửa sổ: style samhie vẽ (mục 60), plugin đánh dấu widget
+//      (samhieCard) và chừa khe CARD_GAP quanh thẻ. Cây có đường nhánh, không
+//      mũi tên (mục 61, samhieTreeLines).
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -78,6 +82,17 @@
 namespace
 {
 const QString kTitle = QStringLiteral("Terminal");
+// Khe giữa thẻ và mép cửa sổ / thanh trạng thái (bản phác: ~5px)
+constexpr int CARD_GAP = 6;
+
+// Style samhie đọc thuộc tính lúc polish — polish lại sau khi đánh dấu
+void markCard(QWidget *w)
+{
+    if (!w->property("samhieCard").toBool()) {
+        w->setProperty("samhieCard", true);
+        w->style()->polish(w);
+    }
+}
 
 KPluginFactory *konsoleFactory()
 {
@@ -277,12 +292,31 @@ public:
             }
             if (auto *edit = qobject_cast<QLineEdit *>(obj); edit && isProjectFilter(edit)) {
                 edit->hide();
+                QWidget *view = edit->parentWidget();
+                // trái: cách cột icon; phải: khe do vùng code chừa (dưới)
+                view->layout()->setContentsMargins(CARD_GAP, 0, 0, CARD_GAP);
+                QWidget *tree = view->layout()->itemAt(0)->widget();
+                tree->setProperty("samhieTreeLines", true);  // style samhie mục 61
+                markCard(tree);
             } else if (auto *combo = qobject_cast<QComboBox *>(obj)) {
                 if (QHBoxLayout *row = projectHeader(combo)) {
                     fixProjectHeader(row, combo->parentWidget());
                 }
             }
             if (isViewSpace(obj)) {
+                auto *vs = static_cast<QWidget *>(obj);
+                if (!vs->property("samhieCard").toBool()) {
+                    vs->layout()->setContentsMargins(0, 0, CARD_GAP, CARD_GAP);
+                    markCard(vs);
+                }
+                // Khe trái của cả vùng code (KateViewManager, QSplitter ngoài
+                // cùng): cách thẻ Projects, hoặc cách cột icon khi thu khung lại
+                for (QWidget *w = vs->parentWidget(); w; w = w->parentWidget()) {
+                    if (w->inherits("KateViewManager")) {
+                        w->setContentsMargins(CARD_GAP, 0, 0, 0);
+                        break;
+                    }
+                }
                 schedulePlaceMenuButton();
             }
             break;

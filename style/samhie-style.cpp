@@ -358,6 +358,20 @@
 //      như nút công cụ (vẫn bấm được để chuyển dự án); mũi tên ▾ chỉ hiện
 //      khi đang mở từ 2 dự án — một dự án thì danh sách chỉ có chính nó.
 //      Plugin Kate (kate/) đánh dấu ô bằng thuộc tính samhieFlatCombo.
+//  60. Kate: cây Projects và vùng code là hai THẺ bo góc CARD_RADIUS nền
+//      PANE trên nền cửa sổ (bản phác Figma của user 2026-10-10); hàng tab,
+//      hàng tên dự án, cột icon, thanh trạng thái nằm trên nền cửa sổ. Plugin
+//      Kate đánh dấu widget bằng samhieCard rồi polish lại (CardPainter):
+//      - view space (KateViewSpace): thẻ = breadcrumb + editor, dưới hàng tab;
+//      - cây Projects: thẻ = cả widget, bỏ khung Kvantum, vùng hiển thị trong.
+//      Editor Kate tự tô nền vuông (không trong suốt được) → bốn góc là bốn
+//      widget con nhỏ nằm trên cùng (CardCorner), tô nền cửa sổ phần ngoài
+//      cung. Không viền: tab đang mở (mục 11) cũng không viền, liền với thẻ.
+//      Khe giữa các thẻ là tay nắm splitter — không vẽ vạch (Kvantum vẽ).
+//  61. Cây Projects của Kate: đường nhánh ├ └ │ nối mục con với thư mục cha,
+//      không mũi tên ▸ (bản phác Figma của user 2026-10-10). Mục cấp gốc
+//      không có đường (cột nhánh đầu bỏ trống). Plugin Kate đánh dấu cây
+//      bằng samhieTreeLines. Màu FRAME_LINE như mọi viền của Samhie.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -392,6 +406,7 @@
 #include <QGraphicsView>
 #include <QPainter>
 #include <QPainterPath>
+#include <QStackedWidget>
 #include <QLayout>
 #include <QBoxLayout>
 #include <QMenu>
@@ -446,6 +461,7 @@
 #include <QSet>
 #include <QTreeWidget>
 #include <QTimer>
+#include <QTreeView>
 #include <QDateTime>
 #include <QToolButton>
 #include <QUrl>
@@ -475,6 +491,7 @@ namespace {
 
 constexpr int SIDEBAR_INDENT = 8;  // bản vẽ: icon sidebar cách mép ~16px (KIO tự chừa 4)
 constexpr int PANE_RADIUS = 12;    // góc viền vùng file Dolphin (bản vẽ ~12) = góc cửa sổ
+constexpr int CARD_RADIUS = samhie::TAB_RADIUS;  // thẻ Kate (mục 60) = góc tab, tab liền thẻ
 constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6px mỗi phía
 constexpr int TOOLBAR_SEPARATOR_HEIGHT = 18;  // icon thanh công cụ cao ~20px (mục 23)
 constexpr int KEY_FOCUS_PAD = 6;   // ô nền focus bàn phím rộng hơn vòng radio + chữ (mục 25, 28)
@@ -837,6 +854,176 @@ private:
 };
 
 // Thẻ popup sau nội dung thanh tìm (vẽ trước các con của khung nội dung).
+// Mục 60: vùng thẻ trong toạ độ của widget. View space Kate: breadcrumb
+// (KateUrlBar) + editor (QStackedWidget) — hàng tab nằm ngoài thẻ.
+QRect cardRect(const QWidget *w)
+{
+    if (!w->inherits("KateViewSpace"))
+        return w->rect();
+    QRect r;
+    for (QObject *o : w->children()) {
+        auto *c = qobject_cast<QWidget *>(o);
+        if (c && !c->isHidden() && (c->inherits("KateUrlBar") || qobject_cast<QStackedWidget *>(c)))
+            r |= c->geometry();
+    }
+    return r;
+}
+
+// Mục 60: một góc thẻ — tô nền cửa sổ phần nằm ngoài cung tròn, đè hẳn
+// (Source, giữ độ trong của cửa sổ) lên thứ app tự vẽ vuông bên dưới.
+class CardCorner : public QWidget
+{
+public:
+    CardCorner(QWidget *card, Qt::Corner corner)
+        : QWidget(card)
+        , m_corner(corner)
+    {
+        setAttribute(Qt::WA_TransparentForMouseEvents);
+        setAttribute(Qt::WA_NoSystemBackground);
+        setFocusPolicy(Qt::NoFocus);
+        setObjectName(QStringLiteral("samhieCardCorner"));
+        resize(CARD_RADIUS, CARD_RADIUS);
+    }
+
+    // Không có Q_OBJECT (lớp nội bộ) nên tìm theo tên
+    static QList<CardCorner *> of(const QWidget *card)
+    {
+        QList<CardCorner *> list;
+        for (QWidget *c : card->findChildren<QWidget *>(QStringLiteral("samhieCardCorner"), Qt::FindDirectChildrenOnly))
+            list.append(static_cast<CardCorner *>(c));
+        return list;
+    }
+
+    void place(const QRect &card)
+    {
+        const bool right = m_corner == Qt::TopRightCorner || m_corner == Qt::BottomRightCorner;
+        const bool bottom = m_corner == Qt::BottomLeftCorner || m_corner == Qt::BottomRightCorner;
+        move(right ? card.right() + 1 - CARD_RADIUS : card.left(), bottom ? card.bottom() + 1 - CARD_RADIUS : card.top());
+        setVisible(card.isValid());
+        raise();
+    }
+
+protected:
+    void paintEvent(QPaintEvent *) override
+    {
+        const bool right = m_corner == Qt::TopRightCorner || m_corner == Qt::BottomRightCorner;
+        const bool bottom = m_corner == Qt::BottomLeftCorner || m_corner == Qt::BottomRightCorner;
+        QRectF circle(0, 0, 2 * CARD_RADIUS, 2 * CARD_RADIUS);
+        if (right)
+            circle.moveRight(CARD_RADIUS);
+        if (bottom)
+            circle.moveBottom(CARD_RADIUS);
+        QPainterPath outside;
+        outside.addRect(QRectF(rect()));
+        QPainterPath arc;
+        arc.addEllipse(circle);
+        outside = outside.subtracted(arc);
+        QColor bg(samhie::WINDOW);
+        bg.setAlphaF(samhie::WINDOW_OPACITY);
+        QPainter p(this);
+        p.setRenderHint(QPainter::Antialiasing);
+        p.setCompositionMode(QPainter::CompositionMode_Source);
+        p.fillPath(outside, bg);
+    }
+
+private:
+    Qt::Corner m_corner;
+};
+
+// Mục 60: tô nền thẻ trước khi widget/con vẽ, và giữ bốn góc đúng chỗ.
+class CardPainter : public QObject
+{
+public:
+    using QObject::QObject;
+
+    void attach(QWidget *w)
+    {
+        w->installEventFilter(this);
+        if (auto *area = qobject_cast<QAbstractScrollArea *>(w)) {
+            area->setFrameShape(QFrame::NoFrame);
+            area->viewport()->setAutoFillBackground(false);
+        }
+        // Đổi bố cục bên trong view space (breadcrumb ẩn/hiện, editor đổi
+        // cỡ) không làm view space đổi cỡ — nghe cả hai con.
+        for (QObject *o : w->children()) {
+            auto *c = qobject_cast<QWidget *>(o);
+            if (c && (c->inherits("KateUrlBar") || qobject_cast<QStackedWidget *>(c)))
+                c->installEventFilter(this);
+            // Breadcrumb (BreadCrumbView, một QListView) tô nền bằng màu cửa sổ
+            // (kateurlbar.cpp updatePalette) → dải đục giữa thẻ; để trong.
+            if (c && c->inherits("KateUrlBar")) {
+                for (auto *view : c->findChildren<QAbstractItemView *>())
+                    view->viewport()->setAutoFillBackground(false);
+            }
+        }
+        if (CardCorner::of(w).isEmpty()) {
+            for (auto corner : {Qt::TopLeftCorner, Qt::TopRightCorner, Qt::BottomLeftCorner, Qt::BottomRightCorner})
+                new CardCorner(w, corner);
+        }
+        schedulePlace(w);
+    }
+
+    void detach(QWidget *w)
+    {
+        w->removeEventFilter(this);
+        qDeleteAll(CardCorner::of(w));
+    }
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        auto *w = static_cast<QWidget *>(obj);
+        if (!w->property("samhieCard").toBool()) {
+            // con của view space
+            if (w->parentWidget() && w->parentWidget()->property("samhieCard").toBool()) {
+                switch (event->type()) {
+                case QEvent::Move:
+                case QEvent::Resize:
+                case QEvent::Show:
+                case QEvent::Hide:
+                    schedulePlace(w->parentWidget());
+                    break;
+                default:
+                    break;
+                }
+            }
+            return false;
+        }
+        switch (event->type()) {
+        case QEvent::Paint: {
+            QPainter p(w);
+            p.setRenderHint(QPainter::Antialiasing);
+            p.setCompositionMode(QPainter::CompositionMode_Source);
+            QPainterPath path;
+            path.addRoundedRect(QRectF(cardRect(w)), CARD_RADIUS, CARD_RADIUS);
+            p.fillPath(path, paneColor());
+            // Cây: nền thẻ thay khung Kvantum (QFrame::paintEvent)
+            return qobject_cast<QAbstractScrollArea *>(w) != nullptr;
+        }
+        case QEvent::Resize:
+        case QEvent::Show:
+        case QEvent::LayoutRequest:
+        case QEvent::ChildAdded:
+            schedulePlace(w);
+            break;
+        default:
+            break;
+        }
+        return false;
+    }
+
+private:
+    // Sau vòng sự kiện: lúc này bố cục đã xếp xong con
+    void schedulePlace(QWidget *card)
+    {
+        QTimer::singleShot(0, card, [card] {
+            const QRect r = cardRect(card);
+            for (CardCorner *c : CardCorner::of(card))
+                c->place(r);
+            card->update(r);
+        });
+    }
+};
+
 class PopupPainter : public QObject
 {
 public:
@@ -2378,6 +2565,8 @@ public:
             static_cast<ScrollAreaAccess *>(static_cast<QAbstractScrollArea *>(w))
                 ->setViewportMargins(rtl ? 0 : SIDEBAR_INDENT, 0, rtl ? SIDEBAR_INDENT : 0, 0);
         }
+        if (w->property("samhieCard").toBool())
+            m_card.attach(w);  // mục 60
         auto *tw = qobject_cast<QTabWidget *>(w);
         if (tw && tw->documentMode())
             w->installEventFilter(&m_pane);  // cài lại cùng bộ lọc: Qt bỏ bản cũ
@@ -2951,6 +3140,8 @@ public:
     void unpolish(QWidget *w) override
     {
         w->removeEventFilter(&m_pane);
+        if (w->property("samhieCard").toBool())
+            m_card.detach(w);
         w->removeEventFilter(&m_popup);
         if (isSearchContents(w))
             w->parentWidget()->removeEventFilter(&m_popup);
@@ -2973,6 +3164,12 @@ public:
     {
         if (pm == PM_TextCursorWidth && w && w->property("samhieShortCaret").toBool())
             return 0;  // mục 22: ShortCaret vẽ thay
+        // Mục 60: editor Kate (KTextEditor) không chừa khung — KTextEditor
+        // đặt lề = độ dày khung quanh vùng code (kateview.cpp 6.30, setupLayout)
+        // mà không vẽ khung; 8px của Kvantum để lộ một vòng nền thẻ quanh
+        // trái/trên/dưới (đo container: KateViewInternal ở 74,8).
+        if (pm == PM_DefaultFrameWidth && w && w->inherits("KTextEditor::ViewPrivate"))
+            return 0;
         // Mục 14: lề tiêu đề cột Dolphin (chỉ lời hỏi không kèm gì của Dolphin).
         if (pm == PM_HeaderMargin && !opt && !w
             && QCoreApplication::applicationName() == QLatin1String("dolphin")) {
@@ -3023,6 +3220,29 @@ public:
 
     void drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
     {
+        // Mục 61: đường nhánh cây Projects của Kate. opt->rect là một cột
+        // thụt lề (QTreeView::drawBranches, toạ độ vùng hiển thị).
+        if (pe == PE_IndicatorBranch && w && w->property("samhieTreeLines").toBool()) {
+            auto *tree = qobject_cast<const QTreeView *>(w);
+            const QRect r = opt->rect;
+            const int indent = tree ? tree->indentation() : 0;
+            const int column = indent > 0 ? (r.left() - tree->columnViewportPosition(0)) / indent : 0;
+            if (tree && !(column == 0 && tree->rootIsDecorated())) {
+                const int x = r.left() + r.width() / 2;
+                const int y = r.top() + r.height() / 2;
+                p->save();
+                p->setRenderHint(QPainter::Antialiasing, false);
+                p->setPen(QColor(samhie::FRAME_LINE));
+                if (opt->state & State_Item) {
+                    p->drawLine(x, r.top(), x, (opt->state & State_Sibling) ? r.bottom() : y);  // ├ hoặc └
+                    p->drawLine(x, y, r.right(), y);
+                } else if (opt->state & State_Sibling) {
+                    p->drawLine(x, r.top(), x, r.bottom());  // │ của cấp trên còn mục bên dưới
+                }
+                p->restore();
+            }
+            return;
+        }
         if (pe == PE_IndicatorToolBarSeparator && w && (opt->state & State_Horizontal)) {
             drawToolBarSeparator(opt->rect, p, w);  // mục 23
             return;
@@ -3276,6 +3496,9 @@ public:
 
     void drawControl(ControlElement ce, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
     {
+        // Mục 60: tay nắm splitter của Kate là khe giữa hai thẻ — không vạch
+        if (ce == CE_Splitter && w && w->window()->inherits("KateMainWindow"))
+            return;
         // Mục 53: "&" trong chữ ô chọn là chữ thật (QComboBox không có phím
         // tắt trong chữ) — Kvantum vẽ như nhãn nút, "&" thành gạch phím tắt.
         if (ce == CE_ComboBoxLabel && w && w->property("samhieFlatCombo").toBool()) {
@@ -3769,6 +3992,7 @@ private:
 
     PanePainter m_pane;
     PopupPainter m_popup;
+    CardPainter m_card;
     MenuButtonForwarder m_menuForwarder;
     UrlButtonHover m_urlHover;
     NoEditPencil m_noPencil;

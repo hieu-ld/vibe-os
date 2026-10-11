@@ -43,6 +43,12 @@
 //      (samhieCard) và chừa khe CARD_GAP quanh thẻ. Cây có đường nhánh, không
 //      mũi tên (mục 61, samhieTreeLines). Nhật ký trong khung Output
 //      (KateOutputEdit) cũng là thẻ, ô Search + nút nằm trên nền cửa sổ.
+//
+// 5. Menu chuột phải trên nút panel (Output, Diagnostics, cột icon) không có
+//    "Hide Button" (user 2026-10-11): với Output nó là mục ĐẦU menu — nhiều khả năng lỡ
+//    bấm nên nút Output biến mất khỏi đáy cửa sổ (file phiên máy ảo:
+//    Show-Button-In-Sidebar=false). Ẩn nút có chủ ý vẫn làm được bằng
+//    Ctrl+Alt+I › "Show … Button".
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -122,6 +128,14 @@ bool isProjectFilter(QLineEdit *edit)
     QLayout *layout = view ? view->layout() : nullptr;
     return layout && layout->count() == 2 && qobject_cast<QTreeView *>(layout->itemAt(0)->widget())
         && layout->itemAt(1)->widget() == edit && qobject_cast<QStackedWidget *>(view->parentWidget());
+}
+
+// Mục "Hide Button" trong menu chuột phải nút panel: Sidebar::eventFilter dựng
+// QMenu cha là Sidebar, mục mang data = Sidebar::HideButtonAction (11,
+// katemdi.h 26.08.1). Tiêu đề mục (section) không có data — xét isValid.
+bool isHideButtonAction(const QAction *a)
+{
+    return a->data().isValid() && a->data().toInt() == 11;
 }
 
 // Hàng [ô chọn dự án, ⟳, ✕] đầu khung Projects (kateprojectpluginview.cpp):
@@ -290,6 +304,13 @@ public:
             // thay vì sửa file .rc (tài khoản cũ không nhận).
             if (obj->objectName() == QLatin1String("hamburgerBar") && obj->inherits("KToolBar")) {
                 QTimer::singleShot(0, static_cast<QWidget *>(obj), &QWidget::hide);
+            }
+            if (auto *menu = qobject_cast<QMenu *>(obj); menu && menu->parentWidget() && menu->parentWidget()->inherits("KateMDI::Sidebar")) {
+                for (QAction *a : menu->actions()) {
+                    if (isHideButtonAction(a)) {
+                        a->setVisible(false);
+                    }
+                }
             }
             if (auto *edit = qobject_cast<QLineEdit *>(obj); edit && isProjectFilter(edit)) {
                 edit->hide();

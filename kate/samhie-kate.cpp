@@ -52,6 +52,12 @@
 //    bấm nên nút Output biến mất khỏi đáy cửa sổ (file phiên máy ảo:
 //    Show-Button-In-Sidebar=false). Ẩn nút có chủ ý vẫn làm được bằng
 //    Ctrl+Alt+I › "Show … Button".
+//
+// 6. Bấm chỗ TRỐNG của cột icon trái / thanh đáy (Diagnostics, Output) không
+//    làm gì (user 2026-10-11: "nút nào thì thực hiện đúng nhiệm vụ của nút
+//    đó", lỡ bấm ra ngoài mà thẻ tự đóng thì hoang mang). Kate mặc định thu/
+//    mở panel dùng gần nhất (Sidebar::eventFilter, MouseButtonPress trên
+//    MultiTabBar có thuộc tính "is-multi-tabbar", katemdi.cpp 26.08.1).
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -81,6 +87,7 @@
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
+#include <QMouseEvent>
 #include <QPointer>
 #include <QStackedWidget>
 #include <QTabWidget>
@@ -289,6 +296,13 @@ public:
     bool eventFilter(QObject *obj, QEvent *event) override
     {
         switch (event->type()) {
+        case QEvent::MouseButtonPress:
+            // Mục 6: bấm chỗ trống cột icon / thanh đáy không thu-mở panel.
+            // Bộ lọc của ứng dụng chạy trước bộ lọc Sidebar::eventFilter.
+            if (obj->property("is-multi-tabbar").toBool() && static_cast<QMouseEvent *>(event)->button() == Qt::LeftButton) {
+                return true;
+            }
+            break;
         case QEvent::ActionAdded:
         case QEvent::ActionChanged:
             if (obj == m_menuBar) {

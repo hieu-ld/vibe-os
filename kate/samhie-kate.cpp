@@ -41,7 +41,8 @@
 //    - Cây Projects và vùng code (breadcrumb + editor) là hai thẻ bo góc trên
 //      nền cửa sổ: style samhie vẽ (mục 60), plugin đánh dấu widget
 //      (samhieCard) và chừa khe CARD_GAP quanh thẻ. Cây có đường nhánh, không
-//      mũi tên (mục 61, samhieTreeLines).
+//      mũi tên (mục 61, samhieTreeLines). Nhật ký trong khung Output
+//      (KateOutputEdit) cũng là thẻ, ô Search + nút nằm trên nền cửa sổ.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -301,6 +302,15 @@ public:
             } else if (auto *combo = qobject_cast<QComboBox *>(obj)) {
                 if (QHBoxLayout *row = projectHeader(combo)) {
                     fixProjectHeader(row, combo->parentWidget());
+                }
+            }
+            // Khung Output (KateOutputView: [hàng Search, nhật ký]): thẻ thẳng
+            // hàng với thẻ code ở trên (trái = khe vùng code, phải/dưới = khe)
+            if (obj->inherits("KateOutputEdit")) {
+                auto *edit = static_cast<QWidget *>(obj);
+                if (!edit->property("samhieCard").toBool() && edit->parentWidget() && edit->parentWidget()->layout()) {
+                    edit->parentWidget()->layout()->setContentsMargins(CARD_GAP, 0, CARD_GAP, CARD_GAP);
+                    markCard(edit);
                 }
             }
             if (isViewSpace(obj)) {

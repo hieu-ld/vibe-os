@@ -16,3 +16,11 @@ Show output view for message type=0
 # Thanh menu ẩn — mọi menu nằm trong nút ☰ cuối hàng tab (plugin samhiekate,
 # bản phác Figma của user 2026-10-10). Ctrl+M hiện lại. Tài khoản cũ: user-setup 0i.
 Show Menu Bar=false
+
+[Shortcuts]
+# Bật/tắt khung Output (nhật ký của Kate — LSP báo lỗi, PATH…; user
+# 2026-10-11: ẩn, lâu lâu mở xem). Kate không gán phím mặc định; đọc ở
+# GUIClient::registerToolView (katemdi.cpp 26.08.1), nhóm [Shortcuts] của
+# katerc. Ctrl+Shift+Y: Kate/KTextEditor 26.08.1 chưa dùng (đã dò mã), VS Code
+# dùng cho khung dưới Debug Console. Esc vẫn đóng khung (có sẵn trong Kate).
+kate_mdi_toolview_output=Ctrl+Shift+Y

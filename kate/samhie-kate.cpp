@@ -41,7 +41,10 @@
 //    - Cây Projects và vùng code (breadcrumb + editor) là hai thẻ bo góc trên
 //      nền cửa sổ: style samhie vẽ (mục 60), plugin đánh dấu widget
 //      (samhieCard) và chừa khe CARD_GAP quanh thẻ. Cây có đường nhánh, không
-//      mũi tên (mục 61, samhieTreeLines). Nhật ký trong khung Output
+//      mũi tên (mục 61, samhieTreeLines). Đỉnh thẻ cây thẳng hàng đỉnh thẻ
+//      code: bỏ vạch ngăn dưới hàng tên dự án, hàng đó cao bằng hàng tab
+//      (đo container: ô chọn 42 + vạch 3 so với hàng tab 40 → lệch 5px; máy
+//      ảo user 2026-10-11 cũng 5px). Nhật ký trong khung Output
 //      (KateOutputEdit) cũng là thẻ, ô Search + nút nằm trên nền cửa sổ.
 //
 // 5. Menu chuột phải trên nút panel (Output, Diagnostics, cột icon) không có
@@ -68,6 +71,7 @@
 #include <QApplication>
 #include <QComboBox>
 #include <QDir>
+#include <QFrame>
 #include <QFileInfo>
 #include <QGridLayout>
 #include <QHBoxLayout>
@@ -318,6 +322,8 @@ public:
                 // trái: cách cột icon; phải: khe do vùng code chừa (dưới)
                 view->layout()->setContentsMargins(CARD_GAP, 0, 0, CARD_GAP);
                 QWidget *tree = view->layout()->itemAt(0)->widget();
+                m_projectTree = tree;
+                schedulePlaceMenuButton();  // căn đỉnh thẻ (alignProjectCard)
                 tree->setProperty("samhieTreeLines", true);  // style samhie mục 61
                 markCard(tree);
             } else if (auto *combo = qobject_cast<QComboBox *>(obj)) {
@@ -374,6 +380,14 @@ private:
     void fixProjectHeader(QHBoxLayout *row, QWidget *toolView)
     {
         row->itemAt(2)->widget()->hide();
+        // Vạch ngăn dưới hàng (QFrame HLine, kateprojectpluginview.cpp)
+        for (int i = 0; i < toolView->layout()->count(); ++i) {
+            auto *line = qobject_cast<QFrame *>(toolView->layout()->itemAt(i)->widget());
+            if (line && line->frameShape() == QFrame::HLine) {
+                line->hide();
+            }
+        }
+        m_projectCombo = qobject_cast<QComboBox *>(row->itemAt(0)->widget());
         // Ô chọn dự án vẽ phẳng thành tên (style samhie, mục 59)
         row->itemAt(0)->widget()->setProperty("samhieFlatCombo", true);
         auto *collapse = new QToolButton(toolView);
@@ -396,6 +410,30 @@ private:
         }
     }
 
+    // Đỉnh thẻ cây Projects = đỉnh thẻ code của view space trên cùng: đổi
+    // chiều cao ô chọn dự án (hàng tên dự án cao theo nó) đúng phần lệch.
+    void alignProjectCard(QWidget *topViewSpace)
+    {
+        if (!m_projectCombo || !m_projectTree || !m_projectTree->isVisible() || !topViewSpace) {
+            return;
+        }
+        int cardTop = -1; // breadcrumb hoặc editor — con thấp nhất dưới hàng tab
+        for (QObject *o : topViewSpace->children()) {
+            auto *c = qobject_cast<QWidget *>(o);
+            if (c && !c->isHidden() && (c->inherits("KateUrlBar") || qobject_cast<QStackedWidget *>(c))) {
+                cardTop = cardTop < 0 ? c->y() : std::min(cardTop, c->y());
+            }
+        }
+        if (cardTop < 0) {
+            return;
+        }
+        QWidget *win = m_mw->window();
+        const int delta = topViewSpace->mapTo(win, QPoint(0, cardTop)).y() - m_projectTree->mapTo(win, QPoint(0, 0)).y();
+        if (delta != 0 && m_projectCombo->height() + delta > 0) {
+            m_projectCombo->setFixedHeight(m_projectCombo->height() + delta);
+        }
+    }
+
     void placeMenuButton()
     {
         m_placePending = false;
@@ -412,6 +450,7 @@ private:
                 best = corner;
             }
         }
+        alignProjectCard(target);
         auto *grid = target ? qobject_cast<QGridLayout *>(target->layout()) : nullptr;
         if (!grid || (m_menuButton && m_menuButton->parentWidget() == target)) {
             return;
@@ -572,6 +611,8 @@ private:
     QPointer<QMenuBar> m_menuBar;
     QPointer<QAction> m_showMenuBar; // Ctrl+M của Kate
     QPointer<QWidget> m_menuButton;
+    QPointer<QComboBox> m_projectCombo;
+    QPointer<QWidget> m_projectTree;
     bool m_placePending = false;
     QPointer<TerminalTab> m_lastTerminal;
     QPointer<QWidget> m_lastEditor;

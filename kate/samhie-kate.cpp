@@ -90,6 +90,15 @@
 //    đợt 1, user 2026-10-12. Menu dựng mới mỗi lần trong mã
 //    (KateViewSpace::buildContextMenu) nên ẩn mục lúc menu polish, trước khi
 //    tính cỡ. Menu chuột phải trong vùng code: kate-ui.sh.
+//
+// 11. Khung Projects khi chưa mở thư mục nào: thẻ "You have not yet opened a
+//    folder." + nút Open Folder như VS Code (user 2026-10-12 — Kate để trống
+//    trơn; phòng khi tắt welcome page). Nút gọi openDirectoryOrProject() của
+//    plugin Projects (hành động "Open Folder…" có sẵn). Thẻ nằm CẠNH ngăn xếp
+//    cây dự án chứ không trong nó: Kate ép kiểu currentWidget() của ngăn xếp
+//    thành KateProjectView (kateprojectpluginview.cpp). ToolView của Kate tự
+//    thêm mọi con vào bố cục và chuyển focus cho con mới nhất
+//    (ToolView::childEvent) — trả focus về ngăn xếp như lúc Kate dựng xong.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -109,6 +118,7 @@
 #include <QApplication>
 #include <QComboBox>
 #include <QContextMenuEvent>
+#include <QLabel>
 #include <QDir>
 #include <QFrame>
 #include <QFileInfo>
@@ -123,6 +133,7 @@
 #include <QMenuBar>
 #include <QMouseEvent>
 #include <QPointer>
+#include <QPushButton>
 #include <QResizeEvent>
 #include <QStackedWidget>
 #include <QTabBar>
@@ -588,6 +599,59 @@ private:
         });
         row->addWidget(collapse);
         growIcons(toolView);
+        addWelcome(toolView, row->itemAt(1)->widget());
+    }
+
+    // Mục 11
+    // reload: nút ⟳ — chưa có dự án thì Kate để nó mờ; ẩn đi cho tiêu đề đủ chỗ
+    void addWelcome(QWidget *toolView, QWidget *reload)
+    {
+        auto *stack = toolView->findChild<QStackedWidget *>(QString(), Qt::FindDirectChildrenOnly);
+        if (!stack) {
+            return;
+        }
+        m_welcome = new QWidget(toolView);
+        auto *outer = new QVBoxLayout(m_welcome);
+        outer->setContentsMargins(CARD_GAP, 0, 0, CARD_GAP); // như cây dự án
+        auto *card = new QWidget(m_welcome);
+        auto *layout = new QVBoxLayout(card);
+        layout->setContentsMargins(12, 12, 12, 12);
+        layout->setSpacing(12);
+        auto *text = new QLabel(QStringLiteral("You have not yet opened a folder."), card);
+        text->setWordWrap(true);
+        layout->addWidget(text);
+        auto *open = new QPushButton(QStringLiteral("Open Folder"), card);
+        connect(open, &QPushButton::clicked, this, [this] {
+            if (QObject *projects = m_mw->pluginView(QStringLiteral("kateprojectplugin"))) {
+                QMetaObject::invokeMethod(projects, "openDirectoryOrProject");
+            }
+        });
+        layout->addWidget(open);
+        layout->addStretch();
+        outer->addWidget(card);
+        markCard(card);
+        m_welcomeCard = card;
+        toolView->setFocusProxy(stack);
+
+        // Tiêu đề khi chưa có dự án (Kate để "Current Project", bị cắt chữ)
+        if (m_projectCombo) {
+            m_projectCombo->setPlaceholderText(QStringLiteral("No Folder Opened"));
+        }
+        const auto update = [this, stack, reload = QPointer<QWidget>(reload)] {
+            const bool empty = stack->count() == 0;
+            stack->setVisible(!empty);
+            m_welcome->setVisible(empty);
+            if (reload) {
+                reload->setVisible(!empty);
+            }
+            schedulePlaceMenuButton(); // căn đỉnh thẻ
+        };
+        update();
+        // widgetRemoved phát khi đang gỡ — xét sau một nhịp
+        connect(stack, &QStackedWidget::widgetAdded, this, update);
+        connect(stack, &QStackedWidget::widgetRemoved, this, [this, update] {
+            QTimer::singleShot(0, this, update);
+        });
     }
 
     // Đổi bố cục (chia đôi, đóng view space, kéo khung) sinh cả loạt sự kiện —
@@ -600,11 +664,14 @@ private:
         }
     }
 
-    // Đỉnh thẻ cây Projects = đỉnh thẻ code của view space trên cùng: đổi
+    // Đỉnh thẻ cây Projects (hay thẻ chào, mục 11) = đỉnh thẻ code của view space trên cùng: đổi
     // chiều cao ô chọn dự án (hàng tên dự án cao theo nó) đúng phần lệch.
     void alignProjectCard(QWidget *topViewSpace)
     {
-        if (!m_projectCombo || !m_projectTree || !m_projectTree->isVisible() || !topViewSpace) {
+        QWidget *sideCard = m_projectTree && m_projectTree->isVisible() ? m_projectTree.data()
+            : m_welcomeCard && m_welcomeCard->isVisible()           ? m_welcomeCard.data()
+                                                                    : nullptr;
+        if (!m_projectCombo || !sideCard || !topViewSpace) {
             return;
         }
         int cardTop = -1; // breadcrumb hoặc editor — con thấp nhất dưới hàng tab
@@ -618,7 +685,7 @@ private:
             return;
         }
         QWidget *win = m_mw->window();
-        const int delta = topViewSpace->mapTo(win, QPoint(0, cardTop)).y() - m_projectTree->mapTo(win, QPoint(0, 0)).y();
+        const int delta = topViewSpace->mapTo(win, QPoint(0, cardTop)).y() - sideCard->mapTo(win, QPoint(0, 0)).y();
         if (delta != 0 && m_projectCombo->height() + delta > 0) {
             m_projectCombo->setFixedHeight(m_projectCombo->height() + delta);
         }
@@ -818,6 +885,8 @@ private:
     QPointer<QWidget> m_menuButton;
     QPointer<QComboBox> m_projectCombo;
     QPointer<QWidget> m_projectTree;
+    QPointer<QWidget> m_welcome; // mục 11: khung ngoài (lề) và thẻ bên trong
+    QPointer<QWidget> m_welcomeCard;
     bool m_placePending = false;
     QPointer<TerminalTab> m_lastTerminal;
     QPointer<QWidget> m_lastEditor;

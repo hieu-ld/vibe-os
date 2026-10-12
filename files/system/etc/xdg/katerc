@@ -17,6 +17,12 @@ Show output view for message type=0
 # bản phác Figma của user 2026-10-10). Ctrl+M hiện lại. Tài khoản cũ: user-setup 0i.
 Show Menu Bar=false
 
+# Icon cột panel trái 22px (user 2026-10-12; mặc định 32 — nét Hugeicons cao
+# 26–30px trong nút 32, trông to so với icon 18 của cây Projects). Ô nút 48×48
+# như VS Code do style samhie đặt (mục 66). Kate cho chỉnh 16–48 ở Configure
+# Kate › Behavior › Sidebars; đọc ở Sidebar::readConfig (katemdi.cpp 26.08.1).
+Icon size for left and right sidebar buttons=22
+
 [Shortcuts]
 # Bật/tắt khung Output (nhật ký của Kate — LSP báo lỗi, PATH…; user
 # 2026-10-11: ẩn, lâu lâu mở xem). Kate không gán phím mặc định; đọc ở

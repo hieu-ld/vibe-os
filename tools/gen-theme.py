@@ -383,6 +383,12 @@ def argb(hex_color, alpha):
     return f"#{round(alpha * 255):02x}{hex_color[1:]}"
 
 
+def over(top, alpha, base):
+    # Màu `top` phủ alpha lên nền đục `base` → màu đục #rrggbb
+    return "#" + "".join(
+        f"{round(int(top[i:i + 2], 16) * alpha + int(base[i:i + 2], 16) * (1 - alpha)):02x}" for i in (1, 3, 5))
+
+
 def kate_theme(pal):
     # Theme màu vùng code của Kate (KTextEditor). Màu cú pháp giữ của Breeze
     # Dark (theme/kate/README.md); chỉ thay nền cho vùng code giống thẻ cây
@@ -443,6 +449,10 @@ def style_colors_h(pal):
         # một bậc = sub-secondary, như ghi chú của vai trò `hover`.
         ("KEY_FOCUS_FILL", d["hover"], "radio/checkbox đi bằng Tab, trên nền card (popup, menu)"),
         ("KEY_FOCUS_FILL_RAISED", d["sub-secondary"], "radio/checkbox đi bằng Tab, trên nền cửa sổ secondary"),
+        # Nút panel đang mở ở cột icon Kate: giữ đúng màu Kvantum từng tô
+        # (#444444 = secondary + 30 mức xám) nhưng lấy từ bảng: chữ 20% phủ
+        # nền cửa sổ — cũng là màu nút đang bấm (tbutton pressed, kvantum.py).
+        ("SIDEBAR_TAB_OPEN", over(d["text"], 0.2, d["secondary"]), "cột icon Kate: nút panel đang mở (chữ 20% trên secondary)"),
     ]
     out = [f"// {HEADER}", "#pragma once", "", "namespace samhie {"]
     out += [f'constexpr const char *{n} = "{c}";  // {why}' for n, c, why in rows]

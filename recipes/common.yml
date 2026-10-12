@@ -118,6 +118,19 @@ modules:
       packages:
         - plasma-integration
 
+  # Máy chủ ngôn ngữ cho Kate (2026-10-12). qmlls (QML/Quickshell) không có gói
+  # riêng — files/scripts/qmlls.sh tách nó từ gói Fedora. Bỏ qua: clangd (+171
+  # MB, thiếu header Qt/KF6 ở máy thật thì file C++ nào cũng báo lỗi đỏ),
+  # bash-language-server (+77 MB, kéo Node.js); Lua/Markdown/YAML/TOML/JSON
+  # không có trong Fedora 44. Không kéo weak deps: pylsp gợi ý black[d] →
+  # aiohttp (máy chủ web blackd) cùng mọi plugin định dạng — +19 MB thay vì 12.
+  - type: dnf
+    install:
+      install-weak-deps: false
+      packages:
+        - python3-lsp-server      # pylsp: gợi ý, nhảy tới định nghĩa (jedi)
+        - python3-pyflakes        # pylsp báo lỗi thật: tên chưa khai báo, import thừa
+
   # ── 2. Hyprland từ COPR ────────────────────────────────────────────────────
   # lionheartp/Hyprland là COPR mà wiki chính thức của Hyprland chỉ tới cho
   # Fedora (kiểm lại 2026-09-27). COPR này còn chứa kitty, qt6ct, quickshell,
@@ -223,6 +236,7 @@ modules:
       - kate-ui.sh
       - samhie-style.sh
       - kate-plugin.sh
+      - qmlls.sh
 
   # ── 6. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────
   # Edge cài bằng Flatpak chứ không đưa bản RPM vào image: image là công khai,

@@ -25,6 +25,16 @@ Show Menu Bar=false
 # dùng cho khung dưới Debug Console. Esc vẫn đóng khung (có sẵn trong Kate).
 kate_mdi_toolview_output=Ctrl+Shift+Y
 
+[lspclient]
+# Máy chủ ngôn ngữ có sẵn trong image (recipes/common.yml, qmlls.sh) chạy luôn,
+# không hộp thoại "Do you want the LSP server to be started?" lần đầu mở file.
+# Kate so ĐÚNG cả dòng lệnh (đường dẫn đầy đủ + tham số, lspclientplugin.cpp
+# 26.08.1) — dự án nào tự khai lệnh khác thì Kate vẫn hỏi như thường.
+# Ghi cả /usr/sbin: đường dẫn là thứ Kate tìm thấy ĐẦU TIÊN trong PATH, và
+# /usr/sbin chỉ là symlink tới bin (Fedora gộp sbin) — PATH có sbin đứng trước
+# (container thử 2026-10-12) thì Kate thấy /usr/sbin/pylsp. Cùng một file.
+AllowedServerCommandLines=/usr/bin/pylsp --check-parent-process,/usr/sbin/pylsp --check-parent-process,/usr/bin/qmlls,/usr/sbin/qmlls
+
 [KTextEditor Renderer]
 # Theme màu vùng code: Samhie (sinh từ theme/palette.toml — nền = thẻ cây
 # Projects, trong 90% như cửa sổ; màu cú pháp của Breeze Dark). Kate mặc định

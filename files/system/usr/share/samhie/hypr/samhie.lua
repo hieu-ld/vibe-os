@@ -91,7 +91,7 @@ hl.env("QT_IM_MODULE", "fcitx")
 -- màn khoá Quickshell tự ghép chuỗi tiếng Việt, không đọc biến này.
 hl.env("LC_TIME", "en_GB.UTF-8")
 
--- App Electron (VS Code) chạy Wayland thật thay vì XWayland.
+-- App Electron (người dùng tự cài, vd VS Code) chạy Wayland thật thay vì XWayland.
 hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 
 -------------------

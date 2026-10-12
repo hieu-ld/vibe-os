@@ -27,7 +27,7 @@ Rectangle {
     id: root
 
     // id của file .desktop (không có đuôi). App nào chưa cài thì bỏ qua.
-    property var pinned: ["org.kde.dolphin", "org.kde.konsole", "com.microsoft.VSCode", "com.microsoft.Edge"]
+    property var pinned: ["org.kde.dolphin", "org.kde.konsole", "org.kde.kate", "com.microsoft.Edge"]
     // Đọc qua applications.values (không dùng byId) để danh sách TỰ CẬP NHẬT:
     // lúc dock dựng mà Quickshell chưa đọc xong file .desktop thì byId trả
     // null và dock trống luôn (đo 2026-10-01).
@@ -59,9 +59,9 @@ Rectangle {
     readonly property int iconSize: 32
     // Bản vẽ: icon Samhie hình 28 (khung 32), icon app khác hình 30. Icon của
     // app khác lề trong mỗi cái một khác → cỡ vẽ riêng cho hình ra 30 (đo
-    // 2026-10-01: vscode.png vẽ 32 ra hình 28 → 34; Edge Flatpak vẽ 32 ra
-    // hình 32, không lề → 30).
-    readonly property var iconSizes: ({ "com.microsoft.VSCode": 34, "com.microsoft.Edge": 30 })
+    // 2026-10-01: Edge Flatpak vẽ 32 ra hình 32, không lề → 30; 2026-10-12:
+    // kate.svg (hicolor) vẽ 32 ra hình 28 → 34).
+    readonly property var iconSizes: ({ "org.kde.kate": 34, "com.microsoft.Edge": 30 })
 
     width: apps.length * cell + Math.max(0, apps.length - 1) * gap + 2 * gap
     height: 52

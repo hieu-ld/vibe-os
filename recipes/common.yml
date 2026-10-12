@@ -45,8 +45,8 @@ modules:
         - kde-cli-tools           # kioclient: để menu "Open with" chạy ngoài Plasma
         - konsole
         - ark
-        - kwrite                  # mở nhanh file chữ; VS Code cho việc code
-        # Kate: đang thử thay VS Code (2026-10-10). Đo trong image: +33 MB
+        - kwrite                  # mở nhanh file chữ; Kate cho việc code
+        # Kate: thay VS Code (thử từ 2026-10-10, gỡ VS Code 2026-10-12). Đo: +33 MB
         # (kate + kate-plugins + 3 thư viện KF6; kate-libs đã có nhờ kwrite) —
         # VS Code chiếm 1,06 GB. Đo RAM máy ảo, cùng dự án: Kate 108 MB, VS Code
         # 873 MB. kate-plugins ghi rõ vì nó chỉ là weak dep mà cây dự án,
@@ -158,21 +158,7 @@ modules:
         # Hyprland (+5 gói python/gtk, ~5 MB). Samhie dùng Quickshell.
         - nwg-panel
 
-  # ── 3. VS Code từ kho của Microsoft ────────────────────────────────────────
-  # File .repo tự viết (files/dnf/vscode.repo) thay vì dùng file của Microsoft,
-  # vì file gốc để gpgcheck=0 — tức không kiểm chữ ký gói.
-  - type: dnf
-    repos:
-      cleanup: true
-      files:
-        - vscode.repo
-      keys:
-        - https://packages.microsoft.com/keys/microsoft.asc
-    install:
-      packages:
-        - code
-
-  # ── 4. File cấu hình của Samhie ────────────────────────────────────────────
+  # ── 3. File cấu hình của Samhie ────────────────────────────────────────────
   # files/system soi gương đường dẫn thật: files/system/etc/xdg/hypr/hypridle.conf
   # sẽ nằm ở /etc/xdg/hypr/hypridle.conf trong image.
   - type: files
@@ -191,7 +177,7 @@ modules:
       HOME_URL: https://github.com/hieu-ld/samhie
       BUG_REPORT_URL: https://github.com/hieu-ld/samhie/issues
 
-  # ── 5. Dịch vụ hệ thống ────────────────────────────────────────────────────
+  # ── 4. Dịch vụ hệ thống ────────────────────────────────────────────────────
   - type: systemd
     system:
       enabled:
@@ -238,7 +224,7 @@ modules:
       - kate-plugin.sh
       - qmlls.sh
 
-  # ── 6. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────
+  # ── 5. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────
   # Edge cài bằng Flatpak chứ không đưa bản RPM vào image: image là công khai,
   # nhét Edge vào là phân phối lại phần mềm đóng của Microsoft. Bản Flatpak tải
   # file cài thẳng từ Microsoft về máy người dùng nên không vướng chuyện đó.

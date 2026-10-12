@@ -99,6 +99,21 @@
 //    thành KateProjectView (kateprojectpluginview.cpp). ToolView của Kate tự
 //    thêm mọi con vào bố cục và chuyển focus cho con mới nhất
 //    (ToolView::childEvent) — trả focus về ngăn xếp như lúc Kate dựng xong.
+//
+// 12. Rà Kate đợt 2 (2026-10-12):
+//    - Quick Open (Ctrl+Alt+O) rộng 60% cửa sổ thay vì 1/2,4 (đường dẫn dài
+//      bị cắt cụt — Kate tự vẽ chữ, không có "…"; KateQuickOpen::
+//      updateViewGeometry, Kate 26.08.1). Kate đặt lại cỡ mỗi lần mở và mỗi
+//      khi cửa sổ đổi cỡ (setFixedSize rồi move) → nới lại ở Show/Move, giữ tâm.
+//    - Breadcrumb bỏ nút "…" đầu dải (bấm vào thì nở thành cả đường dẫn thật
+//      /var/home/… — VS Code chỉ hiện từ thư mục dự án). Kate hiện lại nút mỗi
+//      lần đổi file (UrlbarContainer, kateurlbar.cpp) → ép cỡ 0 thay vì ẩn,
+//      dải lùi vào 12px thay chỗ nút.
+//    - Panel Search ở cột trái (~190px) chật: "Replace"/"Replace Checked" cắt
+//      thành "R…". Thành nút icon cạnh ô Replace như VS Code, hàng dưới chỉ
+//      còn nút tuỳ chọn. Kate xếp lưới lại khi panel đổi giữa dọc/ngang
+//      (KatePluginSearchView::onResize, trong bộ lọc Resize của nó — chạy SAU
+//      bộ lọc ứng dụng của plugin) → xếp lại sau một nhịp.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -282,6 +297,90 @@ bool isTrimmedTabAction(const QAction *a)
     return icons.contains(a->icon().name());
 }
 
+// Mục 12: KateQuickOpen không có Q_OBJECT — nhận qua ô nhập (focus proxy)
+bool isQuickOpen(const QObject *obj)
+{
+    auto *w = qobject_cast<const QWidget *>(obj);
+    return w && w->focusProxy() && w->focusProxy()->inherits("QuickOpenLineEdit");
+}
+
+void widenQuickOpen(QWidget *w)
+{
+    const int target = std::max(w->width(), int(w->parentWidget()->width() * 0.6));
+    if (w->width() == target) {
+        return;
+    }
+    const int center = w->geometry().center().x();
+    w->setFixedWidth(target);
+    w->move(center - target / 2, w->y());
+}
+
+// Mục 12: nút "…" của breadcrumb — QToolButton trong UrlbarContainer (không
+// Q_OBJECT), container nằm trong QStackedWidget của KateUrlBar
+bool isCrumbEllipsis(const QObject *obj)
+{
+    auto *b = qobject_cast<const QToolButton *>(obj);
+    if (!b || b->text() != QStringLiteral("…")) {
+        return false;
+    }
+    for (const QWidget *w = b->parentWidget(); w; w = w->parentWidget()) {
+        if (w->inherits("KateUrlBar")) {
+            return true;
+        }
+    }
+    return false;
+}
+
+// Mục 12: bỏ "…" — cỡ 0 (Kate gọi show() lại mỗi lần đổi file), dải
+// breadcrumb lùi vào 12px thay chỗ nút cho chữ không dính góc bo của thẻ.
+// Lề của layout container Kate chỉ đặt một lần lúc dựng (setContentsMargins({})).
+void hideCrumbEllipsis(QWidget *button)
+{
+    button->setFixedSize(0, 0);
+    if (QLayout *row = button->parentWidget()->layout()) {
+        row->setContentsMargins(12, 0, 0, 0);
+    }
+}
+
+// Mục 12: lưới panel Search (search.ui: widget "SearchDialog", lưới
+// "gridLayout"). Chỉ xếp khi Kate đang để bố cục dọc (ô Replace ở hàng 2).
+void arrangeSearchPanel(QWidget *dialog)
+{
+    auto *grid = dialog->findChild<QGridLayout *>(QStringLiteral("gridLayout"));
+    const auto child = [dialog](const char *name) {
+        return dialog->findChild<QWidget *>(QLatin1String(name));
+    };
+    QWidget *replaceCombo = child("replaceCombo");
+    auto *replace = qobject_cast<QPushButton *>(child("replaceButton"));
+    auto *replaceChecked = qobject_cast<QPushButton *>(child("replaceCheckedBtn"));
+    QWidget *options = child("searchOptionsLayoutW");
+    QWidget *newTab = child("newTabButton");
+    QWidget *more = child("displayOptions");
+    if (!grid || !replaceCombo || !replace || !replaceChecked || !options || !newTab || !more) {
+        return;
+    }
+    int row, col, rowSpan, colSpan;
+    grid->getItemPosition(grid->indexOf(replaceCombo), &row, &col, &rowSpan, &colSpan);
+    if (row != 2 || colSpan != 5) { // bố cục ngang, hoặc đã xếp rồi
+        return;
+    }
+    // Chữ → icon (một lần; giữ cả khi panel chuyển sang ngang)
+    if (!replace->text().isEmpty()) {
+        replace->setToolTip(replace->text());
+        replace->setText(QString());
+        replace->setIcon(QIcon::fromTheme(QStringLiteral("edit-find-replace")));
+        replaceChecked->setToolTip(replaceChecked->text());
+        replaceChecked->setText(QString());
+        replaceChecked->setIcon(QIcon::fromTheme(QStringLiteral("document-replace")));
+    }
+    grid->addWidget(replaceCombo, 2, 0, 1, 3);
+    grid->addWidget(replace, 2, 3);
+    grid->addWidget(replaceChecked, 2, 4);
+    grid->addWidget(options, 3, 0, 1, 3);
+    grid->addWidget(newTab, 3, 3);
+    grid->addWidget(more, 3, 4);
+}
+
 // Mục 9: cây Projects mà plugin đã đánh dấu (samhieTreeLines) — mỗi dự án một cây
 QTreeView *projectTreeOf(QObject *obj)
 {
@@ -439,6 +538,13 @@ public:
         }
         // Ô Filter… của mỗi dự án: bắt lúc nó sắp hiện
         qApp->installEventFilter(this);
+
+        // Mục 12: breadcrumb của view space đã dựng trước khi plugin nạp
+        for (auto *button : m_mw->window()->findChildren<QToolButton *>()) {
+            if (isCrumbEllipsis(button)) {
+                hideCrumbEllipsis(button);
+            }
+        }
     }
 
     bool eventFilter(QObject *obj, QEvent *event) override
@@ -464,6 +570,9 @@ public:
             }
             break;
         case QEvent::Polish:
+            if (isCrumbEllipsis(obj)) {
+                hideCrumbEllipsis(static_cast<QWidget *>(obj)); // mục 12 (view space mới)
+            }
             if (auto *menu = qobject_cast<QMenu *>(obj); menu && menu->parentWidget()) {
                 if (isViewSpace(menu->parentWidget())) {
                     for (QAction *a : menu->actions()) {
@@ -493,6 +602,9 @@ public:
             }
             break;
         case QEvent::Show:
+            if (isQuickOpen(obj)) {
+                widenQuickOpen(static_cast<QWidget *>(obj)); // mục 12
+            }
             // Kate ẩn thanh menu theo Show Menu Bar=false rồi có thứ hiện lại
             // (đo container: khoá false mà thanh vẫn hiện; chưa rõ ai — nghi
             // KXmlGui dựng lại thanh khi plugin thêm menu). Giữ đúng ý khoá.
@@ -561,6 +673,17 @@ public:
         case QEvent::Resize:
             if (isViewSpace(obj)) {
                 schedulePlaceMenuButton();
+            }
+            if (event->type() == QEvent::Resize && obj->objectName() == QLatin1String("SearchDialog")) {
+                auto *dialog = static_cast<QWidget *>(obj);
+                QTimer::singleShot(0, dialog, [dialog] {
+                    arrangeSearchPanel(dialog); // mục 12
+                });
+            }
+            break;
+        case QEvent::Move:
+            if (isQuickOpen(obj)) {
+                widenQuickOpen(static_cast<QWidget *>(obj)); // mục 12
             }
             break;
         default:

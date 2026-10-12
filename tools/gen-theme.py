@@ -409,6 +409,11 @@ def kate_theme(pal):
         # dùng màu nền: Kate kẻ vạch đè cả dòng đang đứng (nền hover) → lộ vạch
         # tối 1px ở đầu dòng (máy ảo user).
         "Separator": argb(d["card"], 0),
+        # Ô chấm xám (Dense4Pattern) ở phần thụt lề của dòng xuống-dòng-mềm
+        # (KateRenderer::paintTextLine, KTextEditor 6.30) → trong suốt hẳn như
+        # VS Code (rà Kate đợt 2, 2026-10-12). Màu này chỉ còn dùng cho vạch cột
+        # cố định "static word wrap marker" — Kate để tắt.
+        "WordWrapMarker": argb(d["card"], 0),
         # Nền ngoặc khớp (Breeze Dark: #000000 — ô đen ở đầu dòng khi con trỏ
         # đứng cạnh ngoặc/nháy) → màu viền của Samhie
         "BracketMatching": argb(d["sub-secondary"], op),

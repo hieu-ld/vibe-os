@@ -467,6 +467,6 @@
         "TemplatePlaceholder": "#123723",
         "TemplateFocusedPlaceholder": "#123723",
         "TemplateReadOnlyPlaceholder": "#4d1f24",
-        "WordWrapMarker": "#3a3f44"
+        "WordWrapMarker": "#00171717"
     }
 }

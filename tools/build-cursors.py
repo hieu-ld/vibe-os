@@ -33,7 +33,6 @@ DMZ, whiteglass, Breeze — 2026-09-29): cạnh trái đều dựng đứng 0°,
 
 import hashlib
 import math
-import re
 import shutil
 import struct
 import subprocess

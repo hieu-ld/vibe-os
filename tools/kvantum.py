@@ -368,7 +368,6 @@ def svg(pal):
 
 def kvconfig(pal):
     d = pal["dark"]
-    fonts = pal["fonts"]
     transparency = round((1 - pal["window"]["opacity"]) * 100)
 
     def frame(name, top=None, side=None):

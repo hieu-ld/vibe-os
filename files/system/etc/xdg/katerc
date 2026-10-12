@@ -51,3 +51,11 @@ Line Height Multiplier=1.556
 # Minimap bên phải vùng code rộng hơn mặc định 60px (user 2026-10-12: "rộng
 # ra 1 xíu"). Khoá đọc ở KateViewConfig (kateconfig.cpp, KTextEditor 6.30.0).
 Scroll Bar Mini Map Width=72
+# Thanh trạng thái bỏ hai ô (rà Kate đợt 1, user 2026-10-12):
+#   INSERT  bấm nhầm là lật sang OVERWRITE (gõ đè chữ) — nút ẩn dễ lỡ tay.
+#           Phím Insert vẫn lật được; lúc gõ đè, con trỏ chữ thành ô đặc.
+#   en_US   từ điển kiểm chính tả — repo chỉ code, ô này không dùng tới.
+# Cùng KateViewConfig. Kate chỉ ghi cả nhóm này vào ~/.config/katerc khi người
+# dùng đổi cấu hình trong Kate — tài khoản đã đổi thì giữ giá trị lúc đó.
+Show Statusbar Input Mode=false
+Show Statusbar Dictionary=false

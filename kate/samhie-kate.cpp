@@ -77,6 +77,19 @@
 //    BÊN TRÁI cột: ô đệm trái của lưới trong view (m_leftSpacer, ô 2,0 —
 //    kateview.cpp setupLayout; style samhie để nó 0). Khe giữa số và code
 //    rộng thêm: style samhie mục 64.
+//
+// 9. Chuột phải file/thư mục trong cây Projects › "Open Internal Terminal
+//    Here" mở TAB terminal của plugin tại thư mục đó (user 2026-10-12), thay vì
+//    khung Terminal dưới đáy của plugin Projects (trùng mục 1). Mục đó là một
+//    lambda giữ đường dẫn theo tham chiếu (kateprojecttreeviewcontextmenu.cpp
+//    26.08.1) — plugin tự tính lại đường dẫn từ sự kiện chuột phải, cùng công
+//    thức với KateProjectViewTree::contextMenuEvent, rồi nối mục sang tab.
+//
+// 10. Menu chuột phải trên tab bỏ Open…, Detach Document (mở file ở cửa sổ
+//    mới), Properties, Compare with Active Document (+ "… Using") — rà Kate
+//    đợt 1, user 2026-10-12. Menu dựng mới mỗi lần trong mã
+//    (KateViewSpace::buildContextMenu) nên ẩn mục lúc menu polish, trước khi
+//    tính cỡ. Menu chuột phải trong vùng code: kate-ui.sh.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -95,6 +108,7 @@
 #include <QAction>
 #include <QApplication>
 #include <QComboBox>
+#include <QContextMenuEvent>
 #include <QDir>
 #include <QFrame>
 #include <QFileInfo>
@@ -242,6 +256,32 @@ QHBoxLayout *projectHeader(QComboBox *combo)
 bool isViewSpace(const QObject *obj)
 {
     return obj->inherits("KateViewSpace");
+}
+
+// Mục 10: nhận mục theo tên icon (đặt trong mã Kate, không đổi theo ngôn ngữ):
+// Open… (KStandardAction::open), Detach Document, Properties (chép icon của
+// hành động file_properties), Compare + menu con "… Using" (menuAction mang
+// icon của menu con)
+bool isTrimmedTabAction(const QAction *a)
+{
+    static const QStringList icons{QStringLiteral("document-open"),
+                                   QStringLiteral("tab-detach"),
+                                   QStringLiteral("dialog-object-properties"),
+                                   QStringLiteral("vcs-diff")};
+    return icons.contains(a->icon().name());
+}
+
+// Mục 9: cây Projects mà plugin đã đánh dấu (samhieTreeLines) — mỗi dự án một cây
+QTreeView *projectTreeOf(QObject *obj)
+{
+    auto *tree = qobject_cast<QTreeView *>(obj);
+    if (!tree && obj->parent()) {
+        tree = qobject_cast<QTreeView *>(obj->parent());
+        if (tree && tree->viewport() != obj) {
+            tree = nullptr;
+        }
+    }
+    return tree && tree->property("samhieTreeLines").toBool() ? tree : nullptr;
 }
 
 void trimMenuBar(QMenuBar *bar)
@@ -398,6 +438,41 @@ public:
             // Bộ lọc của ứng dụng chạy trước bộ lọc Sidebar::eventFilter.
             if (obj->property("is-multi-tabbar").toBool() && static_cast<QMouseEvent *>(event)->button() == Qt::LeftButton) {
                 return true;
+            }
+            break;
+        case QEvent::ContextMenu:
+            // Mục 9: nhớ thư mục của mục bị chuột phải (sự kiện tới viewport
+            // trước khi Kate dựng menu)
+            if (QTreeView *tree = projectTreeOf(obj)) {
+                const QModelIndex index = tree->indexAt(static_cast<QContextMenuEvent *>(event)->pos());
+                QString path = index.isValid() ? index.data(Qt::UserRole).toString() : projectBaseDir();
+                if (QFileInfo(path).isFile()) {
+                    path = QFileInfo(path).absolutePath();
+                }
+                m_contextDir = path;
+            }
+            break;
+        case QEvent::Polish:
+            if (auto *menu = qobject_cast<QMenu *>(obj); menu && menu->parentWidget()) {
+                if (isViewSpace(menu->parentWidget())) {
+                    for (QAction *a : menu->actions()) {
+                        if (isTrimmedTabAction(a)) {
+                            a->setVisible(false);
+                        }
+                    }
+                } else if (QTreeView *tree = projectTreeOf(menu->parentWidget()); tree && !m_contextDir.isEmpty()) {
+                    for (QAction *a : menu->actions()) {
+                        // Kate đặt icon "terminal", nhưng bộ icon không có tên đó thì
+                        // icon rỗng (đo container) → nhận theo chữ. Giao diện Samhie
+                        // tiếng Anh; ngôn ngữ khác thì mục giữ hành vi gốc của Kate.
+                        if (a->text() == QLatin1String("Open Internal Terminal Here")) {
+                            a->disconnect(tree);
+                            connect(a, &QAction::triggered, this, [this, dir = m_contextDir] {
+                                openTerminalIn(dir);
+                            });
+                        }
+                    }
+                }
             }
             break;
         case QEvent::ActionAdded:
@@ -621,14 +696,17 @@ private:
         return col;
     }
 
+    QString projectBaseDir() const
+    {
+        QObject *projects = m_mw->pluginView(QStringLiteral("kateprojectplugin"));
+        return projects ? projects->property("projectBaseDir").toString() : QString();
+    }
+
     // Thư mục mở terminal: gốc dự án đang mở → thư mục của file đang xem → home
     QString startDirectory()
     {
-        if (QObject *projects = m_mw->pluginView(QStringLiteral("kateprojectplugin"))) {
-            const QString dir = projects->property("projectBaseDir").toString();
-            if (!dir.isEmpty() && QFileInfo(dir).isDir()) {
-                return dir;
-            }
+        if (const QString dir = projectBaseDir(); !dir.isEmpty() && QFileInfo(dir).isDir()) {
+            return dir;
         }
         if (KTextEditor::View *view = m_mw->activeView()) {
             const QUrl url = view->document()->url();
@@ -639,7 +717,7 @@ private:
         return QDir::homePath();
     }
 
-    TerminalTab *createTerminal()
+    TerminalTab *createTerminal(const QString &dir)
     {
         KPluginFactory *factory = konsoleFactory();
         auto *part = factory ? factory->create<KParts::ReadOnlyPart>(this) : nullptr;
@@ -664,7 +742,7 @@ private:
             });
         });
 
-        qobject_cast<TerminalInterface *>(part)->showShellInDir(startDirectory());
+        qobject_cast<TerminalInterface *>(part)->showShellInDir(dir);
         m_mw->addWidget(tab);
         m_lastTerminal = tab;
         return tab;
@@ -678,8 +756,13 @@ private:
 
     void newTerminal()
     {
+        openTerminalIn(startDirectory());
+    }
+
+    void openTerminalIn(const QString &dir)
+    {
         rememberEditor();
-        if (TerminalTab *tab = createTerminal()) {
+        if (TerminalTab *tab = createTerminal(dir)) {
             focusTerminal(tab);
         }
     }
@@ -707,7 +790,7 @@ private:
             }
         }
         if (!tab) {
-            tab = createTerminal();
+            tab = createTerminal(startDirectory());
         }
         if (tab) {
             focusTerminal(tab);
@@ -738,6 +821,7 @@ private:
     bool m_placePending = false;
     QPointer<TerminalTab> m_lastTerminal;
     QPointer<QWidget> m_lastEditor;
+    QString m_contextDir; // mục 9
 };
 
 class SamhieKatePlugin : public KTextEditor::Plugin

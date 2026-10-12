@@ -503,11 +503,11 @@ namespace {
 constexpr int SIDEBAR_INDENT = 8;  // bản vẽ: icon sidebar cách mép ~16px (KIO tự chừa 4)
 constexpr int PANE_RADIUS = 12;    // góc viền vùng file Dolphin (bản vẽ ~12) = góc cửa sổ
 constexpr int CARD_RADIUS = samhie::TAB_RADIUS;  // thẻ Kate (mục 60) = góc tab, tab liền thẻ
-// Mục 61: nhịp dòng cây Projects của Kate (user 2026-10-12, chọn sau khi đo
-// VS Code trên máy thật: 22px, chữ 13px, icon 16px — Dongle 20 trông cùng cỡ
-// chữ, chừa thêm 2px vì Dongle có phần dưới chữ thấp). Thụt mỗi cấp giữ 12
-// của Kate (kateprojectviewtree.cpp setIndentation) — VS Code 8, Zed 20.
-constexpr int KATE_TREE_ROW = 24;
+// Mục 61: nhịp dòng cây Projects của Kate (user 2026-10-12, sau khi đo VS Code
+// trên máy thật: 22px, chữ 13px, icon 16px — Dongle 20 trông cùng cỡ chữ).
+// Xem 24px trên máy ảo rồi chọn 28. Thụt mỗi cấp giữ 12 của Kate
+// (kateprojectviewtree.cpp setIndentation) — VS Code 8, Zed 20.
+constexpr int KATE_TREE_ROW = 28;
 constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6px mỗi phía
 constexpr int TOOLBAR_SEPARATOR_HEIGHT = 18;  // icon thanh công cụ cao ~20px (mục 23)
 constexpr int KEY_FOCUS_PAD = 6;   // ô nền focus bàn phím rộng hơn vòng radio + chữ (mục 25, 28)

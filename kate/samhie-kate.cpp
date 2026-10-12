@@ -46,6 +46,9 @@
 //      (đo container: ô chọn 42 + vạch 3 so với hàng tab 40 → lệch 5px; máy
 //      ảo user 2026-10-11 cũng 5px). Nhật ký trong khung Output
 //      (KateOutputEdit) cũng là thẻ, ô Search + nút nằm trên nền cửa sổ.
+//    - Icon cây Projects và mọi nút icon ở hàng trên (⟳ « đầu khung Projects;
+//      ‹ › ⌘ ⧉ ☰ của view space) cùng cỡ ICON_SIZE (user 2026-10-12: to hơn
+//      1px, cho đồng đều — trước đều 16).
 //
 // 5. Menu chuột phải trên nút panel (Output, Diagnostics, cột icon) không có
 //    "Hide Button" (user 2026-10-11): với Output nó là mục ĐẦU menu — nhiều khả năng lỡ
@@ -102,6 +105,15 @@ namespace
 const QString kTitle = QStringLiteral("Terminal");
 // Khe giữa thẻ và mép cửa sổ / thanh trạng thái (bản phác: ~5px)
 constexpr int CARD_GAP = 6;
+// Icon cây Projects + nút hàng trên (đo máy ảo: đều 16; user muốn to hơn 1px)
+constexpr int ICON_SIZE = 17;
+
+void growIcons(QWidget *parent)
+{
+    for (auto *button : parent->findChildren<QToolButton *>(Qt::FindDirectChildrenOnly)) {
+        button->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
+    }
+}
 
 // Style samhie đọc thuộc tính lúc polish — polish lại sau khi đánh dấu
 void markCard(QWidget *w)
@@ -340,6 +352,9 @@ public:
                 schedulePlaceMenuButton();  // căn đỉnh thẻ (alignProjectCard)
                 tree->setProperty("samhieTreeLines", true);  // style samhie mục 61
                 markCard(tree);
+                if (auto *view = qobject_cast<QTreeView *>(tree)) {
+                    view->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
+                }
             } else if (auto *combo = qobject_cast<QComboBox *>(obj)) {
                 if (QHBoxLayout *row = projectHeader(combo)) {
                     fixProjectHeader(row, combo->parentWidget());
@@ -412,6 +427,7 @@ private:
             m_mw->hideToolView(toolView);
         });
         row->addWidget(collapse);
+        growIcons(toolView);
     }
 
     // Đổi bố cục (chia đôi, đóng view space, kéo khung) sinh cả loạt sự kiện —
@@ -465,6 +481,11 @@ private:
             }
         }
         alignProjectCard(target);
+        for (QWidget *vs : win->findChildren<QWidget *>()) {
+            if (isViewSpace(vs)) {
+                growIcons(vs);
+            }
+        }
         auto *grid = target ? qobject_cast<QGridLayout *>(target->layout()) : nullptr;
         if (!grid || (m_menuButton && m_menuButton->parentWidget() == target)) {
             return;
@@ -484,6 +505,7 @@ private:
             button->setAutoRaise(true);
         }
         grid->addWidget(m_menuButton, 0, menuColumn(target, grid));
+        growIcons(target);
         m_menuButton->show();
     }
 

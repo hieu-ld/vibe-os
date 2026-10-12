@@ -372,6 +372,7 @@
 //      không mũi tên ▸ (bản phác Figma của user 2026-10-10). Mục cấp gốc
 //      không có đường (cột nhánh đầu bỏ trống). Plugin Kate đánh dấu cây
 //      bằng samhieTreeLines. Màu FRAME_LINE như mọi viền của Samhie.
+//      Dòng cao KATE_TREE_ROW (Kvantum + Dongle cho 42px — thưa hơn bản phác).
 //  62. Vùng code Kate trong đúng WINDOW_OPACITY như thẻ cây bên cạnh (user
 //      2026-10-12; nền = theme màu editor "Samhie", gen-theme.py). KTextEditor
 //      6.30 tô nền dòng có chữ HAI lần (KateViewInternal::paintEvent rồi
@@ -502,6 +503,11 @@ namespace {
 constexpr int SIDEBAR_INDENT = 8;  // bản vẽ: icon sidebar cách mép ~16px (KIO tự chừa 4)
 constexpr int PANE_RADIUS = 12;    // góc viền vùng file Dolphin (bản vẽ ~12) = góc cửa sổ
 constexpr int CARD_RADIUS = samhie::TAB_RADIUS;  // thẻ Kate (mục 60) = góc tab, tab liền thẻ
+// Mục 61: nhịp dòng cây Projects của Kate (user 2026-10-12, chọn sau khi đo
+// VS Code trên máy thật: 22px, chữ 13px, icon 16px — Dongle 20 trông cùng cỡ
+// chữ, chừa thêm 2px vì Dongle có phần dưới chữ thấp). Thụt mỗi cấp giữ 12
+// của Kate (kateprojectviewtree.cpp setIndentation) — VS Code 8, Zed 20.
+constexpr int KATE_TREE_ROW = 24;
 constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6px mỗi phía
 constexpr int TOOLBAR_SEPARATOR_HEIGHT = 18;  // icon thanh công cụ cao ~20px (mục 23)
 constexpr int KEY_FOCUS_PAD = 6;   // ô nền focus bàn phím rộng hơn vòng radio + chữ (mục 25, 28)
@@ -3888,6 +3894,8 @@ public:
         }
         if ((ct == CT_RadioButton || ct == CT_CheckBox) && isToggle(w))
             s.setWidth(s.width() + KEY_FOCUS_PAD);  // mục 28
+        if (ct == CT_ItemViewItem && w && w->property("samhieTreeLines").toBool())
+            s.setHeight(KATE_TREE_ROW);  // mục 61
         auto *mopt = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
         if (ct == CT_MenuItem && mopt && mopt->menuItemType != QStyleOptionMenuItem::Separator)
             s.setHeight(qMin(s.height(), mopt->fontMetrics.height() + 2 * MENUITEM_FRAME));

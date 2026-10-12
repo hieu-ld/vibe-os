@@ -33,3 +33,6 @@ kate_mdi_toolview_output=Ctrl+Shift+Y
 # Khoá đọc ở KateRendererConfig (kateconfig.cpp, KTextEditor 6.30.0).
 Auto Color Theme Selection=false
 Color Theme=Samhie
+# Khoảng cách dòng code 28px (user 2026-10-12; VS Code của user để 32): font
+# Hack 11pt cao 18px (đo máy ảo) × 1,556 = 28 (KateRenderer làm tròn xuống).
+Line Height Multiplier=1.556

@@ -404,6 +404,9 @@ def kate_theme(pal):
         "BackgroundColor": argb(d["card"], op),
         "IconBorder": argb(d["card"], op),            # cột số dòng = nền code, như VS Code
         "CurrentLine": argb(d["hover"], op),          # dòng con trỏ = ô hover trên nền card
+        # Vạch dọc giữa cột số dòng và code: trùng nền = không thấy, khoảng cách
+        # vẫn giữ (user 2026-10-12: VS Code không kẻ vạch, chỉ chừa ~30px)
+        "Separator": argb(d["card"], op),
     })
     return json.dumps(theme, ensure_ascii=False, indent=4) + "\n"
 

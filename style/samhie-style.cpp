@@ -397,6 +397,15 @@
 //      theo hàng (thuộc tính trên widget): ngoài vùng đang vẽ, bộ đệm Wayland
 //      (nhiều bộ luân phiên) có thể còn hình cũ — đọc lúc tô ô đệm thì chép
 //      nhầm dải dòng cũ (đo container).
+//  65. Minimap của Kate thoáng như VS Code (user 2026-10-12 chọn kiểu D từ bản
+//      giả lập): xen một hàng trống giữa các hàng chữ + chữ nhạt còn
+//      MINIMAP_INK. Kate vẽ cứng (KateScrollBar, KTextEditor 6.30): mỗi dòng
+//      code 2px liền nhau, mỗi ký tự một khối đặc rồi ép ngang 108px vào bề
+//      rộng minimap → vệt đặc "dày cộm". Sau khi Kate vẽ: màu nền thật của
+//      từng hàng lấy ở cột MINIMAP_BASE_X (lề 8px bên trái dành cho vạch dòng
+//      đã sửa — vạch nằm ở cột 2–4, cột 7 luôn trống), đã gồm lớp tô khung
+//      xem + lớp làm mờ; hàng lẻ = màu đó, hàng chẵn pha về nó. Viền khung
+//      xem chạy ngang qua cột nền nên giữ nguyên.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -526,6 +535,13 @@ constexpr int CARD_RADIUS = samhie::TAB_RADIUS;  // thẻ Kate (mục 60) = góc
 constexpr int KATE_TREE_ROW = 28;
 // Mục 64: khe thêm giữa cột số dòng và code của Kate
 constexpr int GUTTER_EXTRA = 8;
+// Mục 65: minimap Kate — cột lấy màu nền, cột chữ đầu tiên (s_pixelMargin của
+// Kate), độ đậm chữ còn lại, bề rộng tối thiểu để coi là minimap (thanh cuộn
+// thường ~12px)
+constexpr int MINIMAP_BASE_X = 7;
+constexpr int MINIMAP_TEXT_X = 8;
+constexpr qreal MINIMAP_INK = 0.7;
+constexpr int MINIMAP_MIN_WIDTH = 40;
 constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6px mỗi phía
 constexpr int TOOLBAR_SEPARATOR_HEIGHT = 18;  // icon thanh công cụ cao ~20px (mục 23)
 constexpr int KEY_FOCUS_PAD = 6;   // ô nền focus bàn phím rộng hơn vòng radio + chữ (mục 25, 28)
@@ -1087,6 +1103,8 @@ public:
         static_cast<QObject *>(w)->event(event);
         m_painting = false;
         clamp(w, static_cast<QPaintEvent *>(event)->region());
+        if (w->inherits("KateScrollBar"))
+            airMinimap(w, static_cast<QPaintEvent *>(event)->region());  // mục 65
         // Mục 64
         if (w->inherits("KateIconBorder")) {
             const int width = w->sizeHint().width() + GUTTER_EXTRA;
@@ -1109,6 +1127,44 @@ public:
 
 private:
     static constexpr const char *EDGE_COLORS = "_samhie_edge_colors";
+
+    // Mục 65
+    static void airMinimap(QWidget *w, const QRegion &region)
+    {
+        if (w->width() < MINIMAP_MIN_WIDTH)
+            return;
+        QBackingStore *store = w->backingStore();
+        auto *image = store ? dynamic_cast<QImage *>(store->paintDevice()) : nullptr;
+        if (!image || image->format() != QImage::Format_ARGB32_Premultiplied)
+            return;
+        const qreal dpr = image->devicePixelRatio();
+        const QPoint win = w->mapTo(w->window(), QPoint());
+        const int ink = qRound(MINIMAP_INK * 256);
+        const auto mix = [ink](QRgb base, QRgb c, bool gap) {
+            if (gap)
+                return base;
+            const auto ch = [&](int b, int v) { return b + (((v - b) * ink) >> 8); };
+            return qRgba(ch(qRed(base), qRed(c)), ch(qGreen(base), qGreen(c)), ch(qBlue(base), qBlue(c)),
+                         ch(qAlpha(base), qAlpha(c)));
+        };
+        for (const QRect &r : region.intersected(w->rect())) {
+            // cột nền phải nằm trong vùng vừa vẽ, không thì là màu cũ
+            if (r.left() > MINIMAP_BASE_X || r.right() < MINIMAP_BASE_X)
+                continue;
+            const int x0 = qRound((win.x() + qMax(r.left(), MINIMAP_TEXT_X)) * dpr);
+            const int x1 = qRound((win.x() + qMin(r.right(), w->width() - 3)) * dpr);
+            const int baseX = qRound((win.x() + MINIMAP_BASE_X) * dpr);
+            const int y0 = qRound((win.y() + r.top()) * dpr);
+            const int y1 = qRound((win.y() + r.bottom() + 1) * dpr) - 1;
+            for (int y = qMax(y0, 0); y <= qMin(y1, image->height() - 1); ++y) {
+                auto *line = reinterpret_cast<QRgb *>(image->scanLine(y));
+                const QRgb base = line[baseX];
+                const bool gap = (qFloor(y / dpr) - win.y()) % 2 == 0;  // hàng 0 = lề trên
+                for (int x = qMax(x0, 0); x <= qMin(x1, image->width() - 1); ++x)
+                    line[x] = mix(base, line[x], gap);
+            }
+        }
+    }
 
     // Mục 64: màu cột 0 của cột số từng hàng (toạ độ widget) — đọc bộ đệm cửa
     // sổ ngay sau khi Kate vẽ các hàng đó

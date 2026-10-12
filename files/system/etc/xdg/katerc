@@ -36,3 +36,8 @@ Color Theme=Samhie
 # Khoảng cách dòng code 28px (user 2026-10-12; VS Code của user để 32): font
 # Hack 11pt cao 18px (đo máy ảo) × 1,556 = 28 (KateRenderer làm tròn xuống).
 Line Height Multiplier=1.556
+
+[KTextEditor View]
+# Minimap bên phải vùng code rộng hơn mặc định 60px (user 2026-10-12: "rộng
+# ra 1 xíu"). Khoá đọc ở KateViewConfig (kateconfig.cpp, KTextEditor 6.30.0).
+Scroll Bar Mini Map Width=72

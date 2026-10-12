@@ -381,6 +381,10 @@
 //      container: lộ vệt quanh từng dòng). Vẽ xong mỗi widget đó, hạ điểm ảnh
 //      nào đục hơn WINDOW_OPACITY xuống đúng mức ấy trong bộ đệm cửa sổ
 //      (EditorAlpha) — chữ cũng 90%, như mọi thứ trên thẻ.
+//  63. Dải tab cuộn (nhiều tab hơn chỗ) không có vạch xanh 2px ở mép: "dấu
+//      xé tab" của Qt (PE_IndicatorTabTearLeft/Right, QTabBar vẽ khi tab đầu
+//      bị che một phần) ra #198cff — ngoài bảng màu (máy ảo user 2026-10-12,
+//      Kate nhiều tab; tái hiện container). Tab bị cắt ở mép đã đủ báo còn tab.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -3299,6 +3303,8 @@ public:
 
     void drawPrimitive(PrimitiveElement pe, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
     {
+        if (pe == PE_IndicatorTabTearLeft || pe == PE_IndicatorTabTearRight)
+            return;  // mục 63
         // Mục 61: đường nhánh cây Projects của Kate. opt->rect là một cột
         // thụt lề (QTreeView::drawBranches, toạ độ vùng hiển thị).
         if (pe == PE_IndicatorBranch && w && w->property("samhieTreeLines").toBool()) {

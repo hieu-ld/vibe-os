@@ -48,7 +48,7 @@
 //      (KateOutputEdit) cũng là thẻ, ô Search + nút nằm trên nền cửa sổ.
 //    - Icon cây Projects và mọi nút icon ở hàng trên (⟳ « đầu khung Projects;
 //      ‹ › ⌘ ⧉ ☰ của view space) cùng cỡ ICON_SIZE (user 2026-10-12: to hơn
-//      1px, cho đồng đều — trước đều 16).
+//      cho đồng đều — trước đều 16, thử 17, chốt 18).
 //
 // 5. Menu chuột phải trên nút panel (Output, Diagnostics, cột icon) không có
 //    "Hide Button" (user 2026-10-11): với Output nó là mục ĐẦU menu — nhiều khả năng lỡ
@@ -61,6 +61,14 @@
 //    đó", lỡ bấm ra ngoài mà thẻ tự đóng thì hoang mang). Kate mặc định thu/
 //    mở panel dùng gần nhất (Sidebar::eventFilter, MouseButtonPress trên
 //    MultiTabBar có thuộc tính "is-multi-tabbar", katemdi.cpp 26.08.1).
+//
+// 7. Dải tab không kẹt ở độ cuộn cũ. Mở nhiều file lúc khởi động, có lúc dải
+//    tab cuộn tới mức chỉ còn tab cuối, bên phải trống trơn (container: nút
+//    hàng trên 18px thì lần nào cũng vậy, 17px thì không — do thứ tự xếp bố
+//    cục; dải tab rộng 1133 mà độ cuộn 1400). Qt 6.11 chỉ tính lại độ cuộn
+//    khi tab đổi hoặc dải tab đổi cỡ (QTabBar::resizeEvent → makeVisible,
+//    nhánh "lấp chỗ trống bên phải") → sau mỗi lần xếp lại bố cục và mỗi
+//    lần đổi file, gửi lại sự kiện đổi cỡ cho dải tab (refreshTabScroll).
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -92,7 +100,9 @@
 #include <QMenuBar>
 #include <QMouseEvent>
 #include <QPointer>
+#include <QResizeEvent>
 #include <QStackedWidget>
+#include <QTabBar>
 #include <QTabWidget>
 #include <QTimer>
 #include <QToolButton>
@@ -105,8 +115,22 @@ namespace
 const QString kTitle = QStringLiteral("Terminal");
 // Khe giữa thẻ và mép cửa sổ / thanh trạng thái (bản phác: ~5px)
 constexpr int CARD_GAP = 6;
-// Icon cây Projects + nút hàng trên (đo máy ảo: đều 16; user muốn to hơn 1px)
-constexpr int ICON_SIZE = 17;
+// Icon cây Projects + nút hàng trên (đo máy ảo: đều 16; user thử 17 rồi chọn
+// 18 "cho chẵn")
+constexpr int ICON_SIZE = 18;
+
+// Mục 7: gửi lại QResizeEvent (cùng cỡ) để QTabBar tính lại độ cuộn
+void refreshTabScroll(QWidget *viewSpace)
+{
+    QTimer::singleShot(0, viewSpace, [viewSpace] {
+        for (auto *bar : viewSpace->findChildren<QTabBar *>()) {
+            if (bar->inherits("KateTabBar")) {
+                QResizeEvent ev(bar->size(), bar->size());
+                QCoreApplication::sendEvent(bar, &ev);
+            }
+        }
+    });
+}
 
 void growIcons(QWidget *parent)
 {
@@ -290,6 +314,15 @@ public:
         });
 
         m_mw->guiFactory()->addClient(this);
+
+        // Mục 7: đổi file (mở file mới cũng là đổi) → dải tab tính lại độ cuộn
+        connect(m_mw, &KTextEditor::MainWindow::viewChanged, this, [this] {
+            for (QWidget *vs : m_mw->window()->findChildren<QWidget *>()) {
+                if (isViewSpace(vs)) {
+                    refreshTabScroll(vs);
+                }
+            }
+        });
 
         // Thanh menu: ẩn ngay, và ẩn lại mỗi khi KXmlGui thêm/sửa mục (plugin
         // nạp sau, đổi view thì phần editor gỡ ra lắp vào).
@@ -484,6 +517,7 @@ private:
         for (QWidget *vs : win->findChildren<QWidget *>()) {
             if (isViewSpace(vs)) {
                 growIcons(vs);
+                refreshTabScroll(vs);
             }
         }
         auto *grid = target ? qobject_cast<QGridLayout *>(target->layout()) : nullptr;

@@ -47,6 +47,19 @@ cho hộp Edit Profile (`add`, `keyboard`, `konsole-scrolling`,
 `konsole-mouse`, `konsole-advanced`, `text-font`) — Claude lấy thẳng từ repo
 ở commit trên, đổi `#141B34` → `currentColor`. `konsole-mouse` trùng nét
 `mouse` (cỡ 32 thay 16, bảng NUDGE khác).
+Kate (rà Kate đợt 2, 2026-10-12, user: "mấy cái dùng lại thì dùng lại, mấy
+cái chưa có thì tìm giúp"): icon cho hộp Configure Kate (16px), cột icon trái
+(32px), nút đáy cửa sổ và nút Replace của panel Search (16px). Dùng lại thẳng
+hình đã có, cùng cỡ: Color Themes = `symbol-design`, Editing = `edit`,
+Documents = `folder`, Plugins = `plugins`, LSP Client = `symbol-development`.
+Bản chép vì khác cỡ/kiểu với hình gốc: `kate-session` = `history` (như
+`recent`, cỡ 20), `kate-projects` = `files-01` (như `files`, nhưng không thu
+nhỏ/nét mảnh như icon loại file), `kate-git` = `git-branch` (như `git`).
+Hình mới: `save` (`floppy-disk`), `kate-behavior` (`cursor-in-window`),
+`kate-feedback` (`comment-01`), `kate-outline` (`workflow-square-03`),
+`kate-diagnostics` (`alert-02`), `kate-output` (`note-01`), `replace`,
+`replace-all`. Claude lấy thẳng từ repo ở commit trên, đổi `#141B34` →
+`currentColor`.
 Ba file đã sửa (MIT cho sửa):
 - `star-full`: `star` tô kín (fill `currentColor`) — sao Rating đã chọn.
 - `trash-full`: `waste` thêm ba vạch dọc user tự vẽ.
@@ -129,6 +142,14 @@ Ba file đã sửa (MIT cho sửa):
 | `info` | `information-circle` |
 | `interface` | `dashboard-browsing` |
 | `invert-selection` | `contrast` |
+| `kate-behavior` | `cursor-in-window` |
+| `kate-diagnostics` | `alert-02` |
+| `kate-feedback` | `comment-01` |
+| `kate-git` | `git-branch` |
+| `kate-outline` | `workflow-square-03` |
+| `kate-output` | `note-01` |
+| `kate-projects` | `files-01` |
+| `kate-session` | `history` |
 | `keyboard` | `keyboard` |
 | `konsole-advanced` | `sliders-horizontal` |
 | `konsole-general` | `computer-terminal-01` |
@@ -174,8 +195,11 @@ Ba file đã sửa (MIT cho sửa):
 | `redo` | `redo-03` |
 | `refresh` | `refresh-ccw` |
 | `rename` | `pencil-edit-01` |
+| `replace` | `replace` |
+| `replace-all` | `replace-all` |
 | `restart` | `rotate-ccw` |
 | `restore` | `undo` |
+| `save` | `floppy-disk` |
 | `search` | `search-01` |
 | `select-all` | `tick-double-02` |
 | `select-text` | `cursor-text` |

@@ -111,9 +111,14 @@
 //      dải lùi vào 12px thay chỗ nút.
 //    - Panel Search ở cột trái (~190px) chật: "Replace"/"Replace Checked" cắt
 //      thành "R…". Thành nút icon cạnh ô Replace như VS Code, hàng dưới chỉ
-//      còn nút tuỳ chọn. Kate xếp lưới lại khi panel đổi giữa dọc/ngang
+//      còn nút tuỳ chọn (icon Hugeicons replace / replace-all — bộ icon
+//      Samhie). Kate xếp lưới lại khi panel đổi giữa dọc/ngang
 //      (KatePluginSearchView::onResize, trong bộ lọc Resize của nó — chạy SAU
 //      bộ lọc ứng dụng của plugin) → xếp lại sau một nhịp.
+//    - Nút Git ở cột icon trái: icon Kate nhúng trong mã (gitIcon(),
+//      sc-apps-git.svg — không qua bộ icon) → gắn "samhie-kate-git" (Hugeicons
+//      git-branch) lên nút. Nút là KMultiTabBarTab mang tên panel ở thuộc tính
+//      kate_original_text (Sidebar::updateButtonStyle, katemdi.cpp).
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -129,6 +134,7 @@
 #include <KXmlGuiWindow>
 #include <kde_terminal_interface.h>
 
+#include <QAbstractButton>
 #include <QAction>
 #include <QApplication>
 #include <QComboBox>
@@ -371,7 +377,7 @@ void arrangeSearchPanel(QWidget *dialog)
         replace->setIcon(QIcon::fromTheme(QStringLiteral("edit-find-replace")));
         replaceChecked->setToolTip(replaceChecked->text());
         replaceChecked->setText(QString());
-        replaceChecked->setIcon(QIcon::fromTheme(QStringLiteral("document-replace")));
+        replaceChecked->setIcon(QIcon::fromTheme(QStringLiteral("samhie-replace-all")));
     }
     grid->addWidget(replaceCombo, 2, 0, 1, 3);
     grid->addWidget(replace, 2, 3);
@@ -379,6 +385,12 @@ void arrangeSearchPanel(QWidget *dialog)
     grid->addWidget(options, 3, 0, 1, 3);
     grid->addWidget(newTab, 3, 3);
     grid->addWidget(more, 3, 4);
+}
+
+// Mục 12: nút panel Git ở cột icon trái
+bool isGitSidebarButton(const QObject *obj)
+{
+    return obj->inherits("KMultiTabBarTab") && obj->property("kate_original_text").toString() == QLatin1String("Git");
 }
 
 // Mục 9: cây Projects mà plugin đã đánh dấu (samhieTreeLines) — mỗi dự án một cây
@@ -539,10 +551,17 @@ public:
         // Ô Filter… của mỗi dự án: bắt lúc nó sắp hiện
         qApp->installEventFilter(this);
 
-        // Mục 12: breadcrumb của view space đã dựng trước khi plugin nạp
+        // Mục 12: breadcrumb của view space đã dựng trước khi plugin nạp (cũng
+        // nút Git dưới)
         for (auto *button : m_mw->window()->findChildren<QToolButton *>()) {
             if (isCrumbEllipsis(button)) {
                 hideCrumbEllipsis(button);
+            }
+        }
+        // Mục 12: nút Git — panel Git dựng trước plugin này
+        for (auto *button : m_mw->window()->findChildren<QAbstractButton *>()) {
+            if (isGitSidebarButton(button)) {
+                button->setIcon(QIcon::fromTheme(QStringLiteral("samhie-kate-git")));
             }
         }
     }
@@ -572,6 +591,9 @@ public:
         case QEvent::Polish:
             if (isCrumbEllipsis(obj)) {
                 hideCrumbEllipsis(static_cast<QWidget *>(obj)); // mục 12 (view space mới)
+            }
+            if (isGitSidebarButton(obj)) {
+                static_cast<QAbstractButton *>(obj)->setIcon(QIcon::fromTheme(QStringLiteral("samhie-kate-git"))); // mục 12
             }
             if (auto *menu = qobject_cast<QMenu *>(obj); menu && menu->parentWidget()) {
                 if (isViewSpace(menu->parentWidget())) {

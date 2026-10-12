@@ -159,7 +159,8 @@ MAP = {
     "copy-link":  [("actions", "edit-copy-path")],
     "cut":        [("actions", "edit-cut")],
     "paste":      [("actions", "edit-paste")],
-    "edit":       [("actions", "document-edit"), ("actions", "edit-entry")],
+    "edit":       [("actions", "document-edit"), ("actions", "edit-entry"),
+                   ("actions", "accessories-text-editor")],  # trang Editing (Configure Kate)
     "rename":     [("actions", "edit-rename")],
     "folder-new": [("actions", "folder-new")],
     "refresh":    [("actions", "view-refresh")],
@@ -292,7 +293,8 @@ MAP = {
     "select-text": [("actions", "edit-select")],          # Select Mode
     "exchange":   [("actions", "exchange-positions")],   # Swap panes
     "mouse":      [("actions", "input-mouse-symbolic")], # Allow Mouse Tracking
-    "plugins":    [("actions", "plugins")],
+    "plugins":    [("actions", "plugins"),
+                   ("actions", "preferences-plugin")],   # trang Plugins (Configure Kate)
     "web-search": [("actions", "preferences-web-browser-shortcuts")],  # Search for … with
     "quick-commands": [("actions", "quickopen")],
     "detach":     [("actions", "tab-detach")],
@@ -374,7 +376,37 @@ MAP = {
     # icon app nhiều màu ở apps/scalable (tools/build-app-icons.py). Thư mục
     # cỡ cố định đứng trước scalable trong index.theme nên thắng đúng ở 16px.
     "terminal":   [("apps/16", "utilities-terminal")],
+    # Kate (rà Kate đợt 2, user 2026-10-12 nhờ Claude tìm / dùng lại hình sẵn
+    # có — bản chép "kate-*" khi cỡ hiển thị khác hình gốc). Tên đo trong mã Kate
+    # 26.08.1 / KTextEditor 6.30.0, chỉ những tên còn rơi về Breeze.
+    # Trang hộp Configure Kate (16px — khác Konsole 32, đo container):
+    # Color Themes / Editing / Plugins / Documents / LSP Client gắn thẳng vào
+    # hình gốc cùng cỡ 16 (symbol-design, edit, plugins, folder,
+    # symbol-development) — xem dưới bảng và các dòng đó.
+    "save":         [("actions", "document-save")],                 # Open/Save (+ Save trong menu)
+    "kate-behavior": [("actions", "preferences-system-windows-behavior")],  # Behavior
+    "kate-session": [("actions", "view-history")],                  # Session
+    "kate-feedback": [("actions", "preferences-desktop-locale")],   # User Feedback
+    # Cột icon trái (Kate vẽ 32px — "Icon size for left and right sidebar
+    # buttons", katemdi.cpp). Projects cũng là trang Projects của Configure.
+    # Git: icon Kate NHÚNG trong mã (sc-apps-git.svg) → plugin samhiekate gắn
+    # tên riêng lên nút. Symbols: quickopen-class rơi về ⌘ của quickopen —
+    # trùng nút Quick Open.
+    "kate-projects": [("actions", "project-open")],
+    "kate-git":     [("actions", "samhie-kate-git")],
+    "kate-outline": [("actions", "quickopen-class")],
+    # Nút đáy cửa sổ (16px) + nút icon panel Search (plugin samhiekate mục 12)
+    "kate-diagnostics": [("actions", "dialog-warning-symbolic")],
+    "kate-output":  [("actions", "output_win")],
+    "replace":      [("actions", "edit-find-replace")],             # Replace (+ Find/Replace của Kate)
+    "replace-all":  [("actions", "samhie-replace-all")],            # Replace Checked
 }
+
+# Hình gốc dùng thêm cho trang Configure Kate (16px). folder khai nhiều dòng,
+# symbol-* sinh bằng vòng lặp — gắn thêm tên ở đây cho dễ thấy.
+MAP["folder"].append(("actions", "folder-documents-symbolic"))       # Documents
+MAP["symbol-design"].append(("actions", "preferences-desktop-color"))  # Color Themes
+MAP["symbol-development"].append(("actions", "format-text-code"))    # LSP Client (+ panel LSP)
 
 # Có sẵn, chưa lắp. `wifi-lock`: chỉ có bản sóng đầy — danh sách Wi-Fi cần
 # khoá đi cùng cả bốn mức, nên vẫn dùng ổ khoá nhỏ đè góc (WifiPage.qml).
@@ -394,7 +426,8 @@ SIZE = {
     22: ["icons", "details", "menu", "search", "prev", "next"],
     32: ["context-menu", "interface", "konsole-general", "konsole-profiles", "memory",
          "tab-bar", "temp-files", "thumbnails",
-         "konsole-scrolling", "keyboard", "konsole-mouse", "konsole-advanced"],
+         "konsole-scrolling", "keyboard", "konsole-mouse", "konsole-advanced",
+         "kate-projects", "kate-git", "kate-outline"],
 }
 
 
@@ -450,6 +483,12 @@ FAMILIES = [
 # Họ loa và họ thùng rác: dò chung không giảm mờ đủ 0,06 nên không dời.
 # tên hình: (cỡ px, dời ngang px, dời dọc px)
 NUDGE = {
+    "kate-diagnostics": (16, -0.5, -0.5),  # mờ 0.61 → 0.40
+    "save": (16, -0.5, -0.125),          # mờ 0.52 → 0.36
+    "kate-behavior": (16, 0.125, -0.5),  # mờ 0.50 → 0.41
+    "kate-session": (16, -0.5, -0.5),    # mờ 0.61 → 0.37
+    "kate-feedback": (16, 0, -0.25),     # mờ 0.46 → 0.34
+    "replace-all": (16, -0.5, -0.5),     # mờ 0.56 → 0.47
     "backspace": (16, -0.5, -0.5),       # mờ 0.57 → 0.40
     "bell": (18, -0.5, 0),               # mờ 0.37 → 0.31 (họ chuông)
     "noti-off": (18, -0.5, 0),

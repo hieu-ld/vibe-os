@@ -252,7 +252,7 @@ if [ ! -e "$kate_menu_marker" ] && command -v kwriteconfig6 >/dev/null; then
     echo "Hid Kate's menu bar"
 fi
 
-# ── 0j. Kate/KWrite: bản nháp chưa lưu cất chung một chỗ ────────────────────
+# ── 0j. Kate: bản nháp chưa lưu cất chung một chỗ ───────────────────────────
 # Bản nháp (*.kate-swp, để cứu dữ liệu khi editor bị đóng đột ngột) mặc định
 # là file ẩn cạnh file gốc — máy ảo user 2026-10-12 thấy
 # .samhie-style.cpp.kate-swp hiện trong cây Projects, mở nhầm thành tab.
@@ -263,16 +263,16 @@ fi
 # Ghi ở ~/.config chứ không /etc/xdg vì thư mục phải là đường dẫn ĐẦY ĐỦ của
 # từng người: KTextEditor không thay biến — `Swap Directory[$e]=$HOME/…` trong
 # /etc/xdg/katerc thành thư mục tên "$HOME" ngay chỗ Kate được mở (đo container
-# 2026-10-12). Người dùng đã tự chọn chế độ nháp thì để nguyên.
+# 2026-10-12). Người dùng đã tự chọn chế độ nháp thì để nguyên. (Bản đầu ghi
+# cả kwriterc — KWrite đã bỏ khỏi image; khoá thừa trong đó vô hại.)
+# Bản nháp sót lâu ngày: /usr/share/user-tmpfiles.d/samhie-kate.conf dọn.
 kate_swap_marker=$state_dir/kate-swap-dir
 if [ ! -e "$kate_swap_marker" ] && command -v kwriteconfig6 >/dev/null; then
-    for rc in katerc kwriterc; do
-        if [ -z "$(kreadconfig6 --file "$config_home/$rc" --group 'KTextEditor Document' --key 'Swap File Mode')" ]; then
-            kwriteconfig6 --file "$config_home/$rc" --group 'KTextEditor Document' --key 'Swap File Mode' 2
-            kwriteconfig6 --file "$config_home/$rc" --group 'KTextEditor Document' --key 'Swap Directory' \
-                "${XDG_STATE_HOME:-$HOME/.local/state}/kate/swap"
-        fi
-    done
+    if [ -z "$(kreadconfig6 --file "$config_home/katerc" --group 'KTextEditor Document' --key 'Swap File Mode')" ]; then
+        kwriteconfig6 --file "$config_home/katerc" --group 'KTextEditor Document' --key 'Swap File Mode' 2
+        kwriteconfig6 --file "$config_home/katerc" --group 'KTextEditor Document' --key 'Swap Directory' \
+            "${XDG_STATE_HOME:-$HOME/.local/state}/kate/swap"
+    fi
     mkdir -p -- "$state_dir"
     touch -- "$kate_swap_marker"
     echo "Moved Kate's unsaved-change files out of project folders"

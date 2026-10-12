@@ -45,9 +45,10 @@ modules:
         - kde-cli-tools           # kioclient: để menu "Open with" chạy ngoài Plasma
         - konsole
         - ark
-        - kwrite                  # mở nhanh file chữ; Kate cho việc code
-        # Kate: thay VS Code (thử từ 2026-10-10, gỡ VS Code 2026-10-12). Đo: +33 MB
-        # (kate + kate-plugins + 3 thư viện KF6; kate-libs đã có nhờ kwrite) —
+        # Kate: thay VS Code (thử từ 2026-10-10, gỡ VS Code 2026-10-12), mở cả file
+        # chữ khi nhấp đúp — KWrite bỏ 2026-10-12 (user chọn; nó còn giao diện
+        # gốc Breeze + menu + toolbar). Đo: +33 MB (kate + kate-plugins
+        # + 3 thư viện KF6; khi đó kate-libs đã có nhờ kwrite) —
         # VS Code chiếm 1,06 GB. Đo RAM máy ảo, cùng dự án: Kate 108 MB, VS Code
         # 873 MB. kate-plugins ghi rõ vì nó chỉ là weak dep mà cây dự án,
         # terminal nhúng, Git, LSP đều nằm trong đó.

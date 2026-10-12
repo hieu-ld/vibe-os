@@ -1,9 +1,9 @@
 # Mở file bằng app nào — mặc định của Samhie.
 #
-# Nhấp đúp file chữ → KWrite (mở nhanh); Kate có trong "Open with" vì file
-# .desktop của nó tự khai text/plain và inode/directory. (Trước 2026-10-12 có
-# khối [Added Associations] khai thêm VS Code — .desktop của Microsoft chỉ khai
-# application/x-code-workspace; VS Code đã gỡ khỏi image.)
+# Nhấp đúp file chữ → Kate (KWrite bỏ khỏi image 2026-10-12; trước đó KWrite
+# mở file chữ). File .desktop của Kate tự khai text/plain và inode/directory.
+# (Trước 2026-10-12 có khối [Added Associations] khai thêm VS Code — .desktop
+# của Microsoft chỉ khai application/x-code-workspace; VS Code đã gỡ khỏi image.)
 #
 # Ở /etc/xdg vì KService 6.30 đọc mimeapps.list trong MỌI thư mục cấu hình,
 # bản hệ thống trước rồi bản người dùng sau (src/sycoca/kmimeassociations.cpp) —
@@ -13,5 +13,5 @@
 # tự tính kế thừa kiểu MIME.
 
 [Default Applications]
-text/plain=org.kde.kwrite.desktop
+text/plain=org.kde.kate.desktop
 inode/directory=org.kde.dolphin.desktop

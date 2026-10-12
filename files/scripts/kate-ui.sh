@@ -15,7 +15,7 @@
 #       (~/.local/state/katestaterc); bật lại: chuột phải menubar.
 #
 # katepart5ui.rc (libKF6TextEditor.so, component "katepart" — vùng code của
-# Kate; KWrite cũng dùng): menu chuột phải trong vùng code (<Menu
+# Kate): menu chuột phải trong vùng code (<Menu
 # name="ktexteditor_popup">) bỏ Copy as HTML, Paste Selection (dán chữ đang bôi
 # đen ở chỗ khác — kiểu chuột giữa X11), Swap with Clipboard Contents, Text to
 # Speech + Say current selection (rà Kate đợt 1, user 2026-10-12). Chỉ bỏ khỏi

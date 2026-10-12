@@ -373,6 +373,41 @@ def konsole_profile(pal):
     return "\n".join(head) + ini(sections)
 
 
+# ---------------------------------------------------------------- Kate
+
+KATE_BASE = ROOT / "theme" / "kate" / "breeze-dark.theme"
+
+
+def argb(hex_color, alpha):
+    # KSyntaxHighlighting đọc màu "#aarrggbb" (themedata.cpp readColor)
+    return f"#{round(alpha * 255):02x}{hex_color[1:]}"
+
+
+def kate_theme(pal):
+    # Theme màu vùng code của Kate (KTextEditor). Màu cú pháp giữ của Breeze
+    # Dark (theme/kate/README.md); chỉ thay nền cho vùng code giống thẻ cây
+    # Projects bên cạnh: card, trong như nền cửa sổ (user 2026-10-12).
+    # Đọc mã KTextEditor 6.30.0: dòng có chữ được tô nền HAI lần
+    # (KateViewInternal::paintEvent rồi KateRenderer::paintTextLineBackground)
+    # → độ đục 1 − 0,1² = 0,99; vùng trống dưới dòng cuối và cột số dòng tô
+    # một lần → 0,9 như thẻ cây. Chênh nhau chỉ thấy trên hình nền sáng.
+    d, op = pal["dark"], pal["window"]["opacity"]
+    theme = json.loads(KATE_BASE.read_text())
+    theme["metadata"] = {
+        "copyright": theme["metadata"]["copyright"],
+        "license": theme["metadata"]["license"],
+        "revision": 1,
+        "name": "Samhie",
+        "_comment": f"{HEADER} Màu cú pháp: Breeze Dark (theme/kate/README.md).",
+    }
+    theme["editor-colors"].update({
+        "BackgroundColor": argb(d["card"], op),
+        "IconBorder": argb(d["card"], op),            # cột số dòng = nền code, như VS Code
+        "CurrentLine": argb(d["hover"], op),          # dòng con trỏ = ô hover trên nền card
+    })
+    return json.dumps(theme, ensure_ascii=False, indent=4) + "\n"
+
+
 def style_colors_h(pal):
     # Màu cho widget style "samhie" (style/samhie-style.cpp) — chỉ vài chỗ mà
     # theme Kvantum không vẽ được. Bản tối, như theme Kvantum.
@@ -693,6 +728,7 @@ OUTPUTS = {
     "files/system/usr/share/konsole/Samhie.colorscheme": konsole_colorscheme,
     "files/system/usr/share/konsole/Samhie.profile": konsole_profile,
     "style/colors.h": style_colors_h,
+    "files/system/usr/share/org.kde.syntax-highlighting/themes/samhie.theme": kate_theme,
     "files/system/etc/profile.d/samhie-prompt.sh": bash_prompt,
     "files/system/etc/xdg/kdeglobals": kdeglobals,
     "files/system/usr/share/color-schemes/SamhieDark.colors": kde_colors_file("dark"),

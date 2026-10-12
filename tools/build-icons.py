@@ -235,6 +235,9 @@ MAP = {
     "restore":    [("actions", "view-restore"), ("actions", "document-revert")],
     "show-hidden": [("actions", "view-visible")],          # ẩn: `hide`
     "sidebar":    [("actions", "compass")],                # panel Places
+    # Nút « thu khung Projects của Kate (plugin samhiekate, kate/samhie-kate.cpp) —
+    # user nhờ chọn 2026-10-12: khung có ‹, khác ‹ › đầu dải tab.
+    "sidebar-close": [("actions", "sidebar-collapse-left")],
     "preview":    [("actions", "view-preview")],
     "open-folder": [("actions", "document-open-folder"),  # Show Target
                     # Nút "Open file dialog" cạnh ô đường dẫn (KUrlRequester,
@@ -506,6 +509,7 @@ NUDGE = {
     "redo": (16, 0.25, 0.125),           # mờ 0.46 → 0.34
     "restore": (16, -0.5, 0.375),        # mờ 0.54 → 0.42
     "sidebar": (16, -0.5, -0.5),         # mờ 0.71 → 0.16
+    "sidebar-close": (16, 0.125, -0.5),  # mờ 0.50 → 0.28
     # Konsole (2026-10-09)
     "detach": (16, -0.5, -0.5),          # mờ 0.54 → 0.43
     "exchange": (16, 0.125, -0.5),       # mờ 0.76 → 0.17

@@ -63,6 +63,7 @@ var NUDGE = {
     "samhie-symbol-music": [16, -1, 0],
     "samhie-user-home": [20, 0, -1],
     "show-menu": [16, -1, -1],
+    "sidebar-collapse-left": [16, 0, -1],
     "swap-panels": [16, 0, -1],
     "system-file-manager-symbolic": [16, 0, -1],
     "system-log-out": [20, 0, 1],

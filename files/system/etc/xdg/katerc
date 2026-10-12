@@ -24,3 +24,12 @@ Show Menu Bar=false
 # katerc. Ctrl+Shift+Y: Kate/KTextEditor 26.08.1 chưa dùng (đã dò mã), VS Code
 # dùng cho khung dưới Debug Console. Esc vẫn đóng khung (có sẵn trong Kate).
 kate_mdi_toolview_output=Ctrl+Shift+Y
+
+[KTextEditor Renderer]
+# Theme màu vùng code: Samhie (sinh từ theme/palette.toml — nền = thẻ cây
+# Projects, trong 90% như cửa sổ; màu cú pháp của Breeze Dark). Kate mặc định
+# TỰ chọn theme theo bảng màu app (khớp đúng màu nền Base, không có thì Breeze
+# Dark) — theme Samhie có nền trong nên không bao giờ khớp → tắt tự chọn.
+# Khoá đọc ở KateRendererConfig (kateconfig.cpp, KTextEditor 6.30.0).
+Auto Color Theme Selection=false
+Color Theme=Samhie

@@ -372,6 +372,14 @@
 //      không mũi tên ▸ (bản phác Figma của user 2026-10-10). Mục cấp gốc
 //      không có đường (cột nhánh đầu bỏ trống). Plugin Kate đánh dấu cây
 //      bằng samhieTreeLines. Màu FRAME_LINE như mọi viền của Samhie.
+//  62. Vùng code Kate trong đúng WINDOW_OPACITY như thẻ cây bên cạnh (user
+//      2026-10-12; nền = theme màu editor "Samhie", gen-theme.py). KTextEditor
+//      6.30 tô nền dòng có chữ HAI lần (KateViewInternal::paintEvent rồi
+//      KateRenderer::paintTextLineBackground), cột số dòng tô lại mép phải,
+//      minimap tô rãnh đè — nền 90% thành ~99% ở đó, 90% ở chỗ khác (đo
+//      container: lộ vệt quanh từng dòng). Vẽ xong mỗi widget đó, hạ điểm ảnh
+//      nào đục hơn WINDOW_OPACITY xuống đúng mức ấy trong bộ đệm cửa sổ
+//      (EditorAlpha) — chữ cũng 90%, như mọi thứ trên thẻ.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -404,6 +412,8 @@
 #include <QEvent>
 #include <QGraphicsScene>
 #include <QGraphicsView>
+#include <QBackingStore>
+#include <QPaintEvent>
 #include <QPainter>
 #include <QPainterPath>
 #include <QStackedWidget>
@@ -1022,6 +1032,66 @@ private:
             card->update(r);
         });
     }
+};
+
+// Mục 62: để widget của KTextEditor tự vẽ, rồi hạ độ đục trong bộ đệm cửa sổ.
+class EditorAlpha : public QObject
+{
+public:
+    using QObject::QObject;
+
+    static bool wants(const QWidget *w)
+    {
+        return w->inherits("KateViewInternal") || w->inherits("KateIconBorder") || w->inherits("KateScrollBar");
+    }
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() != QEvent::Paint || m_painting)
+            return false;
+        auto *w = static_cast<QWidget *>(obj);
+        if (!w->window()->testAttribute(Qt::WA_TranslucentBackground))
+            return false;
+        // Gọi thẳng QObject::event (public) — chạy paintEvent của Kate ngay
+        // trong lượt vẽ này, rồi mới sửa điểm ảnh nó vừa vẽ.
+        m_painting = true;
+        static_cast<QObject *>(w)->event(event);
+        m_painting = false;
+        clamp(w, static_cast<QPaintEvent *>(event)->region());
+        return true;
+    }
+
+private:
+    static void clamp(QWidget *w, const QRegion &region)
+    {
+        QBackingStore *store = w->backingStore();
+        auto *image = store ? dynamic_cast<QImage *>(store->paintDevice()) : nullptr;
+        if (!image || image->format() != QImage::Format_ARGB32_Premultiplied)
+            return;
+        const int limit = qRound(samhie::WINDOW_OPACITY * 255);
+        const qreal dpr = image->devicePixelRatio();
+        const QPoint offset = w->mapTo(w->window(), QPoint());
+        const QRect bounds = image->rect();
+        for (const QRect &r : region.intersected(w->rect())) {
+            const QRect px = QRectF(QRectF(r.translated(offset)).topLeft() * dpr, QRectF(r).size() * dpr)
+                                 .toAlignedRect()
+                                 .intersected(bounds);
+            for (int y = px.top(); y <= px.bottom(); ++y) {
+                auto *line = reinterpret_cast<QRgb *>(image->scanLine(y));
+                for (int x = px.left(); x <= px.right(); ++x) {
+                    const QRgb c = line[x];
+                    const int a = qAlpha(c);
+                    if (a <= limit)
+                        continue;
+                    // Màu đã nhân sẵn alpha: nhân cả bốn kênh cùng tỉ lệ
+                    const auto scale = [&](int v) { return (v * limit + a / 2) / a; };
+                    line[x] = qRgba(scale(qRed(c)), scale(qGreen(c)), scale(qBlue(c)), limit);
+                }
+            }
+        }
+    }
+
+    bool m_painting = false;
 };
 
 class PopupPainter : public QObject
@@ -2567,6 +2637,8 @@ public:
         }
         if (w->property("samhieCard").toBool())
             m_card.attach(w);  // mục 60
+        if (EditorAlpha::wants(w))
+            w->installEventFilter(&m_editorAlpha);  // mục 62
         auto *tw = qobject_cast<QTabWidget *>(w);
         if (tw && tw->documentMode())
             w->installEventFilter(&m_pane);  // cài lại cùng bộ lọc: Qt bỏ bản cũ
@@ -3142,6 +3214,7 @@ public:
         w->removeEventFilter(&m_pane);
         if (w->property("samhieCard").toBool())
             m_card.detach(w);
+        w->removeEventFilter(&m_editorAlpha);
         w->removeEventFilter(&m_popup);
         if (isSearchContents(w))
             w->parentWidget()->removeEventFilter(&m_popup);
@@ -3993,6 +4066,7 @@ private:
     PanePainter m_pane;
     PopupPainter m_popup;
     CardPainter m_card;
+    EditorAlpha m_editorAlpha;
     MenuButtonForwarder m_menuForwarder;
     UrlButtonHover m_urlHover;
     NoEditPencil m_noPencil;

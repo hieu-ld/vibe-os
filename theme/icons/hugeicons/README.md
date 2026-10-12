@@ -25,6 +25,9 @@ hiển thị và bảng NUDGE khác nhau.
 `open-with` (dòng "Other Application…" của menu Open With, 2026-10-08,
 user nhờ tìm): Claude lấy `dashboard-square-add` từ repo, đổi `#141B34` →
 `currentColor`.
+`sidebar-close` (nút « thu khung Projects của Kate, 2026-10-12, user nhờ
+chọn): Claude lấy `sidebar-left-01` từ repo ở commit trên, đổi `#141B34` →
+`currentColor`.
 `txt` (file .txt) và `star` (sao Rating) user tải 2026-10-08 cho hộp
 Properties, đối chiếu cùng commit: trùng nét `txt-02` và `star`.
 Ba mươi icon LOẠI FILE (2026-10-09, user chọn kiểu "nhãn + nhóm" từ bảng
@@ -180,6 +183,7 @@ Ba file đã sửa (MIT cho sửa):
 | `show-hidden` | `view` |
 | `shut-down` | `shut-down` |
 | `sidebar` | `view-sidebar-left` |
+| `sidebar-close` | `sidebar-left-01` |
 | `sleep` | `moon-02` |
 | `smart-home` | `home-02` |
 | `sort` | `arrow-data-transfer-vertical` |

@@ -404,9 +404,14 @@ def kate_theme(pal):
         "BackgroundColor": argb(d["card"], op),
         "IconBorder": argb(d["card"], op),            # cột số dòng = nền code, như VS Code
         "CurrentLine": argb(d["hover"], op),          # dòng con trỏ = ô hover trên nền card
-        # Vạch dọc giữa cột số dòng và code: trùng nền = không thấy, khoảng cách
-        # vẫn giữ (user 2026-10-12: VS Code không kẻ vạch, chỉ chừa ~30px)
-        "Separator": argb(d["card"], op),
+        # Vạch dọc giữa cột số dòng và code: trong suốt hẳn, khoảng cách vẫn
+        # giữ (user 2026-10-12: VS Code không kẻ vạch, chỉ chừa ~30px). Không
+        # dùng màu nền: Kate kẻ vạch đè cả dòng đang đứng (nền hover) → lộ vạch
+        # tối 1px ở đầu dòng (máy ảo user).
+        "Separator": argb(d["card"], 0),
+        # Nền ngoặc khớp (Breeze Dark: #000000 — ô đen ở đầu dòng khi con trỏ
+        # đứng cạnh ngoặc/nháy) → màu viền của Samhie
+        "BracketMatching": argb(d["sub-secondary"], op),
     })
     return json.dumps(theme, ensure_ascii=False, indent=4) + "\n"
 

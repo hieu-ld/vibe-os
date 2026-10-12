@@ -385,6 +385,18 @@
 //      xé tab" của Qt (PE_IndicatorTabTearLeft/Right, QTabBar vẽ khi tab đầu
 //      bị che một phần) ra #198cff — ngoài bảng màu (máy ảo user 2026-10-12,
 //      Kate nhiều tab; tái hiện container). Tab bị cắt ở mép đã đủ báo còn tab.
+//  64. Khe giữa cột số dòng và code của Kate rộng thêm GUTTER_EXTRA (user
+//      2026-10-12: "nới ra 1 chút"). KateIconBorder::sizeHint = mép phải vùng
+//      cuối nó vẽ (cột gập code); nó tô nền + dòng đang đứng hết bề rộng
+//      thật → đặt bề rộng tối thiểu = sizeHint + GUTTER_EXTRA sau mỗi lần vẽ
+//      (sizeHint đổi theo số chữ số). Kate bố trí widget Fixed theo sizeHint
+//      nhưng tôn trọng minimumWidth. Bên trái cột: plugin Kate mục 8 chừa ô
+//      đệm (ngoài KateIconBorder) → style tô ô đệm từng hàng bằng màu mép
+//      trái của cột số — dải dòng đang đứng liền tới mép thẻ (không thì hở
+//      một khấc ~10px, đo container). Màu đọc NGAY sau khi cột số vẽ, cất
+//      theo hàng (thuộc tính trên widget): ngoài vùng đang vẽ, bộ đệm Wayland
+//      (nhiều bộ luân phiên) có thể còn hình cũ — đọc lúc tô ô đệm thì chép
+//      nhầm dải dòng cũ (đo container).
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -512,6 +524,8 @@ constexpr int CARD_RADIUS = samhie::TAB_RADIUS;  // thẻ Kate (mục 60) = góc
 // Xem 24px trên máy ảo rồi chọn 28. Thụt mỗi cấp giữ 12 của Kate
 // (kateprojectviewtree.cpp setIndentation) — VS Code 8, Zed 20.
 constexpr int KATE_TREE_ROW = 28;
+// Mục 64: khe thêm giữa cột số dòng và code của Kate
+constexpr int GUTTER_EXTRA = 8;
 constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6px mỗi phía
 constexpr int TOOLBAR_SEPARATOR_HEIGHT = 18;  // icon thanh công cụ cao ~20px (mục 23)
 constexpr int KEY_FOCUS_PAD = 6;   // ô nền focus bàn phím rộng hơn vòng radio + chữ (mục 25, 28)
@@ -1052,7 +1066,8 @@ public:
 
     static bool wants(const QWidget *w)
     {
-        return w->inherits("KateViewInternal") || w->inherits("KateIconBorder") || w->inherits("KateScrollBar");
+        return w->inherits("KateViewInternal") || w->inherits("KateIconBorder") || w->inherits("KateScrollBar")
+            || w->inherits("KTextEditor::ViewPrivate");
     }
 
     bool eventFilter(QObject *obj, QEvent *event) override
@@ -1062,16 +1077,98 @@ public:
         auto *w = static_cast<QWidget *>(obj);
         if (!w->window()->testAttribute(Qt::WA_TranslucentBackground))
             return false;
+        if (w->inherits("KTextEditor::ViewPrivate")) {
+            fillGutterPad(w, static_cast<QPaintEvent *>(event)->region());  // mục 64
+            return false;
+        }
         // Gọi thẳng QObject::event (public) — chạy paintEvent của Kate ngay
         // trong lượt vẽ này, rồi mới sửa điểm ảnh nó vừa vẽ.
         m_painting = true;
         static_cast<QObject *>(w)->event(event);
         m_painting = false;
         clamp(w, static_cast<QPaintEvent *>(event)->region());
+        // Mục 64
+        if (w->inherits("KateIconBorder")) {
+            const int width = w->sizeHint().width() + GUTTER_EXTRA;
+            if (w->minimumWidth() != width)
+                w->setMinimumWidth(width);
+            // ô đệm bên trái: cất màu mép trái các hàng vừa vẽ, báo vẽ lại ô đệm
+            if (w->x() > 0) {
+                const QRect rows = static_cast<QPaintEvent *>(event)->region().boundingRect().intersected(w->rect());
+                storeEdgeColors(w, rows);
+                w->parentWidget()->update(QRect(0, w->y() + rows.top(), w->x(), rows.height()));
+                // Kate cuộn cột số bằng QWidget::scroll (dời hình, chỉ vẽ phần
+                // lộ ra — kateviewinternal.cpp) → màu đã cất lệch hàng: vẽ cả
+                // cột lần sau (cột nhỏ, rẻ)
+                if (rows.top() > 0 || rows.bottom() < w->height() - 1)
+                    w->update();
+            }
+        }
         return true;
     }
 
 private:
+    static constexpr const char *EDGE_COLORS = "_samhie_edge_colors";
+
+    // Mục 64: màu cột 0 của cột số từng hàng (toạ độ widget) — đọc bộ đệm cửa
+    // sổ ngay sau khi Kate vẽ các hàng đó
+    static void storeEdgeColors(QWidget *border, const QRect &rows)
+    {
+        QBackingStore *store = border->backingStore();
+        auto *image = store ? dynamic_cast<QImage *>(store->paintDevice()) : nullptr;
+        if (rows.isEmpty() || !image || image->format() != QImage::Format_ARGB32_Premultiplied)
+            return;
+        QByteArray colors = border->property(EDGE_COLORS).toByteArray();
+        colors.resize(border->height() * int(sizeof(QRgb)), '\0');
+        auto *out = reinterpret_cast<QRgb *>(colors.data());
+        const qreal dpr = image->devicePixelRatio();
+        const QPoint win = border->mapTo(border->window(), QPoint());
+        const int x = qRound(win.x() * dpr);
+        for (int y = rows.top(); y <= rows.bottom(); ++y) {
+            const int iy = qRound((win.y() + y) * dpr);
+            if (x >= 0 && x < image->width() && iy >= 0 && iy < image->height())
+                out[y] = reinterpret_cast<const QRgb *>(image->constScanLine(iy))[x];
+        }
+        border->setProperty(EDGE_COLORS, colors);
+    }
+
+    // Mục 64: tô ô đệm trái cột số bằng màu đã cất, từng hàng
+    static void fillGutterPad(QWidget *view, const QRegion &region)
+    {
+        QWidget *border = nullptr;
+        for (QObject *o : view->children()) {
+            if (o->inherits("KateViewInternal")) {
+                for (QObject *c : o->children()) {
+                    if (c->inherits("KateIconBorder"))
+                        border = static_cast<QWidget *>(c);
+                }
+            }
+            if (o->inherits("KateIconBorder"))
+                border = static_cast<QWidget *>(o);
+        }
+        if (!border || !border->isVisible())
+            return;
+        const QPoint origin = border->mapTo(view, QPoint());
+        const QRect pad = QRect(0, origin.y(), origin.x(), border->height()).intersected(region.boundingRect());
+        QBackingStore *store = view->backingStore();
+        auto *image = store ? dynamic_cast<QImage *>(store->paintDevice()) : nullptr;
+        if (pad.isEmpty() || !image || image->format() != QImage::Format_ARGB32_Premultiplied)
+            return;
+        const QByteArray colors = border->property(EDGE_COLORS).toByteArray();
+        const auto *edge = reinterpret_cast<const QRgb *>(colors.constData());
+        const int known = int(colors.size() / sizeof(QRgb));
+        const qreal dpr = image->devicePixelRatio();
+        const QPoint win = view->mapTo(view->window(), QPoint());
+        const QRect px = QRectF(QPointF(pad.topLeft() + win) * dpr, QSizeF(pad.size()) * dpr).toAlignedRect().intersected(image->rect());
+        for (int y = px.top(); y <= px.bottom(); ++y) {
+            const int row = qFloor(y / dpr) - win.y() - origin.y();  // hàng trong cột số
+            if (row < 0 || row >= known)
+                continue;
+            auto *line = reinterpret_cast<QRgb *>(image->scanLine(y));
+            std::fill(line + px.left(), line + px.right() + 1, edge[row]);
+        }
+    }
+
     static void clamp(QWidget *w, const QRegion &region)
     {
         QBackingStore *store = w->backingStore();

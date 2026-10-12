@@ -69,6 +69,14 @@
 //    khi tab đổi hoặc dải tab đổi cỡ (QTabBar::resizeEvent → makeVisible,
 //    nhánh "lấp chỗ trống bên phải") → sau mỗi lần xếp lại bố cục và mỗi
 //    lần đổi file, gửi lại sự kiện đổi cỡ cho dải tab (refreshTabScroll).
+//
+// 8. Cột số dòng rộng ít nhất bằng GUTTER_DIGITS chữ số (user 2026-10-12:
+//    file 3 chữ số cũng rộng như file 4 chữ số). Kate tính bề rộng theo đúng
+//    số chữ số của file (KateIconBorder::lineNumberWidth, KTextEditor 6.30:
+//    (chữ số + 1) × bề rộng chữ số lớn nhất), số căn phải → thêm khoảng trống
+//    BÊN TRÁI cột: ô đệm trái của lưới trong view (m_leftSpacer, ô 2,0 —
+//    kateview.cpp setupLayout; style samhie để nó 0). Khe giữa số và code
+//    rộng thêm: style samhie mục 64.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -90,6 +98,7 @@
 #include <QDir>
 #include <QFrame>
 #include <QFileInfo>
+#include <QFontMetricsF>
 #include <QGridLayout>
 #include <QHBoxLayout>
 #include <QIcon>
@@ -110,6 +119,9 @@
 #include <QVBoxLayout>
 #include <QWidgetAction>
 
+#include <algorithm>
+#include <cmath>
+
 namespace
 {
 const QString kTitle = QStringLiteral("Terminal");
@@ -118,6 +130,31 @@ constexpr int CARD_GAP = 6;
 // Icon cây Projects + nút hàng trên (đo máy ảo: đều 16; user thử 17 rồi chọn
 // 18 "cho chẵn")
 constexpr int ICON_SIZE = 18;
+
+// Mục 8: cột số dòng tối thiểu bấy nhiêu chữ số
+constexpr int GUTTER_DIGITS = 4;
+
+void padGutter(KTextEditor::View *view)
+{
+    auto *grid = qobject_cast<QGridLayout *>(view->layout());
+    QLayoutItem *item = grid ? grid->itemAtPosition(2, 0) : nullptr;
+    QSpacerItem *spacer = item ? item->spacerItem() : nullptr;
+    if (!spacer) {
+        return;
+    }
+    // Cùng công thức với Kate: số chữ số = ceil(log10(số dòng + 1))
+    const int digits = int(std::ceil(std::log10(double(view->document()->lines() + 1))));
+    const QFontMetricsF fm(view->configValue(QStringLiteral("font")).value<QFont>());
+    qreal digitWidth = 0;
+    for (char c = '0'; c <= '9'; ++c) {
+        digitWidth = std::max(digitWidth, std::ceil(fm.horizontalAdvance(QLatin1Char(c))));
+    }
+    const int pad = std::max(0, GUTTER_DIGITS - digits) * int(digitWidth);
+    if (spacer->sizeHint().width() != pad) {
+        spacer->changeSize(pad, 0, QSizePolicy::Fixed, QSizePolicy::Minimum);
+        grid->invalidate();
+    }
+}
 
 // Mục 7: gửi lại QResizeEvent (cùng cỡ) để QTabBar tính lại độ cuộn
 void refreshTabScroll(QWidget *viewSpace)
@@ -314,6 +351,21 @@ public:
         });
 
         m_mw->guiFactory()->addClient(this);
+
+        // Mục 8: cột số dòng — view mới, số dòng đổi, đổi font/phóng to chữ
+        const auto watchGutter = [this](KTextEditor::View *view) {
+            padGutter(view);
+            connect(view->document(), &KTextEditor::Document::textChanged, view, [view] {
+                padGutter(view);
+            });
+            connect(view, &KTextEditor::View::configChanged, view, [view] {
+                padGutter(view);
+            });
+        };
+        for (KTextEditor::View *view : m_mw->views()) {
+            watchGutter(view);
+        }
+        connect(m_mw, &KTextEditor::MainWindow::viewCreated, this, watchGutter);
 
         // Mục 7: đổi file (mở file mới cũng là đổi) → dải tab tính lại độ cuộn
         connect(m_mw, &KTextEditor::MainWindow::viewChanged, this, [this] {

@@ -400,6 +400,9 @@ MAP = {
     "kate-output":  [("actions", "output_win")],
     "replace":      [("actions", "edit-find-replace")],             # Replace (+ Find/Replace của Kate)
     "replace-all":  [("actions", "samhie-replace-all")],            # Replace Checked
+    "match-case":   [("actions", "samhie-match-case")],             # Aa (plugin mục 15)
+    "regex":        [("actions", "samhie-regex")],                  # .*
+    "search-details": [("actions", "samhie-search-details")],       # ⋯ Folder/Filter/Exclude
 }
 
 # Hình gốc dùng thêm cho trang Configure Kate (16px). folder khai nhiều dòng,
@@ -489,6 +492,8 @@ NUDGE = {
     "kate-session": (16, -0.5, -0.5),    # mờ 0.61 → 0.37
     "kate-feedback": (16, 0, -0.25),     # mờ 0.46 → 0.34
     "replace-all": (16, -0.5, -0.5),     # mờ 0.56 → 0.47
+    "regex": (16, 0.375, -0.375),        # mờ 0.51 → 0.39
+    "search-details": (16, 0, -0.375),   # mờ 0.40 → 0.18
     "backspace": (16, -0.5, -0.5),       # mờ 0.57 → 0.40
     "bell": (18, -0.5, 0),               # mờ 0.37 → 0.31 (họ chuông)
     "noti-off": (18, -0.5, 0),

@@ -60,6 +60,10 @@ Hình mới: `save` (`floppy-disk`), `kate-behavior` (`cursor-in-window`),
 `kate-diagnostics` (`alert-02`), `kate-output` (`note-01`), `replace`,
 `replace-all`. Claude lấy thẳng từ repo ở commit trên, đổi `#141B34` →
 `currentColor`.
+Panel Search của Kate gọn như VS Code (2026-10-13, user nhờ sắp xếp):
+`match-case` (`case-sensitive`), `regex` (`regex`), `search-details`
+(`more-horizontal`) — Claude lấy thẳng từ repo ở commit trên, đổi `#141B34`
+→ `currentColor`. Nút ›/⌄ mở ô Replace dùng lại `ar-right`/`ar-bottom`.
 Ba file đã sửa (MIT cho sửa):
 - `star-full`: `star` tô kín (fill `currentColor`) — sao Rating đã chọn.
 - `trash-full`: `waste` thêm ba vạch dọc user tự vẽ.
@@ -160,6 +164,7 @@ Ba file đã sửa (MIT cho sửa):
 | `login` | `login-02` |
 | `logout` | `logout-02` |
 | `makefile-action` | `gears` |
+| `match-case` | `case-sensitive` |
 | `max` | `circle-arrow-expand-01` |
 | `memory` | `ram-memory` |
 | `menu` | `menu` |
@@ -194,6 +199,7 @@ Ba file đã sửa (MIT cho sửa):
 | `recent` | `history` |
 | `redo` | `redo-03` |
 | `refresh` | `refresh-ccw` |
+| `regex` | `regex` |
 | `rename` | `pencil-edit-01` |
 | `replace` | `replace` |
 | `replace-all` | `replace-all` |
@@ -201,6 +207,7 @@ Ba file đã sửa (MIT cho sửa):
 | `restore` | `undo` |
 | `save` | `floppy-disk` |
 | `search` | `search-01` |
+| `search-details` | `more-horizontal` |
 | `select-all` | `tick-double-02` |
 | `select-text` | `cursor-text` |
 | `settings` | `settings-01` |

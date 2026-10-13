@@ -441,6 +441,12 @@
 //      đang chọn TREE_ROW_SELECTED, dòng chỉ trỏ chuột ROW_HOVER. Đường
 //      nhánh vẽ trên nền (trên dòng chọn: TREE_LINE_SELECTED — nền chọn trùng
 //      màu đường FRAME_LINE).
+//  71. Kết quả panel Search của Kate không có ô tích khi ô Replace đang
+//      đóng (plugin Kate mục 15 đánh dấu samhieNoCheck): ô tích chỉ để chọn
+//      dòng cho "Replace Checked" — VS Code không có. Bỏ HasCheckIndicator
+//      khi vẽ VÀ khi tính chỗ (chữ dịch về chỗ ô tích; vùng bấm ô tích rỗng →
+//      bấm không đổi tích). Delegate của Kate có chỗ hỏi chỗ chữ KHÔNG kèm
+//      widget (dòng tên file) → đọc widget trong option.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -3933,6 +3939,8 @@ public:
             if (auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
                 QStyleOptionViewItem o(*vopt);
                 o.state &= ~State_HasFocus;
+                if (noCheck(vopt, w))  // mục 71
+                    o.features &= ~QStyleOptionViewItem::HasCheckIndicator;
                 if (w && w->property("samhieTreeLines").toBool()) {  // mục 70: nền ở PE_PanelItemViewRow
                     o.state &= ~(State_Selected | State_MouseOver);
                     QProxyStyle::drawControl(ce, &o, p, w);
@@ -4128,6 +4136,15 @@ public:
                 return QProxyStyle::subElementRect(se, &o, w);
             }
         }
+        if (se == SE_ItemViewItemCheckIndicator || se == SE_ItemViewItemDecoration || se == SE_ItemViewItemText
+            || se == SE_ItemViewItemFocusRect) {
+            auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt);
+            if (vopt && noCheck(vopt, w)) {  // mục 71
+                QStyleOptionViewItem o(*vopt);
+                o.features &= ~QStyleOptionViewItem::HasCheckIndicator;
+                return QProxyStyle::subElementRect(se, &o, w);
+            }
+        }
         QRect r = QProxyStyle::subElementRect(se, opt, w);
         // Ô góc (nút + của Konsole) cao bằng dải tab, nút tự căn icon giữa.
         auto *twf = qstyleoption_cast<const QStyleOptionTabWidgetFrame *>(opt);
@@ -4227,6 +4244,14 @@ public:
     }
 
 private:
+    // Mục 71: cây kết quả Search của Kate đang bỏ ô tích
+    static bool noCheck(const QStyleOptionViewItem *vopt, const QWidget *w)
+    {
+        const QWidget *view = w ? w : vopt->widget;
+        return (vopt->features & QStyleOptionViewItem::HasCheckIndicator) && view
+            && view->property("samhieNoCheck").toBool();
+    }
+
     static void trimTabMenu(QMenu *menu)  // mục 19
     {
         for (QAction *a : menu->actions()) {

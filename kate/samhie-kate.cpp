@@ -113,11 +113,8 @@
 //      lần đổi file (UrlbarContainer, kateurlbar.cpp) → ép cỡ 0 thay vì ẩn,
 //      dải lùi vào 12px thay chỗ nút.
 //    - Panel Search ở cột trái (~190px) chật: "Replace"/"Replace Checked" cắt
-//      thành "R…". Thành nút icon cạnh ô Replace như VS Code, hàng dưới chỉ
-//      còn nút tuỳ chọn (icon Hugeicons replace / replace-all — bộ icon
-//      Samhie). Kate xếp lưới lại khi panel đổi giữa dọc/ngang
-//      (KatePluginSearchView::onResize, trong bộ lọc Resize của nó — chạy SAU
-//      bộ lọc ứng dụng của plugin) → xếp lại sau một nhịp.
+//      thành "R…". Thành nút icon cạnh ô Replace như VS Code (icon Hugeicons
+//      replace / replace-all — bộ icon Samhie). Cả panel: xem mục 15.
 //    - Nút Git ở cột icon trái: icon Kate nhúng trong mã (gitIcon(),
 //      sc-apps-git.svg — không qua bộ icon) → gắn "samhie-kate-git" (Hugeicons
 //      git-branch) lên nút. Nút là KMultiTabBarTab mang tên panel ở thuộc tính
@@ -154,6 +151,29 @@
 //      thuộc tính samhieTextIndent của ô chọn, style samhie tự vẽ chữ ở đó.
 //      Chưa mở thư mục (thẻ chào, mục 11): thẳng dòng chữ của thẻ — Kvantum
 //      cắt cụt "No Folder Openec" không "…"; chữ đổi thành "No Folder".
+//
+// 15. Panel Search gọn như VS Code (user 2026-10-13: "nhiều thứ, không đủ
+//    chỗ"; chưa dùng chức năng nào → Claude sắp xếp). Bố cục dọc:
+//        [›] [Find              ▾]
+//            [Replace    ] [⇄] [⇄⇄]   ← chỉ hiện khi bấm › (như VS Code)
+//            [Project ▾   ] [Aa] [.*] [⋯] [■]
+//    - Ẩn: nút Search (Enter trong ô Find làm việc đó; gõ thì Kate tự tìm
+//      trong file đang mở), Next (F6 / Shift+F6), "+" tab tìm mới (lệnh
+//      "Search in Files (in new tab)" ở Ctrl+Alt+I), ≣ Expand results (bật
+//      sẵn — mọi kết quả mở hết như VS Code), phễu lọc kết quả, ⟳ "dùng thư
+//      mục file đang mở" (chọn "In Folder" là Kate tự làm), nút T+ chèn ký tự
+//      đặc biệt trong ô Replace.
+//    - ■ Stop chỉ hiện lúc Kate đang tìm (stopAndNext lật sang trang Stop).
+//    - ⋯ (Kate: ⚙ "Show more search options") mở trang Folder/Filter/Exclude
+//      thay chỗ kết quả. Có dự án thì chỗ tìm mặc định "Project" (VS Code
+//      tìm cả thư mục đang mở; Kate mặc định "In Open Files") và chọn dự án
+//      thì KHÔNG tự mở trang ⋯ (Kate mở — chỉ cần cho Folder). Ô chỗ tìm
+//      bỏ icon, chữ ngắn (Current File / Open Files / Folder / Project /
+//      All Projects) — ô chật, "In Open Files" còn "In".
+//    - Kate xếp lưới lại khi panel đổi giữa dọc/ngang
+//      (KatePluginSearchView::onResize, trong bộ lọc Resize của nó — chạy SAU
+//      bộ lọc ứng dụng của plugin) → xếp lại sau một nhịp. Bố cục ngang
+//      (panel kéo xuống đáy): giữ của Kate, chỉ bỏ › và hiện lại ô Replace.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -578,43 +598,193 @@ void hideCrumbEllipsis(QWidget *button)
     }
 }
 
-// Mục 12: lưới panel Search (search.ui: widget "SearchDialog", lưới
-// "gridLayout"). Chỉ xếp khi Kate đang để bố cục dọc (ô Replace ở hàng 2).
+// Mục 15: kết quả không ô tích khi ô Replace đang đóng (style samhie mục 71
+// đọc samhieNoCheck). Cây kết quả: ResultsTreeView, một cây mỗi tab tìm.
+void syncResultChecks(QWidget *dialog)
+{
+    QWidget *replaceCombo = dialog->findChild<QWidget *>(QStringLiteral("replaceCombo"));
+    const bool noCheck = replaceCombo && !replaceCombo->isVisibleTo(dialog);
+    for (auto *tree : dialog->findChildren<QTreeView *>()) {
+        if (tree->inherits("ResultsTreeView") && tree->property("samhieNoCheck").toBool() != noCheck) {
+            tree->setProperty("samhieNoCheck", noCheck);
+            tree->viewport()->update();
+        }
+    }
+}
+
+// Mục 15: một hàng của panel Search — dải ngang riêng, không chung cột lưới
+// với hàng khác (chung cột thì nút Replace rộng bóp ô chỗ tìm còn "⌄").
+QWidget *searchRow(QWidget *dialog, const char *name, int spacing, const QList<QWidget *> &widgets)
+{
+    auto *row = dialog->findChild<QWidget *>(QLatin1String(name), Qt::FindDirectChildrenOnly);
+    if (!row) {
+        row = new QWidget(dialog);
+        row->setObjectName(QLatin1String(name));
+        auto *box = new QHBoxLayout(row);
+        box->setContentsMargins(0, 0, 0, 0);
+        box->setSpacing(spacing);
+    }
+    auto *box = static_cast<QHBoxLayout *>(row->layout());
+    for (QWidget *w : widgets) {
+        box->addWidget(w, w == widgets.first() ? 1 : 0); // ô đầu giãn
+    }
+    return row;
+}
+
+// Mục 15: lưới panel Search (search.ui: widget "SearchDialog", lưới
+// "gridLayout", 6 cột, cột 0 giãn). Kate đặt ô Replace ở (2, 0, span 5) khi
+// vừa xếp dọc, ở (1, 0) khi xếp ngang; bản của plugin: trong dải
+// samhieReplaceRow (không nằm thẳng trong lưới).
 void arrangeSearchPanel(QWidget *dialog)
 {
     auto *grid = dialog->findChild<QGridLayout *>(QStringLiteral("gridLayout"));
     const auto child = [dialog](const char *name) {
         return dialog->findChild<QWidget *>(QLatin1String(name));
     };
+    QWidget *searchCombo = child("searchCombo");
     QWidget *replaceCombo = child("replaceCombo");
     auto *replace = qobject_cast<QPushButton *>(child("replaceButton"));
     auto *replaceChecked = qobject_cast<QPushButton *>(child("replaceCheckedBtn"));
     QWidget *options = child("searchOptionsLayoutW");
-    QWidget *newTab = child("newTabButton");
-    QWidget *more = child("displayOptions");
-    if (!grid || !replaceCombo || !replace || !replaceChecked || !options || !newTab || !more) {
+    QWidget *place = child("searchPlaceLayoutW");
+    auto *placeCombo = qobject_cast<QComboBox *>(child("searchPlaceCombo"));
+    auto *more = qobject_cast<QToolButton *>(child("displayOptions"));
+    auto *stopAndNext = qobject_cast<QStackedWidget *>(child("stopAndNext"));
+    auto *stop = qobject_cast<QPushButton *>(child("stopButton"));
+    auto *matchCase = qobject_cast<QToolButton *>(child("matchCase"));
+    auto *regExp = qobject_cast<QToolButton *>(child("useRegExp"));
+    auto *expand = qobject_cast<QToolButton *>(child("expandResults"));
+    if (!grid || !searchCombo || !replaceCombo || !replace || !replaceChecked || !options || !place || !placeCombo || !more || !stopAndNext || !stop
+        || !matchCase || !regExp || !expand) {
+        return;
+    }
+
+    // Một lần: icon, nút ẩn, nút › và các nối tín hiệu
+    auto *toggle = dialog->findChild<QToolButton *>(QStringLiteral("samhieReplaceToggle"));
+    if (!toggle) {
+        const auto iconOnly = [](QAbstractButton *b, const char *icon) {
+            if (!b->text().isEmpty()) {
+                b->setToolTip(b->text());
+                b->setText(QString());
+            }
+            b->setIcon(QIcon::fromTheme(QLatin1String(icon)));
+        };
+        iconOnly(replace, "edit-find-replace");
+        iconOnly(replaceChecked, "samhie-replace-all");
+        iconOnly(stop, "process-stop");
+        matchCase->setIcon(QIcon::fromTheme(QStringLiteral("samhie-match-case")));
+        regExp->setIcon(QIcon::fromTheme(QStringLiteral("samhie-regex")));
+        more->setIcon(QIcon::fromTheme(QStringLiteral("samhie-search-details")));
+        for (const char *name : {"searchButton", "newTabButton", "expandResults", "filterBtn", "currentFolderButton"}) {
+            if (QWidget *w = child(name)) {
+                w->hide();
+            }
+        }
+        // Mọi kết quả mở hết (Kate lưu ExpandSearchResults theo phiên)
+        expand->setChecked(true);
+        // Nút T+ (chèn \n, \t… vào ô Replace) — action icon "insert-text"
+        if (auto *combo = qobject_cast<QComboBox *>(replaceCombo); combo && combo->lineEdit()) {
+            for (QAction *a : combo->lineEdit()->actions()) {
+                if (a->icon().name() == QLatin1String("insert-text")) {
+                    a->setVisible(false);
+                }
+            }
+        }
+
+        // ■ chỉ hiện lúc đang tìm
+        stopAndNext->setVisible(stopAndNext->currentWidget() == stop);
+        QObject::connect(stopAndNext, &QStackedWidget::currentChanged, stopAndNext, [stopAndNext, stop] {
+            stopAndNext->setVisible(stopAndNext->currentWidget() == stop);
+        });
+
+        // Chỗ tìm: chữ ngắn, bỏ icon (ô chật: "In Open Files" còn "In") —
+        // Kate thêm/bớt hai mục dự án khi mở/đóng dự án nên làm lại mỗi lần
+        // thêm. Dự án (index 3 = MatchModel::Project) mặc định khi có, và
+        // chọn dự án thì không tự mở trang ⋯: nối SAU Kate → chạy sau
+        // searchPlaceChanged (nó bật ⋯ khi đổi bằng combo).
+        constexpr int PROJECT = 3;
+        const auto tidyPlaces = [placeCombo] {
+            static const QStringList names{QStringLiteral("Current File"),
+                                           QStringLiteral("Open Files"),
+                                           QStringLiteral("Folder"),
+                                           QStringLiteral("Project"),
+                                           QStringLiteral("All Projects")};
+            for (int i = 0; i < placeCombo->count() && i < names.size(); ++i) {
+                placeCombo->setItemText(i, names[i]);
+                placeCombo->setItemIcon(i, QIcon());
+            }
+            if (placeCombo->count() > PROJECT && placeCombo->currentIndex() < 2) { // Current File / Open Files
+                placeCombo->setCurrentIndex(PROJECT);
+            }
+        };
+        QObject::connect(placeCombo, &QComboBox::currentIndexChanged, more, [more](int index) {
+            if (index >= PROJECT) {
+                more->setChecked(false);
+            }
+        });
+        QObject::connect(placeCombo->model(), &QAbstractItemModel::rowsInserted, placeCombo, tidyPlaces, Qt::QueuedConnection);
+        tidyPlaces();
+
+        // › / ⌄ mở ô Replace. Không dùng nút checkable: nút đang "bật" có
+        // nền như nút được nhấn — VS Code chỉ đổi mũi tên.
+        toggle = new QToolButton(dialog);
+        toggle->setObjectName(QStringLiteral("samhieReplaceToggle"));
+        toggle->setAutoRaise(true);
+        toggle->setToolTip(QStringLiteral("Toggle Replace"));
+        toggle->setIcon(QIcon::fromTheme(QStringLiteral("arrow-right")));
+        toggle->setFixedWidth(20);
+        toggle->setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Preferred); // cao theo hàng, không đòi thêm
+        QObject::connect(toggle, &QToolButton::clicked, dialog, [dialog, grid, toggle] {
+            QWidget *row = dialog->findChild<QWidget *>(QStringLiteral("samhieReplaceRow"), Qt::FindDirectChildrenOnly);
+            if (!row) {
+                return;
+            }
+            const bool on = row->isHidden();
+            row->setVisible(on);
+            toggle->setIcon(QIcon::fromTheme(on ? QStringLiteral("arrow-down") : QStringLiteral("arrow-right")));
+            // Mở thì › cao hết hai ô như VS Code; đóng thì chỉ hàng Find
+            // (› nằm ở hàng 1 thì hàng đó không còn trống → vẫn chừa khe)
+            grid->addWidget(toggle, 0, 0, on ? 2 : 1, 1);
+            if (on) {
+                dialog->findChild<QWidget *>(QStringLiteral("replaceCombo"))->setFocus();
+            }
+            syncResultChecks(dialog);
+        });
+    }
+
+    const int index = grid->indexOf(replaceCombo);
+    if (index < 0) { // đã xếp rồi (ô Replace nằm trong dải của plugin)
         return;
     }
     int row, col, rowSpan, colSpan;
-    grid->getItemPosition(grid->indexOf(replaceCombo), &row, &col, &rowSpan, &colSpan);
-    if (row != 2 || colSpan != 5) { // bố cục ngang, hoặc đã xếp rồi
+    grid->getItemPosition(index, &row, &col, &rowSpan, &colSpan);
+    if (row == 1 && col == 0) { // Kate vừa xếp ngang (kéo các ô ra khỏi dải): giữ của Kate
+        toggle->hide();
+        for (const char *name : {"samhieReplaceRow", "samhiePlaceRow"}) {
+            if (QWidget *w = dialog->findChild<QWidget *>(QLatin1String(name), Qt::FindDirectChildrenOnly)) {
+                w->hide();
+            }
+        }
+        grid->setColumnStretch(0, 1);
+        grid->setColumnStretch(1, 0);
+        syncResultChecks(dialog);
         return;
     }
-    // Chữ → icon (một lần; giữ cả khi panel chuyển sang ngang)
-    if (!replace->text().isEmpty()) {
-        replace->setToolTip(replace->text());
-        replace->setText(QString());
-        replace->setIcon(QIcon::fromTheme(QStringLiteral("edit-find-replace")));
-        replaceChecked->setToolTip(replaceChecked->text());
-        replaceChecked->setText(QString());
-        replaceChecked->setIcon(QIcon::fromTheme(QStringLiteral("samhie-replace-all")));
-    }
-    grid->addWidget(replaceCombo, 2, 0, 1, 3);
-    grid->addWidget(replace, 2, 3);
-    grid->addWidget(replaceChecked, 2, 4);
-    grid->addWidget(options, 3, 0, 1, 3);
-    grid->addWidget(newTab, 3, 3);
-    grid->addWidget(more, 3, 4);
+    // Dọc: cột 0 ›, cột 1 giãn — mỗi hàng dưới là một dải
+    const int spacing = grid->horizontalSpacing();
+    QWidget *replaceRow = searchRow(dialog, "samhieReplaceRow", spacing, {replaceCombo, replace, replaceChecked});
+    QWidget *placeRow = searchRow(dialog, "samhiePlaceRow", spacing, {place, options, more, stopAndNext});
+    grid->setColumnStretch(0, 0);
+    grid->setColumnStretch(1, 1);
+    grid->addWidget(searchCombo, 0, 1, 1, 5);
+    grid->addWidget(replaceRow, 1, 1, 1, 5);
+    grid->addWidget(placeRow, 2, 1, 1, 5);
+    const bool on = toggle->icon().name() == QLatin1String("arrow-down");
+    replaceRow->setVisible(on);
+    placeRow->show();
+    toggle->show();
+    grid->addWidget(toggle, 0, 0, on ? 2 : 1, 1);
+    syncResultChecks(dialog);
 }
 
 // Mục 12: nút panel Git ở cột icon trái
@@ -839,6 +1009,14 @@ public:
             if (isIconOnlySidebarTab(obj)) {
                 schedulePlaceMenuButton(); // mục 13: nút panel nạp sau
             }
+            if (obj->inherits("ResultsTreeView")) { // mục 15: tab tìm mới
+                for (QWidget *w = static_cast<QWidget *>(obj)->parentWidget(); w; w = w->parentWidget()) {
+                    if (w->objectName() == QLatin1String("SearchDialog")) {
+                        syncResultChecks(w);
+                        break;
+                    }
+                }
+            }
             if (auto *menu = qobject_cast<QMenu *>(obj); menu && menu->parentWidget()) {
                 if (isViewSpace(menu->parentWidget())) {
                     for (QAction *a : menu->actions()) {
@@ -957,7 +1135,7 @@ public:
             if (event->type() == QEvent::Resize && obj->objectName() == QLatin1String("SearchDialog")) {
                 auto *dialog = static_cast<QWidget *>(obj);
                 QTimer::singleShot(0, dialog, [dialog] {
-                    arrangeSearchPanel(dialog); // mục 12
+                    arrangeSearchPanel(dialog); // mục 15
                 });
             }
             break;

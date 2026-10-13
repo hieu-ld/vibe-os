@@ -180,6 +180,7 @@
 #include <QFileInfo>
 #include <QFontMetricsF>
 #include <QGridLayout>
+#include <QHeaderView>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QKeyEvent>
@@ -258,6 +259,38 @@ void refreshTabScroll(QWidget *viewSpace)
             }
         }
     });
+}
+
+class NoPaint : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *, QEvent *event) override
+    {
+        return event->type() == QEvent::Paint;
+    }
+};
+
+// Dòng đầu cây Projects cách mép trên thẻ CARD_GAP (user 2026-10-13: trước
+// dính sát — nét icon cách mép trên 7px, mép trái 18px). Không đặt được bằng
+// lề: QTreeView::updateGeometries đặt lại lề trên vùng hiển thị = chiều cao
+// header (header ẩn → 0, Qt 6.11.2), còn setContentsMargins của cây đọc lại
+// ra 0 ngay (đo container). → hiện header của cây (Kate ẩn nó,
+// kateprojectviewtree.cpp) nhưng cao CARD_GAP, không vẽ, không nhận chuột:
+// Qt tự chừa đúng khe đó; nền thẻ (style samhie mục 60) lộ qua.
+void padTreeTop(QTreeView *tree)
+{
+    static NoPaint noPaint;
+    QHeaderView *header = tree->header();
+    header->setFixedHeight(CARD_GAP);
+    header->setSectionsClickable(false);
+    header->setAttribute(Qt::WA_TransparentForMouseEvents);
+    header->setAutoFillBackground(false);
+    header->viewport()->setAutoFillBackground(false);
+    header->installEventFilter(&noPaint);
+    header->viewport()->installEventFilter(&noPaint);
+    tree->setHeaderHidden(false);
 }
 
 // Mục 13: nút chỉ-có-icon ở cột trái/phải (Kate xoá chữ ở đó)
@@ -876,6 +909,9 @@ public:
                     view->setAllColumnsShowFocus(false);
                 }
                 markCard(tree);
+                if (auto *view = qobject_cast<QTreeView *>(tree)) {
+                    padTreeTop(view);
+                }
                 if (auto *view = qobject_cast<QTreeView *>(tree)) {
                     view->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
                 }

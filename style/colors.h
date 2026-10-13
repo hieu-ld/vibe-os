@@ -19,6 +19,7 @@ constexpr const char *POPUP_ITEM = "#393939";  // ô đang chọn/trỏ trong po
 constexpr const char *KEYCAP = "#1fbdbec1";  // mặt phím tắt trong Find Action (chữ 12%, nổi trên thẻ và ô chọn)
 constexpr const char *TREE_ROW_SELECTED = "#393939";  // cây Projects Kate: dòng đang chọn, không viền
 constexpr const char *TREE_LINE_SELECTED = "#5a5a5b";  // cây Projects Kate: đường nhánh trên dòng đang chọn
+constexpr const char *PAGE_ITEM_SELECTED = "#393939";  // danh sách trang hộp cài đặt: trang đang chọn, không viền
 constexpr const char *SIDEBAR_TAB_OPEN = "#444445";  // cột icon Kate: nút panel đang mở (chữ 20% trên secondary)
 constexpr double WINDOW_OPACITY = 0.9;  // [window] opacity
 constexpr int ITEM_RADIUS = 10;  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)

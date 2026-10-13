@@ -233,7 +233,7 @@
 //      Context Menu): ô hover cách mép PAGE_LIST_GAP, cách nhau
 //      PAGE_LIST_GAP (user 2026-10-07); danh sách tích chọn không có viền
 //      chọn ("chọn dòng" vô nghĩa), danh sách chọn (Trash: thùng rác từng ổ)
-//      có nền + viền chọn như danh sách trang. Ô tích/icon/chữ lùi theo nội
+//      có nền chọn như danh sách trang (mục 77). Ô tích/icon/chữ lùi theo nội
 //      dung cả lúc dò cú bấm (subElementRect) — không thì vùng bấm ô tích
 //      lệch trái 8px, bấm giữa ô không ăn (user 2026-10-07).
 //  38. Configure Dolphin → Context Menu bớt dòng không dùng được ở Samhie
@@ -475,6 +475,11 @@
 //      dòng chọn giữ chữ xám "Kate Part:" và chữ khớp cyan như Quick Open
 //      (kcommandbar.cpp 6.30 bỏ màu khi chọn vì nền Highlight). Mặt phím tắt
 //      KDE tô màu cửa sổ = nền thẻ → đổi sang KEYCAP.
+//  77. Danh sách trang bên trái hộp cài đặt (KPageView: Configure Kate dạng
+//      danh sách phẳng, Dolphin/Konsole dạng icon — user 2026-10-13 "giao diện nào cũ thì
+//      làm hết"): trang đang chọn tô PAGE_ITEM_SELECTED, KHÔNG viền
+//      item-selected-border (viền đó chỉ giữ cho ô file Dolphin); trỏ chuột
+//      vẫn nền hover của Kvantum — chọn sáng hơn trỏ như cây Projects (mục 70).
 //  76. Popup dạng QMenu mang samhiePopupPanel (lịch sử clipboard của Kate,
 //      plugin Kate mục 25) vẽ thẻ như mục 69 thay nền + khung menu Kvantum
 //      (menu trong suốt → chữ code phía sau lộ qua chỗ trống). Vùng xem trước
@@ -1714,6 +1719,17 @@ void paintPopupItem(QPainter *p, const QRectF &rect, bool selected,
     p->setPen(Qt::NoPen);
     p->setBrush(fill);
     p->drawRoundedRect(band, R, R);
+    p->restore();
+}
+
+// Mục 77: trang đang chọn trong danh sách trang hộp cài đặt — nền, không viền
+void paintPageSelected(QPainter *p, const QRectF &rect)
+{
+    p->save();
+    p->setRenderHint(QPainter::Antialiasing);
+    p->setPen(Qt::NoPen);
+    p->setBrush(QColor(samhie::PAGE_ITEM_SELECTED));
+    p->drawRoundedRect(rect, samhie::ITEM_RADIUS, samhie::ITEM_RADIUS);
     p->restore();
 }
 
@@ -3918,6 +3934,10 @@ public:
                 QStyleOptionViewItem o(*vopt);
                 const int right = static_cast<const QAbstractScrollArea *>(w)->viewport()->width() - 1 - PAGE_LIST_GAP;
                 o.rect.setRight(qMin(o.rect.right(), right));
+                if (o.state & State_Selected) {  // mục 77 (chữ: KDE tự tô HighlightedText)
+                    paintPageSelected(p, o.rect);
+                    return;
+                }
                 QProxyStyle::drawPrimitive(pe, &o, p, w);
                 return;
             }
@@ -4172,6 +4192,18 @@ public:
                     QProxyStyle::drawControl(ce, &o, p, w);
                     return;
                 }
+                // Mục 77: danh sách trang không delegate riêng (Configure Kate:
+                // FlatList; dạng cây) — Kvantum vẽ ô trong drawControl của nó
+                // (không qua proxy) → tô ô ở đây, đưa xuống như ô thường nhưng
+                // giữ chữ sáng của trang đang chọn.
+                if (w && (w->inherits("KDEPrivate::KPageListView") || w->inherits("KDEPrivate::KPageTreeView"))
+                    && (o.state & State_Selected)) {
+                    paintPageSelected(p, o.rect);
+                    o.state &= ~(State_Selected | State_MouseOver);
+                    o.palette.setColor(QPalette::Text, o.palette.color(QPalette::HighlightedText));
+                    QProxyStyle::drawControl(ce, &o, p, w);
+                    return;
+                }
                 if (w && w->property("samhiePopupList").toBool()) {  // mục 69
                     if (o.state & (State_Selected | State_MouseOver))
                         paintPopupItem(p, o.rect, o.state & State_Selected, o.viewItemPosition);
@@ -4186,11 +4218,14 @@ public:
                     panel.viewItemPosition = QStyleOptionViewItem::OnlyOne;
                     panel.rect.adjust(PAGE_LIST_GAP, PAGE_LIST_GAP / 2, -PAGE_LIST_GAP, -PAGE_LIST_GAP / 2);
                     // Danh sách tích chọn: "dòng đang chọn" vô nghĩa → không
-                    // viền chọn. Danh sách chọn (thùng rác của từng ổ, trang
-                    // Trash) thì giữ nền + viền chọn như danh sách trang.
+                    // tô chọn. Danh sách chọn (thùng rác của từng ổ, trang
+                    // Trash) thì tô như danh sách trang (mục 77, không viền).
                     if (o.features & QStyleOptionViewItem::HasCheckIndicator)
                         panel.state &= ~State_Selected;
-                    QProxyStyle::drawPrimitive(PE_PanelItemViewItem, &panel, p, w);
+                    if (panel.state & State_Selected)
+                        paintPageSelected(p, panel.rect);
+                    else
+                        QProxyStyle::drawPrimitive(PE_PanelItemViewItem, &panel, p, w);
                     o.state &= ~(State_Selected | State_MouseOver);
                     o.viewItemPosition = QStyleOptionViewItem::OnlyOne;
                     // Nội dung lùi theo ô: chữ không dính mép trái ô (dòng chỉ

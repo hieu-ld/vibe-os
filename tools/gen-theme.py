@@ -573,6 +573,10 @@ def style_colors_h(pal):
         # Đường nhánh trên dòng đang chọn: nền chọn trùng màu đường (sub-secondary)
         # → sáng hơn một chút (chữ 25% phủ nền chọn ~ đường thụt lề VS Code #585858)
         ("TREE_LINE_SELECTED", over(d["text"], 0.25, d["sub-secondary"]), "cây Projects Kate: đường nhánh trên dòng đang chọn"),
+        # Danh sách trang bên trái hộp cài đặt (KPageView — Configure Kate/
+        # Dolphin/Konsole): trang đang chọn tô nâng hai bậc trên nền card, không
+        # viền cyan (user 2026-10-13); trang chỉ trỏ chuột giữ `hover` của Kvantum.
+        ("PAGE_ITEM_SELECTED", d["sub-secondary"], "danh sách trang hộp cài đặt: trang đang chọn, không viền"),
         ("SIDEBAR_TAB_OPEN", over(d["text"], 0.2, d["secondary"]), "cột icon Kate: nút panel đang mở (chữ 20% trên secondary)"),
     ]
     out = [f"// {HEADER}", "#pragma once", "", "namespace samhie {"]

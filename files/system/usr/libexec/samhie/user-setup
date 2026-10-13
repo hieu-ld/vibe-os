@@ -278,6 +278,20 @@ if [ ! -e "$kate_swap_marker" ] && command -v kwriteconfig6 >/dev/null; then
     echo "Moved Kate's unsaved-change files out of project folders"
 fi
 
+# ── 0k. Kate: tô màu cặp ngoặc ───────────────────────────────────────────────
+# Plugin Colored Brackets (rainbowparens) có sẵn trong Kate nhưng không nằm
+# trong danh sách tự bật (katepluginmanager.cpp 26.08.1) — bật trong file phiên
+# như bước 0h. Màu: [ColoredBrackets] của /etc/xdg/katerc (gen-theme.py, bộ màu
+# VS Code của user 2026-10-13). Chạy một lần; người dùng tắt thì Kate tự nhớ.
+kate_brackets_marker=$state_dir/kate-brackets-1
+if [ ! -e "$kate_brackets_marker" ] && command -v kwriteconfig6 >/dev/null; then
+    mkdir -p -- "${kate_session%/*}"
+    kwriteconfig6 --file "$kate_session" --group 'Kate Plugins' --key rainbowparens true
+    mkdir -p -- "$state_dir"
+    touch -- "$kate_brackets_marker"
+    echo "Turned on Kate's colored brackets"
+fi
+
 done_version=0
 if [ -r "$marker" ]; then
     read -r done_version < "$marker" || true

@@ -24,4 +24,6 @@ constexpr int ITEM_RADIUS = 10;  // góc ô file = RADIUS["itemview"] (tools/kva
 constexpr int MENUITEM_RADIUS = 6;  // góc ô hover dòng menu = RADIUS["menuitem"] (tools/kvantum.py)
 constexpr int TAB_RADIUS = 8;  // góc trên tab = RADIUS["tab"] (tools/kvantum.py)
 constexpr int TAB_INSET = 4;  // khe trên tab = TAB_INSET (tools/kvantum.py)
+constexpr int FONT_SIZE = 20;  // [fonts] size — cỡ chữ giao diện (Dongle)
+constexpr int FONT_MONO_SIZE = 11;  // [fonts] mono-size — cỡ chữ đều nét cùng độ lớn mắt thấy
 }

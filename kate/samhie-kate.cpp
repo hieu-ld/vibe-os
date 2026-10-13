@@ -240,6 +240,13 @@
 // 21. ☰ › View › Reset Sidebar Width: khung bên trái về SIDEBAR_WIDTH (user
 //    2026-10-13 lỡ kéo mất cỡ cũ — Kate nhớ cỡ trong file phiên, không có
 //    nút trả về).
+//
+// 22. Tooltip khi trỏ vào chữ trong editor (LSP hover, git blame) cỡ chữ như
+//    editor (user 2026-10-13: "font size cũng to lắm"). Kate dựng tooltip
+//    (TooltipPrivate, texthint/tooltip.cpp 26.08.1 — QTextBrowser không
+//    Q_OBJECT) bằng font editor nhưng lấy cỡ điểm của font giao diện: Dongle
+//    20pt → Hack 20pt, gần gấp đôi chữ code (Hack 11). Đặt font mặc định của
+//    lớp QTextBrowser trong Kate = font editor trước khi tooltip nào ra đời.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -1345,6 +1352,10 @@ public:
         a->setIcon(QIcon::fromTheme(QStringLiteral("utilities-terminal")));
         actionCollection()->setDefaultShortcut(a, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_QuoteLeft));
         connect(a, &QAction::triggered, this, &SamhieKateView::newTerminal);
+
+        // Mục 22: tooltip hover của editor (LSP, git blame) = font editor ở cỡ
+        // của chính editor
+        QApplication::setFont(KTextEditor::Editor::instance()->font(), "QTextBrowser");
 
         // Mục 21: ☰ › View › Reset Sidebar Width
         a = actionCollection()->addAction(QStringLiteral("samhie_reset_sidebar"));

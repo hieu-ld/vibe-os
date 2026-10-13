@@ -72,3 +72,12 @@ Scroll Bar Mini Map Width=72
 # dùng đổi cấu hình trong Kate — tài khoản đã đổi thì giữ giá trị lúc đó.
 Show Statusbar Input Mode=false
 Show Statusbar Dictionary=false
+
+# ↓ SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay khối này
+[ColoredBrackets]
+color1=#accb7b
+color2=#deb596
+color3=#179fff
+color4=#accb7b
+color5=#45d9c3
+# ↑ hết khối sinh tự động

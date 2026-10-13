@@ -455,14 +455,36 @@ KATE_SYNTAX = {
 
 
 def kate_syntax_colors(pal):
-    """Màu từng nhóm [syntax] + lỗi tương phản (dưới 4,5:1 trên card, trừ comment)."""
+    """Màu từng nhóm [syntax] (cả bracket-default) + lỗi tương phản (dưới 4,5:1
+    trên card, trừ comment; brackets nhắc nhóm không có)."""
     d, errors, colors = pal["dark"], [], {}
-    for group in KATE_SYNTAX:
+    for group in (*KATE_SYNTAX, "bracket-default"):
         colors[group] = syntax_color(pal["syntax"][group], d["text"])
         ratio = contrast(colors[group], d["card"])
         if group != "comment" and ratio < 4.5:
             errors.append(f"[syntax] {group} {colors[group]} trên card = {ratio:.2f}:1, cần 4.5:1")
+    brackets = pal["syntax"]["brackets"]
+    if len(brackets) != 5 or any(b not in colors for b in brackets):
+        errors.append(f"[syntax] brackets: cần đúng 5 tên nhóm trong {sorted(colors)}")
     return colors, errors
+
+
+KATERC = ROOT / "files/system/etc/xdg/katerc"
+KATERC_BEGIN = "# ↓ SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay khối này"
+KATERC_END = "# ↑ hết khối sinh tự động"
+
+
+def katerc(pal):
+    # /etc/xdg/katerc viết tay; chỉ khối cuối là sinh ra: màu cặp ngoặc của
+    # plugin Colored Brackets (rainbowparens_plugin.cpp, Kate 26.08.1: đọc
+    # [ColoredBrackets] color1..color5 của katerc)
+    colors, _ = kate_syntax_colors(pal)
+    text = KATERC.read_text()
+    head = text.split(KATERC_BEGIN)[0].rstrip("\n")
+    block = [KATERC_BEGIN, "[ColoredBrackets]"]
+    block += [f"color{i}={colors[g]}" for i, g in enumerate(pal["syntax"]["brackets"], 1)]
+    block += [KATERC_END]
+    return head + "\n\n" + "\n".join(block) + "\n"
 
 
 def kate_theme(pal):
@@ -556,6 +578,8 @@ def style_colors_h(pal):
     out += [f'constexpr int MENUITEM_RADIUS = {kvantum.RADIUS["menuitem"]};  // góc ô hover dòng menu = RADIUS["menuitem"] (tools/kvantum.py)']
     out += [f'constexpr int TAB_RADIUS = {kvantum.RADIUS["tab"]};  // góc trên tab = RADIUS["tab"] (tools/kvantum.py)']
     out += [f'constexpr int TAB_INSET = {kvantum.TAB_INSET};  // khe trên tab = TAB_INSET (tools/kvantum.py)']
+    out += [f'constexpr int FONT_SIZE = {pal["fonts"]["size"]};  // [fonts] size — cỡ chữ giao diện (Dongle)']
+    out += [f'constexpr int FONT_MONO_SIZE = {pal["fonts"]["mono-size"]};  // [fonts] mono-size — cỡ chữ đều nét cùng độ lớn mắt thấy']
     out += ["}", ""]
     return "\n".join(out)
 
@@ -847,6 +871,7 @@ OUTPUTS = {
     "files/system/usr/share/konsole/Samhie.profile": konsole_profile,
     "style/colors.h": style_colors_h,
     "files/system/usr/share/org.kde.syntax-highlighting/themes/samhie.theme": kate_theme,
+    "files/system/etc/xdg/katerc": katerc,
     "files/system/etc/profile.d/samhie-prompt.sh": bash_prompt,
     "files/system/etc/xdg/kdeglobals": kdeglobals,
     "files/system/usr/share/color-schemes/SamhieDark.colors": kde_colors_file("dark"),

@@ -218,6 +218,12 @@ type      = ["#00aefd", "#298292"]  # .mtk18: kiểu, lớp
 comment   = "#546e7a"               # .mtk5: một màu sẵn (user: giữ nguyên).
                                     # 3,32:1 trên card — dưới 4,5 có chủ ý: chú
                                     # thích mờ hẳn đi là màu user đã chọn.
+# Cặp ngoặc tô màu (plugin Colored Brackets của Kate, 5 màu xoay vòng). VS Code
+# của user tô theo tầng lồng: tầng 0 và 3 = number, 1 = operator, 4 = attribute
+# (.bracket-highlighting-N trong custom.css); tầng 2 không ghi đè → màu mặc
+# định thứ ba của VS Code (editorBracketHighlight.foreground3).
+bracket-default = "#179fff"
+brackets  = ["number", "operator", "bracket-default", "number", "attribute"]
 
 # 16 màu ANSI của Konsole (bản 1.0, theme/konsole/Samhie.colorscheme).
 # Thứ tự: đen, đỏ, lục, vàng, lam, tím, cyan, trắng — thường / sáng (intense).

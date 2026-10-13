@@ -458,6 +458,11 @@
 //      của Kate (kateurlbar.cpp 26.08.1) đổi chữ sang windowText khi trỏ, mà
 //      chữ thường đã cùng màu đó (đo container: 189,190,193 cả hai) → không
 //      nhận ra.
+//  74. Chữ đều nét trong nhãn rich text (<tt> <code> <pre>) cùng cỡ mắt thấy
+//      với chữ thường (user 2026-10-13: đường dẫn trong hộp xoá file to, tràn
+//      hai mép). Qt giữ cỡ điểm của nhãn cho đoạn đều nét: Dongle 20pt ≈ Hack
+//      11pt → Hack 20pt to gấp đôi. Trước khi nhãn vẽ, ghi font-size =
+//      cỡ nhãn × [fonts] mono-size / size vào thẻ (MonoSpans).
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -540,6 +545,7 @@
 #include <QFormLayout>
 #include <QGroupBox>
 #include <QLabel>
+#include <QRegularExpression>
 #include <QPlainTextEdit>
 #include <QLineEdit>
 #include <QListView>
@@ -2341,6 +2347,43 @@ public:
 // tên (sizeHint: nửa chiều cao) khi mũi tên ẩn và đang ở dạng nút (ô sửa
 // đường dẫn KUrlComboBox ẩn). Nghe Show/Hide của mũi tên và ô sửa; xét sau
 // một nhịp vì KIO đổi hai cái lần lượt.
+// Mục 74: chữ đều nét (<tt> <code> <pre>) trong nhãn rich text cùng cỡ mắt
+// thấy với chữ thường. Qt vẽ đoạn đó bằng font đều nét ở CÙNG cỡ điểm của
+// nhãn — Dongle 20pt trông như ~11pt nên Hack 20pt to gần gấp đôi (máy ảo user
+// 2026-10-13: hộp xoá file của KIO, đường dẫn trong <tt> tràn ra hai mép).
+// Ghi cỡ vào thẻ trước khi nhãn vẽ, theo tỉ lệ [fonts] mono-size/size; dấu
+// MONO_MARK để không ghi lại.
+class MonoSpans : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() == QEvent::Paint)
+            fix(static_cast<QLabel *>(obj));
+        return false;
+    }
+
+private:
+    static void fix(QLabel *label)
+    {
+        static const QString mark = QStringLiteral("<!--samhie-mono-->");
+        static const QRegularExpression tag(QStringLiteral("<(tt|code|pre)(?=[\\s>])"),
+                                            QRegularExpression::CaseInsensitiveOption);
+        const QString text = label->text();
+        if (label->textFormat() == Qt::PlainText || text.contains(mark) || !text.contains(tag)
+            || (label->textFormat() == Qt::AutoText && !Qt::mightBeRichText(text)))
+            return;
+        const qreal size = label->font().pointSizeF();
+        if (size <= 0)
+            return;
+        QString sized = text;
+        sized.replace(tag, QStringLiteral("<\\1 style=\"font-size:%1pt\"").arg(size * samhie::FONT_MONO_SIZE / samhie::FONT_SIZE));
+        label->setText(sized + mark);
+    }
+};
+
 class CrumbIndent : public QObject
 {
 public:
@@ -3348,6 +3391,8 @@ public:
             w->installEventFilter(&m_detailsAlign);
         if (qobject_cast<QPlainTextEdit *>(w) && w->parentWidget() && w->parentWidget()->inherits("KCommentWidget"))
             w->installEventFilter(&m_commentHeight);
+        if (qobject_cast<QLabel *>(w))
+            w->installEventFilter(&m_monoSpans);  // mục 74
         if (CrumbIndent::watches(w)) {  // mục 51
             w->installEventFilter(&m_crumbIndent);
             CrumbIndent::schedule(w->parentWidget());
@@ -3496,6 +3541,7 @@ public:
         w->removeEventFilter(&m_sidebarTab);
         w->removeEventFilter(&m_keepCommandBarFocus);
         w->removeEventFilter(&m_crumbIndent);
+        w->removeEventFilter(&m_monoSpans);
         w->removeEventFilter(&m_propsSetup);
         w->removeEventFilter(&m_detailsAlign);
         w->removeEventFilter(&m_commentHeight);
@@ -4471,6 +4517,7 @@ private:
     SidebarTabPaint m_sidebarTab;
     KeepCommandBarFocus m_keepCommandBarFocus;
     CrumbIndent m_crumbIndent;
+    MonoSpans m_monoSpans;
     PropertiesDialogSetup m_propsSetup;
     DetailsAlign m_detailsAlign;
     CommentHeight m_commentHeight;

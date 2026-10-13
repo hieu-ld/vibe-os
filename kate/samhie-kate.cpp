@@ -867,6 +867,14 @@ public:
                 m_projectTree = tree;
                 schedulePlaceMenuButton();  // căn đỉnh thẻ (alignProjectCard)
                 tree->setProperty("samhieTreeLines", true);  // style samhie mục 61
+                // Khung focus cyan cả dòng khi cây giữ focus (bấm vào cây, bấm
+                // chỗ trống): QTreeView::drawRow vẽ PE_FrameFocusRect KHÔNG kèm
+                // widget khi allColumnsShowFocus (Kate bật,
+                // kateprojectviewtree.cpp) → style không chặn được. Tắt thì
+                // focus về lại ô (State_HasFocus) — style samhie bỏ (mục 70).
+                if (auto *view = qobject_cast<QTreeView *>(tree)) {
+                    view->setAllColumnsShowFocus(false);
+                }
                 markCard(tree);
                 if (auto *view = qobject_cast<QTreeView *>(tree)) {
                     view->setIconSize(QSize(ICON_SIZE, ICON_SIZE));

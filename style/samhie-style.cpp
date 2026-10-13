@@ -432,9 +432,12 @@
 //      đang trỏ chuột tô nhạt một nửa — phân biệt với ô đang chọn (Enter mở).
 //      Plugin Kate (mục 14) đánh dấu samhiePopupPanel / samhiePopupList.
 //  70. Cây Projects của Kate (samhieTreeLines, mục 61) chọn/trỏ như Explorer
-//      của VS Code (user 2026-10-13): ô vuông dài HẾT bề ngang cây — cả phần
-//      thụt đầu dòng của mục con — thay ô bo góc bắt đầu sau phần thụt;
-//      không viền cyan (Kvantum vẽ viền chọn item-selected-border). Dòng
+//      của VS Code (user 2026-10-13): ô dài gần hết bề ngang cây — cả phần
+//      thụt đầu dòng của mục con, lùi TREE_ROW_INSET mỗi bên, bo
+//      TREE_ROW_RADIUS (đo VS Code) — thay ô bắt đầu sau phần thụt; không
+//      viền cyan (Kvantum vẽ viền chọn item-selected-border; khung focus cả
+//      dòng của QTreeView — Qt vẽ KHÔNG kèm widget nên style không nhận ra
+//      — plugin Kate tắt allColumnsShowFocus). Dòng
 //      đang chọn TREE_ROW_SELECTED, dòng chỉ trỏ chuột ROW_HOVER. Đường
 //      nhánh vẽ trên nền (trên dòng chọn: TREE_LINE_SELECTED — nền chọn trùng
 //      màu đường FRAME_LINE).
@@ -565,6 +568,10 @@ constexpr int CARD_RADIUS = samhie::TAB_RADIUS;  // thẻ Kate (mục 60) = góc
 // Xem 24px trên máy ảo rồi chọn 28. Thụt mỗi cấp giữ 12 của Kate
 // (kateprojectviewtree.cpp setIndentation) — VS Code 8, Zed 20.
 constexpr int KATE_TREE_ROW = 28;
+// Mục 70: ô chọn/trỏ của cây cách mép thẻ + bo góc — đo Explorer VS Code
+// (ảnh user 2026-10-13): lùi 5px mỗi bên, góc ~4px, cao trọn dòng
+constexpr int TREE_ROW_INSET = 5;
+constexpr int TREE_ROW_RADIUS = 4;
 // Mục 64: khe thêm giữa cột số dòng và code của Kate
 constexpr int GUTTER_EXTRA = 8;
 // Mục 66: ô nút cột icon Kate = ô activity bar VS Code (48×48, icon ở giữa)
@@ -3552,8 +3559,13 @@ public:
             if (vopt && (vopt->features & QStyleOptionViewItem::IsDecorationForRootColumn)
                 && (vopt->state & (State_Selected | State_MouseOver))) {
                 const int right = static_cast<const QAbstractScrollArea *>(w)->viewport()->width();
-                p->fillRect(QRect(0, vopt->rect.top(), right, vopt->rect.height()),
-                            QColor(vopt->state & State_Selected ? samhie::TREE_ROW_SELECTED : samhie::ROW_HOVER));
+                const QRectF row(TREE_ROW_INSET, vopt->rect.top(), right - 2 * TREE_ROW_INSET, vopt->rect.height());
+                p->save();
+                p->setRenderHint(QPainter::Antialiasing);
+                p->setPen(Qt::NoPen);
+                p->setBrush(QColor(vopt->state & State_Selected ? samhie::TREE_ROW_SELECTED : samhie::ROW_HOVER));
+                p->drawRoundedRect(row, TREE_ROW_RADIUS, TREE_ROW_RADIUS);
+                p->restore();
             }
             return;
         }

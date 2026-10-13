@@ -7,116 +7,112 @@
         "license": "SPDX-License-Identifier: MIT",
         "revision": 1,
         "name": "Samhie",
-        "_comment": "SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay. Màu cú pháp: Breeze Dark (theme/kate/README.md)."
+        "_comment": "SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay. Màu cú pháp: [syntax] của palette.toml; nền + kiểu còn lại: Breeze Dark (theme/kate/README.md)."
     },
     "text-styles": {
         "Normal": {
-            "text-color": "#cfcfc2",
-            "selected-text-color": "#cfcfc2",
+            "text-color": "#bdbec1",
+            "selected-text-color": "#bdbec1",
             "bold": false,
             "italic": false,
             "underline": false,
             "strike-through": false
         },
         "Keyword": {
-            "text-color": "#cfcfc2",
-            "selected-text-color": "#cfcfc2",
-            "bold": true
+            "text-color": "#f04f80",
+            "selected-text-color": "#f04f80"
         },
         "Function": {
-            "text-color": "#8e44ad",
-            "selected-text-color": "#af81ff"
+            "text-color": "#e4b19e",
+            "selected-text-color": "#e4b19e"
         },
         "Variable": {
-            "text-color": "#27aeae",
-            "selected-text-color": "#27aeae"
+            "text-color": "#45d9c3",
+            "selected-text-color": "#45d9c3"
         },
         "ControlFlow": {
-            "text-color": "#fdbc4b",
-            "selected-text-color": "#fdbc4b",
-            "bold": true
+            "text-color": "#f04f80",
+            "selected-text-color": "#f04f80"
         },
         "Operator": {
-            "text-color": "#3f8058",
-            "selected-text-color": "#54aa75"
+            "text-color": "#deb596",
+            "selected-text-color": "#deb596"
         },
         "BuiltIn": {
-            "text-color": "#609ca0",
-            "selected-text-color": "#75bfc4"
+            "text-color": "#e4b19e",
+            "selected-text-color": "#e4b19e"
         },
         "Extension": {
-            "text-color": "#0099ff",
-            "selected-text-color": "#bdc3c7",
-            "bold": true
+            "text-color": "#1498c8",
+            "selected-text-color": "#1498c8"
         },
         "Preprocessor": {
-            "text-color": "#27ae60",
-            "selected-text-color": "#27ae60"
+            "text-color": "#f04f80",
+            "selected-text-color": "#f04f80"
         },
         "Attribute": {
-            "text-color": "#2980b9",
-            "selected-text-color": "#fdbc4b"
+            "text-color": "#45d9c3",
+            "selected-text-color": "#45d9c3"
         },
         "Char": {
-            "text-color": "#3daee9",
-            "selected-text-color": "#3daee9"
+            "text-color": "#809e88",
+            "selected-text-color": "#809e88"
         },
         "SpecialChar": {
-            "text-color": "#3daee9",
-            "selected-text-color": "#3daee9"
+            "text-color": "#809e88",
+            "selected-text-color": "#809e88"
         },
         "String": {
-            "text-color": "#f44f4f",
-            "selected-text-color": "#f44f4f"
+            "text-color": "#809e88",
+            "selected-text-color": "#809e88"
         },
         "VerbatimString": {
-            "text-color": "#da4453",
-            "selected-text-color": "#da4453"
+            "text-color": "#809e88",
+            "selected-text-color": "#809e88"
         },
         "SpecialString": {
-            "text-color": "#da4453",
-            "selected-text-color": "#da4453"
+            "text-color": "#809e88",
+            "selected-text-color": "#809e88"
         },
         "Import": {
-            "text-color": "#27ae60",
-            "selected-text-color": "#27ae60"
+            "text-color": "#f04f80",
+            "selected-text-color": "#f04f80"
         },
         "DataType": {
-            "text-color": "#2980b9",
-            "selected-text-color": "#fdbc4b"
+            "text-color": "#1498c8",
+            "selected-text-color": "#1498c8"
         },
         "DecVal": {
-            "text-color": "#f67400",
-            "selected-text-color": "#f67400"
+            "text-color": "#accb7b",
+            "selected-text-color": "#accb7b"
         },
         "BaseN": {
-            "text-color": "#f67400",
-            "selected-text-color": "#f67400"
+            "text-color": "#accb7b",
+            "selected-text-color": "#accb7b"
         },
         "Float": {
-            "text-color": "#f67400",
-            "selected-text-color": "#f67400"
+            "text-color": "#accb7b",
+            "selected-text-color": "#accb7b"
         },
         "Constant": {
-            "text-color": "#27aeae",
-            "selected-text-color": "#27aeae",
-            "bold": true
+            "text-color": "#f04f80",
+            "selected-text-color": "#f04f80"
         },
         "Comment": {
-            "text-color": "#7a7c7d",
-            "selected-text-color": "#808080"
+            "text-color": "#546e7a",
+            "selected-text-color": "#546e7a"
         },
         "Documentation": {
-            "text-color": "#a43340",
-            "selected-text-color": "#da4453"
+            "text-color": "#546e7a",
+            "selected-text-color": "#546e7a"
         },
         "Annotation": {
-            "text-color": "#3f8058",
-            "selected-text-color": "#54aa75"
+            "text-color": "#e4b19e",
+            "selected-text-color": "#e4b19e"
         },
         "CommentVar": {
-            "text-color": "#7f8c8d",
-            "selected-text-color": "#94a3a4"
+            "text-color": "#546e7a",
+            "selected-text-color": "#546e7a"
         },
         "RegionMarker": {
             "text-color": "#2980b9",
@@ -143,8 +139,8 @@
             "underline": true
         },
         "Others": {
-            "text-color": "#27ae60",
-            "selected-text-color": "#27ae60"
+            "text-color": "#45d9c3",
+            "selected-text-color": "#45d9c3"
         }
     },
     "custom-styles": {

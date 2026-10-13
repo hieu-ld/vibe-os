@@ -398,6 +398,73 @@ def over(top, alpha, base):
         f"{round(int(top[i:i + 2], 16) * alpha + int(base[i:i + 2], 16) * (1 - alpha)):02x}" for i in (1, 3, 5))
 
 
+def _lin(c):
+    return c / 12.92 if c <= 0.04045 else ((c + 0.055) / 1.055) ** 2.4
+
+
+def _unlin(c):
+    return 12.92 * c if c <= 0.0031308 else 1.055 * c ** (1 / 2.4) - 0.055
+
+
+def oklab(hex_color):
+    r, g, b = (_lin(int(hex_color[i:i + 2], 16) / 255) for i in (1, 3, 5))
+    l, m, s = (x ** (1 / 3) for x in (0.4122214708 * r + 0.5363325363 * g + 0.0514459929 * b,
+                                      0.2119034982 * r + 0.6806995451 * g + 0.1073969566 * b,
+                                      0.0883024619 * r + 0.2817188376 * g + 0.6299787005 * b))
+    return (0.2104542553 * l + 0.7936177850 * m - 0.0040720468 * s,
+            1.9779984951 * l - 2.4285922050 * m + 0.4505937099 * s,
+            0.0259040371 * l + 0.7827717662 * m - 0.8086757660 * s)
+
+
+def from_oklab(L, a, b):
+    l, m, s = ((L + 0.3963377774 * a + 0.2158037573 * b) ** 3,
+               (L - 0.1055613458 * a - 0.0638541728 * b) ** 3,
+               (L - 0.0894841775 * a - 1.2914855480 * b) ** 3)
+    rgb = (4.0767416621 * l - 3.3077115913 * m + 0.2309699292 * s,
+           -1.2684380046 * l + 2.6097574011 * m - 0.3413193965 * s,
+           -0.0041960863 * l - 0.7034186147 * m + 1.7076147010 * s)
+    return "#" + "".join(f"{round(min(max(_unlin(max(c, 0)), 0), 1) * 255):02x}" for c in rgb)
+
+
+def syntax_color(stops, text):
+    # [syntax]: dải gradient → màu giữa hai đầu; sáng hơn chữ thường thì hạ
+    # độ sáng OKLab về bằng nó (giữ sắc độ)
+    if isinstance(stops, str):
+        return stops
+    a, b = stops
+    mid = "#" + "".join(f"{round((int(a[i:i + 2], 16) + int(b[i:i + 2], 16)) / 2):02x}" for i in (1, 3, 5))
+    L, A, B = oklab(mid)
+    cap = oklab(text)[0]
+    return mid if L <= cap else from_oklab(cap, A, B)
+
+
+# Kiểu chữ chung của KSyntaxHighlighting (mọi ngôn ngữ dùng) → nhóm màu
+# [syntax]. VS Code tô "constant.language" (True/None), import, tiền xử lý
+# cùng màu keyword; hàm có sẵn (print) cùng màu hàm; html: thẻ = Keyword, tên
+# thuộc tính = Others, giá trị = String (html.xml).
+KATE_SYNTAX = {
+    "keyword": ["Keyword", "ControlFlow", "Import", "Preprocessor", "Constant"],
+    "attribute": ["Variable", "Attribute", "Others"],
+    "string": ["String", "VerbatimString", "SpecialString", "Char", "SpecialChar"],
+    "function": ["Function", "BuiltIn", "Annotation"],
+    "number": ["DecVal", "BaseN", "Float"],
+    "operator": ["Operator"],
+    "type": ["DataType", "Extension"],
+    "comment": ["Comment", "Documentation", "CommentVar"],
+}
+
+
+def kate_syntax_colors(pal):
+    """Màu từng nhóm [syntax] + lỗi tương phản (dưới 4,5:1 trên card, trừ comment)."""
+    d, errors, colors = pal["dark"], [], {}
+    for group in KATE_SYNTAX:
+        colors[group] = syntax_color(pal["syntax"][group], d["text"])
+        ratio = contrast(colors[group], d["card"])
+        if group != "comment" and ratio < 4.5:
+            errors.append(f"[syntax] {group} {colors[group]} trên card = {ratio:.2f}:1, cần 4.5:1")
+    return colors, errors
+
+
 def kate_theme(pal):
     # Theme màu vùng code của Kate (KTextEditor). Màu cú pháp giữ của Breeze
     # Dark (theme/kate/README.md); chỉ thay nền cho vùng code giống thẻ cây
@@ -413,7 +480,7 @@ def kate_theme(pal):
         "license": theme["metadata"]["license"],
         "revision": 1,
         "name": "Samhie",
-        "_comment": f"{HEADER} Màu cú pháp: Breeze Dark (theme/kate/README.md).",
+        "_comment": f"{HEADER} Màu cú pháp: [syntax] của palette.toml; nền + kiểu còn lại: Breeze Dark (theme/kate/README.md).",
     }
     theme["editor-colors"].update({
         "BackgroundColor": argb(d["card"], op),
@@ -433,6 +500,15 @@ def kate_theme(pal):
         # đứng cạnh ngoặc/nháy) → màu viền của Samhie
         "BracketMatching": argb(d["sub-secondary"], op),
     })
+    # Màu chữ code: bộ màu của user ([syntax]); chữ thường = chữ Samhie. Không
+    # in đậm keyword/hằng như Breeze — VS Code không in đậm.
+    styles = theme["text-styles"]
+    styles["Normal"].update({"text-color": d["text"], "selected-text-color": d["text"]})
+    colors, _ = kate_syntax_colors(pal)
+    for group, names in KATE_SYNTAX.items():
+        for name in names:
+            styles[name].update({"text-color": colors[group], "selected-text-color": colors[group]})
+            styles[name].pop("bold", None)
     return json.dumps(theme, ensure_ascii=False, indent=4) + "\n"
 
 
@@ -805,6 +881,7 @@ def main():
     results = []
     if not errors:
         results, errors = measure(pal)
+        errors += kate_syntax_colors(pal)[1]
 
     if args.report:
         for r in results:

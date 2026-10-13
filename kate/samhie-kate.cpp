@@ -230,6 +230,16 @@
 //    - khung mới là terminal mới ở thư mục đang đứng của terminal cũ, như
 //      VS Code tách terminal; Kate không có view của widget nên nó tạo tài
 //      liệu trống cho khung mới — mở terminal rồi đóng tài liệu đó.
+//
+// 20. Popup khi bấm một mục breadcrumb (user 2026-10-13): như thẻ Quick Open —
+//    lề trong QUICK_OPEN_PAD, ô chọn/trỏ POPUP_ITEM bo góc không viền cyan
+//    (style mục 69, samhiePopupList); mọi popup cùng bề rộng
+//    CRUMB_POPUP_WIDTH, tên dài cắt "…"; cao vừa danh sách (tối đa 600 như
+//    Kate).
+//
+// 21. ☰ › View › Reset Sidebar Width: khung bên trái về SIDEBAR_WIDTH (user
+//    2026-10-13 lỡ kéo mất cỡ cũ — Kate nhớ cỡ trong file phiên, không có
+//    nút trả về).
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -264,6 +274,7 @@
 #include <QIcon>
 #include <QKeyEvent>
 #include <QLineEdit>
+#include <QListView>
 #include <QMainWindow>
 #include <QMenu>
 #include <QMenuBar>
@@ -302,6 +313,14 @@ constexpr double QUICK_OPEN_SHARE = 0.62;
 constexpr int QUICK_OPEN_MAX_WIDTH = 600;
 constexpr int QUICK_OPEN_PAD = 12;
 constexpr int QUICK_OPEN_GAP = 8;
+
+// Mục 20: popup breadcrumb — mọi popup cùng bề rộng (user: "khỏi sợ popup
+// của đường dẫn này to, đường dẫn kia nhỏ"), lề trong như Quick Open
+constexpr int CRUMB_POPUP_WIDTH = 280;
+constexpr int CRUMB_POPUP_MAX_HEIGHT = 600; // như Kate
+// Mục 21: bề rộng khung bên trái (Projects…) như máy ảo user trước khi lỡ kéo
+// (ảnh 2026-10-13 11:02: thẻ cây 281px + khe CARD_GAP bên trái)
+constexpr int SIDEBAR_WIDTH = 287;
 
 // Mục 8: cột số dòng tối thiểu bấy nhiêu chữ số
 constexpr int GUTTER_DIGITS = 4;
@@ -633,6 +652,30 @@ void placeQuickOpen(QWidget *w)
     for (QWidget *marked : {w, static_cast<QWidget *>(list)}) {
         marked->setProperty(marked == w ? "samhiePopupPanel" : "samhiePopupList", true);
         marked->style()->polish(marked);
+    }
+}
+
+// Mục 20: popup khi bấm một mục breadcrumb (DirFilesList, kateurlbar.cpp
+// 26.08.1 — QMenu chứa ô lọc ẩn + danh sách). Kate đặt cỡ vừa khít danh sách
+// (setFixedSize) mỗi lần đổi thư mục → đặt lại ở Show/Resize.
+void fitCrumbPopup(QWidget *popup)
+{
+    auto *list = popup->findChild<QListView *>();
+    if (!list || !popup->layout()) {
+        return;
+    }
+    if (!list->property("samhiePopupList").toBool()) {
+        popup->layout()->setContentsMargins(QUICK_OPEN_PAD, QUICK_OPEN_PAD, QUICK_OPEN_PAD, QUICK_OPEN_PAD);
+        list->setFrameShape(QFrame::NoFrame);
+        list->viewport()->setAutoFillBackground(false);
+        list->setTextElideMode(Qt::ElideRight);
+        list->setProperty("samhiePopupList", true); // ô chọn/trỏ như Quick Open (style mục 69)
+        list->style()->polish(list);
+    }
+    const int rows = list->model() ? list->model()->rowCount() : 0;
+    const int height = std::min(rows * std::max(list->sizeHintForRow(0), 0) + 2 * QUICK_OPEN_PAD, CRUMB_POPUP_MAX_HEIGHT);
+    if (popup->size() != QSize(CRUMB_POPUP_WIDTH, height)) {
+        popup->setFixedSize(CRUMB_POPUP_WIDTH, height);
     }
 }
 
@@ -1303,6 +1346,11 @@ public:
         actionCollection()->setDefaultShortcut(a, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_QuoteLeft));
         connect(a, &QAction::triggered, this, &SamhieKateView::newTerminal);
 
+        // Mục 21: ☰ › View › Reset Sidebar Width
+        a = actionCollection()->addAction(QStringLiteral("samhie_reset_sidebar"));
+        a->setText(QStringLiteral("Reset Sidebar Width"));
+        connect(a, &QAction::triggered, this, &SamhieKateView::resetSidebarWidth);
+
         // Mục 4: ☰ › File › Close Folder = bấm nút ✕ đầu khung Projects
         m_closeFolder = a = actionCollection()->addAction(QStringLiteral("samhie_close_folder"));
         a->setText(QStringLiteral("Close Folder"));
@@ -1492,6 +1540,9 @@ public:
             if (isQuickOpen(obj)) {
                 placeQuickOpen(static_cast<QWidget *>(obj)); // mục 14
             }
+            if (obj->inherits("DirFilesList")) {
+                fitCrumbPopup(static_cast<QWidget *>(obj)); // mục 20
+            }
             // Kate ẩn thanh menu theo Show Menu Bar=false rồi có thứ hiện lại
             // (đo container: khoá false mà thanh vẫn hiện; chưa rõ ai — nghi
             // KXmlGui dựng lại thanh khi plugin thêm menu). Giữ đúng ý khoá.
@@ -1574,6 +1625,9 @@ public:
             }
             if (event->type() == QEvent::Resize && isQuickOpen(obj)) {
                 placeQuickOpen(static_cast<QWidget *>(obj)); // mục 14
+            }
+            if (event->type() == QEvent::Resize && obj->inherits("DirFilesList")) {
+                fitCrumbPopup(static_cast<QWidget *>(obj)); // mục 20
             }
             if (event->type() == QEvent::Resize && obj->objectName() == QLatin1String("SearchDialog")) {
                 auto *dialog = static_cast<QWidget *>(obj);
@@ -1978,6 +2032,47 @@ private:
         }
         if (tab) {
             focusTerminal(tab);
+        }
+    }
+
+    // Mục 21: khung bên trái về SIDEBAR_WIDTH. Khung bên trái là một ô của
+    // splitter ngang chính (m_hSplitter, katemdi.cpp), ô giữa chứa vùng code;
+    // phần chênh lệch trừ/cộng vào ô giữa.
+    void resetSidebarWidth()
+    {
+        QWidget *central = m_mw->window()->findChild<QWidget *>(QStringLiteral("KateViewManager"));
+        if (!central) {
+            for (QWidget *w : m_mw->window()->findChildren<QWidget *>()) {
+                if (w->inherits("KateViewManager")) {
+                    central = w;
+                    break;
+                }
+            }
+        }
+        QWidget *side = m_projectsToolView;
+        if (!central || !side) {
+            return;
+        }
+        for (QWidget *w = side; w && w->parentWidget(); w = w->parentWidget()) {
+            auto *splitter = qobject_cast<QSplitter *>(w->parentWidget());
+            if (!splitter || splitter->orientation() != Qt::Horizontal || !splitter->isAncestorOf(central)) {
+                continue;
+            }
+            const int sideIndex = splitter->indexOf(w);
+            int centralIndex = -1;
+            for (int i = 0; i < splitter->count(); ++i) {
+                if (splitter->widget(i)->isAncestorOf(central)) {
+                    centralIndex = i;
+                }
+            }
+            if (centralIndex < 0 || centralIndex == sideIndex) {
+                return;
+            }
+            QList<int> sizes = splitter->sizes();
+            sizes[centralIndex] += sizes[sideIndex] - SIDEBAR_WIDTH;
+            sizes[sideIndex] = SIDEBAR_WIDTH;
+            splitter->setSizes(sizes);
+            return;
         }
     }
 

@@ -199,6 +199,26 @@ important = "#9e4443"
 [window]
 opacity = 0.90
 
+# Màu chữ code trong Kate (theme editor "Samhie", chỉ bản tối) — bộ màu user tự
+# làm cho VS Code (~/Storage/Design/Code/Custom/custom.css, 2026-10-13): mỗi
+# loại chữ một dải gradient. Theme Kate chỉ có màu đơn → gen-theme.py lấy màu
+# GIỮA hai đầu (trộn sRGB như CSS), màu nào sáng hơn chữ thường (dark.text) thì
+# hạ độ sáng OKLab về bằng chữ thường (user: "đậm tối xuống 1 xíu để hợp với
+# tone của màu text"); màu vốn tối hơn giữ nguyên. Lớp .mtkN của VS Code ứng
+# với loại chữ nào: đo theo theme Minimal Dark của user (thứ tự màu trong
+# tokenColors) — ghép sang kiểu chữ chung của Kate trong gen-theme.py.
+[syntax]
+keyword   = ["#e233ff", "#ff6b00"]  # .mtk6 .mtk19: keyword, storage, thẻ html
+attribute = ["#13e2da", "#b2ffda"]  # .mtk10: biến, tên thuộc tính
+string    = ["#d7ba7d", "#298292"]  # .mtk12: chuỗi
+function  = ["#fdcaa5", "#ffcac9"]  # .mtk17: hàm
+number    = ["#b5cea8", "#d6ff7f"]  # .mtk7: số
+operator  = ["#d7ba7d", "#ffcac9"]  # .mtk3: toán tử, phần nhúng
+type      = ["#00aefd", "#298292"]  # .mtk18: kiểu, lớp
+comment   = "#546e7a"               # .mtk5: một màu sẵn (user: giữ nguyên).
+                                    # 3,32:1 trên card — dưới 4,5 có chủ ý: chú
+                                    # thích mờ hẳn đi là màu user đã chọn.
+
 # 16 màu ANSI của Konsole (bản 1.0, theme/konsole/Samhie.colorscheme).
 # Thứ tự: đen, đỏ, lục, vàng, lam, tím, cyan, trắng — thường / sáng (intense).
 # Sinh ra /usr/share/konsole/Samhie.colorscheme. Dấu nhắc lệnh ($) dùng màu số

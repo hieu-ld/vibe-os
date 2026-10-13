@@ -4,6 +4,9 @@
     <Menu name="file">
       <Action name="samhie_close_folder" group="open_merge"/>
     </Menu>
+    <Menu name="view">
+      <Action name="samhie_reset_sidebar"/>
+    </Menu>
     <Menu name="samhie_terminal">
       <text>&amp;Terminal</text>
       <Action name="samhie_terminal_new"/>

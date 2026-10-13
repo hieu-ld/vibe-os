@@ -452,6 +452,12 @@
 //      TREE_ROW_INSET bo góc, mục 70); nút Commit hover như tên dự án (mục
 //      59): ô vuông hết nút, nút sát cột icon (samhieFlatHover). Plugin Kate
 //      mục 17 đánh dấu.
+//  73. Breadcrumb trên vùng code Kate (BreadCrumbView) không có ô hover/ô
+//      chọn (user 2026-10-13: "chuyển sang hover text"): trỏ vào thì chữ
+//      HOVER_ACCENT như tên thư mục trên thanh đường dẫn Dolphin. Delegate
+//      của Kate (kateurlbar.cpp 26.08.1) đổi chữ sang windowText khi trỏ, mà
+//      chữ thường đã cùng màu đó (đo container: 189,190,193 cả hai) → không
+//      nhận ra.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -3966,6 +3972,13 @@ public:
                 o.state &= ~State_HasFocus;
                 if (noCheck(vopt, w))  // mục 71
                     o.features &= ~QStyleOptionViewItem::HasCheckIndicator;
+                // Mục 73: breadcrumb Kate không ô hover/chọn — trỏ vào thì chữ
+                // cyan như thanh đường dẫn Dolphin (dấu › Kate tự bỏ trạng thái trỏ)
+                if (w && w->inherits("BreadCrumbView")) {
+                    if (o.state & State_MouseOver)
+                        o.palette.setColor(QPalette::Text, QColor(samhie::HOVER_ACCENT));
+                    o.state &= ~(State_Selected | State_MouseOver);
+                }
                 if (w && w->property("samhieTreeLines").toBool()) {  // mục 70: nền ở PE_PanelItemViewRow
                     o.state &= ~(State_Selected | State_MouseOver);
                     QProxyStyle::drawControl(ce, &o, p, w);

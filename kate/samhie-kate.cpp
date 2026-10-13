@@ -220,6 +220,16 @@
 //    tài liệu trống chưa lưu, đứng một mình, thì mở tab terminal rồi đóng tài
 //    liệu (vùng không trống nữa nên Kate không mở lại). Gõ exit ở terminal
 //    cuối cùng → terminal mới, cũng như đóng tab cuối.
+//
+// 19. Chia đôi (Split Vertical/Horizontal) khi đang ở terminal (user
+//    2026-10-13: khung không chia đều, khung mới là "Untitled"):
+//    - chia đều: Konsole báo sizeHint = cỡ hiện tại, khung chứa của view
+//      space (QStackedWidget, MinimumExpanding) lấy đó làm bề rộng tối thiểu
+//      → Kate đặt 50:50 nhưng khung terminal giữ nguyên ~1000px (đo container).
+//      Tab terminal báo sizeHint = cỡ tối thiểu.
+//    - khung mới là terminal mới ở thư mục đang đứng của terminal cũ, như
+//      VS Code tách terminal; Kate không có view của widget nên nó tạo tài
+//      liệu trống cho khung mới — mở terminal rồi đóng tài liệu đó.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -261,6 +271,7 @@
 #include <QPointer>
 #include <QPushButton>
 #include <QResizeEvent>
+#include <QSplitter>
 #include <QStackedWidget>
 #include <QPainter>
 #include <QTextLayout>
@@ -1238,6 +1249,20 @@ public:
         return m_part;
     }
 
+    // Mục 19: Konsole báo sizeHint = cỡ hiện tại, mà khung chứa của view space
+    // Kate (MinimumExpanding) lấy sizeHint làm bề rộng tối thiểu → chia đôi
+    // thì khung terminal không chịu nhỏ lại. Báo cỡ tối thiểu thay vào.
+    QSize sizeHint() const override
+    {
+        return minimumSizeHint();
+    }
+
+    QString workingDirectory() const
+    {
+        auto *term = qobject_cast<TerminalInterface *>(m_part.data());
+        return term ? term->currentWorkingDirectory() : QString();
+    }
+
     // Kate hỏi trước khi đóng tab (và trước khi thoát): đang chạy chương trình
     // (vd Claude CLI) thì hỏi lại như Konsole/VS Code; chỉ có shell thì đóng luôn.
     Q_INVOKABLE bool shouldClose()
@@ -1320,6 +1345,16 @@ public:
             watchGutter(view);
         }
         connect(m_mw, &KTextEditor::MainWindow::viewCreated, this, watchGutter);
+
+        // Mục 19: chia đôi khi đang ở terminal → khung mới cũng là terminal.
+        // Kate nối hành động trước plugin → chạy sau khi Kate chia xong.
+        if (auto *xmlWin = dynamic_cast<KXmlGuiWindow *>(m_mw->window())) {
+            for (const auto &name : {QStringLiteral("view_split_vert"), QStringLiteral("view_split_horiz")}) {
+                if (QAction *split = xmlWin->actionCollection()->action(name)) {
+                    connect(split, &QAction::triggered, this, &SamhieKateView::splitTerminal);
+                }
+            }
+        }
 
         // Mục 18: "Untitled" Kate tự mở khi vùng editor trống → terminal thay
         // chỗ. Bấm New File trên welcome page thì giữ: welcome còn trong vùng
@@ -1943,6 +1978,40 @@ private:
         }
         if (tab) {
             focusTerminal(tab);
+        }
+    }
+
+    // Mục 19: Kate chia view space đang hiện terminal → khung mới (đứng ngay
+    // sau khung cũ trong splitter, kateviewmanager.cpp splitViewSpace) có
+    // tài liệu trống mới tạo → thay bằng terminal ở thư mục của terminal cũ.
+    void splitTerminal()
+    {
+        KTextEditor::View *view = m_mw->activeView();
+        if (!view) {
+            return;
+        }
+        KTextEditor::Document *doc = view->document();
+        if (!doc->url().isEmpty() || doc->isModified() || !doc->isEmpty() || doc->views().size() != 1) {
+            return;
+        }
+        QWidget *space = view;
+        while (space && !isViewSpace(space)) {
+            space = space->parentWidget();
+        }
+        auto *splitter = space ? qobject_cast<QSplitter *>(space->parentWidget()) : nullptr;
+        const int index = splitter ? splitter->indexOf(space) : -1;
+        if (index < 1 || !isViewSpace(splitter->widget(index - 1))) {
+            return;
+        }
+        auto *stack = splitter->widget(index - 1)->findChild<QStackedWidget *>(QString(), Qt::FindDirectChildrenOnly);
+        auto *source = stack ? qobject_cast<TerminalTab *>(stack->currentWidget()) : nullptr;
+        if (!source) {
+            return;
+        }
+        const QString dir = source->workingDirectory();
+        if (TerminalTab *tab = createTerminal(QFileInfo(dir).isDir() ? dir : startDirectory())) {
+            focusTerminal(tab);
+            KTextEditor::Editor::instance()->application()->closeDocument(doc);
         }
     }
 

@@ -292,6 +292,15 @@ def kdeglobals(pal):
         # khoá này → Qt::AA_DontShowIconsInMenus; ô đánh dấu vẫn hiện.
         ("KDE", dict(contrast="4", frameContrast=str(pal["kde"]["frame-contrast"]["dark"]),
                      SingleClick="false", widgetStyle="samhie", ShowIconsInMenuItems="false")),
+        # Cột Places của hộp thoại mở/lưu file (KFileWidget — Open File/Open
+        # Folder của Kate, Save As của mọi app KDE): icon 20 như sidebar
+        # Dolphin (dolphinrc [PlacesPanel] IconSize=20). KIO mặc định tự phóng
+        # icon theo bề rộng cột (máy ảo user 2026-10-13: ~56px). Đọc ở
+        # KFilePlacesViewPrivate::readConfig (kfileplacesview.cpp, KIO 6.30)
+        # qua KSharedConfig của app — có gộp kdeglobals. Chuột phải › Icon Size
+        # trong hộp thoại ghi đè vào file cấu hình riêng của app đó.
+        ("KFileDialog Settings", {"Places Icons Auto-resize": "false",
+                                  "Places Icons Static Size": "20"}),
     ] + kde_color_sections(pal, "dark")
     return "\n".join(head) + ini(sections)
 

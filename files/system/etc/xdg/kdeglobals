@@ -20,6 +20,10 @@ SingleClick=false
 widgetStyle=samhie
 ShowIconsInMenuItems=false
 
+[KFileDialog Settings]
+Places Icons Auto-resize=false
+Places Icons Static Size=20
+
 [ColorEffects:Disabled]
 Color=56,56,56
 ColorAmount=0

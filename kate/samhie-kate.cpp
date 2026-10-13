@@ -201,6 +201,12 @@
 //    view) → một nhịp sau, cột trái đang mở Search/Git/Outline thì chuyển
 //    sang Projects. Cột trái đang thu thì để thu. Dự án cuối cùng mở lại
 //    nhờ restoreProjectsForSessions trong /etc/xdg/katerc.
+//
+// 17. Panel Git và Symbols như Projects/Search (user 2026-10-13): cây là thẻ
+//    bo góc không viền, trái cách cột icon, đáy bằng đáy thẻ code (bỏ ô
+//    Filter… như Projects — Symbols vẫn gõ để nhảy tới mục như mọi cây), không
+//    khung cyan khi bấm dòng; nút chỉ-icon ô hover vuông. Symbols: tiêu đề + ≣
+//    Kate vẽ trong đầu cột của cây → thay bằng hàng thật [Symbols … ≣] trên thẻ.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -744,6 +750,119 @@ void cardResults(QTreeView *tree)
     markCard(results);
 }
 
+// Mục 17: cây của panel Git / Symbols thành thẻ như cây Projects — bỏ ô
+// Filter… (thẻ dài tới đáy, bằng đáy thẻ code), trái cách cột icon, không
+// khung focus cyan cả dòng (xem cây Projects trong eventFilter), dòng đầu
+// cách mép trên CARD_GAP.
+void cardSideTree(QTreeView *tree)
+{
+    QWidget *panel = tree->parentWidget();
+    QLayout *layout = panel ? panel->layout() : nullptr;
+    if (!layout) {
+        return;
+    }
+    for (int i = 0; i < layout->count(); ++i) {
+        if (auto *filter = qobject_cast<QLineEdit *>(layout->itemAt(i)->widget())) {
+            filter->hide();
+        }
+    }
+    layout->setContentsMargins(CARD_GAP, 0, 0, CARD_GAP);
+    tree->setAllColumnsShowFocus(false);
+    // Chọn/trỏ dòng như cây Projects (style samhie mục 61, 70) — Kvantum vẽ
+    // dòng chọn có viền cyan. Git tự bỏ đường nhánh (GitWidgetTreeView).
+    tree->setProperty("samhieTreeLines", true);
+    tree->style()->polish(tree);
+    padTreeTop(tree);
+    markCard(tree);
+}
+
+// Mục 17: panel Git (gitwidget.cpp: m_mainView = [hàng nút, cây, ô lọc])
+bool isGitTree(QTreeView *tree)
+{
+    for (QWidget *w = tree->parentWidget(); w; w = w->parentWidget()) {
+        if (w->inherits("GitWidget")) {
+            return true;
+        }
+        if (w->inherits("KateMDI::ToolView")) {
+            break;
+        }
+    }
+    return false;
+}
+
+void cardGitPanel(QTreeView *tree)
+{
+    if (tree->property("samhieCard").toBool() || !tree->parentWidget()->layout()) {
+        return;
+    }
+    cardSideTree(tree);
+    // Hàng [Commit, ↥, ↧, ⟳, ≣]: nút chỉ-icon ô hover vuông như nút hàng
+    // Projects; Commit có chữ — chỉ icon cùng cỡ (⟳ nằm trong BusyWrapperWidget)
+    QLayout *layout = tree->parentWidget()->layout();
+    QLayout *row = layout->count() ? layout->itemAt(0)->layout() : nullptr;
+    if (row) {
+        row->setSpacing(0); // nút sát nhau như hàng Projects — ô 190px còn đủ chữ "Commit"
+    }
+    for (int i = 0; row && i < row->count(); ++i) {
+        QWidget *w = row->itemAt(i)->widget();
+        QList<QToolButton *> buttons;
+        if (auto *b = qobject_cast<QToolButton *>(w)) {
+            buttons.append(b);
+        } else if (w) {
+            buttons = w->findChildren<QToolButton *>();
+        }
+        for (QToolButton *b : buttons) {
+            if (b->toolButtonStyle() == Qt::ToolButtonIconOnly) {
+                growIcon(b);
+            } else {
+                b->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
+            }
+        }
+    }
+}
+
+// Mục 17: panel Symbols (lspclientsymbolview.cpp): ToolView = [cây, ô lọc].
+// Tiêu đề "Symbols" + nút ≣ Kate vẽ TRONG đầu cột của cây
+// (MenuButtonHeaderView — nút vẽ tay, không là widget: style không làm ô hover
+// vuông được) → thay bằng hàng thật trên thẻ như hàng nút Git: [Symbols … ≣],
+// ≣ mở đúng menu của Kate (QMenu con của cây).
+void cardSymbolsPanel(QTreeView *tree)
+{
+    auto *layout = qobject_cast<QBoxLayout *>(tree->parentWidget()->layout());
+    if (tree->property("samhieCard").toBool() || !layout) {
+        return;
+    }
+    auto *row = new QWidget(tree->parentWidget());
+    auto *rowLayout = new QHBoxLayout(row);
+    rowLayout->setContentsMargins(0, 0, 0, 0);
+    auto *title = new QLabel(QStringLiteral("Symbols"), row);
+    title->setIndent(6); // như chữ "Commit" của Git (lề trong nút)
+    rowLayout->addWidget(title, 1);
+    auto *menu = new QToolButton(row);
+    menu->setAutoRaise(true);
+    menu->setIcon(QIcon::fromTheme(QStringLiteral("application-menu")));
+    menu->setToolTip(QStringLiteral("Options"));
+    growIcon(menu);
+    QObject::connect(menu, &QToolButton::clicked, tree, [tree, menu] {
+        if (auto *popup = tree->findChild<QMenu *>(QString(), Qt::FindDirectChildrenOnly)) {
+            popup->exec(menu->mapToGlobal(QPoint(0, menu->height())));
+        }
+    });
+    rowLayout->addWidget(menu);
+    layout->insertWidget(layout->indexOf(tree), row);
+    cardSideTree(tree);
+}
+
+// Mục 17: cây mới của Git / Symbols (cũng gọi lúc plugin nạp — panel dựng trước)
+void cardSidePanel(QTreeView *tree)
+{
+    if (isGitTree(tree)) {
+        cardGitPanel(tree);
+    } else if (tree->header() && tree->header()->inherits("MenuButtonHeaderView")) {
+        cardSymbolsPanel(tree);
+    }
+}
+
 // Mục 15: kết quả không ô tích khi ô Replace đang đóng (style samhie mục 71
 // đọc samhieNoCheck). Cây kết quả: ResultsTreeView, một cây mỗi tab tìm.
 void syncResultChecks(QWidget *dialog)
@@ -1199,6 +1318,11 @@ public:
         // Mục 16: Kate khôi phục panel sau khi dựng view này
         QTimer::singleShot(0, this, &SamhieKateView::startOnProjects);
 
+        // Mục 17: panel Git / Symbols dựng trước plugin này
+        for (auto *tree : m_mw->window()->findChildren<QTreeView *>()) {
+            cardSidePanel(tree);
+        }
+
         // Mục 12: breadcrumb của view space đã dựng trước khi plugin nạp (cũng
         // nút Git dưới)
         for (auto *button : m_mw->window()->findChildren<QToolButton *>()) {
@@ -1245,6 +1369,9 @@ public:
             }
             if (isIconOnlySidebarTab(obj)) {
                 schedulePlaceMenuButton(); // mục 13: nút panel nạp sau
+            }
+            if (auto *tree = qobject_cast<QTreeView *>(obj)) {
+                cardSidePanel(tree); // mục 17
             }
             if (obj->inherits("ResultsTreeView")) { // mục 15: tab tìm mới
                 cardResults(static_cast<QTreeView *>(obj));

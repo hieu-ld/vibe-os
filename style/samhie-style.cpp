@@ -420,6 +420,10 @@
 //  67. Tên dự án đầu khung Projects của Kate (mục 59) bắt đầu thẳng icon thư
 //      mục cấp gốc của cây bên dưới (user 2026-10-13). Plugin Kate (mục 13)
 //      đo vị trí icon, ghi samhieTextIndent lên ô chọn; style tự vẽ chữ.
+//  68. Nút icon hàng trên của Kate (⟳ « đầu khung Projects; ‹ › ⌘ ⧉ ☰ đầu
+//      dải tab): ô hover vuông như mục 21 (user 2026-10-13: ô 28×18 — Kate
+//      xếp nút cao bằng icon). Plugin Kate đánh dấu samhieSquareHover; nút
+//      được nới tối thiểu bằng ô vuông (hàng cao 40 — đủ chỗ).
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -3035,6 +3039,10 @@ public:
             const int side = qMax(tb->iconSize().width(), tb->iconSize().height()) + 2 * TOOL_PADDING;
             tb->setMinimumSize(qMax(side, tb->minimumWidth()), qMax(side, tb->minimumHeight()));  // mục 58
         }
+        if (auto *tb = qobject_cast<QToolButton *>(w); tb && w->property("samhieSquareHover").toBool()) {
+            const int side = qMax(tb->iconSize().width(), tb->iconSize().height()) + 2 * TOOL_PADDING;
+            tb->setMinimumSize(qMax(side, tb->minimumWidth()), qMax(side, tb->minimumHeight()));  // mục 68
+        }
         // Mục 24: thanh lọc không có 🔒 "Keep Filter When Changing Folders" và
         // Aᴮ "Match case" (user 2026-10-06: cho gọn). Nhận theo icon — nút
         // không có tên (filterbar.cpp 26.08.1). Ẩn lúc polish: con được polish
@@ -3735,7 +3743,7 @@ public:
                 }
             }
             if (w && tbopt->toolButtonStyle == Qt::ToolButtonIconOnly
-                && (isTabCornerButton(w)
+                && (isTabCornerButton(w) || w->property("samhieSquareHover").toBool()  // mục 68
                     || (inDolphinLocationOrSearch(w) && !qobject_cast<QLineEdit *>(w->parentWidget()))
                     || (qobject_cast<QToolBar *>(w->parentWidget()) && w->window()->inherits("DolphinMainWindow")))) {
                 const int side = qMax(o.iconSize.width(), o.iconSize.height()) + 2 * TOOL_PADDING;

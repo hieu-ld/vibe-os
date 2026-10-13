@@ -48,7 +48,9 @@
 //      (KateOutputEdit) cũng là thẻ, ô Search + nút nằm trên nền cửa sổ.
 //    - Icon cây Projects và mọi nút icon ở hàng trên (⟳ « đầu khung Projects;
 //      ‹ › ⌘ ⧉ ☰ của view space) cùng cỡ ICON_SIZE (user 2026-10-12: to hơn
-//      cho đồng đều — trước đều 16, thử 17, chốt 18).
+//      cho đồng đều — trước đều 16, thử 17, chốt 18). Ô hover của các nút
+//      đó vuông icon + 6px mỗi phía (user 2026-10-13: trước cao bằng icon,
+//      28×18 — "lùn"); plugin đánh dấu samhieSquareHover, style vẽ (mục 68).
 //
 // 5. Menu chuột phải trên nút panel (Output, Diagnostics, cột icon) không có
 //    "Hide Button" (user 2026-10-11): với Output nó là mục ĐẦU menu — nhiều khả năng lỡ
@@ -254,6 +256,12 @@ void growIcons(QWidget *parent)
 {
     for (auto *button : parent->findChildren<QToolButton *>(Qt::FindDirectChildrenOnly)) {
         button->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
+        // Ô hover vuông như nút icon khác của Samhie (style samhie mục 68) —
+        // style đọc thuộc tính lúc polish → polish lại
+        if (!button->property("samhieSquareHover").toBool()) {
+            button->setProperty("samhieSquareHover", true);
+            button->style()->polish(button);
+        }
     }
 }
 

@@ -455,6 +455,13 @@ def style_colors_h(pal):
         # Ô đang chọn/trỏ trong popup nền secondary (Quick Open Kate): nâng một
         # bậc như ghi chú của vai trò `hover` (trên nền secondary = sub-secondary)
         ("POPUP_ITEM", d["sub-secondary"], "ô đang chọn/trỏ trong popup nền secondary (Quick Open Kate)"),
+        # Cây Projects Kate (user 2026-10-13: bỏ viền cyan, ô dài hết dòng như
+        # VS Code): dòng đang chọn tô nâng hai bậc trên nền card, hơn dòng trỏ
+        # chuột (ROW_HOVER) — như VS Code tách selection / hover.
+        ("TREE_ROW_SELECTED", d["sub-secondary"], "cây Projects Kate: dòng đang chọn, không viền"),
+        # Đường nhánh trên dòng đang chọn: nền chọn trùng màu đường (sub-secondary)
+        # → sáng hơn một chút (chữ 25% phủ nền chọn ~ đường thụt lề VS Code #585858)
+        ("TREE_LINE_SELECTED", over(d["text"], 0.25, d["sub-secondary"]), "cây Projects Kate: đường nhánh trên dòng đang chọn"),
         ("SIDEBAR_TAB_OPEN", over(d["text"], 0.2, d["secondary"]), "cột icon Kate: nút panel đang mở (chữ 20% trên secondary)"),
     ]
     out = [f"// {HEADER}", "#pragma once", "", "namespace samhie {"]

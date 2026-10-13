@@ -431,6 +431,13 @@
 //      cho nền card, trên nền secondary thì chìm mất), không viền chọn; ô chỉ
 //      đang trỏ chuột tô nhạt một nửa — phân biệt với ô đang chọn (Enter mở).
 //      Plugin Kate (mục 14) đánh dấu samhiePopupPanel / samhiePopupList.
+//  70. Cây Projects của Kate (samhieTreeLines, mục 61) chọn/trỏ như Explorer
+//      của VS Code (user 2026-10-13): ô vuông dài HẾT bề ngang cây — cả phần
+//      thụt đầu dòng của mục con — thay ô bo góc bắt đầu sau phần thụt;
+//      không viền cyan (Kvantum vẽ viền chọn item-selected-border). Dòng
+//      đang chọn TREE_ROW_SELECTED, dòng chỉ trỏ chuột ROW_HOVER. Đường
+//      nhánh vẽ trên nền (trên dòng chọn: TREE_LINE_SELECTED — nền chọn trùng
+//      màu đường FRAME_LINE).
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -3536,6 +3543,20 @@ public:
             return;  // mục 63
         // Mục 61: đường nhánh cây Projects của Kate. opt->rect là một cột
         // thụt lề (QTreeView::drawBranches, toạ độ vùng hiển thị).
+        // Mục 70: nền dòng chọn/trỏ của cây Projects, hết bề ngang. Qt vẽ nền
+        // phần thụt lề (PE_PanelItemViewRow, cờ IsDecorationForRootColumn) →
+        // đường nhánh → nội dung dòng (QTreeView::drawRow, Qt 6.11.2): tô ở
+        // bước đầu thì đường nhánh nằm trên nền; nội dung dòng không tô nữa.
+        if (pe == PE_PanelItemViewRow && w && w->property("samhieTreeLines").toBool()) {
+            auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt);
+            if (vopt && (vopt->features & QStyleOptionViewItem::IsDecorationForRootColumn)
+                && (vopt->state & (State_Selected | State_MouseOver))) {
+                const int right = static_cast<const QAbstractScrollArea *>(w)->viewport()->width();
+                p->fillRect(QRect(0, vopt->rect.top(), right, vopt->rect.height()),
+                            QColor(vopt->state & State_Selected ? samhie::TREE_ROW_SELECTED : samhie::ROW_HOVER));
+            }
+            return;
+        }
         if (pe == PE_IndicatorBranch && w && w->property("samhieTreeLines").toBool()) {
             auto *tree = qobject_cast<const QTreeView *>(w);
             const QRect r = opt->rect;
@@ -3546,7 +3567,7 @@ public:
                 const int y = r.top() + r.height() / 2;
                 p->save();
                 p->setRenderHint(QPainter::Antialiasing, false);
-                p->setPen(QColor(samhie::FRAME_LINE));
+                p->setPen(QColor((opt->state & State_Selected) ? samhie::TREE_LINE_SELECTED : samhie::FRAME_LINE));  // mục 70
                 if (opt->state & State_Item) {
                     p->drawLine(x, r.top(), x, (opt->state & State_Sibling) ? r.bottom() : y);  // ├ hoặc └
                     p->drawLine(x, y, r.right(), y);
@@ -3900,6 +3921,11 @@ public:
             if (auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
                 QStyleOptionViewItem o(*vopt);
                 o.state &= ~State_HasFocus;
+                if (w && w->property("samhieTreeLines").toBool()) {  // mục 70: nền ở PE_PanelItemViewRow
+                    o.state &= ~(State_Selected | State_MouseOver);
+                    QProxyStyle::drawControl(ce, &o, p, w);
+                    return;
+                }
                 if (w && w->property("samhiePopupList").toBool()) {  // mục 69
                     if (o.state & (State_Selected | State_MouseOver)) {
                         QColor fill(samhie::POPUP_ITEM);

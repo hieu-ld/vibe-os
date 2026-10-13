@@ -247,6 +247,23 @@
 //    Q_OBJECT) bằng font editor nhưng lấy cỡ điểm của font giao diện: Dongle
 //    20pt → Hack 20pt, gần gấp đôi chữ code (Hack 11). Đặt font mặc định của
 //    lớp QTextBrowser trong Kate = font editor trước khi tooltip nào ra đời.
+//
+// 23. Menu ☰ bớt như Dolphin/Konsole (user 2026-10-13, MENU_HIDDEN):
+//    Settings bỏ Window Color Scheme, Configure Language, Configure Toolbars,
+//    Toolbars Shown, Show Menubar (bật lên là vỡ bố cục, đổi màu/ngôn ngữ
+//    ngoài ý Samhie); Help bỏ Handbook, What's This, Report Bug, Donate,
+//    About KDE (tới KDE, không phải Samhie) và Welcome Page (trang chào kiểu
+//    cũ — vùng trống đã là terminal, mục 18). Hành động ẩn thì phím tắt chết
+//    theo (Ctrl+M, F1, Shift+F1) và Find Action không liệt kê (style mục 41).
+//    Toolbars Shown được KXmlGui dựng lại mỗi khi plugin nạp
+//    (ktoolbarhandler.cpp 6.30) → ẩn thêm lúc mỗi menu polish / sắp hiện.
+//
+// 24. Popup Ctrl+Tab (Last Used Views, plugin tabswitcher) là thẻ như Quick
+//    Open (user 2026-10-13: "giao diện nào cũ thì làm hết"): popup chính là
+//    QTreeView (TabSwitcherTreeView, Qt::Popup) → nền trong suốt cho góc bo,
+//    thẻ + ô chọn do style vẽ (mục 69), lề trong QUICK_OPEN_PAD bằng viewport
+//    margin; Kate đặt cỡ vừa nội dung (updateViewGeometry, tabswitcher.cpp
+//    26.08.1) rồi mới show → nới thêm lề lúc Show, giữ tâm.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -457,6 +474,49 @@ KPluginFactory *konsoleFactory()
 // Mục ẩn khỏi thanh menu: tên <Menu name> trong file .rc = objectName của
 // QMenu (KXMLGUIBuilder); Sessions là một hành động (KActionMenu) đặt thẳng
 // lên thanh menu, objectName = tên hành động.
+// Mục 23: tên hành động (kxmlgui / khelpmenu.cpp 6.30, Kate 26.08.1)
+const QStringList MENU_HIDDEN{
+    QStringLiteral("colorscheme_menu"),
+    QStringLiteral("switch_application_language"),
+    QStringLiteral("options_configure_toolbars"),
+    QStringLiteral("toolbars_submenu_action"),
+    QStringLiteral("options_show_menubar"),
+    QStringLiteral("help_contents"),
+    QStringLiteral("help_whats_this"),
+    QStringLiteral("help_report_bug"),
+    QStringLiteral("help_donate"),
+    QStringLiteral("help_about_kde"),
+    QStringLiteral("help_welcome_page"),
+};
+
+void hideMenuActions(const QList<QAction *> &actions)
+{
+    for (QAction *a : actions) {
+        if (a->isVisible() && MENU_HIDDEN.contains(a->objectName())) {
+            a->setVisible(false);
+        }
+    }
+}
+
+// setViewportMargins là protected — lớp con chỉ để mở quyền (như style)
+class ScrollAreaAccess : public QAbstractScrollArea
+{
+public:
+    using QAbstractScrollArea::setViewportMargins;
+};
+
+// Mục 24: thẻ Ctrl+Tab — một lần lúc polish (trước khi popup có cửa sổ thật,
+// nên nền trong suốt còn kịp)
+void cardTabSwitcher(QTreeView *view)
+{
+    view->setAttribute(Qt::WA_TranslucentBackground);
+    view->viewport()->setAutoFillBackground(false);
+    static_cast<ScrollAreaAccess *>(static_cast<QAbstractScrollArea *>(view))
+        ->setViewportMargins(QUICK_OPEN_PAD, QUICK_OPEN_PAD, QUICK_OPEN_PAD, QUICK_OPEN_PAD);
+    view->setProperty("samhiePopupPanel", true);
+    view->setProperty("samhiePopupList", true);
+}
+
 bool isHiddenMenu(const QAction *a)
 {
     static const QStringList menus{QStringLiteral("projects"), QStringLiteral("LSPClient Menubar"), QStringLiteral("tools")};
@@ -1445,6 +1505,7 @@ public:
             m_menuBar = win->menuBar();
             if (auto *xmlWin = dynamic_cast<KXmlGuiWindow *>(win)) {
                 m_showMenuBar = xmlWin->actionCollection()->action(QStringLiteral("options_show_menubar"));
+                hideMenuActions(xmlWin->actionCollection()->actions()); // mục 23
             }
             m_menuBar->installEventFilter(this);
             trimMenuBar(m_menuBar);
@@ -1498,6 +1559,15 @@ public:
             }
             break;
         case QEvent::Polish:
+            if (auto *menu = qobject_cast<QMenu *>(obj)) { // mục 23
+                hideMenuActions(menu->actions());
+                connect(menu, &QMenu::aboutToShow, menu, [menu] {
+                    hideMenuActions(menu->actions());
+                });
+            }
+            if (obj->inherits("TabSwitcherTreeView")) {
+                cardTabSwitcher(static_cast<QTreeView *>(obj)); // mục 24
+            }
             if (isCrumbEllipsis(obj)) {
                 hideCrumbEllipsis(static_cast<QWidget *>(obj)); // mục 12 (view space mới)
             }
@@ -1550,6 +1620,11 @@ public:
         case QEvent::Show:
             if (isQuickOpen(obj)) {
                 placeQuickOpen(static_cast<QWidget *>(obj)); // mục 14
+            }
+            if (obj->inherits("TabSwitcherTreeView")) { // mục 24: cỡ Kate vừa đặt + lề thẻ
+                auto *view = static_cast<QWidget *>(obj);
+                view->setFixedSize(view->size() + QSize(2 * QUICK_OPEN_PAD, 2 * QUICK_OPEN_PAD));
+                view->move(view->pos() - QPoint(QUICK_OPEN_PAD, QUICK_OPEN_PAD));
             }
             if (obj->inherits("DirFilesList")) {
                 fitCrumbPopup(static_cast<QWidget *>(obj)); // mục 20

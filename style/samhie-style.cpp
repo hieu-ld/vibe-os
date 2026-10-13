@@ -431,6 +431,8 @@
 //      cho nền card, trên nền secondary thì chìm mất), không viền chọn; ô chỉ
 //      đang trỏ chuột tô nhạt một nửa — phân biệt với ô đang chọn (Enter mở).
 //      Plugin Kate (mục 14) đánh dấu samhiePopupPanel / samhiePopupList.
+//      Dòng nhiều cột (popup Ctrl+Tab, plugin mục 24): một dải liền, bo hai
+//      đầu dòng.
 //  70. Cây Projects của Kate (samhieTreeLines, mục 61) chọn/trỏ như Explorer
 //      của VS Code (user 2026-10-13): ô dài gần hết bề ngang cây — cả phần
 //      thụt đầu dòng của mục con, lùi TREE_ROW_INSET mỗi bên, bo
@@ -1676,17 +1678,27 @@ private:
     mutable QSet<const QMenu *> m_hiddenMenus;
 };
 
-// Mục 69, 75: ô đang chọn / chỉ trỏ chuột trong danh sách của thẻ popup
-void paintPopupItem(QPainter *p, const QRectF &rect, bool selected)
+// Mục 69, 75: ô đang chọn / chỉ trỏ chuột trong danh sách của thẻ popup.
+// Dòng nhiều cột (Ctrl+Tab của Kate: thư mục | tên file) — mỗi ô là một
+// đoạn của cùng một dải, chỉ bo ở đầu và cuối dòng.
+void paintPopupItem(QPainter *p, const QRectF &rect, bool selected,
+                    QStyleOptionViewItem::ViewItemPosition pos = QStyleOptionViewItem::OnlyOne)
 {
+    constexpr qreal R = samhie::MENUITEM_RADIUS;
     QColor fill(samhie::POPUP_ITEM);
     if (!selected)
         fill.setAlphaF(0.5);  // chỉ trỏ chuột: nhạt hơn ô đang chọn
+    QRectF band = rect;
+    if (pos == QStyleOptionViewItem::Beginning || pos == QStyleOptionViewItem::Middle)
+        band.setRight(band.right() + R);
+    if (pos == QStyleOptionViewItem::End || pos == QStyleOptionViewItem::Middle)
+        band.setLeft(band.left() - R);
     p->save();
+    p->setClipRect(rect, Qt::IntersectClip);
     p->setRenderHint(QPainter::Antialiasing);
     p->setPen(Qt::NoPen);
     p->setBrush(fill);
-    p->drawRoundedRect(rect, samhie::MENUITEM_RADIUS, samhie::MENUITEM_RADIUS);
+    p->drawRoundedRect(band, R, R);
     p->restore();
 }
 
@@ -4143,7 +4155,7 @@ public:
                 }
                 if (w && w->property("samhiePopupList").toBool()) {  // mục 69
                     if (o.state & (State_Selected | State_MouseOver))
-                        paintPopupItem(p, o.rect, o.state & State_Selected);
+                        paintPopupItem(p, o.rect, o.state & State_Selected, o.viewItemPosition);
                     o.state &= ~(State_Selected | State_MouseOver);
                     o.viewItemPosition = QStyleOptionViewItem::OnlyOne;
                     QProxyStyle::drawControl(ce, &o, p, w);

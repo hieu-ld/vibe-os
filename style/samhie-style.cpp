@@ -417,6 +417,9 @@
 //      (SIDEBAR_TAB) như activity bar VS Code (ACTION_HEIGHT 48, rộng 48);
 //      cỡ icon đặt ở /etc/xdg/katerc. Nút có chữ (Output, Diagnostics ở
 //      đáy) giữ nguyên Kvantum.
+//  67. Tên dự án đầu khung Projects của Kate (mục 59) bắt đầu thẳng icon thư
+//      mục cấp gốc của cây bên dưới (user 2026-10-13). Plugin Kate (mục 13)
+//      đo vị trí icon, ghi samhieTextIndent lên ô chọn; style tự vẽ chữ.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -3793,6 +3796,19 @@ public:
         // tắt trong chữ) — Kvantum vẽ như nhãn nút, "&" thành gạch phím tắt.
         if (ce == CE_ComboBoxLabel && w && w->property("samhieFlatCombo").toBool()) {
             if (auto *cb = qstyleoption_cast<const QStyleOptionComboBox *>(opt)) {
+                // Mục 67: chữ bắt đầu thẳng icon thư mục cấp gốc của cây (plugin
+                // Kate mục 13 đo, ghi samhieTextIndent) — tự vẽ vì Kvantum đặt
+                // chữ theo lề riêng của nó, không đọc lại được.
+                const QVariant indent = w->property("samhieTextIndent");
+                if (indent.isValid()) {
+                    QRect r = proxy()->subControlRect(CC_ComboBox, cb, SC_ComboBoxEditField, w);
+                    r.setLeft(cb->rect.left() + indent.toInt());
+                    // drawItemText không đổi "&" thành gạch phím tắt (không cờ mnemonic)
+                    const QString text = cb->fontMetrics.elidedText(cb->currentText, Qt::ElideRight, r.width());
+                    proxy()->drawItemText(p, r, Qt::AlignLeft | Qt::AlignVCenter, cb->palette, cb->state & State_Enabled, text,
+                                          QPalette::ButtonText);
+                    return;
+                }
                 QStyleOptionComboBox o(*cb);  // mục 59: không icon
                 o.currentIcon = QIcon();
                 o.iconSize = QSize();

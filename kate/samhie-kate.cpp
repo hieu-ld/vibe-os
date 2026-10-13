@@ -119,6 +119,18 @@
 //      sc-apps-git.svg — không qua bộ icon) → gắn "samhie-kate-git" (Hugeicons
 //      git-branch) lên nút. Nút là KMultiTabBarTab mang tên panel ở thuộc tính
 //      kate_original_text (Sidebar::updateButtonStyle, katemdi.cpp).
+//
+// 13. Hàng tên dự án và cột icon trái (user 2026-10-13):
+//    - Ô sáng nút panel (style samhie mục 66, ô 48 như VS Code) cao bằng ô
+//      hover tên dự án = chiều cao ô chọn dự án (co giãn theo mục 4 cho đỉnh
+//      thẻ cây thẳng đỉnh thẻ code — đo: 41 máy ảo, 40 container). Phần còn
+//      lại của nhịp 48 thành khe giữa các nút (spacing của bố cục
+//      KMultiTabBarInternal) → icon vẫn cách nhau 48, ô sáng Projects khớp
+//      ô hover cạnh nó.
+//    - Chữ tên dự án bắt đầu đúng chỗ icon thư mục cấp gốc trong cây (Kvantum
+//      đặt chữ sát mép ô, lệch icon ~18–20px). Vị trí icon = hộp decoration
+//      style trả về cho dòng cấp gốc (khớp điểm ảnh, đo container) → ghi vào
+//      thuộc tính samhieTextIndent của ô chọn, style samhie tự vẽ chữ ở đó.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -157,6 +169,7 @@
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QStackedWidget>
+#include <QStyleOptionViewItem>
 #include <QTabBar>
 #include <QTabWidget>
 #include <QTimer>
@@ -213,6 +226,28 @@ void refreshTabScroll(QWidget *viewSpace)
             }
         }
     });
+}
+
+// Mục 13: nút chỉ-có-icon ở cột trái/phải (Kate xoá chữ ở đó)
+bool isIconOnlySidebarTab(const QObject *obj)
+{
+    auto *b = qobject_cast<const QAbstractButton *>(obj);
+    return b && obj->inherits("KMultiTabBarTab") && b->text().isEmpty();
+}
+
+// Mục 13: mép trái hộp icon của dòng cấp gốc trong cây, toạ độ của `to`
+int rootIconLeft(QTreeView *tree, QWidget *to)
+{
+    QStyleOptionViewItem opt;
+    opt.initFrom(tree->viewport());
+    opt.rect = QRect(tree->rootIsDecorated() ? tree->indentation() : 0, 0, tree->viewport()->width(), std::max(tree->sizeHintForRow(0), tree->iconSize().height()));
+    opt.features = QStyleOptionViewItem::HasDecoration | QStyleOptionViewItem::HasDisplay;
+    opt.decorationSize = tree->iconSize();
+    opt.decorationPosition = QStyleOptionViewItem::Left;
+    opt.displayAlignment = Qt::AlignLeft | Qt::AlignVCenter;
+    opt.font = tree->font();
+    const QRect deco = tree->style()->subElementRect(QStyle::SE_ItemViewItemDecoration, &opt, tree);
+    return tree->viewport()->mapTo(to, deco.topLeft()).x();
 }
 
 void growIcons(QWidget *parent)
@@ -595,6 +630,9 @@ public:
             if (isGitSidebarButton(obj)) {
                 static_cast<QAbstractButton *>(obj)->setIcon(QIcon::fromTheme(QStringLiteral("samhie-kate-git"))); // mục 12
             }
+            if (isIconOnlySidebarTab(obj)) {
+                schedulePlaceMenuButton(); // mục 13: nút panel nạp sau
+            }
             if (auto *menu = qobject_cast<QMenu *>(obj); menu && menu->parentWidget()) {
                 if (isViewSpace(menu->parentWidget())) {
                     for (QAction *a : menu->actions()) {
@@ -834,6 +872,39 @@ private:
         if (delta != 0 && m_projectCombo->height() + delta > 0) {
             m_projectCombo->setFixedHeight(m_projectCombo->height() + delta);
         }
+        if (auto *tree = qobject_cast<QTreeView *>(sideCard)) {
+            const int indent = rootIconLeft(tree, win) - m_projectCombo->mapTo(win, QPoint(0, 0)).x();
+            if (m_projectCombo->property("samhieTextIndent").toInt() != indent) {
+                m_projectCombo->setProperty("samhieTextIndent", indent);
+                m_projectCombo->update();
+            }
+        }
+    }
+
+    // Mục 13: nút cột icon cao bằng ô chọn dự án, khe bù cho đủ nhịp
+    void fitSidebarTabs()
+    {
+        if (!m_projectCombo) {
+            return;
+        }
+        // Vừa đổi setFixedHeight (alignProjectCard) thì height() chưa kịp đổi
+        const int fixed = m_projectCombo->maximumHeight();
+        const int height = fixed < QWIDGETSIZE_MAX ? fixed : m_projectCombo->height();
+        for (auto *tab : m_mw->window()->findChildren<QAbstractButton *>()) {
+            if (!isIconOnlySidebarTab(tab)) {
+                continue;
+            }
+            const int pitch = tab->sizeHint().height(); // ô của style samhie (mục 66)
+            const int h = std::min(height, pitch);
+            if (tab->minimumHeight() != h || tab->maximumHeight() != h) {
+                tab->setFixedHeight(h);
+            }
+            if (QLayout *bar = tab->parentWidget() ? tab->parentWidget()->layout() : nullptr) {
+                if (bar->spacing() != pitch - h) {
+                    bar->setSpacing(pitch - h);
+                }
+            }
+        }
     }
 
     void placeMenuButton()
@@ -853,6 +924,7 @@ private:
             }
         }
         alignProjectCard(target);
+        fitSidebarTabs();
         for (QWidget *vs : win->findChildren<QWidget *>()) {
             if (isViewSpace(vs)) {
                 growIcons(vs);

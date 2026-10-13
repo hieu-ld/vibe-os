@@ -273,6 +273,24 @@
 //    69); dưới là vùng xem trước cả đoạn. Nền thẻ do style vẽ (mục 76). Lớp
 //    không có Q_OBJECT → nhận theo cấu trúc: QMenu có layout chứa một
 //    KTextEditor::View.
+//
+// 26. Thanh Find/Replace/Go to Line là hộp nổi góc trên phải vùng code như
+//    VS Code (user 2026-10-13, "giao diện nào cũ thì làm hết") thay dải dưới
+//    đáy cửa sổ. Kate để mọi thanh của KTextEditor (tìm, Go to Line…) trong
+//    MỘT khung chung nằm trong layout của cửa sổ, dưới mọi view space
+//    (m_bottomViewBarContainer, katemainwindow.cpp 26.08.1) và chỉ show/hide
+//    nó → gỡ khung khỏi layout, đặt nổi lên trên view đang mở (cách mép
+//    FIND_CARD_GAP), nền thẻ do style vẽ (PE_Frame, samhiePopupPanel — mục
+//    69). Đặt lại khi khung hiện / đổi nội dung / view đổi cỡ / đổi view.
+//    Hai thanh tìm (searchbarincremental.ui, searchbarpower.ui — KF 6.30)
+//    xếp lại như hộp tìm VS Code, bỏ nhãn "Find:" "Replace:" "Mode:" (ô có
+//    chữ mờ thay):
+//      Ctrl+F  [›][Find…][trạng thái][Aa][↑][↓]                       [✕]
+//      Ctrl+R  [⌄][Find…   ][Mode][Aa][vùng chọn][↑][↓]               [✕]
+//                 [Replace…][thay][thay hết | tìm hết]
+//    › / ⌄ là nút đổi thanh của Kate (mutate — trước là icon ⚙) như nút mở
+//    ô Replace của VS Code. Nút chữ thành nút icon như panel Search (mục 15).
+//    Kate dựng lại thanh mỗi lần đổi chế độ → xếp lúc thanh polish.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -346,6 +364,13 @@ constexpr double QUICK_OPEN_SHARE = 0.62;
 constexpr int QUICK_OPEN_MAX_WIDTH = 600;
 constexpr int QUICK_OPEN_PAD = 12;
 constexpr int QUICK_OPEN_GAP = 8;
+// Mục 26: hộp tìm nổi — cách mép view, lề trong, khe giữa các ô, bề rộng tối
+// thiểu (VS Code: 419px với chữ 13px; Dongle to hơn)
+constexpr int FIND_CARD_GAP = 8;
+constexpr int FIND_CARD_PAD = 6;
+constexpr int FIND_CARD_SPACING = 4;
+constexpr int FIND_CARD_WIDTH = 480;
+constexpr int FIND_INPUT_WIDTH = 280; // ô Find/Replace tối thiểu
 
 // Mục 20: popup breadcrumb — mọi popup cùng bề rộng (user: "khỏi sợ popup
 // của đường dẫn này to, đường dẫn kia nhỏ"), lề trong như Quick Open
@@ -582,6 +607,144 @@ void cardClipboardHistory(QMenu *menu)
     list->viewport()->setAutoFillBackground(false);
     list->setItemDelegate(new TallRowDelegate(list->itemDelegate(), list));
     list->setProperty("samhiePopupList", true);
+}
+
+// Mục 26: Kate giữ con trỏ tới layout của hai thanh (Ui::…::hboxLayout,
+// gridLayout) và mỗi lần mở thanh lại addWidget nút ✕ vào đó
+// (katesearchbar.cpp 6.30) → KHÔNG xoá layout của Kate, chỉ xếp lại widget.
+
+// Mục 26: thanh Ctrl+F (IncrementalSearchBar) — mọi ô nằm trong hboxLayout
+void arrangeIncrementalBar(QWidget *bar)
+{
+    auto *label = bar->findChild<QLabel *>(QStringLiteral("label"));
+    auto *pattern = bar->findChild<QComboBox *>(QStringLiteral("pattern"));
+    auto *next = bar->findChild<QToolButton *>(QStringLiteral("next"));
+    auto *prev = bar->findChild<QToolButton *>(QStringLiteral("prev"));
+    auto *matchCase = bar->findChild<QToolButton *>(QStringLiteral("matchCase"));
+    auto *status = bar->findChild<QLabel *>(QStringLiteral("status"));
+    auto *mutate = bar->findChild<QToolButton *>(QStringLiteral("mutate"));
+    auto *row = bar->findChild<QHBoxLayout *>(QStringLiteral("hboxLayout"));
+    if (!label || !pattern || !pattern->lineEdit() || !next || !prev || !matchCase || !status || !mutate || !row) {
+        return;
+    }
+    label->hide();
+    pattern->lineEdit()->setPlaceholderText(QStringLiteral("Find"));
+    pattern->setMinimumWidth(FIND_INPUT_WIDTH);
+    mutate->setCheckable(false);
+    mutate->setIcon(QIcon::fromTheme(QStringLiteral("arrow-right")));
+    mutate->setToolTip(QStringLiteral("Toggle Replace"));
+    matchCase->setIcon(QIcon::fromTheme(QStringLiteral("samhie-match-case")));
+    for (QToolButton *b : {mutate, matchCase, prev, next}) {
+        growIcon(b);
+    }
+    // Thứ tự mới; thứ khác trong hàng (nút ✕ Kate đã thêm) giữ ở cuối
+    const QList<QWidget *> order{mutate, pattern, status, matchCase, prev, next};
+    QList<QWidget *> rest;
+    for (int i = 0; i < row->count(); ++i) {
+        if (QWidget *w = row->itemAt(i)->widget(); w && w != label && !order.contains(w)) {
+            rest.append(w);
+        }
+    }
+    for (QWidget *w : order + rest) {
+        row->removeWidget(w);
+    }
+    row->removeWidget(label);
+    row->setSpacing(FIND_CARD_SPACING);
+    for (QWidget *w : order + rest) {
+        row->addWidget(w, w == pattern ? 1 : 0);
+    }
+}
+
+// Mục 26: thanh Ctrl+R (PowerSearchBar). Kate đặt ✕ ở ô (0, 2) của gridLayout
+// → hai hàng mới nằm gọn ở cột 1 (một lưới con: ô Find / ô Replace cùng bề
+// rộng như VS Code), cột 0 là nút ⌄.
+void arrangePowerBar(QWidget *bar)
+{
+    const auto child = [bar](const char *name) {
+        return bar->findChild<QWidget *>(QLatin1String(name));
+    };
+    auto *pattern = qobject_cast<QComboBox *>(child("pattern"));
+    auto *replacement = qobject_cast<QComboBox *>(child("replacement"));
+    auto *searchMode = child("searchMode");
+    auto *matchCase = qobject_cast<QToolButton *>(child("matchCase"));
+    auto *selectionOnly = qobject_cast<QToolButton *>(child("selectionOnly"));
+    auto *findNext = qobject_cast<QToolButton *>(child("findNext"));
+    auto *findPrev = qobject_cast<QToolButton *>(child("findPrev"));
+    auto *mutate = qobject_cast<QToolButton *>(child("mutate"));
+    auto *replaceNext = qobject_cast<QAbstractButton *>(child("replaceNext"));
+    auto *replaceAll = qobject_cast<QAbstractButton *>(child("replaceAll"));
+    auto *findAll = qobject_cast<QAbstractButton *>(child("findAll"));
+    auto *cancel = qobject_cast<QAbstractButton *>(child("cancel"));
+    auto *actions = child("searchCancelStacked");
+    auto *grid = bar->findChild<QGridLayout *>(QStringLiteral("gridLayout"));
+    if (!pattern || !pattern->lineEdit() || !replacement || !replacement->lineEdit() || !searchMode || !matchCase || !selectionOnly
+        || !findNext || !findPrev || !mutate || !replaceNext || !replaceAll || !findAll || !cancel || !actions || !grid) {
+        return;
+    }
+    pattern->lineEdit()->setPlaceholderText(QStringLiteral("Find"));
+    replacement->lineEdit()->setPlaceholderText(QStringLiteral("Replace"));
+    pattern->setMinimumWidth(FIND_INPUT_WIDTH);
+    replacement->setMinimumWidth(FIND_INPUT_WIDTH);
+    mutate->setCheckable(false); // Kate bật sẵn → nền nút đang nhấn
+    mutate->setIcon(QIcon::fromTheme(QStringLiteral("arrow-down")));
+    mutate->setToolTip(QStringLiteral("Toggle Replace"));
+    matchCase->setIcon(QIcon::fromTheme(QStringLiteral("samhie-match-case")));
+    const auto iconOnly = [](QAbstractButton *b, const char *icon) {
+        if (!b->text().isEmpty()) {
+            b->setToolTip(b->text().remove(QLatin1Char('&')));
+            b->setText(QString());
+        }
+        b->setIcon(QIcon::fromTheme(QLatin1String(icon)));
+        if (auto *push = qobject_cast<QPushButton *>(b)) {
+            push->setFlat(true); // như các nút icon cạnh nó
+        }
+    };
+    iconOnly(replaceNext, "edit-find-replace");
+    iconOnly(replaceAll, "samhie-replace-all");
+    iconOnly(findAll, "edit-find");
+    iconOnly(cancel, "process-stop");
+    for (QToolButton *b : {mutate, matchCase, selectionOnly, findPrev, findNext}) {
+        growIcon(b);
+    }
+
+    // Gỡ mọi thứ trừ ✕ (ô 0,2) khỏi lưới. Hàng Mode là layout con không ai
+    // giữ con trỏ → bỏ hẳn (widget trong đó vẫn sống, sắp xếp lại bên dưới).
+    for (int i = grid->count() - 1; i >= 0; --i) {
+        int r, c, rs, cs;
+        grid->getItemPosition(i, &r, &c, &rs, &cs);
+        if (c == 2) {
+            continue;
+        }
+        QLayoutItem *item = grid->takeAt(i);
+        if (item->widget() && item->widget()->inherits("QLabel")) {
+            item->widget()->hide(); // Find: / Replace: / Mode:
+        }
+        delete item;
+    }
+    grid->setHorizontalSpacing(FIND_CARD_SPACING);
+    grid->setVerticalSpacing(FIND_CARD_SPACING);
+    auto *rows = new QGridLayout;
+    rows->setHorizontalSpacing(FIND_CARD_SPACING);
+    rows->setVerticalSpacing(FIND_CARD_SPACING);
+    rows->addWidget(pattern, 0, 0);
+    rows->addWidget(replacement, 1, 0);
+    auto *findButtons = new QHBoxLayout;
+    findButtons->setSpacing(FIND_CARD_SPACING);
+    for (QWidget *w : {searchMode, static_cast<QWidget *>(matchCase), static_cast<QWidget *>(selectionOnly), static_cast<QWidget *>(findPrev),
+                       static_cast<QWidget *>(findNext)}) {
+        findButtons->addWidget(w);
+    }
+    rows->addLayout(findButtons, 0, 1);
+    auto *replaceButtons = new QHBoxLayout;
+    replaceButtons->setSpacing(FIND_CARD_SPACING);
+    replaceButtons->addWidget(replaceNext);
+    replaceButtons->addWidget(actions);
+    replaceButtons->addStretch();
+    rows->addLayout(replaceButtons, 1, 1);
+    rows->setColumnStretch(0, 1);
+    grid->addWidget(mutate, 0, 0, 2, 1); // cao hết hai hàng như VS Code
+    grid->addLayout(rows, 0, 1, 2, 1);
+    grid->setColumnStretch(1, 1);
 }
 
 bool isHiddenMenu(const QAction *a)
@@ -1557,6 +1720,11 @@ public:
             });
         });
 
+        // Mục 26: hộp tìm theo view đang mở
+        connect(m_mw, &KTextEditor::MainWindow::viewChanged, this, [this] {
+            QTimer::singleShot(0, this, &SamhieKateView::placeFindCard);
+        });
+
         // Mục 7: đổi file (mở file mới cũng là đổi) → dải tab tính lại độ cuộn
         connect(m_mw, &KTextEditor::MainWindow::viewChanged, this, [this] {
             for (QWidget *vs : m_mw->window()->findChildren<QWidget *>()) {
@@ -1638,6 +1806,11 @@ public:
             if (obj->inherits("TabSwitcherTreeView")) {
                 cardTabSwitcher(static_cast<QTreeView *>(obj)); // mục 24
             }
+            if (obj->objectName() == QLatin1String("IncrementalSearchBar")) {
+                arrangeIncrementalBar(static_cast<QWidget *>(obj)); // mục 26
+            } else if (obj->objectName() == QLatin1String("PowerSearchBar")) {
+                arrangePowerBar(static_cast<QWidget *>(obj)); // mục 26
+            }
             if (isCrumbEllipsis(obj)) {
                 hideCrumbEllipsis(static_cast<QWidget *>(obj)); // mục 12 (view space mới)
             }
@@ -1690,6 +1863,18 @@ public:
         case QEvent::Show:
             if (isQuickOpen(obj)) {
                 placeQuickOpen(static_cast<QWidget *>(obj)); // mục 14
+            }
+            if (obj->inherits("KateViewBar")) { // mục 26
+                auto *viewBar = static_cast<QWidget *>(obj);
+                floatFindCard(viewBar->parentWidget());
+                // Lề trong của thẻ: layout xếp chồng của Kate
+                // (KateContainerStackedLayout) không tính lề của nó → lề ở đây
+                if (viewBar->parentWidget() == m_findCard && viewBar->layout()) {
+                    viewBar->layout()->setContentsMargins(FIND_CARD_PAD, FIND_CARD_PAD, FIND_CARD_PAD, FIND_CARD_PAD);
+                }
+            }
+            if (obj == m_findCard) {
+                placeFindCard(); // mục 26
             }
             if (obj->inherits("TabSwitcherTreeView")) { // mục 24: cỡ Kate vừa đặt + lề thẻ
                 auto *view = static_cast<QWidget *>(obj);
@@ -1779,6 +1964,9 @@ public:
             if (isViewSpace(obj)) {
                 schedulePlaceMenuButton();
             }
+            if (event->type() == QEvent::Resize && m_findCard && obj == m_mw->activeView()) {
+                placeFindCard(); // mục 26
+            }
             if (event->type() == QEvent::Resize && isQuickOpen(obj)) {
                 placeQuickOpen(static_cast<QWidget *>(obj)); // mục 14
             }
@@ -1790,6 +1978,20 @@ public:
                 QTimer::singleShot(0, dialog, [dialog] {
                     arrangeSearchPanel(dialog); // mục 15
                 });
+            }
+            break;
+        case QEvent::Paint:
+            if (obj == m_findCard) { // mục 26: nền thẻ, rồi các thanh vẽ đè
+                auto *card = static_cast<QWidget *>(obj);
+                QPainter p(card);
+                QStyleOption opt;
+                opt.initFrom(card);
+                card->style()->drawPrimitive(QStyle::PE_Frame, &opt, &p, card);
+            }
+            break;
+        case QEvent::LayoutRequest:
+            if (obj == m_findCard) { // mục 26: đổi thanh (Ctrl+F ↔ Ctrl+R) → cỡ mới
+                QTimer::singleShot(0, this, &SamhieKateView::placeFindCard);
             }
             break;
         case QEvent::EnabledChange:
@@ -1814,6 +2016,54 @@ public:
     }
 
 private:
+    // Mục 26: khung chứa thanh (cha của KateViewBar) ra khỏi layout cửa sổ
+    void floatFindCard(QWidget *card)
+    {
+        // Chỉ khung chung của cửa sổ: cùng cha với KateViewManager (centralWidget
+        // của KateMDI, không phải của QMainWindow). View phụ (vd vùng xem trước)
+        // có KateViewBar riêng nằm trong chính nó.
+        QWidget *host = card ? card->parentWidget() : nullptr;
+        if (!host || card == m_findCard || card->window() != m_mw->window()) {
+            return;
+        }
+        const QList<QWidget *> siblings = host->findChildren<QWidget *>(Qt::FindDirectChildrenOnly);
+        if (std::none_of(siblings.begin(), siblings.end(), [](QWidget *w) {
+                return w->inherits("KateViewManager");
+            })) {
+            return;
+        }
+        if (host->layout()) {
+            host->layout()->removeWidget(card);
+        }
+        m_findCard = card;
+        card->setProperty("samhiePopupPanel", true); // PE_Frame vẽ thẻ (style mục 69)
+        placeFindCard();
+    }
+
+    // Mục 26: góc trên phải view đang mở, bề rộng theo nội dung
+    void placeFindCard()
+    {
+        QWidget *card = m_findCard;
+        KTextEditor::View *view = m_mw->activeView();
+        if (!card || card->isHidden() || !view || !card->parentWidget()) {
+            return;
+        }
+        const QRect area(view->mapTo(card->parentWidget(), QPoint(0, 0)), view->size());
+        const QSize hint = card->sizeHint();
+        const int width = std::min(std::max(hint.width(), FIND_CARD_WIDTH), area.width() - 2 * FIND_CARD_GAP);
+        // Esc: Kate ẩn thanh bên trong nhưng có lúc để khung hiện → còn viên thẻ
+        // rỗng (lề trong) đè góc code, chặn chuột → cao 0
+        const QList<QWidget *> bars = card->findChildren<QWidget *>();
+        const bool shown = std::any_of(bars.begin(), bars.end(), [card](QWidget *w) {
+            return w->inherits("KateViewBarWidget") && w->isVisibleTo(card);
+        });
+        const QRect rect(area.right() + 1 - FIND_CARD_GAP - width, area.top() + FIND_CARD_GAP, width, shown ? hint.height() : 0);
+        if (card->geometry() != rect) {
+            card->setGeometry(rect);
+        }
+        card->raise();
+    }
+
     // Mục 16: khu chứa Projects đang mở panel khác → chuyển sang Projects.
     // Mỗi khu của cột (MultiTabBar) có một QStackedWidget riêng chứa các ToolView
     // của nó — nằm trong splitter chính của cửa sổ, KHÔNG trong Sidebar.
@@ -2312,6 +2562,7 @@ private:
     QPointer<TerminalTab> m_lastTerminal;
     QPointer<QWidget> m_lastEditor;
     QString m_contextDir; // mục 9
+    QPointer<QWidget> m_findCard; // mục 26: khung thanh tìm của Kate, đã nổi
 };
 
 class SamhieKatePlugin : public KTextEditor::Plugin

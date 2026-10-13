@@ -447,6 +447,11 @@
 //      khi vẽ VÀ khi tính chỗ (chữ dịch về chỗ ô tích; vùng bấm ô tích rỗng →
 //      bấm không đổi tích). Delegate của Kate có chỗ hỏi chỗ chữ KHÔNG kèm
 //      widget (dòng tên file) → đọc widget trong option.
+//  72. Panel Git / Symbols của Kate (user 2026-10-13): ô chọn/trỏ dòng của
+//      cây hết bề ngang thẻ, vuông (samhieRowFlush — cây Projects giữ lùi
+//      TREE_ROW_INSET bo góc, mục 70); nút Commit hover như tên dự án (mục
+//      59): ô vuông hết nút, nút sát cột icon (samhieFlatHover). Plugin Kate
+//      mục 17 đánh dấu.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -3565,12 +3570,16 @@ public:
             if (vopt && (vopt->features & QStyleOptionViewItem::IsDecorationForRootColumn)
                 && (vopt->state & (State_Selected | State_MouseOver))) {
                 const int right = static_cast<const QAbstractScrollArea *>(w)->viewport()->width();
-                const QRectF row(TREE_ROW_INSET, vopt->rect.top(), right - 2 * TREE_ROW_INSET, vopt->rect.height());
+                // Mục 72: cây Git / Symbols — ô hết bề ngang thẻ, vuông
+                const bool flush = w->property("samhieRowFlush").toBool();
+                const int inset = flush ? 0 : TREE_ROW_INSET;
+                const int radius = flush ? 0 : TREE_ROW_RADIUS;
+                const QRectF row(inset, vopt->rect.top(), right - 2 * inset, vopt->rect.height());
                 p->save();
                 p->setRenderHint(QPainter::Antialiasing);
                 p->setPen(Qt::NoPen);
                 p->setBrush(QColor(vopt->state & State_Selected ? samhie::TREE_ROW_SELECTED : samhie::ROW_HOVER));
-                p->drawRoundedRect(row, TREE_ROW_RADIUS, TREE_ROW_RADIUS);
+                p->drawRoundedRect(row, radius, radius);
                 p->restore();
             }
             return;
@@ -3796,6 +3805,22 @@ public:
                     o.state |= State_MouseOver;
                     o.styleObject = nullptr;
                 }
+            }
+            // Mục 72: nút Commit của panel Git — ô hover như tên dự án (mục 59):
+            // vuông, hết ô nút. Kvantum chỉ vẽ ô vuông (expansion 0) cho nút
+            // KHÔNG chữ — vẽ nền bằng option không chữ, widget là cha (nút
+            // có chữ thì Kvantum đọc chữ từ chính nút), rồi vẽ nút không hover.
+            if (w && w->property("samhieFlatHover").toBool()) {
+                if ((o.state & State_Enabled) && (o.state & (State_MouseOver | State_Sunken | State_On))) {
+                    QStyleOptionToolButton panel;
+                    panel.QStyleOption::operator=(o);
+                    panel.styleObject = nullptr;
+                    panel.state = (o.state & (State_Enabled | State_MouseOver | State_Sunken | State_On)) | State_AutoRaise | State_Raised;
+                    proxy()->drawPrimitive(PE_PanelButtonTool, &panel, p, w->parentWidget());
+                }
+                o.state &= ~(State_MouseOver | State_Sunken | State_On);
+                QProxyStyle::drawComplexControl(cc, &o, p, w);
+                return;
             }
             if (w && tbopt->toolButtonStyle == Qt::ToolButtonIconOnly
                 && (isTabCornerButton(w) || w->property("samhieSquareHover").toBool()  // mục 68

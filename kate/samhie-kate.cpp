@@ -16,6 +16,8 @@
 //      Ctrl+`        mở/về terminal; đang ở terminal thì quay lại file trước đó
 //      Ctrl+Shift+`  terminal mới
 //    Shell thoát (gõ exit) thì tab tự đóng.
+//    Vùng editor trống (mở Kate khi đã tắt welcome page, đóng hết tab) →
+//    terminal thay cho tài liệu "Untitled" Kate tự mở (mục 18).
 //
 // 2. Thanh menu gọn như VS Code (user chọn): ẩn Projects, LSP Client,
 //    Sessions, Tools. Chỉ ẩn mục trên thanh menu — hành động vẫn còn, phím tắt
@@ -207,12 +209,24 @@
 //    Filter… như Projects — Symbols vẫn gõ để nhảy tới mục như mọi cây), không
 //    khung cyan khi bấm dòng; nút chỉ-icon ô hover vuông. Symbols: tiêu đề + ≣
 //    Kate vẽ trong đầu cột của cây → thay bằng hàng thật [Symbols … ≣] trên thẻ.
+//    Ô chọn/trỏ dòng hết bề ngang thẻ, vuông (user 2026-10-13 — cây Projects
+//    vẫn lùi 5px bo góc); Commit hover như tên dự án: ô vuông hết nút, hàng
+//    nút sát cột icon (style samhie mục 72).
+//
+// 18. Vùng editor trống thì mở terminal thay "Untitled" (user 2026-10-13: tắt
+//    welcome page thì Kate mở Untitled lúc khởi động, đóng hết tab cũng tự mở
+//    lại Untitled). Kate tạo nó ở showWelcomeViewOrNewDocumentIfNeeded
+//    (kateviewmanager.cpp 26.08.1, một nhịp sau khi vùng trống) → view mới là
+//    tài liệu trống chưa lưu, đứng một mình, thì mở tab terminal rồi đóng tài
+//    liệu (vùng không trống nữa nên Kate không mở lại). Gõ exit ở terminal
+//    cuối cùng → terminal mới, cũng như đóng tab cuối.
 
 #include <KActionCollection>
 #include <KMessageBox>
 #include <KParts/ReadOnlyPart>
 #include <KPluginFactory>
 #include <KStandardGuiItem>
+#include <KTextEditor/Application>
 #include <KTextEditor/Document>
 #include <KTextEditor/MainWindow>
 #include <KTextEditor/Editor>
@@ -771,6 +785,7 @@ void cardSideTree(QTreeView *tree)
     // Chọn/trỏ dòng như cây Projects (style samhie mục 61, 70) — Kvantum vẽ
     // dòng chọn có viền cyan. Git tự bỏ đường nhánh (GitWidgetTreeView).
     tree->setProperty("samhieTreeLines", true);
+    tree->setProperty("samhieRowFlush", true); // ô dòng hết bề ngang thẻ, vuông
     tree->style()->polish(tree);
     padTreeTop(tree);
     markCard(tree);
@@ -798,8 +813,21 @@ void cardGitPanel(QTreeView *tree)
     cardSideTree(tree);
     // Hàng [Commit, ↥, ↧, ⟳, ≣]: nút chỉ-icon ô hover vuông như nút hàng
     // Projects; Commit có chữ — chỉ icon cùng cỡ (⟳ nằm trong BusyWrapperWidget)
-    QLayout *layout = tree->parentWidget()->layout();
+    QWidget *panel = tree->parentWidget();
+    QLayout *layout = panel->layout();
     QLayout *row = layout->count() ? layout->itemAt(0)->layout() : nullptr;
+    // Commit: ô hover như tên dự án — vuông, hết nút (style samhie mục 72), hàng
+    // sát cột icon như hàng tên dự án → bỏ lề trái của panel, cây vào một
+    // khung con giữ khe CARD_GAP bên trái.
+    if (row && row->count() && row->itemAt(0)->widget()) {
+        row->itemAt(0)->widget()->setProperty("samhieFlatHover", true);
+        auto *wrap = new QWidget(panel);
+        auto *wrapLayout = new QVBoxLayout(wrap);
+        wrapLayout->setContentsMargins(CARD_GAP, 0, 0, 0);
+        delete layout->replaceWidget(tree, wrap);
+        wrapLayout->addWidget(tree);
+        layout->setContentsMargins(0, 0, 0, CARD_GAP);
+    }
     if (row) {
         row->setSpacing(0); // nút sát nhau như hàng Projects — ô 190px còn đủ chữ "Commit"
     }
@@ -1292,6 +1320,21 @@ public:
             watchGutter(view);
         }
         connect(m_mw, &KTextEditor::MainWindow::viewCreated, this, watchGutter);
+
+        // Mục 18: "Untitled" Kate tự mở khi vùng editor trống → terminal thay
+        // chỗ. Bấm New File trên welcome page thì giữ: welcome còn trong vùng
+        // editor lúc view mới ra đời (Kate gỡ nó sau một nhịp).
+        connect(m_mw, &KTextEditor::MainWindow::viewCreated, this, [this](KTextEditor::View *view) {
+            const QList<QWidget *> widgets = m_mw->widgets();
+            if (std::any_of(widgets.begin(), widgets.end(), [](QWidget *w) {
+                    return w->inherits("WelcomeView");
+                })) {
+                return;
+            }
+            QTimer::singleShot(0, this, [this, view = QPointer<KTextEditor::View>(view)] {
+                replaceUntitled(view);
+            });
+        });
 
         // Mục 7: đổi file (mở file mới cũng là đổi) → dải tab tính lại độ cuộn
         connect(m_mw, &KTextEditor::MainWindow::viewChanged, this, [this] {
@@ -1900,6 +1943,22 @@ private:
         }
         if (tab) {
             focusTerminal(tab);
+        }
+    }
+
+    // Mục 18: view là tài liệu trống chưa lưu, đứng một mình trong cửa sổ
+    void replaceUntitled(KTextEditor::View *view)
+    {
+        if (!view || m_mw->views().size() != 1 || !m_mw->widgets().isEmpty()) {
+            return;
+        }
+        KTextEditor::Document *doc = view->document();
+        if (!doc->url().isEmpty() || doc->isModified() || !doc->isEmpty()) {
+            return;
+        }
+        if (TerminalTab *tab = createTerminal(startDirectory())) {
+            focusTerminal(tab);
+            KTextEditor::Editor::instance()->application()->closeDocument(doc);
         }
     }
 

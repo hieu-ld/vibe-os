@@ -41,6 +41,13 @@ kate_mdi_toolview_output=Ctrl+Shift+Y
 # (container thử 2026-10-12) thì Kate thấy /usr/sbin/pylsp. Cùng một file.
 AllowedServerCommandLines=/usr/bin/pylsp --check-parent-process,/usr/sbin/pylsp --check-parent-process,/usr/bin/qmlls,/usr/sbin/qmlls
 
+[project]
+# Mở lại Kate là mở lại dự án (thư mục) đang mở lúc thoát, như VS Code (user
+# 2026-10-13). Kate mặc định false; phiên vô danh (anonymous.katesession) vẫn
+# không mở lại file. Panel lúc mở thì plugin samhiekate đưa về Projects (mục 16).
+# Đọc ở KateProjectPlugin::readConfig (kateprojectplugin.cpp 26.08.1).
+restoreProjectsForSessions=true
+
 [KTextEditor Renderer]
 # Theme màu vùng code: Samhie (sinh từ theme/palette.toml — nền = thẻ cây
 # Projects, trong 90% như cửa sổ; màu cú pháp của Breeze Dark). Kate mặc định

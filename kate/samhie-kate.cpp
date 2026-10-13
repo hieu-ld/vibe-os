@@ -193,6 +193,14 @@
 //      (KatePluginSearchView::onResize, trong bộ lọc Resize của nó — chạy SAU
 //      bộ lọc ứng dụng của plugin) → xếp lại sau một nhịp. Bố cục ngang
 //      (panel kéo xuống đáy): giữ của Kate, chỉ bỏ › và hiện lại ô Replace.
+//
+// 16. Mở Kate luôn về Projects như VS Code (user 2026-10-13: thoát lúc đang
+//    ở Search thì lần sau Kate mở lại Search). Kate nhớ panel nào mở lúc
+//    thoát (Kate-MDI-ToolView-<id>-Visible trong file phiên, khôi phục ở
+//    MainWindow::finishRestore — cuối hàm dựng cửa sổ, SAU khi plugin dựng
+//    view) → một nhịp sau, cột trái đang mở Search/Git/Outline thì chuyển
+//    sang Projects. Cột trái đang thu thì để thu. Dự án cuối cùng mở lại
+//    nhờ restoreProjectsForSessions trong /etc/xdg/katerc.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -944,6 +952,11 @@ void arrangeSearchPanel(QWidget *dialog)
         });
         QObject::connect(placeCombo->model(), &QAbstractItemModel::rowsInserted, placeCombo, tidyPlaces, Qt::QueuedConnection);
         tidyPlaces();
+        // Dự án mở lại lúc khởi động (mục 16) tới SAU khi Kate đọc phiên: Kate
+        // tạm để "Folder" và mở ⋯, rồi đổi sang Project trước khi nối trên có
+        if (placeCombo->currentIndex() >= PROJECT) {
+            more->setChecked(false);
+        }
 
         // › / ⌄ mở ô Replace. Không dùng nút checkable: nút đang "bật" có
         // nền như nút được nhấn — VS Code chỉ đổi mũi tên.
@@ -1182,6 +1195,9 @@ public:
         // Ô Filter… của mỗi dự án: bắt lúc nó sắp hiện
         qApp->installEventFilter(this);
 
+        // Mục 16: Kate khôi phục panel sau khi dựng view này
+        QTimer::singleShot(0, this, &SamhieKateView::startOnProjects);
+
         // Mục 12: breadcrumb của view space đã dựng trước khi plugin nạp (cũng
         // nút Git dưới)
         for (auto *button : m_mw->window()->findChildren<QToolButton *>()) {
@@ -1382,6 +1398,31 @@ public:
     }
 
 private:
+    // Mục 16: khu chứa Projects đang mở panel khác → chuyển sang Projects.
+    // Mỗi khu của cột (MultiTabBar) có một QStackedWidget riêng chứa các ToolView
+    // của nó — nằm trong splitter chính của cửa sổ, KHÔNG trong Sidebar.
+    void startOnProjects()
+    {
+        QWidget *win = m_mw->window();
+        // ToolView chứa hàng [ô chọn dự án, ⟳, ✕] — sửa rồi thì hàng có thêm «
+        QWidget *projects = m_projectsToolView;
+        for (auto *combo : win->findChildren<QComboBox *>()) {
+            if (projects) {
+                break;
+            }
+            if (projectHeader(combo)) {
+                projects = combo->parentWidget();
+            }
+        }
+        auto *stack = projects ? qobject_cast<QStackedWidget *>(projects->parentWidget()) : nullptr;
+        if (!stack || projects->isVisibleTo(win)) {
+            return;
+        }
+        if (QWidget *open = stack->currentWidget(); open && open != projects && open->isVisibleTo(win)) {
+            m_mw->showToolView(projects);
+        }
+    }
+
     // ✕ đóng dự án giữ lại (mục 4), thêm « thu khung (hideToolView nhận đúng widget mà createToolView
     // trả về — ô chọn dự án là con trực tiếp của nó)
     void fixProjectHeader(QHBoxLayout *row, QWidget *toolView)
@@ -1401,6 +1442,7 @@ private:
             }
         }
         m_projectCombo = qobject_cast<QComboBox *>(row->itemAt(0)->widget());
+        m_projectsToolView = toolView; // mục 16
         // Ô chọn dự án vẽ phẳng thành tên (style samhie, mục 59)
         row->itemAt(0)->widget()->setProperty("samhieFlatCombo", true);
         auto *collapse = new QToolButton(toolView);
@@ -1450,6 +1492,16 @@ private:
         // Tiêu đề khi chưa có dự án (Kate để "Current Project", bị cắt chữ)
         if (m_projectCombo) {
             m_projectCombo->setPlaceholderText(QStringLiteral("No Folder")); // ngắn cho vừa ô (thẻ chào nói rõ)
+            // Có chữ chờ thì QComboBox KHÔNG tự chọn mục đầu khi thêm mục (không
+            // có thì có) — dự án Kate mở lại lúc khởi động (mục 16) hiện cây mà
+            // tiêu đề vẫn "No Folder". Chọn như Kate gốc.
+            const auto pickFirst = [combo = m_projectCombo] {
+                if (combo && combo->currentIndex() < 0 && combo->count() > 0) {
+                    combo->setCurrentIndex(0);
+                }
+            };
+            pickFirst();
+            connect(m_projectCombo->model(), &QAbstractItemModel::rowsInserted, this, pickFirst);
         }
         const auto update = [this, stack, reload = QPointer<QWidget>(reload)] {
             const bool empty = stack->count() == 0;
@@ -1743,6 +1795,7 @@ private:
     QPointer<QAction> m_showMenuBar; // Ctrl+M của Kate
     QPointer<QWidget> m_menuButton;
     QPointer<QComboBox> m_projectCombo;
+    QPointer<QWidget> m_projectsToolView;
     QPointer<QToolButton> m_closeFolderButton; // mục 4: ✕ của Kate
     QAction *m_closeFolder = nullptr;
     QPointer<QWidget> m_projectTree;

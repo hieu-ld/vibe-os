@@ -412,8 +412,8 @@
 //      Button (#262626; đang mở: +30 mức xám = #444444) — cả ở trạng thái
 //      thường, qua bộ lọc sự kiện riêng (eventFiltering.cpp, Paint) → máy ảo
 //      thấy dải đục sau 4 nút, dưới nút cuối lại trong. Bộ lọc của style
-//      này chạy trước, gọi thẳng paintEvent của nút (bỏ qua bộ lọc Kvantum);
-//      nút đang mở/đang bấm tô SIDEBAR_TAB_OPEN ở độ đục cửa sổ. Ô 48×48
+//      này chạy trước và tự vẽ cả nút: nút đang mở/đang bấm tô
+//      SIDEBAR_TAB_OPEN ở độ đục cửa sổ, icon giữa ô thật. Ô 48×48
 //      (SIDEBAR_TAB) như activity bar VS Code (ACTION_HEIGHT 48, rộng 48);
 //      cỡ icon đặt ở /etc/xdg/katerc. Nút có chữ (Output, Diagnostics ở
 //      đáy) giữ nguyên Kvantum.
@@ -1354,8 +1354,13 @@ bool isIconOnlySidebarTab(const QWidget *w)
     return b && w->inherits("KMultiTabBarTab") && b->text().isEmpty();
 }
 
-// Mục 66: vẽ nút bằng paintEvent của chính nó, bỏ qua bộ lọc Kvantum (bộ lọc
-// đó tô đặc nút ở trạng thái thường). Cài SAU Kvantum nên chạy TRƯỚC.
+// Mục 66: style tự vẽ cả nút (thay paintEvent của nút VÀ bộ lọc Kvantum —
+// bộ lọc đó tô đặc nút ở trạng thái thường). Cài SAU Kvantum nên chạy TRƯỚC.
+// Không dùng paintEvent của KMultiTabBarTab: nút đang mở (và mọi nút nếu
+// Kate dùng kiểu KDEV3ICON) đặt icon theo lề tính từ ô CHUẨN 48 của
+// sizeFromContents, không theo chiều cao thật → plugin Kate hạ nút xuống
+// cao bằng hàng tên dự án (mục 13 của plugin) thì icon lệch lên nửa phần
+// chênh (máy ảo 2026-10-13: ô 41, icon cao hơn tâm 3,5px).
 class SidebarTabPaint : public QObject
 {
 public:
@@ -1365,7 +1370,20 @@ public:
     {
         if (event->type() != QEvent::Paint || !isIconOnlySidebarTab(static_cast<QWidget *>(obj)))
             return false;
-        obj->event(event);  // QObject::event công khai — không qua bộ lọc nào nữa
+        auto *b = static_cast<QAbstractButton *>(obj);
+        QPainter p(b);
+        if (b->isChecked() || b->isDown()) {
+            QColor c(samhie::SIDEBAR_TAB_OPEN);
+            c.setAlphaF(samhie::WINDOW_OPACITY);
+            p.setCompositionMode(QPainter::CompositionMode_Source);
+            p.fillRect(b->rect(), c);
+            p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        }
+        // Như KMultiTabBarTab::paintEvent (KWidgetsAddons 6.30): luôn trạng
+        // thái On, sáng (Active) khi trỏ chuột
+        const QIcon::Mode mode = !b->isEnabled() ? QIcon::Disabled : b->underMouse() ? QIcon::Active : QIcon::Normal;
+        const QPixmap pixmap = b->icon().pixmap(b->iconSize(), b->devicePixelRatioF(), mode, QIcon::On);
+        b->style()->drawItemPixmap(&p, b->rect(), Qt::AlignCenter, pixmap);
         return true;
     }
 };
@@ -3702,18 +3720,6 @@ public:
     {
         // Mục 21: ô hover vuông ở giữa nút (icon giữ nguyên chỗ: Kvantum đặt
         // icon giữa rect, rect mới cùng tâm).
-        // Mục 66: nút cột icon Kate — chỉ nút đang mở/đang bấm có nền
-        if (cc == CC_ToolButton && isIconOnlySidebarTab(w)) {
-            if (opt->state & (State_On | State_Sunken)) {
-                QColor c(samhie::SIDEBAR_TAB_OPEN);
-                c.setAlphaF(samhie::WINDOW_OPACITY);
-                p->save();
-                p->setCompositionMode(QPainter::CompositionMode_Source);
-                p->fillRect(opt->rect, c);
-                p->restore();
-            }
-            return;
-        }
         auto *tbopt = qstyleoption_cast<const QStyleOptionToolButton *>(opt);
         if (cc == CC_ToolButton && tbopt) {
             QStyleOptionToolButton o(*tbopt);

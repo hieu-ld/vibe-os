@@ -176,10 +176,19 @@
 //    - Kết quả là một thẻ như cây Projects (user 2026-10-13: bỏ viền, bo góc
 //      nền, kết quả cách mép): thẻ = widget Results (results.ui: cây +
 //      ô lọc ẩn), lề trong CARD_GAP, cây không khung + nền trong.
+//      Đáy thẻ chừa CARD_GAP như cây Projects → bằng đáy thẻ code (máy ảo user
+//      2026-10-13: thấp hơn 6px), trái cách cột icon CARD_GAP; lưới ô Find…
+//      bỏ lề phải → các ô thẳng mép phải thẻ.
+//    - Dòng kết quả dài cắt "…" ở mép phải vùng thấy như VS Code (user
+//      2026-10-13). Kate vẽ hết dòng (cột rộng theo dòng dài nhất, cuộn
+//      ngang; dòng file/tổng là HTML không giới hạn bề rộng) → bọc delegate
+//      của Kate (ElideDelegate): vẽ thử dòng vào ảnh, có chữ bên phải mép
+//      thì vẽ lại cắt trước mép, nền dải cuối lấy từ hàng điểm đáy (nền
+//      hover/chọn phủ cả cao, chữ và ô tô kết quả không chạm đáy).
 //    - Trang ⋯ xếp dọc như VS Code (user 2026-10-13 — Kate xếp ngang: ở
 //      ~250px bốn ô tích mất chữ, "128 MB" đè "Size limit"): nhãn trên ô
 //      (Folder / Files to include / Files to exclude), mỗi ô tích một hàng,
-//      bỏ vạch ngăn đầu trang.
+//      bỏ vạch ngăn đầu trang. Nút ↑ ô hover vuông như Aa .* ⋯.
 //    - Kate xếp lưới lại khi panel đổi giữa dọc/ngang
 //      (KatePluginSearchView::onResize, trong bộ lọc Resize của nó — chạy SAU
 //      bộ lọc ứng dụng của plugin) → xếp lại sau một nhịp. Bố cục ngang
@@ -192,6 +201,7 @@
 #include <KStandardGuiItem>
 #include <KTextEditor/Document>
 #include <KTextEditor/MainWindow>
+#include <KTextEditor/Editor>
 #include <KTextEditor/Plugin>
 #include <KTextEditor/View>
 #include <KXMLGUIClient>
@@ -211,6 +221,7 @@
 #include <QFontMetricsF>
 #include <QGridLayout>
 #include <QHeaderView>
+#include <QImage>
 #include <QHBoxLayout>
 #include <QIcon>
 #include <QKeyEvent>
@@ -613,6 +624,100 @@ void hideCrumbEllipsis(QWidget *button)
     }
 }
 
+// Mục 15: dòng kết quả cắt "…" ở mép phải vùng thấy (xem đầu file)
+class ElideDelegate : public QAbstractItemDelegate
+{
+public:
+    ElideDelegate(QAbstractItemDelegate *inner, QAbstractItemView *view)
+        : QAbstractItemDelegate(view)
+        , m_inner(inner)
+        , m_view(view)
+    {
+    }
+
+    void paint(QPainter *p, const QStyleOptionViewItem &opt, const QModelIndex &index) const override
+    {
+        const int edge = m_view->viewport()->width(); // toạ độ vùng thấy, như opt.rect
+        if (opt.rect.right() < edge) {
+            m_inner->paint(p, opt, index);
+            return;
+        }
+        const int left = opt.rect.left();
+        const qreal dpr = p->device() ? p->device()->devicePixelRatioF() : 1.0;
+        QImage img(QSize(edge + SPILL - left, opt.rect.height()) * dpr, QImage::Format_ARGB32_Premultiplied);
+        img.setDevicePixelRatio(dpr);
+        img.fill(Qt::transparent);
+        {
+            QPainter ip(&img);
+            ip.translate(-left, -opt.rect.top());
+            m_inner->paint(&ip, opt, index);
+        }
+        if (!spills(img, int((edge - left) * dpr))) {
+            m_inner->paint(p, opt, index);
+            return;
+        }
+        const QFont font = KTextEditor::Editor::instance()->font(); // chữ kết quả của Kate
+        const QString dots = QStringLiteral("…");
+        const QFontMetrics fm(font);
+        int cut = edge - fm.horizontalAdvance(dots) - DOTS_PAD;
+        // Lùi về khe giữa hai chữ gần nhất — không cắt đôi một chữ
+        for (int x = cut; x > cut - fm.horizontalAdvance(QLatin1Char('M')) && x > left; --x) {
+            if (blank(img, int((x - left) * dpr))) {
+                cut = x;
+                break;
+            }
+        }
+        const int dotsWidth = edge - cut;
+        p->save();
+        p->setClipRect(QRect(left, opt.rect.top(), cut - left, opt.rect.height()), Qt::IntersectClip);
+        m_inner->paint(p, opt, index);
+        p->restore();
+        const QRect strip(cut, opt.rect.top(), dotsWidth, opt.rect.height());
+        p->drawImage(strip, img, QRectF((cut - left) * dpr, img.height() - 1, dotsWidth * dpr, 1));
+        p->save();
+        p->setFont(font);
+        p->setPen(opt.palette.color(QPalette::Text));
+        p->drawText(strip, Qt::AlignLeft | Qt::AlignVCenter, dots);
+        p->restore();
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &opt, const QModelIndex &index) const override
+    {
+        return m_inner->sizeHint(opt, index);
+    }
+
+private:
+    static constexpr int SPILL = 48;   // vẽ thử quá mép bấy nhiêu px (khoảng trắng giữa hai chữ ngắn hơn)
+    static constexpr int DOTS_PAD = 4; // "…" cách mép phải vùng thấy
+
+    // Cột x không có điểm chữ: mọi điểm cùng màu điểm đáy (nền)
+    static bool blank(const QImage &img, int x)
+    {
+        const int bottom = img.height() - 1;
+        const QRgb bg = img.pixel(x, bottom);
+        for (int y = 0; y < bottom; ++y) {
+            if (img.pixel(x, y) != bg) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    // Có chữ từ cột x0 trở đi
+    static bool spills(const QImage &img, int x0)
+    {
+        for (int x = x0; x < img.width(); ++x) {
+            if (!blank(img, x)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    QAbstractItemDelegate *m_inner;
+    QAbstractItemView *m_view;
+};
+
 // Mục 15: thẻ kết quả — Results (cha của ResultsTreeView) là thẻ, cây nằm
 // trong cách mép CARD_GAP (vùng hiển thị của cây không giữ lề: padTreeTop).
 void cardResults(QTreeView *tree)
@@ -624,6 +729,10 @@ void cardResults(QTreeView *tree)
     results->layout()->setContentsMargins(CARD_GAP, CARD_GAP, CARD_GAP, CARD_GAP);
     tree->setFrameShape(QFrame::NoFrame);
     tree->viewport()->setAutoFillBackground(false);
+    // Results.cpp đặt delegate một lần lúc dựng, không giữ con trỏ
+    if (QAbstractItemDelegate *inner = tree->itemDelegate()) {
+        tree->setItemDelegate(new ElideDelegate(inner, tree));
+    }
     markCard(results);
 }
 
@@ -708,6 +817,9 @@ void arrangeSearchOptions(QWidget *dialog)
         column->addLayout(pair);
     };
     auto *folderRow = new QWidget(box);
+    if (auto *up = qobject_cast<QToolButton *>(folderUp)) {
+        growIcon(up); // ô hover vuông (Kate dựng cao bằng icon)
+    }
     auto *folderBox = new QHBoxLayout(folderRow);
     folderBox->setContentsMargins(0, 0, 0, 0);
     folderBox->setSpacing(spacing);
@@ -776,6 +888,13 @@ void arrangeSearchPanel(QWidget *dialog)
             growIcon(b);
         }
         arrangeSearchOptions(dialog);
+        // Thẻ kết quả: đáy chừa CARD_GAP như cây Projects (bằng đáy thẻ code),
+        // trái cách cột icon; lưới ô bỏ lề phải → thẳng mép phải thẻ
+        if (QWidget *page = child("resultPage"); page && page->layout()) {
+            page->layout()->setContentsMargins(CARD_GAP, 0, 0, CARD_GAP);
+        }
+        const QMargins m = grid->contentsMargins();
+        grid->setContentsMargins(m.left(), m.top(), 0, m.bottom());
         for (const char *name : {"searchButton", "newTabButton", "expandResults", "filterBtn", "currentFolderButton"}) {
             if (QWidget *w = child(name)) {
                 w->hide();

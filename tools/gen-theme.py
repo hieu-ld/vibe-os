@@ -562,6 +562,10 @@ def style_colors_h(pal):
         # Ô đang chọn/trỏ trong popup nền secondary (Quick Open Kate): nâng một
         # bậc như ghi chú của vai trò `hover` (trên nền secondary = sub-secondary)
         ("POPUP_ITEM", d["sub-secondary"], "ô đang chọn/trỏ trong popup nền secondary (Quick Open Kate)"),
+        # Phím tắt vẽ như phím bấm trong Find Action (KCommandBar): KDE tô
+        # mặt phím bằng màu cửa sổ — trùng nền thẻ popup (secondary) nên mất.
+        # Chữ 12% trong suốt → nổi được trên cả nền thẻ lẫn ô đang chọn.
+        ("KEYCAP", "#1f" + d["text"].lstrip("#"), "mặt phím tắt trong Find Action (chữ 12%, nổi trên thẻ và ô chọn)"),
         # Cây Projects Kate (user 2026-10-13: bỏ viền cyan, ô dài hết dòng như
         # VS Code): dòng đang chọn tô nâng hai bậc trên nền card, hơn dòng trỏ
         # chuột (ROW_HOVER) — như VS Code tách selection / hover.

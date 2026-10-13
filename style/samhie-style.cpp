@@ -463,6 +463,16 @@
 //      hai mép). Qt giữ cỡ điểm của nhãn cho đoạn đều nét: Dongle 20pt ≈ Hack
 //      11pt → Hack 20pt to gấp đôi. Trước khi nhãn vẽ, ghi font-size =
 //      cỡ nhãn × [fonts] mono-size / size vào thẻ (MonoSpans).
+//  75. Find Action… (Ctrl+Alt+I, KCommandBar — chung Kate, Dolphin, Konsole)
+//      là thẻ như Quick Open của Kate (mục 69, user 2026-10-13: "vẫn dùng
+//      style cũ"): thẻ POPUP bo góc viền POPUP_BORDER, lề trong
+//      POPUP_CARD_PAD, ô gõ có khung ở trên cách danh sách POPUP_CARD_GAP,
+//      danh sách trên nền thẻ. Ô đang chọn/trỏ tô POPUP_ITEM cả dòng (hai cột
+//      — tên + phím tắt — mỗi cột một delegate của KDE), không viền cyan. Bọc
+//      hai delegate (CommandBarRow): tô dòng rồi để KDE vẽ như dòng thường —
+//      dòng chọn giữ chữ xám "Kate Part:" và chữ khớp cyan như Quick Open
+//      (kcommandbar.cpp 6.30 bỏ màu khi chọn vì nền Highlight). Mặt phím tắt
+//      KDE tô màu cửa sổ = nền thẻ → đổi sang KEYCAP.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -615,6 +625,8 @@ constexpr int TERMINAL_GAP = 7;    // khe trên panel Terminal: + vạch ngăn d
 constexpr int POPUP_MARGIN = 8;    // thẻ tìm cách mép vùng file
 constexpr int POPUP_PADDING = 10;  // nội dung cách mép thẻ
 constexpr int POPUP_RADIUS = 12;
+constexpr int POPUP_CARD_PAD = 12;  // thẻ Find Action: lề trong (= QUICK_OPEN_PAD của plugin Kate)
+constexpr int POPUP_CARD_GAP = 8;   // khe ô gõ – danh sách (= QUICK_OPEN_GAP)
 // = PANE_RADIUS − góc tab (8, tools/kvantum.py) → góc tab/nút + đồng tâm với
 // góc khung; cũng bằng khe trên của tab (TAB_INSET) nên lùi đều hai phía.
 constexpr int DOLPHIN_TAB_INSET = 4;
@@ -1663,6 +1675,103 @@ private:
     mutable bool m_scanned = false;
     mutable QSet<const QMenu *> m_hiddenMenus;
 };
+
+// Mục 69, 75: ô đang chọn / chỉ trỏ chuột trong danh sách của thẻ popup
+void paintPopupItem(QPainter *p, const QRectF &rect, bool selected)
+{
+    QColor fill(samhie::POPUP_ITEM);
+    if (!selected)
+        fill.setAlphaF(0.5);  // chỉ trỏ chuột: nhạt hơn ô đang chọn
+    p->save();
+    p->setRenderHint(QPainter::Antialiasing);
+    p->setPen(Qt::NoPen);
+    p->setBrush(fill);
+    p->drawRoundedRect(rect, samhie::MENUITEM_RADIUS, samhie::MENUITEM_RADIUS);
+    p->restore();
+}
+
+// Mục 75: bọc delegate của một cột trong danh sách Find Action. Cột tên (vẽ
+// trước) tô ô cả dòng; mọi cột vẽ như dòng thường.
+class CommandBarRow : public QAbstractItemDelegate
+{
+public:
+    CommandBarRow(QAbstractItemDelegate *inner, QTreeView *view)
+        : QAbstractItemDelegate(view)
+        , m_inner(inner)
+        , m_view(view)
+    {
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        return m_inner->sizeHint(keycapOption(option, index), index);
+    }
+
+    void paint(QPainter *p, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        if (index.column() == 0 && (option.state & (QStyle::State_Selected | QStyle::State_MouseOver)))
+            paintPopupItem(p, QRect(0, option.rect.y(), m_view->viewport()->width(), option.rect.height()),
+                           option.state & QStyle::State_Selected);
+        QStyleOptionViewItem o = keycapOption(option, index);
+        o.state &= ~(QStyle::State_Selected | QStyle::State_MouseOver | QStyle::State_HasFocus);
+        p->save();
+        p->setFont(o.font);  // KDE đo phím bằng o.fontMetrics nhưng viết bằng font của painter
+        m_inner->paint(p, o, index);
+        p->restore();
+    }
+
+    bool editorEvent(QEvent *e, QAbstractItemModel *m, const QStyleOptionViewItem &o, const QModelIndex &i) override
+    {
+        return m_inner->editorEvent(e, m, o, i);
+    }
+
+    bool helpEvent(QHelpEvent *e, QAbstractItemView *v, const QStyleOptionViewItem &o, const QModelIndex &i) override
+    {
+        return m_inner->helpEvent(e, v, o, i);
+    }
+
+private:
+    // Cột phím tắt (ShortcutStyleDelegate, kcommandbar.cpp 6.30): mặt phím
+    // màu cửa sổ + bóng màu shadow lệch 1px, cao bằng một dòng chữ → KEYCAP,
+    // không bóng (lộ qua mặt phím trong suốt), chữ nhỏ hơn như VS Code (phím
+    // 11px trên dòng 13px) — mặt phím cao gần hết dòng thì nặng.
+    static QStyleOptionViewItem keycapOption(const QStyleOptionViewItem &option, const QModelIndex &index)
+    {
+        QStyleOptionViewItem o(option);
+        if (index.column() == 0)
+            return o;
+        o.palette.setColor(QPalette::Window, QColor(samhie::KEYCAP));
+        o.palette.setColor(QPalette::Shadow, Qt::transparent);
+        o.font.setPointSizeF(o.font.pointSizeF() * KEYCAP_FONT_SCALE);
+        o.fontMetrics = QFontMetrics(o.font);
+        return o;
+    }
+
+    static constexpr qreal KEYCAP_FONT_SCALE = 0.85;
+    QPointer<QAbstractItemDelegate> m_inner;
+    QTreeView *m_view;
+};
+
+// Mục 75: dựng thẻ Find Action. KCommandBar được polish lúc hiện lần đầu, khi
+// ô gõ (focusProxy) và danh sách đã dựng xong trong hàm tạo — chưa có thì để
+// lần polish sau (không đánh dấu).
+void setupCommandBar(QFrame *bar)
+{
+    auto *input = qobject_cast<QLineEdit *>(bar->focusProxy());
+    auto *list = bar->findChild<QTreeView *>(QString(), Qt::FindDirectChildrenOnly);
+    if (!input || !list || !bar->layout() || bar->property("samhiePopupPanel").toBool())
+        return;
+    bar->setProperty("samhiePopupPanel", true);  // PE_Frame vẽ thẻ (mục 69)
+    bar->layout()->setContentsMargins(POPUP_CARD_PAD, POPUP_CARD_PAD, POPUP_CARD_PAD, POPUP_CARD_PAD);
+    bar->layout()->setSpacing(POPUP_CARD_GAP);
+    input->setFrame(true);
+    list->setFrameShape(QFrame::NoFrame);
+    list->viewport()->setAutoFillBackground(false);
+    for (int c = 0; list->model() && c < list->model()->columnCount(); ++c) {
+        if (QAbstractItemDelegate *inner = list->itemDelegateForColumn(c))
+            list->setItemDelegateForColumn(c, new CommandBarRow(inner, list));
+    }
+}
 
 // Thư mục con của bộ icon đang dùng, đọc từ index.theme: (thư mục, Context=,
 // có phải Type=Scalable). Bộ icon không đổi trong lúc app chạy → đọc một lần.
@@ -3385,6 +3494,8 @@ public:
             w->installEventFilter(&m_noPaint);  // mục 30
         if (qobject_cast<QLineEdit *>(w) && w->parentWidget() && w->parentWidget()->inherits("KCommandBar"))
             w->installEventFilter(&m_keepCommandBarFocus);  // mục 57
+        if (w->inherits("KCommandBar"))
+            setupCommandBar(static_cast<QFrame *>(w));  // mục 75
         if (w->inherits("KPropertiesDialog"))  // mục 53
             w->installEventFilter(&m_propsSetup);
         if (w->inherits("Baloo::FileMetaDataWidget"))
@@ -4031,17 +4142,8 @@ public:
                     return;
                 }
                 if (w && w->property("samhiePopupList").toBool()) {  // mục 69
-                    if (o.state & (State_Selected | State_MouseOver)) {
-                        QColor fill(samhie::POPUP_ITEM);
-                        if (!(o.state & State_Selected))
-                            fill.setAlphaF(0.5);  // chỉ trỏ chuột: nhạt hơn ô đang chọn
-                        p->save();
-                        p->setRenderHint(QPainter::Antialiasing);
-                        p->setPen(Qt::NoPen);
-                        p->setBrush(fill);
-                        p->drawRoundedRect(QRectF(o.rect), samhie::MENUITEM_RADIUS, samhie::MENUITEM_RADIUS);
-                        p->restore();
-                    }
+                    if (o.state & (State_Selected | State_MouseOver))
+                        paintPopupItem(p, o.rect, o.state & State_Selected);
                     o.state &= ~(State_Selected | State_MouseOver);
                     o.viewItemPosition = QStyleOptionViewItem::OnlyOne;
                     QProxyStyle::drawControl(ce, &o, p, w);

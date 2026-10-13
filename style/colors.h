@@ -16,6 +16,7 @@ constexpr const char *ROW_SELECTED_BORDER = "#097389";  // viền ô dòng file 
 constexpr const char *KEY_FOCUS_FILL = "#262626";  // radio/checkbox đi bằng Tab, trên nền card (popup, menu)
 constexpr const char *KEY_FOCUS_FILL_RAISED = "#393939";  // radio/checkbox đi bằng Tab, trên nền cửa sổ secondary
 constexpr const char *POPUP_ITEM = "#393939";  // ô đang chọn/trỏ trong popup nền secondary (Quick Open Kate)
+constexpr const char *KEYCAP = "#1fbdbec1";  // mặt phím tắt trong Find Action (chữ 12%, nổi trên thẻ và ô chọn)
 constexpr const char *TREE_ROW_SELECTED = "#393939";  // cây Projects Kate: dòng đang chọn, không viền
 constexpr const char *TREE_LINE_SELECTED = "#5a5a5b";  // cây Projects Kate: đường nhánh trên dòng đang chọn
 constexpr const char *SIDEBAR_TAB_OPEN = "#444445";  // cột icon Kate: nút panel đang mở (chữ 20% trên secondary)

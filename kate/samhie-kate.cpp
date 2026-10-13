@@ -264,6 +264,15 @@
 //    thẻ + ô chọn do style vẽ (mục 69), lề trong QUICK_OPEN_PAD bằng viewport
 //    margin; Kate đặt cỡ vừa nội dung (updateViewGeometry, tabswitcher.cpp
 //    26.08.1) rồi mới show → nới thêm lề lúc Show, giữ tâm.
+//
+// 25. Popup lịch sử clipboard (Ctrl+Alt+Shift+V — ClipboardHistoryDialog,
+//    clipboardhistorydialog.cpp KF 6.30) là thẻ như Quick Open: lề
+//    QUICK_OPEN_PAD, khe QUICK_OPEN_GAP; ô gõ có khung, font giao diện (KDE
+//    đặt font code); danh sách không khung, dòng cao như dòng Quick Open (chữ
+//    vẫn font code — là đoạn code đã chép), ô chọn POPUP_ITEM (style mục
+//    69); dưới là vùng xem trước cả đoạn. Nền thẻ do style vẽ (mục 76). Lớp
+//    không có Q_OBJECT → nhận theo cấu trúc: QMenu có layout chứa một
+//    KTextEditor::View.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -515,6 +524,64 @@ void cardTabSwitcher(QTreeView *view)
         ->setViewportMargins(QUICK_OPEN_PAD, QUICK_OPEN_PAD, QUICK_OPEN_PAD, QUICK_OPEN_PAD);
     view->setProperty("samhiePopupPanel", true);
     view->setProperty("samhiePopupList", true);
+}
+
+// Mục 25: dòng cao bằng dòng chữ giao diện (như Quick Open), vẽ như cũ
+class TallRowDelegate : public QStyledItemDelegate
+{
+public:
+    TallRowDelegate(QAbstractItemDelegate *inner, QAbstractItemView *view)
+        : QStyledItemDelegate(view)
+        , m_inner(inner)
+        , m_view(view)
+    {
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        // một dòng chữ giao diện (đoạn chép nhiều dòng — Kate chỉ hiện dòng đầu)
+        QStyleOptionViewItem ui(option);
+        ui.font = m_view->font();
+        ui.fontMetrics = QFontMetrics(ui.font);
+        ui.text = QStringLiteral("Ag");
+        ui.features |= QStyleOptionViewItem::HasDisplay;
+        const int uiHeight = m_view->style()->sizeFromContents(QStyle::CT_ItemViewItem, &ui, QSize(), m_view).height();
+        const QSize own = m_inner->sizeHint(option, index);
+        return {own.width(), std::max(own.height(), uiHeight)};
+    }
+
+    void paint(QPainter *p, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        m_inner->paint(p, option, index);
+    }
+
+private:
+    QPointer<QAbstractItemDelegate> m_inner;
+    QAbstractItemView *m_view;
+};
+
+bool isClipboardHistory(const QObject *obj)
+{
+    auto *menu = qobject_cast<const QMenu *>(obj);
+    return menu && menu->layout() && menu->findChild<KTextEditor::View *>(QString(), Qt::FindDirectChildrenOnly);
+}
+
+void cardClipboardHistory(QMenu *menu)
+{
+    auto *input = menu->findChild<QLineEdit *>(QString(), Qt::FindDirectChildrenOnly);
+    auto *list = menu->findChild<QTreeView *>(QString(), Qt::FindDirectChildrenOnly);
+    if (!input || !list || menu->property("samhiePopupPanel").toBool()) {
+        return;
+    }
+    menu->setProperty("samhiePopupPanel", true);
+    menu->layout()->setContentsMargins(QUICK_OPEN_PAD, QUICK_OPEN_PAD, QUICK_OPEN_PAD, QUICK_OPEN_PAD);
+    menu->layout()->setSpacing(QUICK_OPEN_GAP);
+    input->setFrame(true);
+    input->setFont(QApplication::font());
+    list->setFrameShape(QFrame::NoFrame);
+    list->viewport()->setAutoFillBackground(false);
+    list->setItemDelegate(new TallRowDelegate(list->itemDelegate(), list));
+    list->setProperty("samhiePopupList", true);
 }
 
 bool isHiddenMenu(const QAction *a)
@@ -1564,6 +1631,9 @@ public:
                 connect(menu, &QMenu::aboutToShow, menu, [menu] {
                     hideMenuActions(menu->actions());
                 });
+                if (isClipboardHistory(menu)) {
+                    cardClipboardHistory(menu); // mục 25
+                }
             }
             if (obj->inherits("TabSwitcherTreeView")) {
                 cardTabSwitcher(static_cast<QTreeView *>(obj)); // mục 24

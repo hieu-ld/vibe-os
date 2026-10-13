@@ -475,6 +475,10 @@
 //      dòng chọn giữ chữ xám "Kate Part:" và chữ khớp cyan như Quick Open
 //      (kcommandbar.cpp 6.30 bỏ màu khi chọn vì nền Highlight). Mặt phím tắt
 //      KDE tô màu cửa sổ = nền thẻ → đổi sang KEYCAP.
+//  76. Popup dạng QMenu mang samhiePopupPanel (lịch sử clipboard của Kate,
+//      plugin Kate mục 25) vẽ thẻ như mục 69 thay nền + khung menu Kvantum
+//      (menu trong suốt → chữ code phía sau lộ qua chỗ trống). Vùng xem trước
+//      (KTextEditor) trong popup không hạ độ đục (mục 62 chỉ cho cửa sổ).
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -1171,6 +1175,17 @@ public:
         auto *w = static_cast<QWidget *>(obj);
         if (!w->window()->testAttribute(Qt::WA_TranslucentBackground))
             return false;
+        // Mục 76: vùng xem trước trong popup (thẻ đục) — đục hẳn. Kate tô nền
+        // 90% (WA_OpaquePaintEvent: thẻ không vẽ bên dưới) → lót màu PANE
+        // trước khi Kate vẽ.
+        if (qobject_cast<const QMenu *>(w->window())) {
+            if (!w->inherits("KTextEditor::ViewPrivate")) {
+                QPainter p(w);
+                p.setClipRegion(static_cast<QPaintEvent *>(event)->region());
+                p.fillRect(w->rect(), QColor(samhie::PANE));
+            }
+            return false;
+        }
         if (w->inherits("KTextEditor::ViewPrivate")) {
             fillGutterPad(w, static_cast<QPaintEvent *>(event)->region());  // mục 64
             return false;
@@ -3915,7 +3930,11 @@ public:
         // Mục 27: vùng file khép đáy (Terminal mở) thì ô còn đè góc bo dưới-
         // trái + viền đáy → tô lại nền cửa sổ ngoài góc bo, vẽ lại viền vùng
         // file (cùng nét PanePainter, đổi sang toạ độ của ô).
-        if (pe == PE_Frame && w && w->property("samhiePopupPanel").toBool()) {  // mục 69
+        // Mục 76: popup là QMenu (lịch sử clipboard Kate) — nền thẻ thay nền
+        // menu Kvantum (trong như menu, lộ chữ code phía sau), không khung menu
+        if (pe == PE_FrameMenu && w && w->property("samhiePopupPanel").toBool())
+            return;
+        if ((pe == PE_Frame || pe == PE_PanelMenu) && w && w->property("samhiePopupPanel").toBool()) {  // mục 69
             p->save();
             p->setRenderHint(QPainter::Antialiasing);
             p->setPen(QPen(QColor(samhie::POPUP_BORDER), 1));

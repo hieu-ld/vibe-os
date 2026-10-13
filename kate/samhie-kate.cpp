@@ -35,9 +35,13 @@
 //      (khi chia đôi) có hàng tab riêng; nút chỉ nằm ở view space trên cùng
 //      bên phải, góc cửa sổ như VS Code. Thanh hamburgerBar (giờ trống) ẩn.
 //    - Đầu khung Projects: ô chọn dự án vẽ phẳng thành tên (style samhie mục
-//      59 — plugin chỉ đánh dấu), bỏ nút ✕ (đóng dự án), thêm « thu khung. Đóng
-//      dự án (hiếm dùng) còn ở Ctrl+Alt+I › "Close Project" — menu Projects
-//      đã ẩn ở mục 2.
+//      59 — plugin chỉ đánh dấu), thêm « thu khung. Nút ✕ (đóng dự án) của
+//      Kate: 2026-10-10 bỏ; user 2026-10-13 muốn "Close Folder" như VS Code —
+//      hiện lại (icon × trơn Hugeicons dialog-close như × thanh tìm Dolphin —
+//      window-close-symbolic là × trong vòng tròn của nút cửa sổ; tên
+//      "window-close" Kate gọi thì bộ icon Samhie chưa có → icon Breeze) và
+//      thêm ☰ › File › "Close Folder" (bấm chính nút ✕, mờ theo nút — Kate
+//      tắt nút khi chưa mở thư mục). Đóng: Kate hỏi đóng luôn file của dự án.
 //    - Cây Projects và vùng code (breadcrumb + editor) là hai thẻ bo góc trên
 //      nền cửa sổ: style samhie vẽ (mục 60), plugin đánh dấu widget
 //      (samhieCard) và chừa khe CARD_GAP quanh thẻ. Cây có đường nhánh, không
@@ -148,6 +152,8 @@
 //      đặt chữ sát mép ô, lệch icon ~18–20px). Vị trí icon = hộp decoration
 //      style trả về cho dòng cấp gốc (khớp điểm ảnh, đo container) → ghi vào
 //      thuộc tính samhieTextIndent của ô chọn, style samhie tự vẽ chữ ở đó.
+//      Chưa mở thư mục (thẻ chào, mục 11): thẳng dòng chữ của thẻ — Kvantum
+//      cắt cụt "No Folder Openec" không "…"; chữ đổi thành "No Folder".
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -688,6 +694,17 @@ public:
         actionCollection()->setDefaultShortcut(a, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_QuoteLeft));
         connect(a, &QAction::triggered, this, &SamhieKateView::newTerminal);
 
+        // Mục 4: ☰ › File › Close Folder = bấm nút ✕ đầu khung Projects
+        m_closeFolder = a = actionCollection()->addAction(QStringLiteral("samhie_close_folder"));
+        a->setText(QStringLiteral("Close Folder"));
+        a->setIcon(QIcon::fromTheme(QStringLiteral("dialog-close")));
+        a->setEnabled(false);
+        connect(a, &QAction::triggered, this, [this] {
+            if (m_closeFolderButton) {
+                m_closeFolderButton->click();
+            }
+        });
+
         a = actionCollection()->addAction(QStringLiteral("samhie_terminal_toggle"));
         a->setText(QStringLiteral("Switch Between Terminal and File"));
         actionCollection()->setDefaultShortcut(a, QKeySequence(Qt::CTRL | Qt::Key_QuoteLeft));
@@ -900,6 +917,11 @@ public:
                 });
             }
             break;
+        case QEvent::EnabledChange:
+            if (obj == m_closeFolderButton) {
+                m_closeFolder->setEnabled(m_closeFolderButton->isEnabled()); // mục 4
+            }
+            break;
         case QEvent::Move:
             if (isQuickOpen(obj)) {
                 placeQuickOpen(static_cast<QWidget *>(obj)); // mục 14
@@ -917,11 +939,17 @@ public:
     }
 
 private:
-    // ✕ ẩn, thêm « thu khung (hideToolView nhận đúng widget mà createToolView
+    // ✕ đóng dự án giữ lại (mục 4), thêm « thu khung (hideToolView nhận đúng widget mà createToolView
     // trả về — ô chọn dự án là con trực tiếp của nó)
     void fixProjectHeader(QHBoxLayout *row, QWidget *toolView)
     {
-        row->itemAt(2)->widget()->hide();
+        // Nút ✕ đóng dự án (mục 4)
+        if (auto *close = qobject_cast<QToolButton *>(row->itemAt(2)->widget())) {
+            close->setIcon(QIcon::fromTheme(QStringLiteral("dialog-close")));
+            close->setToolTip(QStringLiteral("Close Folder"));
+            m_closeFolderButton = close;
+            m_closeFolder->setEnabled(close->isEnabled());
+        }
         // Vạch ngăn dưới hàng (QFrame HLine, kateprojectpluginview.cpp)
         for (int i = 0; i < toolView->layout()->count(); ++i) {
             auto *line = qobject_cast<QFrame *>(toolView->layout()->itemAt(i)->widget());
@@ -946,6 +974,7 @@ private:
 
     // Mục 11
     // reload: nút ⟳ — chưa có dự án thì Kate để nó mờ; ẩn đi cho tiêu đề đủ chỗ
+    // (✕ đóng dự án cũng ẩn — đặt m_closeFolderButton TRƯỚC khi gọi hàm này)
     void addWelcome(QWidget *toolView, QWidget *reload)
     {
         auto *stack = toolView->findChild<QStackedWidget *>(QString(), Qt::FindDirectChildrenOnly);
@@ -977,7 +1006,7 @@ private:
 
         // Tiêu đề khi chưa có dự án (Kate để "Current Project", bị cắt chữ)
         if (m_projectCombo) {
-            m_projectCombo->setPlaceholderText(QStringLiteral("No Folder Opened"));
+            m_projectCombo->setPlaceholderText(QStringLiteral("No Folder")); // ngắn cho vừa ô (thẻ chào nói rõ)
         }
         const auto update = [this, stack, reload = QPointer<QWidget>(reload)] {
             const bool empty = stack->count() == 0;
@@ -985,6 +1014,9 @@ private:
             m_welcome->setVisible(empty);
             if (reload) {
                 reload->setVisible(!empty);
+            }
+            if (m_closeFolderButton) {
+                m_closeFolderButton->setVisible(!empty); // ✕ (mục 4) cũng vậy
             }
             schedulePlaceMenuButton(); // căn đỉnh thẻ
         };
@@ -1031,8 +1063,16 @@ private:
         if (delta != 0 && m_projectCombo->height() + delta > 0) {
             m_projectCombo->setFixedHeight(m_projectCombo->height() + delta);
         }
+        // Chữ tiêu đề: thẳng icon thư mục cấp gốc (mục 13) — chưa mở thư mục
+        // thì thẳng dòng chữ của thẻ chào (mục 11)
+        int textLeft = -1;
         if (auto *tree = qobject_cast<QTreeView *>(sideCard)) {
-            const int indent = rootIconLeft(tree, win) - m_projectCombo->mapTo(win, QPoint(0, 0)).x();
+            textLeft = rootIconLeft(tree, win);
+        } else if (auto *label = sideCard->findChild<QLabel *>()) {
+            textLeft = label->mapTo(win, label->contentsRect().topLeft()).x();
+        }
+        if (textLeft >= 0) {
+            const int indent = textLeft - m_projectCombo->mapTo(win, QPoint(0, 0)).x();
             if (m_projectCombo->property("samhieTextIndent").toInt() != indent) {
                 m_projectCombo->setProperty("samhieTextIndent", indent);
                 m_projectCombo->update();
@@ -1260,6 +1300,8 @@ private:
     QPointer<QAction> m_showMenuBar; // Ctrl+M của Kate
     QPointer<QWidget> m_menuButton;
     QPointer<QComboBox> m_projectCombo;
+    QPointer<QToolButton> m_closeFolderButton; // mục 4: ✕ của Kate
+    QAction *m_closeFolder = nullptr;
     QPointer<QWidget> m_projectTree;
     QPointer<QWidget> m_welcome; // mục 11: khung ngoài (lề) và thẻ bên trong
     QPointer<QWidget> m_welcomeCard;

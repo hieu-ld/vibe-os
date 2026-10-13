@@ -164,6 +164,9 @@
 //      mục file đang mở" (chọn "In Folder" là Kate tự làm), nút T+ chèn ký tự
 //      đặc biệt trong ô Replace.
 //    - ■ Stop chỉ hiện lúc Kate đang tìm (stopAndNext lật sang trang Stop).
+//    - Aa .* ⋯ cỡ icon + ô hover như nút hàng trên (mục 4: ICON_SIZE,
+//      samhieSquareHover) — Kate dựng chúng cao bằng icon (máy ảo user
+//      2026-10-13: ô hover Aa 30×16 cạnh ô Project cao 40, "lùn").
 //    - ⋯ (Kate: ⚙ "Show more search options") mở trang Folder/Filter/Exclude
 //      thay chỗ kết quả. Có dự án thì chỗ tìm mặc định "Project" (VS Code
 //      tìm cả thư mục đang mở; Kate mặc định "In Open Files") và chọn dự án
@@ -335,16 +338,21 @@ int rootIconLeft(QTreeView *tree, QWidget *to)
     return tree->viewport()->mapTo(to, deco.topLeft()).x();
 }
 
+void growIcon(QToolButton *button)
+{
+    button->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
+    // Ô hover vuông như nút icon khác của Samhie (style samhie mục 68) —
+    // style đọc thuộc tính lúc polish → polish lại
+    if (!button->property("samhieSquareHover").toBool()) {
+        button->setProperty("samhieSquareHover", true);
+        button->style()->polish(button);
+    }
+}
+
 void growIcons(QWidget *parent)
 {
     for (auto *button : parent->findChildren<QToolButton *>(Qt::FindDirectChildrenOnly)) {
-        button->setIconSize(QSize(ICON_SIZE, ICON_SIZE));
-        // Ô hover vuông như nút icon khác của Samhie (style samhie mục 68) —
-        // style đọc thuộc tính lúc polish → polish lại
-        if (!button->property("samhieSquareHover").toBool()) {
-            button->setProperty("samhieSquareHover", true);
-            button->style()->polish(button);
-        }
+        growIcon(button);
     }
 }
 
@@ -675,6 +683,9 @@ void arrangeSearchPanel(QWidget *dialog)
         matchCase->setIcon(QIcon::fromTheme(QStringLiteral("samhie-match-case")));
         regExp->setIcon(QIcon::fromTheme(QStringLiteral("samhie-regex")));
         more->setIcon(QIcon::fromTheme(QStringLiteral("samhie-search-details")));
+        for (QToolButton *b : {matchCase, regExp, more}) {
+            growIcon(b);
+        }
         for (const char *name : {"searchButton", "newTabButton", "expandResults", "filterBtn", "currentFolderButton"}) {
             if (QWidget *w = child(name)) {
                 w->hide();

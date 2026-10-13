@@ -952,11 +952,12 @@ void arrangeSearchPanel(QWidget *dialog)
         });
         QObject::connect(placeCombo->model(), &QAbstractItemModel::rowsInserted, placeCombo, tidyPlaces, Qt::QueuedConnection);
         tidyPlaces();
-        // Dự án mở lại lúc khởi động (mục 16) tới SAU khi Kate đọc phiên: Kate
-        // tạm để "Folder" và mở ⋯, rồi đổi sang Project trước khi nối trên có
-        if (placeCombo->currentIndex() >= PROJECT) {
-            more->setChecked(false);
-        }
+        // Mở Kate thì trang ⋯ đóng như VS Code (user 2026-10-13): Kate mở nó khi
+        // phiên lưu chỗ tìm "Folder" (readSessionConfig), và khi dự án mở lại
+        // (mục 16) tới sau lúc đọc phiên — Kate tạm để "Folder" rồi đổi sang
+        // Project trước khi nối trên có. Panel dựng lần đầu khi hiện lần đầu,
+        // SAU khi đọc phiên. Tự chọn Folder trong ô thì Kate vẫn mở ⋯.
+        more->setChecked(false);
 
         // › / ⌄ mở ô Replace. Không dùng nút checkable: nút đang "bật" có
         // nền như nút được nhấn — VS Code chỉ đổi mũi tên.

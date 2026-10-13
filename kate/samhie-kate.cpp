@@ -173,6 +173,13 @@
 //      thì KHÔNG tự mở trang ⋯ (Kate mở — chỉ cần cho Folder). Ô chỗ tìm
 //      bỏ icon, chữ ngắn (Current File / Open Files / Folder / Project /
 //      All Projects) — ô chật, "In Open Files" còn "In".
+//    - Kết quả là một thẻ như cây Projects (user 2026-10-13: bỏ viền, bo góc
+//      nền, kết quả cách mép): thẻ = widget Results (results.ui: cây +
+//      ô lọc ẩn), lề trong CARD_GAP, cây không khung + nền trong.
+//    - Trang ⋯ xếp dọc như VS Code (user 2026-10-13 — Kate xếp ngang: ở
+//      ~250px bốn ô tích mất chữ, "128 MB" đè "Size limit"): nhãn trên ô
+//      (Folder / Files to include / Files to exclude), mỗi ô tích một hàng,
+//      bỏ vạch ngăn đầu trang.
 //    - Kate xếp lưới lại khi panel đổi giữa dọc/ngang
 //      (KatePluginSearchView::onResize, trong bộ lọc Resize của nó — chạy SAU
 //      bộ lọc ứng dụng của plugin) → xếp lại sau một nhịp. Bố cục ngang
@@ -606,6 +613,20 @@ void hideCrumbEllipsis(QWidget *button)
     }
 }
 
+// Mục 15: thẻ kết quả — Results (cha của ResultsTreeView) là thẻ, cây nằm
+// trong cách mép CARD_GAP (vùng hiển thị của cây không giữ lề: padTreeTop).
+void cardResults(QTreeView *tree)
+{
+    QWidget *results = tree->parentWidget();
+    if (!results || !results->layout() || results->property("samhieCard").toBool()) {
+        return;
+    }
+    results->layout()->setContentsMargins(CARD_GAP, CARD_GAP, CARD_GAP, CARD_GAP);
+    tree->setFrameShape(QFrame::NoFrame);
+    tree->viewport()->setAutoFillBackground(false);
+    markCard(results);
+}
+
 // Mục 15: kết quả không ô tích khi ô Replace đang đóng (style samhie mục 71
 // đọc samhieNoCheck). Cây kết quả: ResultsTreeView, một cây mỗi tab tìm.
 void syncResultChecks(QWidget *dialog)
@@ -613,6 +634,10 @@ void syncResultChecks(QWidget *dialog)
     QWidget *replaceCombo = dialog->findChild<QWidget *>(QStringLiteral("replaceCombo"));
     const bool noCheck = replaceCombo && !replaceCombo->isVisibleTo(dialog);
     for (auto *tree : dialog->findChildren<QTreeView *>()) {
+        // Cây của tab đầu được polish trước khi plugin nạp → làm thẻ ở đây
+        if (tree->inherits("ResultsTreeView")) {
+            cardResults(tree);
+        }
         if (tree->inherits("ResultsTreeView") && tree->property("samhieNoCheck").toBool() != noCheck) {
             tree->setProperty("samhieNoCheck", noCheck);
             tree->viewport()->update();
@@ -637,6 +662,70 @@ QWidget *searchRow(QWidget *dialog, const char *name, int spacing, const QList<Q
         box->addWidget(w, w == widgets.first() ? 1 : 0); // ô đầu giãn
     }
     return row;
+}
+
+// Mục 15: trang ⋯ (search.ui: folderOptions, lưới gridLayout_2 — Kate không
+// giữ con trỏ tới các layout, chỉ tới widget) xếp lại dọc.
+void arrangeSearchOptions(QWidget *dialog)
+{
+    QWidget *box = dialog->findChild<QWidget *>(QStringLiteral("folderOptions"));
+    if (!box || box->property("samhieArranged").toBool()) {
+        return;
+    }
+    const auto child = [box](const char *name) {
+        return box->findChild<QWidget *>(QLatin1String(name));
+    };
+    auto *folderLabel = qobject_cast<QLabel *>(child("folderLabel"));
+    auto *filterLabel = qobject_cast<QLabel *>(child("filterLabel"));
+    auto *excludeLabel = qobject_cast<QLabel *>(child("excludeLabel"));
+    auto *sizeLabel = qobject_cast<QLabel *>(child("label"));
+    QWidget *folder = child("folderRequester");
+    QWidget *folderUp = child("folderUpButton");
+    QWidget *filter = child("filterCombo");
+    QWidget *exclude = child("excludeCombo");
+    QWidget *sizeLimit = child("sizeLimitSpinBox");
+    if (!folderLabel || !filterLabel || !excludeLabel || !sizeLabel || !folder || !folderUp || !filter || !exclude || !sizeLimit) {
+        return;
+    }
+    box->setProperty("samhieArranged", true);
+    if (QWidget *line = child("line")) {
+        line->hide();
+    }
+    const int spacing = box->layout() ? box->layout()->spacing() : 6;
+    delete box->layout(); // xoá cả layout con + spacer, widget còn nguyên
+
+    auto *column = new QVBoxLayout(box);
+    column->setContentsMargins(0, 0, 0, 0);
+    column->setSpacing(spacing);
+    // Nhãn trên ô, sát ô hơn khe giữa các nhóm
+    const auto group = [column, spacing](QLabel *label, const QString &text, QWidget *field) {
+        label->setText(text);
+        label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+        auto *pair = new QVBoxLayout;
+        pair->setSpacing(spacing / 2);
+        pair->addWidget(label);
+        pair->addWidget(field);
+        column->addLayout(pair);
+    };
+    auto *folderRow = new QWidget(box);
+    auto *folderBox = new QHBoxLayout(folderRow);
+    folderBox->setContentsMargins(0, 0, 0, 0);
+    folderBox->setSpacing(spacing);
+    folderBox->addWidget(folder, 1);
+    folderBox->addWidget(folderUp);
+    group(folderLabel, QStringLiteral("Folder"), folderRow);
+    group(filterLabel, QStringLiteral("Files to include"), filter);
+    group(excludeLabel, QStringLiteral("Files to exclude"), exclude);
+    for (const char *name : {"recursiveCheckBox", "hiddenCheckBox", "symLinkCheckBox", "binaryCheckBox"}) {
+        if (QWidget *check = child(name)) {
+            column->addWidget(check);
+        }
+    }
+    auto *sizeRow = new QHBoxLayout;
+    sizeRow->setSpacing(spacing);
+    sizeRow->addWidget(sizeLabel, 1);
+    sizeRow->addWidget(sizeLimit);
+    column->addLayout(sizeRow);
 }
 
 // Mục 15: lưới panel Search (search.ui: widget "SearchDialog", lưới
@@ -686,6 +775,7 @@ void arrangeSearchPanel(QWidget *dialog)
         for (QToolButton *b : {matchCase, regExp, more}) {
             growIcon(b);
         }
+        arrangeSearchOptions(dialog);
         for (const char *name : {"searchButton", "newTabButton", "expandResults", "filterBtn", "currentFolderButton"}) {
             if (QWidget *w = child(name)) {
                 w->hide();
@@ -1021,6 +1111,7 @@ public:
                 schedulePlaceMenuButton(); // mục 13: nút panel nạp sau
             }
             if (obj->inherits("ResultsTreeView")) { // mục 15: tab tìm mới
+                cardResults(static_cast<QTreeView *>(obj));
                 for (QWidget *w = static_cast<QWidget *>(obj)->parentWidget(); w; w = w->parentWidget()) {
                     if (w->objectName() == QLatin1String("SearchDialog")) {
                         syncResultChecks(w);

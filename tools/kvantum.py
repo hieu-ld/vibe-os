@@ -157,11 +157,13 @@ def frame_element(roles, eid, f, radius, fill, stroke=None, top_only=False, inse
 # "@0.08" = độ đục. None = không tô / không viền.
 FRAMES = [
     # Nút thường (OK/Cancel, combo): mặt secondary viền sub-secondary.
+    # Bật/combo đang mở popup: KHÔNG viền cyan (user 2026-10-13: "thấy chỗ
+    # nào có viền xanh thì bỏ") — mặt sub-secondary như hover là đủ.
     ("button", {
         "normal":   ("secondary", "sub-secondary"),
         "focused":  ("sub-secondary", "sub-secondary"),
         "pressed":  ("sub-secondary@0.6", "sub-secondary"),
-        "toggled":  ("sub-secondary", "accent"),
+        "toggled":  ("sub-secondary", "sub-secondary"),
         "disabled": ("secondary@0.5", "sub-secondary@0.5"),
     }, False),
     # HOVER (user 2026-10-05: mọi app một màu, như popup nút nguồn): trên nền

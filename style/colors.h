@@ -15,6 +15,7 @@ constexpr const char *ROW_HOVER = "#262626";  // ô dòng file Dolphin chế đ�
 constexpr const char *ROW_SELECTED_BORDER = "#097389";  // viền ô dòng file đang chọn (= itemview Kvantum)
 constexpr const char *KEY_FOCUS_FILL = "#262626";  // radio/checkbox đi bằng Tab, trên nền card (popup, menu)
 constexpr const char *KEY_FOCUS_FILL_RAISED = "#393939";  // radio/checkbox đi bằng Tab, trên nền cửa sổ secondary
+constexpr const char *POPUP_ITEM = "#393939";  // ô đang chọn/trỏ trong popup nền secondary (Quick Open Kate)
 constexpr const char *SIDEBAR_TAB_OPEN = "#444445";  // cột icon Kate: nút panel đang mở (chữ 20% trên secondary)
 constexpr double WINDOW_OPACITY = 0.9;  // [window] opacity
 constexpr int ITEM_RADIUS = 10;  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)

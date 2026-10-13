@@ -424,6 +424,13 @@
 //      dải tab): ô hover vuông như mục 21 (user 2026-10-13: ô 28×18 — Kate
 //      xếp nút cao bằng icon). Plugin Kate đánh dấu samhieSquareHover; nút
 //      được nới tối thiểu bằng ô vuông (hàng cao 40 — đủ chỗ).
+//  69. Quick Open của Kate (bản phác user 2026-10-13): khung là MỘT thẻ
+//      POPUP bo POPUP_RADIUS viền POPUP_BORDER (như thẻ thanh tìm Dolphin);
+//      danh sách kết quả nằm thẳng trên nền thẻ, ô đang chọn/trỏ tô
+//      POPUP_ITEM bo MENUITEM_RADIUS (như dòng menu — Kvantum tô `hover` vốn
+//      cho nền card, trên nền secondary thì chìm mất), không viền chọn; ô chỉ
+//      đang trỏ chuột tô nhạt một nửa — phân biệt với ô đang chọn (Enter mở).
+//      Plugin Kate (mục 14) đánh dấu samhiePopupPanel / samhiePopupList.
 //  52. Menu chuột phải Dolphin không có "Git Clone…" (plugin git của
 //      dolphin-plugins, ngoài repo git) — giống gõ git clone trong Konsole.
 //      Dấu trạng thái git trên file và menu Git trong repo vẫn giữ (user
@@ -3685,6 +3692,15 @@ public:
         // Mục 27: vùng file khép đáy (Terminal mở) thì ô còn đè góc bo dưới-
         // trái + viền đáy → tô lại nền cửa sổ ngoài góc bo, vẽ lại viền vùng
         // file (cùng nét PanePainter, đổi sang toạ độ của ô).
+        if (pe == PE_Frame && w && w->property("samhiePopupPanel").toBool()) {  // mục 69
+            p->save();
+            p->setRenderHint(QPainter::Antialiasing);
+            p->setPen(QPen(QColor(samhie::POPUP_BORDER), 1));
+            p->setBrush(QColor(samhie::POPUP));
+            p->drawRoundedRect(QRectF(opt->rect).adjusted(0.5, 0.5, -0.5, -0.5), POPUP_RADIUS, POPUP_RADIUS);
+            p->restore();
+            return;
+        }
         if (pe == PE_Frame && w && w->inherits("DolphinStatusBar")) {
             QProxyStyle::drawPrimitive(pe, opt, p, w);
             if (w->layoutDirection() == Qt::LeftToRight) {
@@ -3884,6 +3900,23 @@ public:
             if (auto *vopt = qstyleoption_cast<const QStyleOptionViewItem *>(opt)) {
                 QStyleOptionViewItem o(*vopt);
                 o.state &= ~State_HasFocus;
+                if (w && w->property("samhiePopupList").toBool()) {  // mục 69
+                    if (o.state & (State_Selected | State_MouseOver)) {
+                        QColor fill(samhie::POPUP_ITEM);
+                        if (!(o.state & State_Selected))
+                            fill.setAlphaF(0.5);  // chỉ trỏ chuột: nhạt hơn ô đang chọn
+                        p->save();
+                        p->setRenderHint(QPainter::Antialiasing);
+                        p->setPen(Qt::NoPen);
+                        p->setBrush(fill);
+                        p->drawRoundedRect(QRectF(o.rect), samhie::MENUITEM_RADIUS, samhie::MENUITEM_RADIUS);
+                        p->restore();
+                    }
+                    o.state &= ~(State_Selected | State_MouseOver);
+                    o.viewItemPosition = QStyleOptionViewItem::OnlyOne;
+                    QProxyStyle::drawControl(ce, &o, p, w);
+                    return;
+                }
                 const QAbstractItemView *view = extendableView(opt, w);
                 if (!view && isSettingsList(w) && o.index.isValid()) {  // mục 37
                     QStyleOptionViewItem panel(o);

@@ -452,6 +452,9 @@ def style_colors_h(pal):
         # Nút panel đang mở ở cột icon Kate: giữ đúng màu Kvantum từng tô
         # (#444444 = secondary + 30 mức xám) nhưng lấy từ bảng: chữ 20% phủ
         # nền cửa sổ — cũng là màu nút đang bấm (tbutton pressed, kvantum.py).
+        # Ô đang chọn/trỏ trong popup nền secondary (Quick Open Kate): nâng một
+        # bậc như ghi chú của vai trò `hover` (trên nền secondary = sub-secondary)
+        ("POPUP_ITEM", d["sub-secondary"], "ô đang chọn/trỏ trong popup nền secondary (Quick Open Kate)"),
         ("SIDEBAR_TAB_OPEN", over(d["text"], 0.2, d["secondary"]), "cột icon Kate: nút panel đang mở (chữ 20% trên secondary)"),
     ]
     out = [f"// {HEADER}", "#pragma once", "", "namespace samhie {"]

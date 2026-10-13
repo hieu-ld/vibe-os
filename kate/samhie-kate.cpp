@@ -103,10 +103,7 @@
 //    (ToolView::childEvent) — trả focus về ngăn xếp như lúc Kate dựng xong.
 //
 // 12. Rà Kate đợt 2 (2026-10-12):
-//    - Quick Open (Ctrl+Alt+O) rộng 60% cửa sổ thay vì 1/2,4 (đường dẫn dài
-//      bị cắt cụt — Kate tự vẽ chữ, không có "…"; KateQuickOpen::
-//      updateViewGeometry, Kate 26.08.1). Kate đặt lại cỡ mỗi lần mở và mỗi
-//      khi cửa sổ đổi cỡ (setFixedSize rồi move) → nới lại ở Show/Move, giữ tâm.
+//    - Quick Open: xem mục 14 (trước: chỉ nới rộng 60%).
 //    - Breadcrumb bỏ nút "…" đầu dải (bấm vào thì nở thành cả đường dẫn thật
 //      /var/home/… — VS Code chỉ hiện từ thư mục dự án). Kate hiện lại nút mỗi
 //      lần đổi file (UrlbarContainer, kateurlbar.cpp) → ép cỡ 0 thay vì ẩn,
@@ -121,6 +118,24 @@
 //      sc-apps-git.svg — không qua bộ icon) → gắn "samhie-kate-git" (Hugeicons
 //      git-branch) lên nút. Nút là KMultiTabBarTab mang tên panel ở thuộc tính
 //      kate_original_text (Sidebar::updateButtonStyle, katemdi.cpp).
+//
+// 14. Quick Open (Ctrl+Alt+O) theo bản phác của user (2026-10-13): MỘT thẻ có
+//    lề trong, ô tìm là ô nhập thường (nền tối hơn thẻ) ở trên, kết quả ngay
+//    trên nền thẻ, mép trái thẳng mép ô tìm. Thẻ + ô đang chọn do style samhie
+//    vẽ (mục 69; plugin đánh dấu samhiePopupPanel/samhiePopupList).
+//    - Căn GIỮA cửa sổ, rộng như VS Code: min(62% cửa sổ, 600px)
+//      (QuickInputController.MAX_WIDTH); cao giữ của Kate (nửa cửa sổ). Kate
+//      đặt lại cỡ + chỗ mỗi lần mở và mỗi khi cửa sổ đổi cỡ (setFixedSize rồi
+//      move, KateQuickOpen::updateViewGeometry, Kate 26.08.1) → đặt lại ở
+//      Show/Resize/Move.
+//    - Dòng kết quả cắt "…" khi dài: delegate của Kate vẽ một QTextLine rộng
+//      bằng ô nhưng dời phải 25px — chữ dài bị ngắt ở chỗ xuống dòng được,
+//      phần sau mất hẳn, không có "…" (Utils::paintItemViewText). Plugin thay
+//      delegate: tên file + đường dẫn xám (nhỏ hơn 1pt như Kate) cắt "…" ở
+//      cuối; chữ trong tên khớp chuỗi gõ (đoạn liền, không có thì lần lượt
+//      từng ký tự; không phân biệt hoa thường — Kate dùng kfts, chọn chỗ khớp
+//      khác đôi chút) in đậm
+//      màu link như Kate. Kate còn in đậm chỗ khớp trong đường dẫn — bỏ.
 //
 // 13. Hàng tên dự án và cột icon trái (user 2026-10-13):
 //    - Ô sáng nút panel (style samhie mục 66, ô 48 như VS Code) cao bằng ô
@@ -171,6 +186,9 @@
 #include <QPushButton>
 #include <QResizeEvent>
 #include <QStackedWidget>
+#include <QPainter>
+#include <QTextLayout>
+#include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
 #include <QTabBar>
 #include <QTabWidget>
@@ -191,6 +209,12 @@ constexpr int CARD_GAP = 6;
 // Icon cây Projects + nút hàng trên (đo máy ảo: đều 16; user thử 17 rồi chọn
 // 18 "cho chẵn")
 constexpr int ICON_SIZE = 18;
+// Mục 14: Quick Open — bề rộng như VS Code (62% cửa sổ, tối đa 600), lề
+// trong của thẻ, khe giữa ô tìm và danh sách
+constexpr double QUICK_OPEN_SHARE = 0.62;
+constexpr int QUICK_OPEN_MAX_WIDTH = 600;
+constexpr int QUICK_OPEN_PAD = 12;
+constexpr int QUICK_OPEN_GAP = 8;
 
 // Mục 8: cột số dòng tối thiểu bấy nhiêu chữ số
 constexpr int GUTTER_DIGITS = 4;
@@ -353,15 +377,139 @@ bool isQuickOpen(const QObject *obj)
     return w && w->focusProxy() && w->focusProxy()->inherits("QuickOpenLineEdit");
 }
 
-void widenQuickOpen(QWidget *w)
+// Mục 14: dòng kết quả Quick Open — tên + đường dẫn cắt "…"
+class QuickOpenDelegate : public QStyledItemDelegate
 {
-    const int target = std::max(w->width(), int(w->parentWidget()->width() * 0.6));
-    if (w->width() == target) {
+public:
+    QuickOpenDelegate(QLineEdit *input, QObject *parent)
+        : QStyledItemDelegate(parent)
+        , m_input(input)
+    {
+    }
+
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        QStyleOptionViewItem opt = option;
+        initStyleOption(&opt, index);
+        const QWidget *view = opt.widget;
+        QStyle *style = view ? view->style() : QApplication::style();
+        QRect textRect = style->subElementRect(QStyle::SE_ItemViewItemText, &opt, view);
+        opt.text.clear();
+        style->drawControl(QStyle::CE_ItemViewItem, &opt, painter, view); // nền + icon
+
+        // KateQuickOpenModel::FileName / FilePath (Qt::UserRole + 1, + 2)
+        const QString name = index.data(Qt::UserRole + 1).toString();
+        QString path = index.data(Qt::UserRole + 2).toString();
+        const QString suffix = QLatin1Char('/') + name;
+        if (path.endsWith(suffix)) {
+            path.chop(suffix.size());
+        }
+
+        QFont small = opt.font;
+        small.setPointSizeF(opt.font.pointSizeF() - 1);
+        const QFontMetrics fm(opt.font);
+        const QFontMetrics fmSmall(small);
+        textRect.setRight(textRect.right() - TEXT_END_PAD);
+        const QString shownName = fm.elidedText(name, Qt::ElideRight, textRect.width());
+        const int pathRoom = textRect.width() - fm.horizontalAdvance(shownName + QLatin1Char(' '));
+        QString shownPath = shownName == name ? fmSmall.elidedText(path, Qt::ElideRight, pathRoom) : QString();
+        if (shownPath == QStringLiteral("…")) {
+            shownPath.clear();
+        }
+
+        QTextCharFormat gray;
+        gray.setForeground(opt.palette.color(QPalette::PlaceholderText));
+        gray.setFont(small);
+        QList<QTextLayout::FormatRange> formats;
+        if (!shownPath.isEmpty()) {
+            formats.append({.start = int(shownName.size()) + 1, .length = int(shownPath.size()), .format = gray});
+        }
+        QTextCharFormat match;
+        match.setForeground(opt.palette.link());
+        match.setFontWeight(QFont::Bold);
+        for (int i : matchPositions(shownName)) {
+            formats.append({.start = i, .length = 1, .format = match});
+        }
+
+        QTextLayout layout(shownPath.isEmpty() ? shownName : shownName + QLatin1Char(' ') + shownPath, opt.font);
+        layout.setFormats(formats);
+        QTextOption textOption;
+        textOption.setWrapMode(QTextOption::NoWrap);
+        layout.setTextOption(textOption);
+        layout.beginLayout();
+        QTextLine line = layout.createLine();
+        layout.endLayout();
+        if (!line.isValid()) {
+            return;
+        }
+        painter->save();
+        painter->setPen(opt.palette.color(QPalette::Text));
+        const qreal y = textRect.top() + (textRect.height() - line.height()) / 2;
+        layout.draw(painter, QPointF(textRect.left(), y));
+        painter->restore();
+    }
+
+private:
+    // Ký tự trong tên khớp chuỗi gõ (phần sau "/" cuối như Kate): đoạn liền
+    // nếu có ("svg" trong "save.svg" → đuôi .svg), không thì lần lượt từng ký
+    // tự — khớp không đủ thì không đánh dấu gì
+    QList<int> matchPositions(const QString &name) const
+    {
+        QString pattern = m_input ? m_input->text() : QString();
+        pattern = pattern.mid(pattern.lastIndexOf(QLatin1Char('/')) + 1);
+        QList<int> positions;
+        if (const int at = pattern.isEmpty() ? -1 : name.indexOf(pattern, 0, Qt::CaseInsensitive); at >= 0) {
+            for (int i = 0; i < pattern.size(); ++i) {
+                positions.append(at + i);
+            }
+            return positions;
+        }
+        int from = 0;
+        for (const QChar c : std::as_const(pattern)) {
+            const int at = name.indexOf(c, from, Qt::CaseInsensitive);
+            if (at < 0) {
+                return {};
+            }
+            positions.append(at);
+            from = at + 1;
+        }
+        return positions;
+    }
+
+    static constexpr int TEXT_END_PAD = 8; // "…" không dính mép phải ô chọn
+    QPointer<QLineEdit> m_input;
+};
+
+// Mục 14: chỗ + cỡ (gọi lại sau mỗi lần Kate đặt) và bố cục thẻ (một lần)
+void placeQuickOpen(QWidget *w)
+{
+    QWidget *win = w->parentWidget();
+    const int width = std::min(int(win->width() * QUICK_OPEN_SHARE), QUICK_OPEN_MAX_WIDTH);
+    if (w->width() != width || w->maximumWidth() != width) {
+        w->setFixedWidth(width);
+    }
+    const QPoint pos = win->rect().center() - QPoint(width / 2, w->height() / 2);
+    if (w->pos() != pos) {
+        w->move(pos);
+    }
+    if (w->property("samhiePopupPanel").toBool()) {
         return;
     }
-    const int center = w->geometry().center().x();
-    w->setFixedWidth(target);
-    w->move(center - target / 2, w->y());
+    auto *input = qobject_cast<QLineEdit *>(w->focusProxy());
+    auto *list = w->findChild<QTreeView *>();
+    if (!input || !list || !w->layout()) {
+        return;
+    }
+    w->layout()->setContentsMargins(QUICK_OPEN_PAD, QUICK_OPEN_PAD, QUICK_OPEN_PAD, QUICK_OPEN_PAD);
+    w->layout()->setSpacing(QUICK_OPEN_GAP);
+    input->setFrame(true); // ô nhập thường (Kate: không khung)
+    list->setFrameShape(QFrame::NoFrame);
+    list->viewport()->setAutoFillBackground(false);
+    list->setItemDelegate(new QuickOpenDelegate(input, list));
+    for (QWidget *marked : {w, static_cast<QWidget *>(list)}) {
+        marked->setProperty(marked == w ? "samhiePopupPanel" : "samhiePopupList", true);
+        marked->style()->polish(marked);
+    }
 }
 
 // Mục 12: nút "…" của breadcrumb — QToolButton trong UrlbarContainer (không
@@ -671,7 +819,7 @@ public:
             break;
         case QEvent::Show:
             if (isQuickOpen(obj)) {
-                widenQuickOpen(static_cast<QWidget *>(obj)); // mục 12
+                placeQuickOpen(static_cast<QWidget *>(obj)); // mục 14
             }
             // Kate ẩn thanh menu theo Show Menu Bar=false rồi có thứ hiện lại
             // (đo container: khoá false mà thanh vẫn hiện; chưa rõ ai — nghi
@@ -742,6 +890,9 @@ public:
             if (isViewSpace(obj)) {
                 schedulePlaceMenuButton();
             }
+            if (event->type() == QEvent::Resize && isQuickOpen(obj)) {
+                placeQuickOpen(static_cast<QWidget *>(obj)); // mục 14
+            }
             if (event->type() == QEvent::Resize && obj->objectName() == QLatin1String("SearchDialog")) {
                 auto *dialog = static_cast<QWidget *>(obj);
                 QTimer::singleShot(0, dialog, [dialog] {
@@ -751,7 +902,7 @@ public:
             break;
         case QEvent::Move:
             if (isQuickOpen(obj)) {
-                widenQuickOpen(static_cast<QWidget *>(obj)); // mục 12
+                placeQuickOpen(static_cast<QWidget *>(obj)); // mục 14
             }
             break;
         default:

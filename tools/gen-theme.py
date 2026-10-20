@@ -116,12 +116,18 @@ def camel(name):
 
 def hyprland_lua(pal):
     # Hyprland ghép mã thành "rgb(...)"/"rgba(...)" nên để hex KHÔNG có '#'.
-    # Hyprland chưa có chế độ sáng -> chỉ sinh bản tối.
+    # Bản tối nằm thẳng trong bảng; bản sáng ở color.light (viền cửa sổ đổi
+    # theo chế độ — samhie.lua).
     lines = [f"-- {HEADER}",
              "-- Màu bản tối, mã hex không có '#': dùng như \"rgba(\" .. color.accent .. \"aa)\".",
+             "-- Bản sáng: color.light.<tên>.",
              "return {"]
     for name, value in pal["dark"].items():
         lines.append(f'    {camel(name):<13} = "{value[1:]}",')
+    lines.append("    light = {")
+    for name, value in pal["light"].items():
+        lines.append(f'        {camel(name):<13} = "{value[1:]}",')
+    lines.append("    },")
     lines.append("}")
     return "\n".join(lines) + "\n"
 
@@ -566,13 +572,13 @@ def kate_theme(pal):
     return json.dumps(theme, ensure_ascii=False, indent=4) + "\n"
 
 
-def style_colors_h(pal):
-    # Màu cho widget style "samhie" (style/samhie-style.cpp) — chỉ vài chỗ mà
-    # theme Kvantum không vẽ được. Bản tối, như theme Kvantum.
-    d, s = pal["dark"], pal["shared"]
-    rows = [
+def style_color_rows(pal, mode):
+    d, s = pal[mode], pal["shared"]
+    return [
         ("ACTIVE_TEXT", d["accent-text"], "sidebar: mục đang chọn — chữ + icon cyan, không nền"),
-        ("HOVER_TEXT", s["white"], "sidebar: mục đang trỏ chuột — chữ sáng lên, không nền"),
+        # Chữ "đậm lên" khi trỏ: bản tối sáng lên (trắng), bản sáng tối đi (đen).
+        ("HOVER_TEXT", s["white"] if mode == "dark" else s["black"],
+         "sidebar: mục đang trỏ chuột — chữ nổi lên, không nền"),
         ("HOVER_ACCENT", d["accent-text"], "thanh đường dẫn Dolphin: tên thư mục đang trỏ — chữ cyan, không nền"),
         ("PANE", d["card"], "vùng nội dung (file Dolphin, chữ Konsole) trên nền cửa sổ secondary"),
         ("FRAME_LINE", d["sub-secondary"], "viền trên + trái vùng file Dolphin"),
@@ -611,8 +617,20 @@ def style_colors_h(pal):
         ("PAGE_ITEM_SELECTED", d["sub-secondary"], "danh sách trang hộp cài đặt: trang đang chọn, không viền"),
         ("SIDEBAR_TAB_OPEN", over(d["text"], 0.2, d["secondary"]), "cột icon Kate: nút panel đang mở (chữ 20% trên secondary)"),
     ]
+
+
+def style_colors_h(pal):
+    # Màu cho widget style "samhie" (style/samhie-style.cpp) — chỉ vài chỗ mà
+    # theme Kvantum không vẽ được. Hai bộ như theme Kvantum (Samhie /
+    # SamhieDark): biến mang giá trị bản tối, style gọi useLight() lúc chọn
+    # theme theo chế độ sáng/tối — trước khi vẽ gì.
+    dark, light = style_color_rows(pal, "dark"), style_color_rows(pal, "light")
     out = [f"// {HEADER}", "#pragma once", "", "namespace samhie {"]
-    out += [f'constexpr const char *{n} = "{c}";  // {why}' for n, c, why in rows]
+    out += [f'inline const char *{n} = "{c}";  // {why}' for n, c, why in dark]
+    out += ["", "// Đổi cả bộ màu sang bản sáng (true) / tối (false).",
+            "inline void useLight(bool light)", "{"]
+    out += [f'    {n} = light ? "{lc}" : "{dc}";' for (n, dc, _), (_, lc, _) in zip(dark, light)]
+    out += ["}", ""]
     out += [f'constexpr double WINDOW_OPACITY = {pal["window"]["opacity"]};  // [window] opacity']
     out += [f'constexpr int ITEM_RADIUS = {kvantum.RADIUS["itemview"]};  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)']
     out += [f'constexpr int MENUITEM_RADIUS = {kvantum.RADIUS["menuitem"]};  // góc ô hover dòng menu = RADIUS["menuitem"] (tools/kvantum.py)']
@@ -928,8 +946,11 @@ OUTPUTS = {
     f"{FCITX_THEME_DIR}/highlight.svg": fcitx_rounded(FCITX_HIGHLIGHT_RADIUS,
                                                                 FCITX_HIGHLIGHT_MARGIN, "selection"),
     "files/system/usr/share/locale/en/LC_MESSAGES/fcitx5.mo": fcitx_mo,
-    "files/system/usr/share/Kvantum/Samhie/Samhie.kvconfig": kvantum.kvconfig,
-    "files/system/usr/share/Kvantum/Samhie/Samhie.svg": kvantum.svg,
+    # Samhie = bản sáng, SamhieDark = bản tối (biến thể "kvantum-dark") — tools/kvantum.py.
+    "files/system/usr/share/Kvantum/Samhie/Samhie.kvconfig": lambda pal: kvantum.kvconfig(pal, "light"),
+    "files/system/usr/share/Kvantum/Samhie/Samhie.svg": lambda pal: kvantum.svg(pal, "light"),
+    "files/system/usr/share/Kvantum/Samhie/SamhieDark.kvconfig": lambda pal: kvantum.kvconfig(pal, "dark"),
+    "files/system/usr/share/Kvantum/Samhie/SamhieDark.svg": lambda pal: kvantum.svg(pal, "dark"),
 }
 
 

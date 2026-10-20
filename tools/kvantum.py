@@ -15,7 +15,13 @@ Bản vẽ của user (Figma 2026-10-03, Konsole + Dolphin): tab đang mở cùn
 nền nội dung (card) liền xuống vùng chữ, bo hai góc trên; tab khác không nền;
 ô đường dẫn/ô tìm viền 1px sub-secondary. Số đo nằm ở RADIUS/kvconfig().
 
-Hiện chỉ có bản TỐI (theme "Samhie"); bản sáng làm cùng đợt bản sáng của app.
+Hai bản, cùng thư mục /usr/share/Kvantum/Samhie (2026-10-20):
+    Samhie.kvconfig/.svg       — bản SÁNG (vai trò [light])
+    SamhieDark.kvconfig/.svg   — bản TỐI  (vai trò [dark])
+Kvantum 1.1.6 tự có cơ chế này: style "kvantum-dark" nạp "<theme>Dark" nằm
+trong thư mục của theme sáng, "kvantum" nạp bản sáng (Kvantum.cpp setTheme).
+Style "samhie" chọn một trong hai theo chế độ sáng/tối (style/samhie-style.cpp).
+Cùng một dáng (FRAMES, RADIUS…), chỉ khác bảng vai trò.
 """
 
 import xml.etree.ElementTree as ET
@@ -351,8 +357,8 @@ def indicators(roles):
     return out
 
 
-def svg(pal):
-    roles = pal["dark"]
+def svg(pal, mode="dark"):
+    roles = pal[mode]
     cells = []
     for name, states, top_only in FRAMES:
         r = RADIUS[name]
@@ -395,8 +401,8 @@ def svg(pal):
 
 # ---------------------------------------------------------------- kvconfig
 
-def kvconfig(pal):
-    d = pal["dark"]
+def kvconfig(pal, mode="dark"):
+    d = pal[mode]
     transparency = round((1 - pal["window"]["opacity"]) * 100)
 
     def frame(name, top=None, side=None):
@@ -410,6 +416,11 @@ def kvconfig(pal):
         if name in EXPAND:
             keys["frame.expansion"] = 2 * EXPAND[name]
         return keys
+
+    # Chữ ô file đang chọn: bản tối sáng hơn chữ thường một chút (on-selection
+    # trên nền sub-secondary). Bản sáng giữ `text`: on-selection là TRẮNG (cho
+    # nền cyan `selection`) — trên nền xám #d0d0d0 thì gần như mất chữ.
+    selected_text = d["on-selection"] if mode == "dark" else d["text"]
 
     text = {"text.normal.color": d["text"], "text.focus.color": d["text"],
             "text.press.color": d["text"], "text.toggle.color": d["text"],
@@ -541,7 +552,7 @@ def kvconfig(pal):
                  "text.margin.left": 0, "text.margin.right": 0}),
         ("ToolboxTab", {"inherits": "PanelButtonCommand"}),
         ("ItemView", {"inherits": "PanelButtonCommand", **frame("itemview", top=1, side=4),
-                      "text.toggle.color": d["on-selection"], "text.press.color": d["on-selection"],
+                      "text.toggle.color": selected_text, "text.press.color": selected_text,
                       "text.margin.top": 0, "text.margin.bottom": 0,
                       "text.margin.left": 0, "text.margin.right": 0}),
         ("HeaderSection", {"inherits": "PanelButtonCommand", **frame("header"),
@@ -582,7 +593,9 @@ def kvconfig(pal):
         ("TitleBar", {"frame": "false", "interior": "false", **text}),
         ("Window", {"frame": "false", "interior": "false"}),
     ]
-    lines = [f"# {HEADER}", "# Theme Kvantum Samhie (bản tối). Phần tử vẽ: Samhie.svg cùng thư mục.", ""]
+    name = "SamhieDark" if mode == "dark" else "Samhie"
+    lines = [f"# {HEADER}",
+             f"# Theme Kvantum Samhie (bản {'tối' if mode == 'dark' else 'sáng'}). Phần tử vẽ: {name}.svg cùng thư mục.", ""]
     for name, keys in sections:
         lines.append(f"[{name}]")
         lines += [f"{k}={v}" for k, v in keys.items()]

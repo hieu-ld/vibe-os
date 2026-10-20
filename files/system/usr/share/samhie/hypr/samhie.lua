@@ -137,10 +137,29 @@ local function wallpaperCmd(light)
     end
     return pick .. 'old=$(pgrep -x swaybg); swaybg -m fill -i "$img" & sleep 1; [ -n "$old" ] && kill $old'
 end
+-- Chế độ sáng/tối đã lưu (quicksettings/Settings.qml ghi settings.json) — đọc
+-- mỗi lần nạp cấu hình, nên nạp lại không làm viền về màu tối.
+local function savedLight()
+    local state = os.getenv("XDG_STATE_HOME") or (os.getenv("HOME") .. "/.local/state")
+    local f = io.open(state .. "/samhie/settings.json")
+    if not f then return false end
+    local text = f:read("a")
+    f:close()
+    return text:find('"lightMode"%s*:%s*true') ~= nil
+end
+
+-- Viền cửa sổ theo chế độ: bản tối viền #393939 trên cửa sổ sáng thành nét
+-- đen quanh app (container 2026-10-20).
+local function borderColors(light)
+    local c = "rgb(" .. (light and color.light or color).windowBorder .. ")"
+    return { active_border = c, inactive_border = c }
+end
+
 -- Toàn cục để Quickshell gọi khi bấm đổi sáng/tối (quicksettings/Settings.qml):
--- `function() samhie_wallpaper(true) end`.
-function samhie_wallpaper(light)
+-- `function() samhie_color_mode(true) end` — hình nền + viền cửa sổ.
+function samhie_color_mode(light)
     hl.exec_cmd(wallpaperCmd(light))
+    hl.config({ general = { col = borderColors(light) } })
 end
 
 -- -n: đang có một bản chạy rồi thì không mở thêm. SAMHIE_WALLPAPER(_LIGHT):
@@ -181,10 +200,7 @@ hl.config({
         -- sổ KHÔNG dùng (decoration.dim_inactive bên dưới), thay viền cyan.
         border_size = 1,
 
-        col = {
-            active_border   = "rgb(" .. color.windowBorder .. ")",
-            inactive_border = "rgb(" .. color.windowBorder .. ")",
-        },
+        col = borderColors(savedLight()),
 
         resize_on_border = true,
         allow_tearing    = false,

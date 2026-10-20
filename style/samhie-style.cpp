@@ -512,6 +512,16 @@
 //      mọi danh sách). Dải sửa phím tắt mở dưới dòng không còn nét
 //      Highlight dày 6px (TabConnectedWidget::paintEvent tự vẽ) — chặn sự
 //      kiện vẽ của nó; các con vẫn tự vẽ.
+//  80. Bản sáng/tối (2026-10-20). Theme Kvantum có hai bản cùng thư mục:
+//      Samhie (sáng) và SamhieDark (tối) — style "kvantum-dark" của Kvantum
+//      nạp "<theme>Dark" (Kvantum.cpp setTheme). Chế độ đọc ở
+//      ~/.config/kdeglobals [General] ColorScheme: color-mode (ô Dark style
+//      của quick settings) ghi SamhieLight khi sáng, xoá khi tối. Màu riêng
+//      của style (colors.h) đổi theo bằng samhie::useLight().
+//      Đổi lúc app đang mở: color-mode phát KGlobalSettings.notifyChange
+//      (PaletteChanged) → nạp lại style. KDE (plasma-integration) có lệnh
+//      StyleChanged nhưng bỏ qua khi tên style không đổi — vẫn là "samhie".
+//      Konsole, Kate: luôn bản tối (xem lightMode()).
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -613,6 +623,10 @@ void armFolderChange(FolderChange kind, const QString &value);
 // với dbus-daemon — đăng ký lúc bấm thì thông báo của plugin (phát ngay
 // trong cú bấm đó) đi trước, bị lỡ (container 2026-10-08).
 void watchFolderChanges(const QString &dir, const QString &symbol, const QString &color);
+// Mục 80 (định nghĩa cuối file): chế độ sáng/tối người dùng đang chọn, và
+// nghe lệnh đổi chế độ khi app đang mở.
+bool lightMode();
+void watchColorMode(bool light);
 
 namespace {
 
@@ -3085,7 +3099,14 @@ public:
 class SamhieStyle : public QProxyStyle
 {
 public:
-    SamhieStyle() : QProxyStyle(QStyleFactory::create(QStringLiteral("kvantum"))) {}
+    // Mục 80: bộ màu chọn TRƯỚC khi Kvantum nạp theme và trước khi vẽ gì.
+    SamhieStyle() : SamhieStyle(lightMode()) {}
+    explicit SamhieStyle(bool light)
+        : QProxyStyle((samhie::useLight(light),
+                       QStyleFactory::create(light ? QStringLiteral("kvantum") : QStringLiteral("kvantum-dark"))))
+    {
+        watchColorMode(light);
+    }
 
     // Nút + ở góc trái dải tab Dolphin; hành động new_tab (Ctrl+T, menu ☰)
     // nối lại sang openHomeTab khi dải hiện lần đầu (NewTabRewire).
@@ -4904,6 +4925,70 @@ void armFolderChange(FolderChange kind, const QString &value)
 void watchFolderChanges(const QString &dir, const QString &symbol, const QString &color)
 {
     FolderChangeWatcher::instance()->remember(dir, symbol, color);
+}
+
+// Mục 80.
+// Đọc tay một khoá: QSettings (IniFormat) đọc kdeglobals của KDE ra rỗng
+// (container 2026-10-20: file có ColorScheme=SamhieLight vẫn ra tối).
+// Konsole và Kate giữ bản tối cho tới khi có bản sáng riêng: vùng terminal/
+// code của chúng tối (bảng màu riêng) — dải tab sáng ghép vùng chữ tối chưa
+// ai thiết kế (Konsole sáng, container 2026-10-20).
+bool lightMode()
+{
+    const QString app = QCoreApplication::applicationName();
+    if (app == QLatin1String("konsole") || app == QLatin1String("kate"))
+        return false;
+    QFile file(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
+               + QStringLiteral("/kdeglobals"));
+    if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+        return false;
+    bool general = false, light = false;
+    while (!file.atEnd()) {
+        const QByteArray line = file.readLine().trimmed();
+        if (line.startsWith('['))
+            general = line == "[General]";
+        else if (general && line.startsWith("ColorScheme="))
+            light = line == "ColorScheme=SamhieLight";
+    }
+    return light;
+}
+
+class ColorModeWatcher : public QObject
+{
+    Q_OBJECT
+
+public:
+    using QObject::QObject;
+    bool light = false;
+
+public Q_SLOTS:
+    void notifyChange(int type, int)
+    {
+        if (type != 0)  // 0 = PaletteChanged (KGlobalSettings)
+            return;
+        const bool now = lightMode();
+        if (now == light)
+            return;
+        light = now;
+        // Sau khi tín hiệu này xử lý xong: setStyle xoá style cũ — có thể là
+        // style đang gọi tới đây.
+        QTimer::singleShot(0, qApp, [] {
+            if (qApp->style()->name().compare(QLatin1String("samhie"), Qt::CaseInsensitive) == 0)
+                QApplication::setStyle(QStringLiteral("samhie"));
+        });
+    }
+};
+
+void watchColorMode(bool light)
+{
+    static auto *watcher = [] {
+        auto *w = new ColorModeWatcher(qApp);
+        QDBusConnection::sessionBus().connect(QString(), QStringLiteral("/KGlobalSettings"),
+                                              QStringLiteral("org.kde.KGlobalSettings"),
+                                              QStringLiteral("notifyChange"), w, SLOT(notifyChange(int, int)));
+        return w;
+    }();
+    watcher->light = light;
 }
 
 class SamhieStylePlugin : public QStylePlugin

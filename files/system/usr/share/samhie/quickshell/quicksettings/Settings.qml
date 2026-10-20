@@ -8,8 +8,8 @@
 // tắt = dừng tiến trình, màn hình tự về màu thường.
 // Sáng/tối: /usr/libexec/samhie/color-mode (app KDE + GTK/Flatpak); giao
 // diện Quickshell đọc `lightMode` (giai đoạn 3, mục "Bản sáng"); hình nền
-// đổi qua Hyprland (samhie_wallpaper trong samhie.lua — lúc đăng nhập nó tự
-// đọc file này).
+// + viền cửa sổ đổi qua Hyprland (samhie_color_mode trong samhie.lua — lúc
+// đăng nhập / nạp lại cấu hình nó tự đọc file này).
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -83,7 +83,7 @@ Scope {
         save()
         if (loaded) {
             colorMode.apply()
-            Hyprland.dispatch("function() samhie_wallpaper(" + lightMode + ") end")
+            Hyprland.dispatch("function() samhie_color_mode(" + lightMode + ") end")
         }
     }
 

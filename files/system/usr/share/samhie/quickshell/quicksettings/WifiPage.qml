@@ -577,6 +577,7 @@ Column {
                         font.family: Colors.fonts.ui
                         font.weight: Colors.fonts.uiWeight
                         font.pixelSize: 24
+                        cursorDelegate: Caret { input: pw; color: Theme.c.text; size: 16 }
                         onActiveFocusChanged: activeFocus ? imGuard.take() : imGuard.restore()
 
                         Text {

@@ -199,6 +199,7 @@ PanelWindow {
                     font.family: Colors.fonts.ui
                     font.weight: Colors.fonts.uiWeight
                     font.pixelSize: 24
+                    cursorDelegate: Caret { input: search; color: Theme.c.text; size: 16 }
                     onTextChanged: root.current = 0
 
                     Text {

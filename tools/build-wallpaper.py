@@ -15,6 +15,9 @@ NGUỒN là theme/wallpaper/samhie.webp — giữ nguyên byte user đưa (file 
   * samhie-blur.png — bản LÀM MỜ SẴN cho màn hình đăng nhập (SDDM) và màn hình
     khoá: cắt giữa về 16:9 rồi làm mờ lúc dựng thay vì bằng shader lúc chạy,
     máy không có tăng tốc đồ hoạ vẫn hiện đúng.
+  * samhie-light.png — bản SÁNG (user đưa 2026-10-20, theme/wallpaper/
+    samhie-light.webp), hiện khi bật chế độ sáng (samhie.lua). Không có bản
+    mờ: màn đăng nhập + màn khoá luôn tối.
 
 --check chỉ dùng thư viện chuẩn: so sha256 của nguồn và hai file sinh ra với
 theme/wallpaper/SHA256SUMS (script ghi lúc sinh). Đổi ảnh nguồn mà quên chạy
@@ -27,9 +30,12 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 SRC = ROOT / "theme/wallpaper/samhie.webp"
+SRC_LIGHT = ROOT / "theme/wallpaper/samhie-light.webp"
 SUMS = ROOT / "theme/wallpaper/SHA256SUMS"
 PNG_PATH = ROOT / "files/system/usr/share/backgrounds/samhie/samhie.png"
 BLUR_PATH = PNG_PATH.with_name("samhie-blur.png")
+LIGHT_PATH = PNG_PATH.with_name("samhie-light.png")
+FILES = (SRC, PNG_PATH, BLUR_PATH, SRC_LIGHT, LIGHT_PATH)
 # Bản mờ nhỏ 960x540 rồi để SDDM phóng lên: đã mờ thì độ phân giải không còn
 # thấy được, file nhỏ. Bán kính 16 ở cỡ này ≈ 64px ở 4K — mạnh cỡ hyprlock cũ
 # (blur_passes 4, blur_size 8): còn thấy dáng hình, hết chi tiết.
@@ -41,7 +47,7 @@ def sha256(path):
 
 
 def sums_text():
-    return "".join(f"{sha256(p)}  {p.relative_to(ROOT)}\n" for p in (SRC, PNG_PATH, BLUR_PATH))
+    return "".join(f"{sha256(p)}  {p.relative_to(ROOT)}\n" for p in FILES)
 
 
 def build():
@@ -58,13 +64,16 @@ def build():
         small = im.crop(box).resize((BLUR_W, BLUR_H), Image.LANCZOS)
         small.filter(ImageFilter.GaussianBlur(BLUR_RADIUS)).save(BLUR_PATH, optimize=True)
         print(f"đã sinh {BLUR_PATH.relative_to(ROOT)} ({BLUR_W}x{BLUR_H}, mờ {BLUR_RADIUS})", file=sys.stderr)
+    with Image.open(SRC_LIGHT) as im:
+        im.convert("RGB").save(LIGHT_PATH, optimize=True)
+        print(f"đã sinh {LIGHT_PATH.relative_to(ROOT)} ({im.width}x{im.height})", file=sys.stderr)
     SUMS.write_text(sums_text())
 
 
 def main():
     if "--check" in sys.argv[1:]:
-        if not all(p.exists() for p in (SUMS, PNG_PATH, BLUR_PATH)) or SUMS.read_text() != sums_text():
-            print("Hình nền trong image không khớp theme/wallpaper/samhie.webp — "
+        if not all(p.exists() for p in (SUMS, *FILES)) or SUMS.read_text() != sums_text():
+            print("Hình nền trong image không khớp theme/wallpaper/*.webp — "
                   "chạy python3 tools/build-wallpaper.py", file=sys.stderr)
             return 1
         return 0

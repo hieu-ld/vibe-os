@@ -35,6 +35,11 @@ local samhie = {
     -- Hình nền: file PNG/JPG. Mặc định là logo Samhie trên nền sao
     -- (theme/wallpaper/, tools/build-wallpaper.py). Đường dẫn bắt đầu bằng ~/ được hiểu là $HOME.
     wallpaper = "/usr/share/backgrounds/samhie/samhie.png",
+    -- Hình nền lúc bật chế độ sáng (ô Dark style của quick settings), vd
+    --     samhie.wallpaper_light = "~/Storage/Pictures/bien.jpg"
+    -- Không đặt: hình nền mặc định thì dùng bản sáng của logo
+    -- (samhie-light.png); đã tự đổi `wallpaper` thì dùng luôn hình đó.
+    wallpaper_light = nil,
     -- Giao diện Quickshell (thanh trên…): thư mục chứa shell.qml. Muốn tự sửa
     -- thì chép cả thư mục này về, vd ~/.config/quickshell/samhie, rồi trỏ vào
     -- đó. Đặt false là không chạy (không có thanh trên).
@@ -103,22 +108,48 @@ hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 -- máy KHÔNG tự khoá — nên luôn phải có bản mặc định.
 local idleCmd = "test -f ~/.config/hypr/hypridle.conf && exec hypridle || exec hypridle -c /etc/xdg/hypr/hypridle.conf"
 
--- Hình nền do swaybg vẽ (TẠM, giai đoạn 3 Quickshell làm thay). Lệnh chạy qua
--- shell nên đường dẫn được đặt trong ngoặc kép, thoát các ký tự đặc biệt.
-local function wallpaperCmd()
-    local path = samhie.wallpaper:gsub('[\\"$`]', "\\%0")
-    path = path:gsub("^~/", "$HOME/")
-    return 'pkill -x swaybg; exec swaybg -m fill -i "' .. path .. '"'
-end
-
--- -n: đang có một bản chạy rồi thì không mở thêm. SAMHIE_WALLPAPER: màn
--- tổng quan vẽ hình nền trong ô màn ảo (đổi hình nền thì phải chạy lại
--- Quickshell mới thấy trong tổng quan).
+-- Lệnh chạy qua shell nên đường dẫn được đặt trong ngoặc kép, thoát các ký
+-- tự đặc biệt; ~/ thành $HOME/.
 local function quoted(path)
     return '"' .. path:gsub('[\\"$`]', "\\%0"):gsub("^~/", "$HOME/") .. '"'
 end
+
+local function lightWallpaper()
+    if samhie.wallpaper_light then return samhie.wallpaper_light end
+    if samhie.wallpaper == "/usr/share/backgrounds/samhie/samhie.png" then
+        return "/usr/share/backgrounds/samhie/samhie-light.png"
+    end
+    return samhie.wallpaper
+end
+
+-- Hình nền do swaybg vẽ (TẠM, giai đoạn 3 Quickshell làm thay), theo chế độ
+-- sáng/tối. `light` nil (khởi động, nạp lại cấu hình): đọc chế độ đã lưu ở
+-- settings.json (quicksettings/Settings.qml ghi). Đổi hình: bật swaybg mới
+-- TRƯỚC, vẽ xong mới tắt cái cũ — tắt trước thì chớp màu nền Hyprland.
+local function wallpaperCmd(light)
+    local pick
+    if light == nil then
+        pick = "img=" .. quoted(samhie.wallpaper) .. "; grep -qs '\"lightMode\": *true' "
+            .. '"${XDG_STATE_HOME:-$HOME/.local/state}/samhie/settings.json" && img='
+            .. quoted(lightWallpaper()) .. "; "
+    else
+        pick = "img=" .. quoted(light and lightWallpaper() or samhie.wallpaper) .. "; "
+    end
+    return pick .. 'old=$(pgrep -x swaybg); swaybg -m fill -i "$img" & sleep 1; [ -n "$old" ] && kill $old'
+end
+-- Toàn cục để Quickshell gọi khi bấm đổi sáng/tối (quicksettings/Settings.qml):
+-- `function() samhie_wallpaper(true) end`.
+function samhie_wallpaper(light)
+    hl.exec_cmd(wallpaperCmd(light))
+end
+
+-- -n: đang có một bản chạy rồi thì không mở thêm. SAMHIE_WALLPAPER(_LIGHT):
+-- màn tổng quan vẽ hình nền trong ô màn ảo (đổi hình nền thì phải chạy lại
+-- Quickshell mới thấy trong tổng quan).
 local function shellCmd()
-    return "SAMHIE_WALLPAPER=" .. quoted(samhie.wallpaper) .. " exec quickshell -n -p " .. quoted(samhie.shell)
+    return "SAMHIE_WALLPAPER=" .. quoted(samhie.wallpaper)
+        .. " SAMHIE_WALLPAPER_LIGHT=" .. quoted(lightWallpaper())
+        .. " exec quickshell -n -p " .. quoted(samhie.shell)
 end
 
 hl.on("hyprland.start", function()
@@ -254,6 +285,10 @@ hl.layer_rule({ match = { namespace = "^samhie-overview$" }, no_anim = true })
 hl.layer_rule({ match = { namespace = "^samhie-dock$" }, no_anim = true })
 -- Popup thông báo: từng thẻ tự trượt vào trong QML (quickshell/notifications).
 hl.layer_rule({ match = { namespace = "^samhie-notifications$" }, no_anim = true })
+-- Hình nền (swaybg, namespace "wallpaper") đổi theo sáng/tối: bản mới lên
+-- trên rồi tắt bản cũ — có hiệu ứng thì bản cũ mờ dần ĐÈ lên bản mới, chớp
+-- lại hình cũ (đo container 2026-10-20). Không hiệu ứng: đổi gọn một nhịp.
+hl.layer_rule({ match = { namespace = "^wallpaper$" }, no_anim = true })
 
 hl.gesture({
     fingers   = 3,

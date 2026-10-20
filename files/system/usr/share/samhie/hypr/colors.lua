@@ -12,6 +12,8 @@ return {
     dockTileRim   = "fafafa",
     dockDot       = "e8e8e8",
     dockDotActive = "00c0e8",
+    overview      = "171717",
+    overviewRaised = "393939",
     card          = "171717",
     cardAlt       = "171717",
     secondary     = "262626",

@@ -1,6 +1,6 @@
 // Màn tổng quan kiểu Ubuntu — theo bản vẽ của user (2026-10-01, khung
 // 1920×1200, số đo trong docs/PLAN.md):
-//   - nền `card` phủ màn hình (trừ thanh trên — thanh vẫn bấm được),
+//   - nền `overview` phủ màn hình (trừ thanh trên — thanh vẫn bấm được),
 //   - ô tìm kiếm 320×40 cách thanh 24px: gõ là lọc app, kết quả thay chỗ
 //     khung lớn (AppResults), Enter mở app,
 //   - khung lớn = màn ảo đang xem; cửa sổ thật DÀN THÀNH HÀNG như GNOME;
@@ -128,7 +128,7 @@ PanelWindow {
     visible: open || progress > 0 || preparing
     // Qt.alpha: màu trong colors.js là CHUỖI — `.r` của chuỗi là undefined,
     // Qt.rgba(undefined…) ra đen (nền tổng quan đen tuyền tới 2026-10-20).
-    color: Qt.alpha(Theme.c.card, progress)
+    color: Qt.alpha(Theme.c.overview, progress)
     anchors { top: true; bottom: true; left: true; right: true }
     // Như PopupLayer: vùng dành riêng 0 → né thanh trên; bàn phím OnDemand
     // (Exclusive làm Hyprland chặn cả cú bấm vào thanh — đo 2026-10-01).
@@ -196,7 +196,7 @@ PanelWindow {
                 width: 320
                 height: 40
                 radius: 20
-                color: Theme.c.subSecondary
+                color: Theme.c.overviewRaised
 
                 MouseArea {
                     anchors.fill: parent
@@ -342,7 +342,7 @@ PanelWindow {
                             radius: 10
                             color: "transparent"
                             border.width: 2
-                            border.color: thumb.viewed ? Theme.c.accent : Theme.c.subSecondary
+                            border.color: thumb.viewed ? Theme.c.accent : Theme.c.overviewRaised
                             visible: thumb.viewed || thumbHover.hovered
                         }
                         HoverHandler { id: thumbHover }

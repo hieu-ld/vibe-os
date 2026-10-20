@@ -50,7 +50,7 @@ var dark = {
 };
 
 var light = {
-    bar: "#f3f3f3",
+    bar: "#e6e6e6",
     barText: "#1c1c1c",
     barAccent: "#0d728f",
     barBadge: "#b3261e",

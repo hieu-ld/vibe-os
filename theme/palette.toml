@@ -101,9 +101,11 @@ warm    = "#e8a048"        # điểm nhấn ấm (xem "CÁCH DÙNG MÀU" ở tr�
 [light]
 # Thanh trên + dock bản sáng cũng SÁNG (user muốn 2026-09-28, chốt màu
 # 2026-10-02: #f3f3f3 như thanh tác vụ Windows 11 bản sáng — tách nhẹ khỏi
-# cửa sổ/popup #fafafa). Thanh vẫn dùng vai trò bar-* riêng: đổi màu thanh
-# không kéo theo màu cửa sổ và ngược lại.
-bar           = "#f3f3f3"
+# cửa sổ/popup #fafafa). 2026-10-20 user thấy chói trên hình nền tối →
+# hạ #e6e6e6 (so 4 mức trên ảnh máy ảo; từ #dadada ô chấm màn ảo chìm).
+# Thanh vẫn dùng vai trò bar-* riêng: đổi màu thanh không kéo theo màu cửa
+# sổ và ngược lại.
+bar           = "#e6e6e6"
 bar-text      = "#1c1c1c"
 bar-accent    = "#0d728f"  # cyan đậm như `accent` bản sáng — #00c0e8 trên nền sáng không đọc được
 bar-badge     = "#b3261e"  # = danger bản sáng: #790000 trên nền sáng gần như đen

@@ -406,7 +406,7 @@ Column {
         height: 32
         radius: 6
         color: primary ? Theme.c.selection
-            : Qt.rgba(Theme.c.text.r, Theme.c.text.g, Theme.c.text.b, btnMouse.containsMouse ? 0.14 : 0.08)
+            : Qt.alpha(Theme.c.text, btnMouse.containsMouse ? 0.14 : 0.08)
         opacity: enabled ? 1 : 0.5
         Rectangle {
             anchors.fill: parent

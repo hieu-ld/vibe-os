@@ -390,7 +390,7 @@ PanelWindow {
         height: 28
         radius: 6
         // Thẻ đang sáng đã là Sub Secondary → nền nút lấy màu chữ mờ.
-        color: btnHover.hovered ? Qt.rgba(Theme.c.text.r, Theme.c.text.g, Theme.c.text.b, 0.12) : "transparent"
+        color: btnHover.hovered ? Qt.alpha(Theme.c.text, 0.12) : "transparent"
 
         SamhieIcon {
             anchors.centerIn: parent

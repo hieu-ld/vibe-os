@@ -126,7 +126,9 @@ PanelWindow {
     }
 
     visible: open || progress > 0 || preparing
-    color: Qt.rgba(Theme.c.card.r, Theme.c.card.g, Theme.c.card.b, progress)
+    // Qt.alpha: màu trong colors.js là CHUỖI — `.r` của chuỗi là undefined,
+    // Qt.rgba(undefined…) ra đen (nền tổng quan đen tuyền tới 2026-10-20).
+    color: Qt.alpha(Theme.c.card, progress)
     anchors { top: true; bottom: true; left: true; right: true }
     // Như PopupLayer: vùng dành riêng 0 → né thanh trên; bàn phím OnDemand
     // (Exclusive làm Hyprland chặn cả cú bấm vào thanh — đo 2026-10-01).

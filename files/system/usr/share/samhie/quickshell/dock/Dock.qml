@@ -1,15 +1,17 @@
 // Dock — bản A (user chọn 2026-10-20 từ ảnh phác trên hình nền thật; bản
 // trước: Figma "Reminder" node 308-854, Dock.png 2026-10-01).
-//   * Mặt "kính": `dock` (tối #262626 trong 40%, sáng #f3f3f3 đục 90%), một
-//     lớp sáng mờ dần ở nửa trên, viền 1px sáng dần từ dưới lên (viền bắt
-//     sáng). KHÔNG blur/bóng đổ thật: sau dock gần như luôn là đáy đen phẳng
+//   * Mặt "kính": `dock` trong 40% — tối #262626 có một lớp sáng mờ dần ở
+//     nửa trên + viền 1px `dock-rim` sáng dần từ dưới lên (viền bắt sáng);
+//     sáng #fafafa phẳng, viền đều (user 2026-10-20, Figma) + nét lót đen
+//     mờ cho màn tổng quan (nền card sáng, kính tan vào nền). KHÔNG
+//     blur/bóng đổ thật: sau dock gần như luôn là đáy đen phẳng
 //     của hình nền (đo: núi cũ #0b0f0f, logo 2026-10-20 #060b13 + vài ngôi
 //     sao), dock lại tự ẩn khi cửa sổ đè lên — blur không có gì để làm mờ,
 //     bóng đổ không thấy (phác 2026-10-20).
 //   * Cao 60 = viền 1 + lề 8 + ô 40 + khe 3 + chấm 4 + lề 3 + viền 1; lề
 //     trái/phải 8, khe giữa các ô 8. 4 app = 200×60.
-//   * Ô 40 luôn hiện: gradient `dock-tile-top` → `-bottom` (chung hai chế độ),
-//     viền sáng dần như mặt dock, bo 10. Rê chuột: ô nhích lên 2px; đang
+//   * Ô 40 luôn hiện: gradient `dock-tile-top` → `-bottom`, viền
+//     `dock-tile-rim` (tối: sáng dần như mặt dock; sáng: đục), bo 10. Rê chuột: ô nhích lên 2px; đang
 //     bấm thì hạ về chỗ cũ. Chấm đứng yên dưới ô.
 //   * Logo 32 giữa ô; mọi logo hình rộng ~28 (icon Samhie: 28×26, thấp hơn
 //     2px là user cố ý — xem iconSizes).
@@ -23,7 +25,8 @@
 //     của nó ra (đang thu nhỏ thì hiện lại, ở màn ảo khác thì nhảy sang);
 //   * app ĐANG focus: một cửa sổ → thu nhỏ; nhiều cửa sổ → sang cửa sổ kế;
 //   * chuột giữa → luôn mở cửa sổ mới.
-// Chấm dưới icon: mỗi cửa sổ một chấm (tối đa 3), màu nhấn khi app đang focus.
+// Chấm dưới icon: mỗi cửa sổ một chấm (tối đa 3), `dock-dot-active` khi app
+// đang focus.
 //
 // Icon bánh răng (Settings) trong bản vẽ TẠM ẨN (user chốt 2026-10-01): image
 // chưa có app cài đặt. Có rồi thì thêm id vào `pinned`.
@@ -127,11 +130,11 @@ Item {
     Glass {
         anchors.fill: parent
         radius: 14
-        fillTop: Qt.alpha(Theme.c.dock, Theme.light ? 0.90 : 0.40)
-        sheen: Qt.alpha(root.white, Theme.light ? 0.35 : 0.06)
-        edge: Theme.light ? Qt.alpha(root.black, 0.10) : "transparent"
-        rimTop: Qt.alpha(root.white, Theme.light ? 0.95 : 0.20)
-        rimBottom: Qt.alpha(root.white, Theme.light ? 0.35 : 0.04)
+        fillTop: Qt.alpha(Theme.c.dock, 0.40)
+        sheen: Theme.light ? "transparent" : Qt.alpha(root.white, 0.06)
+        edge: Theme.light ? Qt.alpha(root.black, 0.08) : "transparent"
+        rimTop: Qt.alpha(Theme.c.dockRim, 0.20)
+        rimBottom: Qt.alpha(Theme.c.dockRim, Theme.light ? 0.20 : 0.04)
     }
 
     Row {
@@ -161,10 +164,10 @@ Item {
                     Glass {
                         anchors.fill: parent
                         radius: 10
-                        fillTop: Colors.shared.dockTileTop
-                        fillBottom: Colors.shared.dockTileBottom
-                        rimTop: Qt.alpha(root.white, 0.18)
-                        rimBottom: Qt.alpha(root.white, 0.04)
+                        fillTop: Theme.c.dockTileTop
+                        fillBottom: Theme.c.dockTileBottom
+                        rimTop: Theme.light ? Theme.c.dockTileRim : Qt.alpha(Theme.c.dockTileRim, 0.18)
+                        rimBottom: Theme.light ? Theme.c.dockTileRim : Qt.alpha(Theme.c.dockTileRim, 0.04)
                     }
                     IconImage {
                         anchors.centerIn: parent
@@ -183,7 +186,7 @@ Item {
                             width: 4
                             height: 4
                             radius: 2
-                            color: slot.focused ? Theme.c.barAccent : Theme.c.barText
+                            color: slot.focused ? Theme.c.dockDotActive : Theme.c.dockDot
                         }
                     }
                 }

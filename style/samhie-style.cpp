@@ -74,8 +74,8 @@
 //      PE_PanelItemViewItem khung từ lề trái tới hết các cột → style tự tô
 //      cả bề ngang viewport (= ô hover tiêu đề: viewport tự cách viền vùng
 //      file 7px — đo container 2026-10-05, cả hai 630…1528), cùng màu phần tử
-//      itemview của Kvantum (trỏ = nền hover, chọn = nền hover + viền
-//      accent). Nhận ra dòng Details theo bề ngang (> 60% vùng file; ô chế
+//      itemview của Kvantum (trỏ = nền hover, chọn = nền ROW_SELECTED, không
+//      viền). Nhận ra dòng Details theo bề ngang (> 60% vùng file; ô chế
 //      độ Icons hẹp hơn nhiều).
 //      Cột Size/Modified rộng cố định (user 2026-10-05: đổi thư mục là cột
 //      xê dịch): Dolphin cho mỗi cột rộng tối thiểu = chữ tiêu đề + grip +
@@ -438,10 +438,9 @@
 //      của VS Code (user 2026-10-13): ô dài gần hết bề ngang cây — cả phần
 //      thụt đầu dòng của mục con, lùi TREE_ROW_INSET mỗi bên, bo
 //      TREE_ROW_RADIUS (đo VS Code) — thay ô bắt đầu sau phần thụt; không
-//      viền cyan (Kvantum vẽ viền chọn item-selected-border; khung focus cả
-//      dòng của QTreeView — Qt vẽ KHÔNG kèm widget nên style không nhận ra
-//      — plugin Kate tắt allColumnsShowFocus). Dòng
-//      đang chọn TREE_ROW_SELECTED, dòng chỉ trỏ chuột ROW_HOVER. Đường
+//      viền cyan (khung focus cả dòng của QTreeView — Qt vẽ KHÔNG kèm
+//      widget nên style không nhận ra — plugin Kate tắt
+//      allColumnsShowFocus). Dòng đang chọn TREE_ROW_SELECTED, dòng chỉ trỏ chuột ROW_HOVER. Đường
 //      nhánh vẽ trên nền (trên dòng chọn: TREE_LINE_SELECTED — nền chọn trùng
 //      màu đường FRAME_LINE).
 //  71. Kết quả panel Search của Kate không có ô tích khi ô Replace đang
@@ -479,8 +478,8 @@
 //      (vệt đen quanh thẻ — máy ảo user 2026-10-15).
 //  77. Danh sách trang bên trái hộp cài đặt (KPageView: Configure Kate dạng
 //      danh sách phẳng, Dolphin/Konsole dạng icon — user 2026-10-13 "giao diện nào cũ thì
-//      làm hết"): trang đang chọn tô PAGE_ITEM_SELECTED, KHÔNG viền
-//      item-selected-border (viền đó chỉ giữ cho ô file Dolphin); trỏ chuột
+//      làm hết"): trang đang chọn tô PAGE_ITEM_SELECTED, không viền;
+//      trỏ chuột
 //      vẫn nền hover của Kvantum — chọn sáng hơn trỏ như cây Projects (mục 70).
 //  78. Tiêu đề nhóm trong menu (QMenu::addSection — vd menu "Soft Tabs" của
 //      thanh trạng thái Kate: Tab Width / Indentation Width / Indentation
@@ -3909,14 +3908,7 @@ public:
             const qreal left = toItem.map(QPointF(0, 0)).x();
             const qreal right = toItem.map(QPointF(w->width(), 0)).x();
             const QRectF box(left, item->rect.top(), right - left, item->rect.height());
-            p->fillRect(box, QColor(samhie::ROW_HOVER));
-            if (selected) {
-                p->save();
-                p->setPen(QPen(QColor(samhie::ROW_SELECTED_BORDER), 1));
-                p->setBrush(Qt::NoBrush);
-                p->drawRect(box.adjusted(0.5, 0.5, -0.5, -0.5));
-                p->restore();
-            }
+            p->fillRect(box, QColor(selected ? samhie::ROW_SELECTED : samhie::ROW_HOVER));
             return;
         }
         if (pe == PE_PanelItemViewItem) {

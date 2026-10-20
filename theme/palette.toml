@@ -38,11 +38,6 @@ cursor-outline = "#fafafa"
 # sáng vì chúng nằm đè lên ẢNH CHỤP, không phải lên giao diện Samhie.
 capture-frame = "#fafafa"
 capture-shade = "#0a0a0a"
-# Ô nền logo trên dock (user 2026-10-20, Figma): gradient trên → dưới, DÙNG
-# CHUNG cho tối lẫn sáng — như icon macOS giữ nền riêng: icon app Samhie vẽ
-# trên nền tối (viền sáng #BDBEC1), dock sáng thì ô vẫn tối.
-dock-tile-top    = "#303030"
-dock-tile-bottom = "#262626"
 
 [dark]
 # Thang bề mặt 4 bậc — user chốt 2026-09-13 bằng ảnh chụp Dolphin (bản 1.0):
@@ -51,6 +46,14 @@ bar-text      = "#e8e8e8"  # chữ/icon trên thanh — tách riêng vì thanh l
 bar-accent    = "#00c0e8"  # vạch active, icon đang bật trên thanh
 bar-badge     = "#790000"  # chấm "có thông báo" trên chuông (user vẽ 2026-10-06)
 dock          = "#262626"  # mặt kính dock — QML vẽ trong 40% (user 2026-10-20, Figma)
+dock-rim      = "#fafafa"  # viền bắt sáng mặt dock — QML: 20% ở trên → 4% ở dưới
+# Ô nền logo trên dock (user 2026-10-20, Figma): gradient trên → dưới, viền
+# bắt sáng như mặt dock (QML: 18% → 4%).
+dock-tile-top    = "#303030"
+dock-tile-bottom = "#262626"
+dock-tile-rim    = "#fafafa"
+dock-dot         = "#e8e8e8"  # chấm "đang chạy" dưới ô (= bar-text)
+dock-dot-active  = "#00c0e8"  # chấm của app đang focus (= bar-accent)
 card          = "#171717"  # vùng nội dung, popup, tooltip   (Figma: Card)
 card-alt      = "#171717"  # hàng xen kẽ trong danh sách — bản tối cố ý KHÔNG kẻ sọc
 secondary     = "#262626"  # khung cửa sổ, sidebar, thanh tab (Figma: Secondary)
@@ -66,10 +69,8 @@ hover         = "#262626"  # nền ô đang trỏ chuột TRÊN NỀN CARD: dòn
                            # nguồn (user 2026-10-05: mọi app một màu hover; trước là #363d3f
                            # xám pha cyan, user vẽ 2026-10-03). Trên nền secondary (thanh
                            # công cụ, dải tab) hover nâng một bậc = sub-secondary.
-item-selected-border = "#097389"  # viền ô file đang chọn (Dolphin, cả Icons lẫn Details) —
-                                 # user 2026-10-05: cyan accent chói → tối lại, hợp tông
-                                 # thư mục + hover: = thân thư mục cyan mặc định cũ (default
-                                 # thành xám Ubuntu 2026-10-20 — giữ viền cyan này)
+                           # Ô file ĐANG CHỌN (Dolphin) tô sub-secondary, không viền —
+                           # như cây Projects Kate (user 2026-10-20 bỏ viền cyan #097389).
 scrollbar         = "#5f5f5f"  # thanh cuộn (tự ẩn) — user 2026-10-05: ĐỤC, cùng độ sáng
                                # như bản cũ (text-muted 60% trên card = #5f5f5f)
 scrollbar-hover   = "#6a6a6a"  # đang trỏ chuột
@@ -106,14 +107,22 @@ bar           = "#f3f3f3"
 bar-text      = "#1c1c1c"
 bar-accent    = "#0d728f"  # cyan đậm như `accent` bản sáng — #00c0e8 trên nền sáng không đọc được
 bar-badge     = "#b3261e"  # = danger bản sáng: #790000 trên nền sáng gần như đen
-dock          = "#f3f3f3"  # = bar; QML vẽ đục 90% — 72% trên hình nền tối ra xám bẩn (phác 2026-10-20)
+# Dock bản sáng (user 2026-10-20, Figma): kính trắng 40% — trên hình nền tối
+# ra xám vừa (#676a6e, đo bản Figma), trên nền màn tổng quan (card) gần như
+# tan vào nền nên có thêm nét lót đen mờ (QML). Ô sáng: #dfdfdf → #bdbec1.
+dock          = "#fafafa"  # QML vẽ trong 40%
+dock-rim      = "#dfdfdf"  # QML 20% cả viền
+dock-tile-top    = "#dfdfdf"
+dock-tile-bottom = "#bdbec1"
+dock-tile-rim    = "#dfdfdf"  # QML đục: trùng mép trên, thành gờ sáng ở đáy ô
+dock-dot         = "#1c1c1c"  # = bar-text
+dock-dot-active  = "#00c0e8"  # cyan gốc như bản Figma — bar-accent #0d728f chìm trên kính xám
 card          = "#fafafa"
 card-alt      = "#f4f4f4"
 secondary     = "#ededed"
 sub-secondary = "#d0d0d0"
 window-border = "#c9c9c9"  # tạm — Hyprland chỉ dùng bản tối (colors.lua); duyệt ở đợt bản sáng
 hover         = "#ededed"  # = secondary, như bản tối — duyệt ở đợt bản sáng
-item-selected-border = "#0d728f"  # tạm = accent bản sáng
 scrollbar         = "#a4a4a4"  # tạm, cùng ý bản tối: text-muted 60% trên card, đậm dần khi trỏ/kéo
 scrollbar-hover   = "#989898"
 scrollbar-pressed = "#8c8c8c"

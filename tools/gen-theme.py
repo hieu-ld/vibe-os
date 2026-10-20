@@ -582,7 +582,7 @@ def style_colors_h(pal):
         # #AARRGGBB — QColor đọc được; cùng màu khung focus của theme Kvantum.
         ("FOCUS_RING", "#b3" + d["accent"].lstrip("#"), "khung focus của ô file (accent 70%)"),
         ("ROW_HOVER", d["hover"], "ô dòng file Dolphin chế độ Details (vuông) — như itemview của Kvantum"),
-        ("ROW_SELECTED_BORDER", d["item-selected-border"], "viền ô dòng file đang chọn (= itemview Kvantum)"),
+        ("ROW_SELECTED", d["sub-secondary"], "ô dòng file đang chọn, không viền (= itemview Kvantum)"),
         # Radio/checkbox đang focus bàn phím (Tab): nền như ô hover thay khung cyan.
         # Trên popup/menu (nền card) = hover; trên nền cửa sổ (secondary) nâng
         # một bậc = sub-secondary, như ghi chú của vai trò `hover`.

@@ -12,7 +12,7 @@ constexpr const char *POPUP = "#262626";  // thẻ thanh tìm Dolphin (dạng po
 constexpr const char *POPUP_BORDER = "#393939";  // viền thẻ thanh tìm
 constexpr const char *FOCUS_RING = "#b300c0e8";  // khung focus của ô file (accent 70%)
 constexpr const char *ROW_HOVER = "#262626";  // ô dòng file Dolphin chế độ Details (vuông) — như itemview của Kvantum
-constexpr const char *ROW_SELECTED_BORDER = "#097389";  // viền ô dòng file đang chọn (= itemview Kvantum)
+constexpr const char *ROW_SELECTED = "#393939";  // ô dòng file đang chọn, không viền (= itemview Kvantum)
 constexpr const char *KEY_FOCUS_FILL = "#262626";  // radio/checkbox đi bằng Tab, trên nền card (popup, menu)
 constexpr const char *KEY_FOCUS_FILL_RAISED = "#393939";  // radio/checkbox đi bằng Tab, trên nền cửa sổ secondary
 constexpr const char *POPUP_ITEM = "#393939";  // ô đang chọn/trỏ trong popup nền secondary (Quick Open Kate)

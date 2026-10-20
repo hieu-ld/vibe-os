@@ -1781,6 +1781,63 @@ void paintPageSelected(QPainter *p, const QRectF &rect)
     p->restore();
 }
 
+// Chế độ của style đang nạp (mục 80) — cho chỗ vẽ không đi qua style.
+bool g_light = false;
+
+// Mục 77: bọc delegate danh sách trang dạng icon (KPageListViewDelegate —
+// Configure Dolphin/Konsole). KDE vẽ icon trang đang chọn ở chế độ Selected:
+// bộ icon tô chế độ đó bằng màu chữ-trên-cyan của CẢ app (KIconLoader, không
+// theo palette widget) → bản sáng icon trắng trên ô PAGE_ITEM_SELECTED xám
+// (máy ảo user 2026-10-20). Bản sáng: tô ô chọn (PE_PanelItemViewItem — mục
+// 77 trong drawPrimitive) rồi để KDE vẽ icon + chữ như mục thường.
+class PageListRow : public QAbstractItemDelegate
+{
+public:
+    PageListRow(QAbstractItemDelegate *inner, QAbstractItemView *view)
+        : QAbstractItemDelegate(view)
+        , m_inner(inner)
+    {
+    }
+
+    static void attach(QAbstractItemView *view)
+    {
+        QAbstractItemDelegate *inner = view->itemDelegate();
+        if (inner && !dynamic_cast<PageListRow *>(inner))
+            view->setItemDelegate(new PageListRow(inner, view));
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        return m_inner->sizeHint(option, index);
+    }
+
+    void paint(QPainter *p, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        if (!g_light || !(option.state & QStyle::State_Selected)) {
+            m_inner->paint(p, option, index);
+            return;
+        }
+        QStyle *style = option.widget ? option.widget->style() : QApplication::style();
+        style->drawPrimitive(QStyle::PE_PanelItemViewItem, &option, p, option.widget);
+        QStyleOptionViewItem o(option);
+        o.state &= ~(QStyle::State_Selected | QStyle::State_MouseOver);
+        m_inner->paint(p, o, index);
+    }
+
+    bool editorEvent(QEvent *e, QAbstractItemModel *m, const QStyleOptionViewItem &o, const QModelIndex &i) override
+    {
+        return m_inner->editorEvent(e, m, o, i);
+    }
+
+    bool helpEvent(QHelpEvent *e, QAbstractItemView *v, const QStyleOptionViewItem &o, const QModelIndex &i) override
+    {
+        return m_inner->helpEvent(e, v, o, i);
+    }
+
+private:
+    QAbstractItemDelegate *m_inner;
+};
+
 // Mục 75: bọc delegate của một cột trong danh sách Find Action. Cột tên (vẽ
 // trước) tô ô cả dòng; mọi cột vẽ như dòng thường.
 class CommandBarRow : public QAbstractItemDelegate
@@ -3128,6 +3185,7 @@ public:
                        QStyleFactory::create(light ? QStringLiteral("kvantum") : QStringLiteral("kvantum-dark"))))
         , m_light(light)
     {
+        g_light = light;
         watchColorMode(light);
     }
 
@@ -3582,7 +3640,9 @@ public:
             w->setPalette(pal);
         }
         if (w->inherits("KDEPrivate::KPageListView")) {
+            PageListRow::attach(static_cast<QAbstractItemView *>(w));
             QTimer::singleShot(0, w, [w] {
+                PageListRow::attach(static_cast<QAbstractItemView *>(w));
                 // Mục 36 (Dolphin) và 56 (Konsole): tên gốc → tên riêng.
                 static const QHash<QString, QString> dolphin = {
                     {QStringLiteral("org.kde.dolphin"), QStringLiteral("samhie-settings-interface")}};

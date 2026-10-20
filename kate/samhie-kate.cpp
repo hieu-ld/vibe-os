@@ -761,6 +761,19 @@ QLabel *addMatchCounter(QWidget *bar, QComboBox *pattern, QAbstractButton *match
 // gridLayout) và mỗi lần mở thanh lại addWidget nút ✕ vào đó
 // (katesearchbar.cpp 6.30) → KHÔNG xoá layout của Kate, chỉ xếp lại widget.
 
+// Mục 26: nút chỉ icon của cả thanh tìm (✕ là con của KateSearchBar, Kate gắn
+// vào layout của thanh mỗi lần mở) — ô hover vuông, không lùn (máy ảo user
+// 2026-10-20: lúc thanh hiện lần đầu ✕ chưa có → phóng ở đây, lúc xếp thanh)
+void growBarButtons(QWidget *bar)
+{
+    QWidget *owner = bar->parentWidget() ? bar->parentWidget() : bar;
+    for (auto *b : owner->findChildren<QToolButton *>()) {
+        if (b->text().isEmpty() || b->toolButtonStyle() == Qt::ToolButtonIconOnly) {
+            growIcon(b);
+        }
+    }
+}
+
 // Mục 26: thanh Ctrl+F (IncrementalSearchBar) — mọi ô nằm trong hboxLayout
 void arrangeIncrementalBar(QWidget *bar, KTextEditor::View *view)
 {
@@ -804,6 +817,7 @@ void arrangeIncrementalBar(QWidget *bar, KTextEditor::View *view)
     for (QWidget *w : order + rest) {
         row->addWidget(w, w == pattern ? 1 : 0);
     }
+    growBarButtons(bar);
 }
 
 // Mục 26: thanh Ctrl+R (PowerSearchBar). Kate đặt ✕ ở ô (0, 2) của gridLayout
@@ -893,6 +907,7 @@ void arrangePowerBar(QWidget *bar, KTextEditor::View *view)
     grid->addWidget(mutate, 0, 0, 2, 1); // cao hết hai hàng như VS Code
     grid->addLayout(rows, 0, 1, 2, 1);
     grid->setColumnStretch(1, 1);
+    growBarButtons(bar);
 }
 
 bool isHiddenMenu(const QAction *a)

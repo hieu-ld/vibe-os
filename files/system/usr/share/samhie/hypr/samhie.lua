@@ -32,8 +32,8 @@ samhie_snap = snap
 -- tức là sau khi cả file của người dùng đã chạy xong, nên gán ở đâu sau dòng
 -- require cũng được.
 local samhie = {
-    -- Hình nền: file PNG/JPG. Mặc định là tranh núi đêm của Samhie
-    -- (tools/build-wallpaper.py). Đường dẫn bắt đầu bằng ~/ được hiểu là $HOME.
+    -- Hình nền: file PNG/JPG. Mặc định là logo Samhie trên nền sao
+    -- (theme/wallpaper/, tools/build-wallpaper.py). Đường dẫn bắt đầu bằng ~/ được hiểu là $HOME.
     wallpaper = "/usr/share/backgrounds/samhie/samhie.png",
     -- Giao diện Quickshell (thanh trên…): thư mục chứa shell.qml. Muốn tự sửa
     -- thì chép cả thư mục này về, vd ~/.config/quickshell/samhie, rồi trỏ vào

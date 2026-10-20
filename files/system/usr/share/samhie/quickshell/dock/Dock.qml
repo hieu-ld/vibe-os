@@ -2,9 +2,10 @@
 // trước: Figma "Reminder" node 308-854, Dock.png 2026-10-01).
 //   * Mặt "kính": `dock` (tối #262626 trong 40%, sáng #f3f3f3 đục 90%), một
 //     lớp sáng mờ dần ở nửa trên, viền 1px sáng dần từ dưới lên (viền bắt
-//     sáng). KHÔNG blur/bóng đổ thật: sau dock gần như luôn là chân núi đen
-//     phẳng của hình nền (đo: trung bình #0b0f0f), dock lại tự ẩn khi cửa sổ
-//     đè lên — blur không có gì để làm mờ, bóng đổ không thấy (phác 2026-10-20).
+//     sáng). KHÔNG blur/bóng đổ thật: sau dock gần như luôn là đáy đen phẳng
+//     của hình nền (đo: núi cũ #0b0f0f, logo 2026-10-20 #060b13 + vài ngôi
+//     sao), dock lại tự ẩn khi cửa sổ đè lên — blur không có gì để làm mờ,
+//     bóng đổ không thấy (phác 2026-10-20).
 //   * Cao 60 = viền 1 + lề 8 + ô 40 + khe 3 + chấm 4 + lề 3 + viền 1; lề
 //     trái/phải 8, khe giữa các ô 8. 4 app = 200×60.
 //   * Ô 40 luôn hiện: gradient `dock-tile-top` → `-bottom` (chung hai chế độ),

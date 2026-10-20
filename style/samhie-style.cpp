@@ -481,6 +481,17 @@
 //      làm hết"): trang đang chọn tô PAGE_ITEM_SELECTED, KHÔNG viền
 //      item-selected-border (viền đó chỉ giữ cho ô file Dolphin); trỏ chuột
 //      vẫn nền hover của Kvantum — chọn sáng hơn trỏ như cây Projects (mục 70).
+//  78. Tiêu đề nhóm trong menu (QMenu::addSection — vd menu "Soft Tabs" của
+//      thanh trạng thái Kate: Tab Width / Indentation Width / Indentation
+//      Mode) hiện chữ (user 2026-10-20 chốt Kate). Kvantum báo không hỗ trợ
+//      (SH_Menu_SupportsSections) → Qt vẽ thành vạch trơn, hai nhóm 8/4/2
+//      giống hệt nhau. Dòng tiêu đề vẽ như một dòng menu bị tắt (Kvantum lo
+//      lề + màu chữ mờ), không trỏ, không ô tích; cao như dòng thường.
+//  79. Thẻ như Quick Open (mục 69/75) cho: HUDDialog của Kate (popup chọn
+//      nhánh git khi bấm tên nhánh ở thanh trạng thái — dựng y như
+//      KCommandBar, quickdialog.cpp 26.08.1); danh sách chế độ (bấm "Python"
+//      ở thanh trạng thái, KateModeMenuList — mọi danh sách nằm trong menu)
+//      có ô chọn POPUP_ITEM, không viền cyan.
 //  76. Popup dạng QMenu mang samhiePopupPanel (lịch sử clipboard của Kate,
 //      plugin Kate mục 25) vẽ thẻ như mục 69 thay nền + khung menu Kvantum
 //      (menu trong suốt → chữ code phía sau lộ qua chỗ trống). Vùng xem trước
@@ -1814,10 +1825,16 @@ void setupCommandBar(QFrame *bar)
     input->setFrame(true);
     list->setFrameShape(QFrame::NoFrame);
     list->viewport()->setAutoFillBackground(false);
+    bool wrapped = false;
     for (int c = 0; list->model() && c < list->model()->columnCount(); ++c) {
-        if (QAbstractItemDelegate *inner = list->itemDelegateForColumn(c))
+        if (QAbstractItemDelegate *inner = list->itemDelegateForColumn(c)) {
             list->setItemDelegateForColumn(c, new CommandBarRow(inner, list));
+            wrapped = true;
+        }
     }
+    // HUDDialog (mục 79): một cột, delegate chung gọi CE_ItemViewItem → mục 69
+    if (!wrapped)
+        list->setProperty("samhiePopupList", true);
 }
 
 // Thư mục con của bộ icon đang dùng, đọc từ index.theme: (thư mục, Context=,
@@ -3541,8 +3558,9 @@ public:
             w->installEventFilter(&m_noPaint);  // mục 30
         if (qobject_cast<QLineEdit *>(w) && w->parentWidget() && w->parentWidget()->inherits("KCommandBar"))
             w->installEventFilter(&m_keepCommandBarFocus);  // mục 57
-        if (w->inherits("KCommandBar"))
-            setupCommandBar(static_cast<QFrame *>(w));  // mục 75
+        if (w->inherits("KCommandBar") || w->inherits("HUDDialog"))
+            setupCommandBar(static_cast<QFrame *>(w));  // mục 75, 79
+
         if (w->inherits("KPropertiesDialog"))  // mục 53
             w->installEventFilter(&m_propsSetup);
         if (w->inherits("Baloo::FileMetaDataWidget"))
@@ -3736,6 +3754,8 @@ public:
     {
         if (hint == SH_Menu_SubMenuSloppyCloseTimeout)
             return SUBMENU_SLOPPY_MS;
+        if (hint == SH_Menu_SupportsSections)
+            return 1;  // mục 78
         return QProxyStyle::styleHint(hint, opt, w, ret);
     }
 
@@ -4101,6 +4121,15 @@ public:
 
     void drawControl(ControlElement ce, const QStyleOption *opt, QPainter *p, const QWidget *w) const override
     {
+        // Mục 78: tiêu đề nhóm trong menu — như dòng thường bị tắt
+        if (ce == CE_MenuItem) {
+            if (auto *m = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
+                m && m->menuItemType == QStyleOptionMenuItem::Separator && !m->text.isEmpty()) {
+                const QStyleOptionMenuItem title = sectionAsItem(m);
+                drawControl(ce, &title, p, w);
+                return;
+            }
+        }
         // Mục 60: tay nắm splitter của Kate là khe giữa hai thẻ — không vạch
         if (ce == CE_Splitter && w && w->window()->inherits("KateMainWindow"))
             return;
@@ -4208,7 +4237,11 @@ public:
                     QProxyStyle::drawControl(ce, &o, p, w);
                     return;
                 }
-                if (w && w->property("samhiePopupList").toBool()) {  // mục 69
+                // Mục 79: danh sách nằm trong menu (danh sách chế độ — lớp
+                // KateModeMenuList không Q_OBJECT; lúc polish chưa vào menu) →
+                // nhận lúc vẽ
+                if (w && (w->property("samhiePopupList").toBool()
+                          || (qobject_cast<const QListView *>(w) && qobject_cast<const QMenu *>(w->window())))) {  // mục 69
                     if (o.state & (State_Selected | State_MouseOver))
                         paintPopupItem(p, o.rect, o.state & State_Selected, o.viewItemPosition);
                     o.state &= ~(State_Selected | State_MouseOver);
@@ -4426,6 +4459,14 @@ public:
 
     QSize sizeFromContents(ContentsType ct, const QStyleOption *opt, const QSize &size, const QWidget *w) const override
     {
+        // Mục 78: dòng tiêu đề nhóm cao như dòng thường
+        if (ct == CT_MenuItem) {
+            if (auto *m = qstyleoption_cast<const QStyleOptionMenuItem *>(opt);
+                m && m->menuItemType == QStyleOptionMenuItem::Separator && !m->text.isEmpty()) {
+                const QStyleOptionMenuItem title = sectionAsItem(m);
+                return sizeFromContents(ct, &title, size, w);
+            }
+        }
         // Mục 42: cao như ô nhập thường. Không kèm widget thì Kvantum nâng lên
         // cỡ mặc định của Qt (nội dung + khung — cao 56 thay vì 41, đo
         // container) → đưa nội dung cao 0: chiều cao chỉ còn theo font + khung
@@ -4500,6 +4541,17 @@ public:
     }
 
 private:
+    // Mục 78: dòng tiêu đề nhóm (separator có chữ) → dòng thường bị tắt
+    static QStyleOptionMenuItem sectionAsItem(const QStyleOptionMenuItem *m)
+    {
+        QStyleOptionMenuItem item(*m);
+        item.menuItemType = QStyleOptionMenuItem::Normal;
+        item.checkType = QStyleOptionMenuItem::NotCheckable;
+        item.checked = false;
+        item.state &= ~(State_Enabled | State_Selected | State_MouseOver | State_Sunken);
+        return item;
+    }
+
     // Mục 71: cây kết quả Search của Kate đang bỏ ô tích
     static bool noCheck(const QStyleOptionViewItem *vopt, const QWidget *w)
     {

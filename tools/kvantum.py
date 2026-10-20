@@ -18,7 +18,11 @@ nền nội dung (card) liền xuống vùng chữ, bo hai góc trên; tab khác
 Hiện chỉ có bản TỐI (theme "Samhie"); bản sáng làm cùng đợt bản sáng của app.
 """
 
+import xml.etree.ElementTree as ET
+from pathlib import Path
+
 HEADER = "SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay."
+HUGEICONS = Path(__file__).resolve().parent.parent / "theme" / "icons" / "hugeicons"
 
 # Bán kính bo (px) của từng loại khung. Cửa sổ Hyprland bo 12.
 RADIUS = {
@@ -252,6 +256,17 @@ FRAMES = [
 
 
 
+def hugeicon(name):
+    """Nét của theme/icons/hugeicons/kvantum-<name>.svg: [(thẻ, {toạ độ})], bỏ màu."""
+    root = ET.parse(HUGEICONS / f"kvantum-{name}.svg").getroot()
+    return [(el.tag.rpartition("}")[2], {k: v for k, v in el.attrib.items() if k in ("d", "cx", "cy", "r")})
+            for el in root]
+
+
+def _attrs(geo):
+    return "".join(f' {k}="{v}"' for k, v in geo.items())
+
+
 def _icon(eid, size, body):
     return f'<g id="{eid}">{_bounds(size, size)}{body}</g>'
 
@@ -286,26 +301,37 @@ def indicators(roles):
         out.append(_icon(f"splitter-grip-{st}", 16, ""))
         out.append(_icon(f"resize-grip-{st}", 16, line(spec, "M12,6 6,12 M12,10 10,12", 1)))
 
-    acc, on_acc = roles["accent"], roles["on-accent"]
-    sub, muted = roles["sub-secondary"], roles["text-muted"]
-    box = '<rect x="2.5" y="2.5" width="11" height="11" rx="3"'
+    # Ô tích + nút tròn: Hugeicons user chọn (2026-10-20), README cạnh file.
+    # Đã tích = nền accent, dấu ✓ / chấm / gạch màu on-accent (tối: đen,
+    # sáng: trắng). Hình 24 thu về hộp 16: viền ngoài nằm đúng 1..15 và nét
+    # khung 1px trọn điểm ảnh (vuông 2.5..21.5 → tâm nét 1.5..14.5, tròn r 6.5).
+    # Dấu ✓ / gạch dày 1,5px (theo tỉ lệ gốc chỉ còn 1px — mảnh, mờ trên nền
+    # cyan; so ảnh 2026-10-20); chấm radio giữ nét gốc cho khỏi to.
+    # radio-button vòng ngoài r 9 (circle r 10) → phóng theo vòng ngoài của
+    # chính nó để tích/bỏ tích không co giãn.
+    acc, on_acc, muted = roles["accent"], roles["on-accent"], roles["text-muted"]
+
+    def ticked(name, frame, mark_fill="none"):
+        shapes = hugeicon(name)
+        tag, geo = shapes[0]
+        s = 6.5 / (float(geo["r"]) if tag == "circle" else 9.5)
+        body = f'<{tag}{_attrs(geo)} stroke-width="{1 / s:g}" fill="{frame[0]}" stroke="{frame[1]}"/>'
+        for tag, geo in shapes[1:]:
+            w = 1.5 / s if tag == "path" else 1.5
+            body += (f'<{tag}{_attrs(geo)} stroke-width="{w:g}" fill="{mark_fill}" stroke="{on_acc}" '
+                     f'stroke-linecap="round" stroke-linejoin="round"/>')
+        return f'<g transform="translate(8 8) scale({s:g}) translate(-12 -12)">{body}</g>'
+
     for st in ("normal", "focused", "pressed", "disabled"):
         edge = muted if st != "focused" else roles["text"]
         op = ' opacity="0.4"' if st == "disabled" else ""
-        out.append(_icon(f"checkbox-{st}", 16, f'<g{op}>{box} fill="none" stroke="{edge}"/></g>'))
-        out.append(_icon(f"checkbox-checked-{st}", 16,
-                         f'<g{op}>{box} fill="{acc}" stroke="{acc}"/>'
-                         f'<path d="M5,8.2 7.2,10.4 11,5.8" fill="none" stroke="{on_acc}" '
-                         f'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></g>'))
-        out.append(_icon(f"checkbox-tristate-{st}", 16,
-                         f'<g{op}>{box} fill="{acc}" stroke="{acc}"/>'
-                         f'<path d="M5,8 H11" stroke="{on_acc}" stroke-width="1.5" '
-                         f'stroke-linecap="round"/></g>'))
-        out.append(_icon(f"radio-{st}", 16,
-                         f'<g{op}><circle cx="8" cy="8" r="5.5" fill="none" stroke="{edge}"/></g>'))
+        for kind in ("checkbox", "radio"):
+            out.append(_icon(f"{kind}-{st}", 16, f'<g{op}>{ticked(kind, ("none", edge))}</g>'))
+        out.append(_icon(f"checkbox-checked-{st}", 16, f'<g{op}>{ticked("checkbox-checked", (acc, acc))}</g>'))
+        out.append(_icon(f"checkbox-tristate-{st}", 16, f'<g{op}>{ticked("checkbox-tristate", (acc, acc))}</g>'))
         out.append(_icon(f"radio-checked-{st}", 16,
-                         f'<g{op}><circle cx="8" cy="8" r="5.5" fill="{acc}" stroke="{acc}"/>'
-                         f'<circle cx="8" cy="8" r="2.2" fill="{on_acc}"/></g>'))
+                         f'<g{op}>{ticked("radio-checked", (acc, acc), mark_fill=on_acc)}</g>'))
+    sub = roles["sub-secondary"]
     for st in ("normal", "focused", "pressed", "disabled"):
         fill = roles["text"] if st in ("focused", "pressed") else roles["text-muted"]
         out.append(_icon(f"slidercursor-{st}", 16,

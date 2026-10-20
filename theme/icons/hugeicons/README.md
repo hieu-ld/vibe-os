@@ -64,6 +64,13 @@ Panel Search của Kate gọn như VS Code (2026-10-13, user nhờ sắp xếp):
 `match-case` (`case-sensitive`), `regex` (`regex`), `search-details`
 (`more-horizontal`) — Claude lấy thẳng từ repo ở commit trên, đổi `#141B34`
 → `currentColor`. Nút ›/⌄ mở ô Replace dùng lại `ar-right`/`ar-bottom`.
+Ô tích + nút tròn của theme Kvantum (2026-10-20, user chọn): `kvantum-checkbox`
+(`square`), `kvantum-checkbox-checked` (`checkmark-square-02`),
+`kvantum-radio` (`circle`), `kvantum-radio-checked` (`radio-button`); thêm
+`kvantum-checkbox-tristate` (`minus-sign-square`, Claude chọn cho ô "tích một
+nửa" cùng kiểu). Claude lấy thẳng từ repo ở commit trên, đổi `#141B34` →
+`currentColor`. KHÔNG qua build-icons.py: `tools/kvantum.py` đọc nét từ các
+file này, tô màu theo palette (xem chú thích ở đó).
 Ba file đã sửa (MIT cho sửa):
 - `star-full`: `star` tô kín (fill `currentColor`) — sao Rating đã chọn.
 - `trash-full`: `waste` thêm ba vạch dọc user tự vẽ.

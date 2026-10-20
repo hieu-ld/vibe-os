@@ -415,6 +415,10 @@ MAP["symbol-development"].append(("actions", "format-text-code"))    # LSP Clien
 # khoá đi cùng cả bốn mức, nên vẫn dùng ổ khoá nhỏ đè góc (WifiPage.qml).
 UNUSED = {"wifi-lock"}
 
+# Ô tích + nút tròn của theme Kvantum: tools/kvantum.py đọc nét và tô màu,
+# không phải icon của bộ Samhie.
+KVANTUM = {p.stem for p in SRC.glob("kvantum-*.svg")}
+
 # Cỡ hiển thị CHÍNH của từng hình (đo trong Quickshell/SDDM/Dolphin) — để dò
 # NUDGE. Hình không có ở đây: cỡ 16 (menu, thanh đường dẫn Dolphin).
 SIZE = {
@@ -690,7 +694,7 @@ def dest(group, icon):
 
 def check_tables():
     names = {p.stem for p in SRC.glob("*.svg")}
-    stray = names - MAP.keys() - UNUSED
+    stray = names - MAP.keys() - UNUSED - KVANTUM
     missing = MAP.keys() - names
     sized = [n for ns in SIZE.values() for n in ns]
     if stray:

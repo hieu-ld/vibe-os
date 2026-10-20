@@ -9,6 +9,8 @@ var shared = {
     cursorOutline: "#fafafa",
     captureFrame: "#fafafa",
     captureShade: "#0a0a0a",
+    dockTileTop: "#303030",
+    dockTileBottom: "#262626",
 };
 
 var dark = {
@@ -16,6 +18,7 @@ var dark = {
     barText: "#e8e8e8",
     barAccent: "#00c0e8",
     barBadge: "#790000",
+    dock: "#262626",
     card: "#171717",
     cardAlt: "#171717",
     secondary: "#262626",
@@ -48,6 +51,7 @@ var light = {
     barText: "#1c1c1c",
     barAccent: "#0d728f",
     barBadge: "#b3261e",
+    dock: "#f3f3f3",
     card: "#fafafa",
     cardAlt: "#f4f4f4",
     secondary: "#ededed",

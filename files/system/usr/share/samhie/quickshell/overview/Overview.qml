@@ -171,7 +171,7 @@ PanelWindow {
             readonly property real sw: root.screen.width
             readonly property real sh: root.screen.height
             readonly property int previewTop: 24 + 40 + 48       // dưới ô tìm kiếm
-            readonly property int dockSpace: 52 + 8 + Math.round(sh * 0.086)  // dock + lề đáy + khe
+            readonly property int dockSpace: 60 + 8 + Math.round(sh * 0.086)  // dock (Dock.qml) + lề đáy + khe
             readonly property int side: 12 + Math.round(sw * 0.076) + 24   // cột trái + khe
             // 0,75 như Ubuntu; màn thấp/hẹp thì co cho vừa.
             readonly property real k: Math.min(0.75, (height - previewTop - dockSpace) / sh, (width - 2 * side) / sw)

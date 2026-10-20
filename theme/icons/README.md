@@ -13,12 +13,14 @@ Ba bộ, ba script:
 ## Icon app (`apps/`) — nhiều màu, KHÔNG qua build-icons.py
 
 User vẽ trên Figma (khung 32, hình trong 2..30 — bản cũ khung 40, script nhận
-cả hai; xuất tên `hover*.svg`). Bản 2026-10-05: viền Dolphin đậm hơn
-(`#006175`), thân Konsole sáng hơn (`#3B3C3C`); bánh răng chưa đổi. Lưu ở đây theo TÊN ICON rồi chạy
+cả hai). Bản 2026-10-20 (user vẽ lại cả ba, xuất `folder .svg`,
+`terminal-dock.svg`, `settings .svg` trong ~/Downloads): tự có gradient ánh
+sáng nên script KHÔNG thêm viền bắt sáng nữa; Dolphin + Konsole cao 26 (thấp
+hơn bề ngang 2px — user cố ý). Lưu ở đây theo TÊN ICON rồi chạy
 `python3 tools/build-app-icons.py` → `files/system/usr/share/icons/Samhie/apps/scalable/`.
 Màu giữ nguyên như bản vẽ. Script đổi: khung `4 4 32 32` (icon 32px trong ô
 dock 40, cách lề 2px), viền ngoài vẽ VÀO TRONG cho sắc 1px, thêm viền bắt
-sáng kiểu bản 1.0 — giải thích đủ ở đầu script. CI chạy `--check`.
+sáng kiểu bản 1.0 khi ICONS khai (bản 2026-10-20 không) — giải thích đủ ở đầu script. CI chạy `--check`.
 
 | Hình | Tên icon |
 |---|---|

@@ -1,8 +1,17 @@
-// Dock — bản vẽ của user (Figma "Reminder" node 308-854, Dock.png 2026-10-01):
-// viên bo góc nền `bar`, viền 1px `sub-secondary`, dày 52 kể cả viền. Ô 40px
-// (rê chuột thì ô hiện nền `secondary`, bo 8), cách nhau 12, lề 12; icon 32px
-// giữa ô (hình 28 cách lề 2 — icon app của Samhie cắt khung đúng vậy, xem
-// tools/build-app-icons.py). 4 app = 220×52 (bản vẽ 5 app = 272×52).
+// Dock — bản A (user chọn 2026-10-20 từ ảnh phác trên hình nền thật; bản
+// trước: Figma "Reminder" node 308-854, Dock.png 2026-10-01).
+//   * Mặt "kính": `dock` (tối #262626 trong 40%, sáng #f3f3f3 đục 90%), một
+//     lớp sáng mờ dần ở nửa trên, viền 1px sáng dần từ dưới lên (viền bắt
+//     sáng). KHÔNG blur/bóng đổ thật: sau dock gần như luôn là chân núi đen
+//     phẳng của hình nền (đo: trung bình #0b0f0f), dock lại tự ẩn khi cửa sổ
+//     đè lên — blur không có gì để làm mờ, bóng đổ không thấy (phác 2026-10-20).
+//   * Cao 60 = viền 1 + lề 8 + ô 40 + khe 3 + chấm 4 + lề 3 + viền 1; lề
+//     trái/phải 8, khe giữa các ô 8. 4 app = 200×60.
+//   * Ô 40 luôn hiện: gradient `dock-tile-top` → `-bottom` (chung hai chế độ),
+//     viền sáng dần như mặt dock, bo 10. Rê chuột: ô nhích lên 2px; đang
+//     bấm thì hạ về chỗ cũ. Chấm đứng yên dưới ô.
+//   * Logo 32 giữa ô; mọi logo hình rộng ~28 (icon Samhie: 28×26, thấp hơn
+//     2px là user cố ý — xem iconSizes).
 //
 // Dùng ở hai chỗ, cùng một vị trí (giữa, cách đáy 8): màn tổng quan
 // (overview/Overview.qml) và desktop (DesktopDock.qml).
@@ -23,7 +32,7 @@ import Quickshell.Widgets
 import ".."
 import "../colors.js" as Colors
 
-Rectangle {
+Item {
     id: root
 
     // id của file .desktop (không có đuôi). App nào chưa cài thì bỏ qua.
@@ -55,23 +64,77 @@ Rectangle {
     }
 
     readonly property int cell: 40
-    readonly property int gap: 12
+    readonly property int gap: 8
+    readonly property int side: 8
+    readonly property int cellTop: 9      // viền 1 + lề 8
+    readonly property int dotTop: 52      // ô 9..49, khe 3
     readonly property int iconSize: 32
-    // Bản vẽ: icon Samhie hình 28 (khung 32), icon app khác hình 30. Icon của
-    // app khác lề trong mỗi cái một khác → cỡ vẽ riêng cho hình ra 30 (đo
-    // 2026-10-01: Edge Flatpak vẽ 32 ra hình 32, không lề → 30; 2026-10-12:
-    // kate.svg (hicolor) vẽ 32 ra hình 28 → 34).
-    readonly property var iconSizes: ({ "org.kde.kate": 34, "com.microsoft.Edge": 30 })
+    // Hình mọi logo rộng ~28 như icon Samhie (khung 32, hình 2..30). Icon app
+    // khác lề mỗi cái một khác (đo 2026-10-20): kate.svg (hicolor) vẽ 34 ra
+    // hình 28,5 → 33 (27,7); Edge Flatpak không lề, vẽ 30 ra 30 → 28. Đã thử
+    // cho hai logo tròn to hơn (30, bù mắt): lấn át thư mục — user muốn đều.
+    readonly property var iconSizes: ({ "org.kde.kate": 33, "com.microsoft.Edge": 28 })
 
-    width: apps.length * cell + Math.max(0, apps.length - 1) * gap + 2 * gap
-    height: 52
-    radius: 12  // đo góc bo trên Dock.png
-    color: Theme.c.bar
-    border.width: 1
-    border.color: Theme.c.subSecondary
+    readonly property color white: Colors.shared.white
+    readonly property color black: Colors.shared.black
+
+    width: 2 * side + apps.length * cell + Math.max(0, apps.length - 1) * gap
+    height: 60
+
+    // Mặt kính + viền bắt sáng (Canvas: viền gradient — Rectangle chỉ có viền
+    // một màu). Vẽ lại khi đổi cỡ/màu.
+    component Glass: Canvas {
+        property real radius
+        property color fillTop
+        property color fillBottom: fillTop
+        property color sheen: "transparent"   // lớp sáng, mờ dần tới giữa
+        property color edge: "transparent"    // nét lót dưới viền (bản sáng)
+        property color rimTop
+        property color rimBottom
+        readonly property string look: [width, height, radius, fillTop, fillBottom, sheen, edge, rimTop, rimBottom].join()
+        onLookChanged: requestPaint()
+
+        function css(c) {
+            return `rgba(${Math.round(c.r * 255)},${Math.round(c.g * 255)},${Math.round(c.b * 255)},${c.a})`
+        }
+        function vertical(ctx, a, b, mid) {
+            const g = ctx.createLinearGradient(0, 0, 0, height)
+            g.addColorStop(0, css(a))
+            g.addColorStop(mid ?? 1, css(b))
+            return g
+        }
+        onPaint: {
+            const ctx = getContext("2d")
+            ctx.reset()
+            ctx.beginPath()
+            ctx.roundedRect(0, 0, width, height, radius, radius)
+            ctx.fillStyle = vertical(ctx, fillTop, fillBottom)
+            ctx.fill()
+            ctx.fillStyle = vertical(ctx, sheen, Qt.alpha(sheen, 0), 0.5)
+            ctx.fill()
+            // Nét 1px nằm trọn trong mép: đường đi lùi vào nửa điểm ảnh.
+            ctx.beginPath()
+            ctx.roundedRect(0.5, 0.5, width - 1, height - 1, radius - 0.5, radius - 0.5)
+            ctx.lineWidth = 1
+            ctx.strokeStyle = css(edge)
+            ctx.stroke()
+            ctx.strokeStyle = vertical(ctx, rimTop, rimBottom)
+            ctx.stroke()
+        }
+    }
+
+    Glass {
+        anchors.fill: parent
+        radius: 14
+        fillTop: Qt.alpha(Theme.c.dock, Theme.light ? 0.90 : 0.40)
+        sheen: Qt.alpha(root.white, Theme.light ? 0.35 : 0.06)
+        edge: Theme.light ? Qt.alpha(root.black, 0.10) : "transparent"
+        rimTop: Qt.alpha(root.white, Theme.light ? 0.95 : 0.20)
+        rimBottom: Qt.alpha(root.white, Theme.light ? 0.35 : 0.04)
+    }
 
     Row {
-        anchors.centerIn: parent
+        x: root.side
         spacing: root.gap
 
         Repeater {
@@ -84,23 +147,34 @@ Rectangle {
                 readonly property var windows: Windows.windowsOf(modelData)
                 readonly property bool focused: windows.indexOf(Windows.focused) >= 0
                 width: root.cell
-                height: root.cell
+                height: root.height
 
-                Rectangle {
-                    anchors.fill: parent
-                    radius: 8
-                    color: slotArea.containsMouse ? Theme.c.secondary : "transparent"
+                Item {
+                    width: root.cell
+                    height: root.cell
+                    y: root.cellTop - (slotArea.containsMouse && !slotArea.pressed ? 2 : 0)
+                    Behavior on y {
+                        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+                    }
+
+                    Glass {
+                        anchors.fill: parent
+                        radius: 10
+                        fillTop: Colors.shared.dockTileTop
+                        fillBottom: Colors.shared.dockTileBottom
+                        rimTop: Qt.alpha(root.white, 0.18)
+                        rimBottom: Qt.alpha(root.white, 0.04)
+                    }
+                    IconImage {
+                        anchors.centerIn: parent
+                        implicitSize: root.iconSizes[slot.modelData.id] ?? root.iconSize
+                        source: Quickshell.iconPath(slot.modelData.icon, "application-x-executable")
+                    }
                 }
-                IconImage {
-                    anchors.centerIn: parent
-                    implicitSize: root.iconSizes[slot.modelData.id] ?? root.iconSize
-                    source: Quickshell.iconPath(slot.modelData.icon, "application-x-executable")
-                }
-                // Mỗi cửa sổ một chấm, giữa mép dưới ô (icon hình 28 kết thúc
-                // ở y 34, chấm ở 36–39).
+                // Mỗi cửa sổ một chấm, giữa dưới ô.
                 Row {
                     anchors.horizontalCenter: parent.horizontalCenter
-                    y: 36
+                    y: root.dotTop
                     spacing: 3
                     Repeater {
                         model: Math.min(slot.windows.length, 3)

@@ -474,7 +474,8 @@
 //      hai delegate (CommandBarRow): tô dòng rồi để KDE vẽ như dòng thường —
 //      dòng chọn giữ chữ xám "Kate Part:" và chữ khớp cyan như Quick Open
 //      (kcommandbar.cpp 6.30 bỏ màu khi chọn vì nền Highlight). Mặt phím tắt
-//      KDE tô màu cửa sổ = nền thẻ → đổi sang KEYCAP.
+//      KDE tô màu cửa sổ = nền thẻ → đổi sang KEYCAP. Bỏ bóng đổ của KDE
+//      (vệt đen quanh thẻ — máy ảo user 2026-10-15).
 //  77. Danh sách trang bên trái hộp cài đặt (KPageView: Configure Kate dạng
 //      danh sách phẳng, Dolphin/Konsole dạng icon — user 2026-10-13 "giao diện nào cũ thì
 //      làm hết"): trang đang chọn tô PAGE_ITEM_SELECTED, KHÔNG viền
@@ -1805,6 +1806,9 @@ void setupCommandBar(QFrame *bar)
     if (!input || !list || !bar->layout() || bar->property("samhiePopupPanel").toBool())
         return;
     bar->setProperty("samhiePopupPanel", true);  // PE_Frame vẽ thẻ (mục 69)
+    // Bóng đổ KDE (QGraphicsDropShadowEffect màu Dark, mờ 48) thành vệt đen
+    // quanh thẻ (máy ảo user 2026-10-15) — Quick Open không có bóng
+    bar->setGraphicsEffect(nullptr);
     bar->layout()->setContentsMargins(POPUP_CARD_PAD, POPUP_CARD_PAD, POPUP_CARD_PAD, POPUP_CARD_PAD);
     bar->layout()->setSpacing(POPUP_CARD_GAP);
     input->setFrame(true);

@@ -274,6 +274,8 @@
 //    không có Q_OBJECT → nhận theo cấu trúc: QMenu có layout chứa một
 //    KTextEditor::View.
 //
+// 27. Bộ đếm "1/4" trong hộp tìm (MatchCounter — xem chỗ khai báo).
+//
 // 26. Thanh Find/Replace/Go to Line là hộp nổi góc trên phải vùng code như
 //    VS Code (user 2026-10-13, "giao diện nào cũ thì làm hết") thay dải dưới
 //    đáy cửa sổ. Kate để mọi thanh của KTextEditor (tìm, Go to Line…) trong
@@ -285,11 +287,13 @@
 //    Hai thanh tìm (searchbarincremental.ui, searchbarpower.ui — KF 6.30)
 //    xếp lại như hộp tìm VS Code, bỏ nhãn "Find:" "Replace:" "Mode:" (ô có
 //    chữ mờ thay):
-//      Ctrl+F  [›][Find…][trạng thái][Aa][↑][↓]                       [✕]
-//      Ctrl+R  [⌄][Find…   ][Mode][Aa][vùng chọn][↑][↓]               [✕]
-//                 [Replace…][thay][thay hết | tìm hết]
+//      Ctrl+F  [›][Find…][1/4][Aa][↑][↓]                              [✕]
+//      Ctrl+R  [⌄][Find…   ][1/4][Mode][Aa][vùng chọn][↑][↓]          [✕]
+//                 [Replace…][Replace][Replace All | Find All]
 //    › / ⌄ là nút đổi thanh của Kate (mutate — trước là icon ⚙) như nút mở
-//    ô Replace của VS Code. Nút chữ thành nút icon như panel Search (mục 15).
+//    ô Replace của VS Code. Hàng Replace là nút chữ phẳng (user nhầm icon
+//    thay với nút "chỉ trong vùng chọn"). Ô trạng thái của Kate ẩn — bộ đếm
+//    (mục 27) thay.
 //    Kate dựng lại thanh mỗi lần đổi chế độ → xếp lúc thanh polish.
 
 #include <KActionCollection>
@@ -332,6 +336,7 @@
 #include <QMouseEvent>
 #include <QPointer>
 #include <QPushButton>
+#include <QRegularExpression>
 #include <QResizeEvent>
 #include <QSplitter>
 #include <QStackedWidget>
@@ -609,12 +614,155 @@ void cardClipboardHistory(QMenu *menu)
     list->setProperty("samhiePopupList", true);
 }
 
+// Mục 27: bộ đếm "1/4" của hộp tìm (user 2026-10-15: như VS Code — Enter / ↓
+// thì số trước tăng, vòng lại). KateSearchBar 6.30 không đếm (ô trạng thái chỉ
+// báo "đã quay lại đầu file") → tự đếm: mọi chỗ khớp của chuỗi tìm trong tài
+// liệu (cache, tính lại khi chuỗi / tuỳ chọn / tài liệu đổi), chỗ đang chọn
+// (Kate chọn chỗ khớp khi nhảy tới) là số thứ tự.
+class MatchCounter : public QObject
+{
+public:
+    MatchCounter(QLabel *label, QComboBox *pattern, QAbstractButton *matchCase, QComboBox *mode, KTextEditor::View *view)
+        : QObject(label)
+        , m_label(label)
+        , m_pattern(pattern)
+        , m_matchCase(matchCase)
+        , m_mode(mode)
+        , m_view(view)
+    {
+        const auto later = [this] {
+            m_dirty = true;
+            schedule();
+        };
+        connect(pattern, &QComboBox::editTextChanged, this, later);
+        connect(matchCase, &QAbstractButton::toggled, this, later);
+        if (mode) {
+            connect(mode, &QComboBox::currentIndexChanged, this, later);
+        }
+        if (view) {
+            connect(view->document(), &KTextEditor::Document::textChanged, this, later);
+            connect(view, &KTextEditor::View::selectionChanged, this, &MatchCounter::schedule);
+        }
+        m_dirty = true;
+        schedule();
+    }
+
+private:
+    // Sau một nhịp: Kate nhảy tới chỗ khớp (đổi vùng chọn) trong cùng lượt sự kiện
+    void schedule()
+    {
+        if (!m_pending) {
+            m_pending = true;
+            QTimer::singleShot(0, this, &MatchCounter::update);
+        }
+    }
+
+    QRegularExpression expression() const
+    {
+        QString text = m_pattern->currentText();
+        const int mode = m_mode ? m_mode->currentIndex() : 0; // Plain, Whole words, Escape sequences, Regex
+        if (mode == 2) {
+            text.replace(QLatin1String("\\n"), QLatin1String("\n")).replace(QLatin1String("\\t"), QLatin1String("\t"));
+            text.replace(QLatin1String("\\\\"), QLatin1String("\\"));
+        }
+        QString pattern = mode == 3 ? text : QRegularExpression::escape(text);
+        if (mode == 1) {
+            pattern = QLatin1String("\\b") + pattern + QLatin1String("\\b");
+        }
+        QRegularExpression::PatternOptions options = QRegularExpression::MultilineOption | QRegularExpression::UseUnicodePropertiesOption;
+        if (!m_matchCase->isChecked()) {
+            options |= QRegularExpression::CaseInsensitiveOption;
+        }
+        return QRegularExpression(pattern, options);
+    }
+
+    void recount()
+    {
+        m_starts.clear();
+        m_lineStarts.clear();
+        if (!m_view || m_pattern->currentText().isEmpty()) {
+            return;
+        }
+        const QRegularExpression re = expression();
+        if (!re.isValid()) {
+            return;
+        }
+        const QString text = m_view->document()->text();
+        m_lineStarts.append(0);
+        for (int i = 0; i < text.size(); ++i) {
+            if (text.at(i) == QLatin1Char('\n')) {
+                m_lineStarts.append(i + 1);
+            }
+        }
+        auto it = re.globalMatch(text);
+        while (it.hasNext() && m_starts.size() < MAX_COUNT) {
+            const auto match = it.next();
+            if (match.capturedLength() > 0) {
+                m_starts.append(match.capturedStart());
+            }
+        }
+    }
+
+    void update()
+    {
+        m_pending = false;
+        if (m_dirty) {
+            m_dirty = false;
+            recount();
+        }
+        if (m_pattern->currentText().isEmpty()) {
+            m_label->clear();
+            return;
+        }
+        if (m_starts.isEmpty()) {
+            m_label->setText(QStringLiteral("No results"));
+            return;
+        }
+        int current = 0;
+        if (m_view && m_view->selection()) {
+            const KTextEditor::Cursor c = m_view->selectionRange().start();
+            if (c.line() < m_lineStarts.size()) {
+                const int offset = m_lineStarts.at(c.line()) + c.column();
+                const auto it = std::lower_bound(m_starts.begin(), m_starts.end(), offset);
+                if (it != m_starts.end() && *it == offset) {
+                    current = int(it - m_starts.begin()) + 1;
+                }
+            }
+        }
+        const QString total = m_starts.size() >= MAX_COUNT ? QStringLiteral("%1+").arg(MAX_COUNT) : QString::number(m_starts.size());
+        m_label->setText(current ? QStringLiteral("%1/%2").arg(current).arg(total) : QStringLiteral("?/%1").arg(total));
+    }
+
+    static constexpr int MAX_COUNT = 9999;
+    QLabel *m_label;
+    QComboBox *m_pattern;
+    QAbstractButton *m_matchCase;
+    QPointer<QComboBox> m_mode;
+    QPointer<KTextEditor::View> m_view;
+    QList<int> m_starts;     // chỗ bắt đầu của từng chỗ khớp (tăng dần)
+    QList<int> m_lineStarts; // chỗ bắt đầu từng dòng trong text()
+    bool m_dirty = false;
+    bool m_pending = false;
+};
+
+// Mục 27: ô số đếm, đặt cạnh ô Find
+QLabel *addMatchCounter(QWidget *bar, QComboBox *pattern, QAbstractButton *matchCase, QComboBox *mode, KTextEditor::View *view)
+{
+    auto *label = new QLabel(bar);
+    label->setObjectName(QStringLiteral("samhieMatchCount"));
+    label->setAlignment(Qt::AlignCenter);
+    // đủ chỗ cho "No results" / "999/999" — ô không nhảy cỡ khi số đổi
+    label->setMinimumWidth(label->fontMetrics().horizontalAdvance(QStringLiteral("No results")) + 8);
+    new MatchCounter(label, pattern, matchCase, mode, view);
+    return label;
+}
+
 // Mục 26: Kate giữ con trỏ tới layout của hai thanh (Ui::…::hboxLayout,
 // gridLayout) và mỗi lần mở thanh lại addWidget nút ✕ vào đó
 // (katesearchbar.cpp 6.30) → KHÔNG xoá layout của Kate, chỉ xếp lại widget.
 
 // Mục 26: thanh Ctrl+F (IncrementalSearchBar) — mọi ô nằm trong hboxLayout
-void arrangeIncrementalBar(QWidget *bar)
+void arrangeIncrementalBar(QWidget *bar, KTextEditor::View *view)
 {
     auto *label = bar->findChild<QLabel *>(QStringLiteral("label"));
     auto *pattern = bar->findChild<QComboBox *>(QStringLiteral("pattern"));
@@ -628,8 +776,10 @@ void arrangeIncrementalBar(QWidget *bar)
         return;
     }
     label->hide();
+    status->hide(); // "đã quay lại đầu file…" — bộ đếm thay (mục 27)
     pattern->lineEdit()->setPlaceholderText(QStringLiteral("Find"));
     pattern->setMinimumWidth(FIND_INPUT_WIDTH);
+    QLabel *count = addMatchCounter(bar, pattern, matchCase, nullptr, view);
     mutate->setCheckable(false);
     mutate->setIcon(QIcon::fromTheme(QStringLiteral("arrow-right")));
     mutate->setToolTip(QStringLiteral("Toggle Replace"));
@@ -638,10 +788,10 @@ void arrangeIncrementalBar(QWidget *bar)
         growIcon(b);
     }
     // Thứ tự mới; thứ khác trong hàng (nút ✕ Kate đã thêm) giữ ở cuối
-    const QList<QWidget *> order{mutate, pattern, status, matchCase, prev, next};
+    const QList<QWidget *> order{mutate, pattern, count, matchCase, prev, next};
     QList<QWidget *> rest;
     for (int i = 0; i < row->count(); ++i) {
-        if (QWidget *w = row->itemAt(i)->widget(); w && w != label && !order.contains(w)) {
+        if (QWidget *w = row->itemAt(i)->widget(); w && w != label && w != status && !order.contains(w)) {
             rest.append(w);
         }
     }
@@ -649,6 +799,7 @@ void arrangeIncrementalBar(QWidget *bar)
         row->removeWidget(w);
     }
     row->removeWidget(label);
+    row->removeWidget(status);
     row->setSpacing(FIND_CARD_SPACING);
     for (QWidget *w : order + rest) {
         row->addWidget(w, w == pattern ? 1 : 0);
@@ -658,7 +809,7 @@ void arrangeIncrementalBar(QWidget *bar)
 // Mục 26: thanh Ctrl+R (PowerSearchBar). Kate đặt ✕ ở ô (0, 2) của gridLayout
 // → hai hàng mới nằm gọn ở cột 1 (một lưới con: ô Find / ô Replace cùng bề
 // rộng như VS Code), cột 0 là nút ⌄.
-void arrangePowerBar(QWidget *bar)
+void arrangePowerBar(QWidget *bar, KTextEditor::View *view)
 {
     const auto child = [bar](const char *name) {
         return bar->findChild<QWidget *>(QLatin1String(name));
@@ -689,20 +840,17 @@ void arrangePowerBar(QWidget *bar)
     mutate->setIcon(QIcon::fromTheme(QStringLiteral("arrow-down")));
     mutate->setToolTip(QStringLiteral("Toggle Replace"));
     matchCase->setIcon(QIcon::fromTheme(QStringLiteral("samhie-match-case")));
-    const auto iconOnly = [](QAbstractButton *b, const char *icon) {
-        if (!b->text().isEmpty()) {
-            b->setToolTip(b->text().remove(QLatin1Char('&')));
-            b->setText(QString());
-        }
-        b->setIcon(QIcon::fromTheme(QLatin1String(icon)));
+    // Nút chữ phẳng (user 2026-10-15 nhầm icon thay với nút ✓ "chỉ trong vùng
+    // chọn" — icon thay của bộ Hugeicons khó đọc): chữ, không icon
+    for (QAbstractButton *b : {replaceNext, replaceAll, findAll, cancel}) {
+        b->setIcon(QIcon());
         if (auto *push = qobject_cast<QPushButton *>(b)) {
-            push->setFlat(true); // như các nút icon cạnh nó
+            push->setFlat(true);
         }
-    };
-    iconOnly(replaceNext, "edit-find-replace");
-    iconOnly(replaceAll, "samhie-replace-all");
-    iconOnly(findAll, "edit-find");
-    iconOnly(cancel, "process-stop");
+    }
+    replaceNext->setText(QStringLiteral("Replace"));
+    selectionOnly->setIcon(QIcon::fromTheme(QStringLiteral("edit-select"))); // trước: ✓✓ (edit-select-all) — tưởng nút xác nhận
+    QLabel *count = addMatchCounter(bar, pattern, matchCase, qobject_cast<QComboBox *>(searchMode), view);
     for (QToolButton *b : {mutate, matchCase, selectionOnly, findPrev, findNext}) {
         growIcon(b);
     }
@@ -730,7 +878,7 @@ void arrangePowerBar(QWidget *bar)
     rows->addWidget(replacement, 1, 0);
     auto *findButtons = new QHBoxLayout;
     findButtons->setSpacing(FIND_CARD_SPACING);
-    for (QWidget *w : {searchMode, static_cast<QWidget *>(matchCase), static_cast<QWidget *>(selectionOnly), static_cast<QWidget *>(findPrev),
+    for (QWidget *w : {static_cast<QWidget *>(count), searchMode, static_cast<QWidget *>(matchCase), static_cast<QWidget *>(selectionOnly), static_cast<QWidget *>(findPrev),
                        static_cast<QWidget *>(findNext)}) {
         findButtons->addWidget(w);
     }
@@ -1807,9 +1955,9 @@ public:
                 cardTabSwitcher(static_cast<QTreeView *>(obj)); // mục 24
             }
             if (obj->objectName() == QLatin1String("IncrementalSearchBar")) {
-                arrangeIncrementalBar(static_cast<QWidget *>(obj)); // mục 26
+                arrangeIncrementalBar(static_cast<QWidget *>(obj), m_mw->activeView()); // mục 26
             } else if (obj->objectName() == QLatin1String("PowerSearchBar")) {
-                arrangePowerBar(static_cast<QWidget *>(obj)); // mục 26
+                arrangePowerBar(static_cast<QWidget *>(obj), m_mw->activeView()); // mục 26
             }
             if (isCrumbEllipsis(obj)) {
                 hideCrumbEllipsis(static_cast<QWidget *>(obj)); // mục 12 (view space mới)
@@ -1871,6 +2019,16 @@ public:
                 // (KateContainerStackedLayout) không tính lề của nó → lề ở đây
                 if (viewBar->parentWidget() == m_findCard && viewBar->layout()) {
                     viewBar->layout()->setContentsMargins(FIND_CARD_PAD, FIND_CARD_PAD, FIND_CARD_PAD, FIND_CARD_PAD);
+                }
+                // Nút chỉ icon (✕ của Kate, ↑↓ của Go to Line): ô hover vuông
+                // như các nút khác — Kate dựng nút cao bằng icon (user: "ô hover
+                // của nút x bị lùn")
+                if (viewBar->parentWidget() == m_findCard) {
+                    for (auto *b : viewBar->findChildren<QToolButton *>()) {
+                        if (b->text().isEmpty() || b->toolButtonStyle() == Qt::ToolButtonIconOnly) {
+                            growIcon(b);
+                        }
+                    }
                 }
             }
             if (obj == m_findCard) {

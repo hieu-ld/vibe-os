@@ -23,24 +23,24 @@
             "selected-text-color": "#f04f80"
         },
         "Function": {
-            "text-color": "#e4b19e",
-            "selected-text-color": "#e4b19e"
+            "text-color": "#7fb8ff",
+            "selected-text-color": "#7fb8ff"
         },
         "Variable": {
-            "text-color": "#45d9c3",
-            "selected-text-color": "#45d9c3"
+            "text-color": "#a8d8ea",
+            "selected-text-color": "#a8d8ea"
         },
         "ControlFlow": {
             "text-color": "#f04f80",
             "selected-text-color": "#f04f80"
         },
         "Operator": {
-            "text-color": "#deb596",
-            "selected-text-color": "#deb596"
+            "text-color": "#9aa5b1",
+            "selected-text-color": "#9aa5b1"
         },
         "BuiltIn": {
-            "text-color": "#e4b19e",
-            "selected-text-color": "#e4b19e"
+            "text-color": "#7fb8ff",
+            "selected-text-color": "#7fb8ff"
         },
         "Extension": {
             "text-color": "#1498c8",
@@ -51,8 +51,8 @@
             "selected-text-color": "#f04f80"
         },
         "Attribute": {
-            "text-color": "#45d9c3",
-            "selected-text-color": "#45d9c3"
+            "text-color": "#a8d8ea",
+            "selected-text-color": "#a8d8ea"
         },
         "Char": {
             "text-color": "#809e88",
@@ -83,16 +83,16 @@
             "selected-text-color": "#1498c8"
         },
         "DecVal": {
-            "text-color": "#accb7b",
-            "selected-text-color": "#accb7b"
+            "text-color": "#e4a6d0",
+            "selected-text-color": "#e4a6d0"
         },
         "BaseN": {
-            "text-color": "#accb7b",
-            "selected-text-color": "#accb7b"
+            "text-color": "#e4a6d0",
+            "selected-text-color": "#e4a6d0"
         },
         "Float": {
-            "text-color": "#accb7b",
-            "selected-text-color": "#accb7b"
+            "text-color": "#e4a6d0",
+            "selected-text-color": "#e4a6d0"
         },
         "Constant": {
             "text-color": "#f04f80",
@@ -107,29 +107,29 @@
             "selected-text-color": "#546e7a"
         },
         "Annotation": {
-            "text-color": "#e4b19e",
-            "selected-text-color": "#e4b19e"
+            "text-color": "#7fb8ff",
+            "selected-text-color": "#7fb8ff"
         },
         "CommentVar": {
             "text-color": "#546e7a",
             "selected-text-color": "#546e7a"
         },
         "RegionMarker": {
-            "text-color": "#2980b9",
-            "selected-text-color": "#3daee9",
+            "text-color": "#7fb8ff",
+            "selected-text-color": "#7fb8ff",
             "background-color": "#153042"
         },
         "Information": {
-            "text-color": "#c45b00",
-            "selected-text-color": "#e46700"
+            "text-color": "#809e88",
+            "selected-text-color": "#809e88"
         },
         "Warning": {
             "text-color": "#da4453",
             "selected-text-color": "#da4453"
         },
         "Alert": {
-            "text-color": "#95da4c",
-            "selected-text-color": "#95da4c",
+            "text-color": "#5ccfe6",
+            "selected-text-color": "#5ccfe6",
             "background-color": "#4d1f24",
             "bold": true
         },
@@ -139,8 +139,8 @@
             "underline": true
         },
         "Others": {
-            "text-color": "#45d9c3",
-            "selected-text-color": "#45d9c3"
+            "text-color": "#a8d8ea",
+            "selected-text-color": "#a8d8ea"
         }
     },
     "custom-styles": {

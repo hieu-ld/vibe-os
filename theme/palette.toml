@@ -131,13 +131,15 @@ warm    = "#8f5a00"
 
 # Font giao diện — user chốt 2026-09-28 (thử trong máy ảo): Dongle Light 20.
 # Dongle rất "lùn" (chữ x thấp) nên cỡ số lớn; Hack 11 cao ngang Dongle 20
-# (đo bằng cách vẽ chữ: H cao 11,0px cả hai). File Dongle nằm ở
+# (đo bằng cách vẽ chữ: H cao 11,0px cả hai). Font code đổi sang Fira Code
+# (user 2026-10-20, cả Kate lẫn Konsole; gói fira-code-fonts của Fedora): chữ
+# thường 0,540 em ≈ Hack 0,547, chữ hoa 0,706 ≈ 0,729 (OS/2) → giữ cỡ 11. File Dongle nằm ở
 # files/system/usr/share/fonts/dongle (Fedora không có gói; giấy phép OFL).
 [fonts]
 ui        = "Dongle"
 ui-weight = 300           # Light. 350 không có (xem README của font)
 size      = 20
-mono      = "Hack"        # terminal, code — Dongle không phải font đều nét
+mono      = "Fira Code"   # terminal, code — Dongle không phải font đều nét
 mono-size = 11
 
 # Thông số riêng của KDE (kdeglobals), theo từng chế độ.
@@ -208,16 +210,30 @@ opacity = 0.90
 # với loại chữ nào: đo theo theme Minimal Dark của user (thứ tự màu trong
 # tokenColors) — ghép sang kiểu chữ chung của Kate trong gen-theme.py.
 [syntax]
+# Màu chữ code. Một mục: một màu, tên nhóm khác (mượn màu), hoặc gradient
+# VS Code của user [đầu, cuối] → lấy màu giữa. User 2026-10-20 ("nhiều màu nóng
+# quá"): GIỮ gradient VS Code cho keyword / string / type / comment / cảnh báo
+# + lỗi; ĐỔI sang tông mát cho function / attribute / number / operator (bộ cũ:
+# function #fdcaa5→#ffcac9, attribute #13e2da→#b2ffda, number #b5cea8→#d6ff7f,
+# operator #d7ba7d→#ffcac9).
 keyword   = ["#e233ff", "#ff6b00"]  # .mtk6 .mtk19: keyword, storage, thẻ html
-attribute = ["#13e2da", "#b2ffda"]  # .mtk10: biến, tên thuộc tính
+attribute = "#a8d8ea"               # xanh trời nhạt: biến, tên thuộc tính
 string    = ["#d7ba7d", "#298292"]  # .mtk12: chuỗi
-function  = ["#fdcaa5", "#ffcac9"]  # .mtk17: hàm
-number    = ["#b5cea8", "#d6ff7f"]  # .mtk7: số
-operator  = ["#d7ba7d", "#ffcac9"]  # .mtk3: toán tử, phần nhúng
+function  = "#7fb8ff"               # xanh lam: hàm, hàm có sẵn (print)
+number    = "#e4a6d0"               # hồng phấn: số
+operator  = "#9aa5b1"               # xám xanh, gần chữ thường: = + ( )
 type      = ["#00aefd", "#298292"]  # .mtk18: kiểu, lớp
 comment   = "#546e7a"               # .mtk5: một màu sẵn (user: giữ nguyên).
                                     # 3,32:1 trên card — dưới 4,5 có chủ ý: chú
                                     # thích mờ hẳn đi là màu user đã chọn.
+information   = "string"    # code trong Markdown (trước: cam #c45b00 của Breeze)
+warning       = "#da4453"   # cảnh báo / lỗi giữ màu Breeze Dark (user 2026-10-20)
+                            # — 4,21:1 trên card, miễn kiểm có chủ ý (gen-theme.py
+                            # SYNTAX_LOW_CONTRAST; gần nhất đạt 4,5 là #e14b59)
+error         = "#da4453"
+alert         = "#5ccfe6"   # TODO / FIXME, in đậm
+region-marker = "function"  # #region / BEGIN…END
+
 # Cặp ngoặc tô màu (plugin Colored Brackets của Kate, 5 màu xoay vòng). VS Code
 # của user tô theo tầng lồng: tầng 0 và 3 = number, 1 = operator, 4 = attribute
 # (.bracket-highlighting-N trong custom.css); tầng 2 không ghi đè → màu mặc

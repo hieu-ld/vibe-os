@@ -57,8 +57,9 @@ restoreProjectsForSessions=true
 Auto Color Theme Selection=false
 Color Theme=Samhie
 # Khoảng cách dòng code 28px (user 2026-10-12; VS Code của user để 32): font
-# Hack 11pt cao 18px (đo máy ảo) × 1,556 = 28 (KateRenderer làm tròn xuống).
-Line Height Multiplier=1.556
+# Fira Code 11pt cao 19px (Hack cũ 18px — đo container 2026-10-20: 1,556 ra
+# dòng 29) × 1,474 = 28 (KateRenderer làm tròn xuống).
+Line Height Multiplier=1.474
 
 [KTextEditor View]
 # Minimap bên phải vùng code rộng hơn mặc định 60px (user 2026-10-12: "rộng
@@ -75,9 +76,9 @@ Show Statusbar Dictionary=false
 
 # ↓ SINH TỰ ĐỘNG từ theme/palette.toml bởi tools/gen-theme.py — đừng sửa tay khối này
 [ColoredBrackets]
-color1=#accb7b
-color2=#deb596
+color1=#e4a6d0
+color2=#9aa5b1
 color3=#179fff
-color4=#accb7b
-color5=#45d9c3
+color4=#e4a6d0
+color5=#a8d8ea
 # ↑ hết khối sinh tự động

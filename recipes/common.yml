@@ -93,7 +93,9 @@ modules:
 
         # Font: Noto Sans (bản variable, mọi độ đậm) có sẵn trong image nền —
         # google-noto-sans-fonts là bản tĩnh thứ hai, 43 MB (gỡ 2026-10-05).
-        # Font mono là Hack (đi kèm plasma-integration); Dongle nằm trong repo.
+        # Font code: Fira Code (user 2026-10-20 — Kate + Konsole, kho Fedora,
+        # OFL). Hack vẫn có (đi kèm plasma-integration). Dongle nằm trong repo.
+        - fira-code-fonts
 
         # Bảo mật
         - firewalld

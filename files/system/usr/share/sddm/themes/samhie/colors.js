@@ -79,6 +79,6 @@ var fonts = {
     ui: "Dongle",
     uiWeight: 300,
     size: 20,
-    mono: "Hack",
+    mono: "Fira Code",
     monoSize: 11,
 };

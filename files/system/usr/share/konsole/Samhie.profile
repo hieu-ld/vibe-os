@@ -3,7 +3,7 @@
 [Appearance]
 BoldIntense=true
 ColorScheme=Samhie
-Font=Hack,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+Font=Fira Code,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 LineSpacing=2
 UseFontLineChararacters=true
 

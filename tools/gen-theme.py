@@ -426,9 +426,12 @@ def from_oklab(L, a, b):
     return "#" + "".join(f"{round(min(max(_unlin(max(c, 0)), 0), 1) * 255):02x}" for c in rgb)
 
 
-def syntax_color(stops, text):
-    # [syntax]: dải gradient → màu giữa hai đầu; sáng hơn chữ thường thì hạ
-    # độ sáng OKLab về bằng nó (giữ sắc độ)
+def syntax_color(stops, text, syntax=None):
+    # [syntax]: một màu; tên nhóm khác (mượn màu nhóm đó); hoặc dải gradient →
+    # màu giữa hai đầu, sáng hơn chữ thường thì hạ độ sáng OKLab về bằng nó
+    # (giữ sắc độ)
+    if isinstance(stops, str) and not stops.startswith("#"):
+        return syntax_color(syntax[stops], text, syntax)
     if isinstance(stops, str):
         return stops
     a, b = stops
@@ -451,7 +454,21 @@ KATE_SYNTAX = {
     "operator": ["Operator"],
     "type": ["DataType", "Extension"],
     "comment": ["Comment", "Documentation", "CommentVar"],
+    # Năm loại trước đây còn màu Breeze Dark (user 2026-10-20: cam #c45b00 của
+    # Information = khối code Markdown "nóng quá"). Information: code trong
+    # Markdown, ghi chú log; Alert: TODO/FIXME (in đậm như Breeze);
+    # RegionMarker: #region / BEGIN…END.
+    "information": ["Information"],
+    "warning": ["Warning"],
+    "error": ["Error"],
+    "alert": ["Alert"],
+    "region-marker": ["RegionMarker"],
 }
+KATE_SYNTAX_BOLD = {"Alert"}  # giữ in đậm — dấu TODO phải nổi
+# Nhóm user CHỌN dưới 4,5:1 trên card: comment (mờ có chủ ý); cảnh báo / lỗi
+# giữ đỏ Breeze #da4453 = 4,21:1 (user 2026-10-20; màu gần nhất đạt 4,5 là
+# #e14b59 — đã báo). Chữ lỗi còn gạch chân / nền nên không chỉ dựa vào màu.
+SYNTAX_LOW_CONTRAST = {"comment", "warning", "error"}
 
 
 def kate_syntax_colors(pal):
@@ -459,9 +476,9 @@ def kate_syntax_colors(pal):
     trên card, trừ comment; brackets nhắc nhóm không có)."""
     d, errors, colors = pal["dark"], [], {}
     for group in (*KATE_SYNTAX, "bracket-default"):
-        colors[group] = syntax_color(pal["syntax"][group], d["text"])
+        colors[group] = syntax_color(pal["syntax"][group], d["text"], pal["syntax"])
         ratio = contrast(colors[group], d["card"])
-        if group != "comment" and ratio < 4.5:
+        if group not in SYNTAX_LOW_CONTRAST and ratio < 4.5:
             errors.append(f"[syntax] {group} {colors[group]} trên card = {ratio:.2f}:1, cần 4.5:1")
     brackets = pal["syntax"]["brackets"]
     if len(brackets) != 5 or any(b not in colors for b in brackets):
@@ -530,7 +547,8 @@ def kate_theme(pal):
     for group, names in KATE_SYNTAX.items():
         for name in names:
             styles[name].update({"text-color": colors[group], "selected-text-color": colors[group]})
-            styles[name].pop("bold", None)
+            if name not in KATE_SYNTAX_BOLD:
+                styles[name].pop("bold", None)
     return json.dumps(theme, ensure_ascii=False, indent=4) + "\n"
 
 

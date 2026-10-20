@@ -7,7 +7,7 @@ font=Dongle,20,-1,5,300,0,0,0,0,0,0,0,0,0,0,1
 menuFont=Dongle,20,-1,5,300,0,0,0,0,0,0,0,0,0,0,1
 toolBarFont=Dongle,20,-1,5,300,0,0,0,0,0,0,0,0,0,0,1
 smallestReadableFont=Dongle,18,-1,5,300,0,0,0,0,0,0,0,0,0,0,1
-fixed=Hack,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
+fixed=Fira Code,11,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 shadeSortColumn=true
 
 [Icons]

@@ -521,7 +521,11 @@
 //      Đổi lúc app đang mở: color-mode phát KGlobalSettings.notifyChange
 //      (PaletteChanged) → nạp lại style. KDE (plasma-integration) có lệnh
 //      StyleChanged nhưng bỏ qua khi tên style không đổi — vẫn là "samhie".
-//      Konsole, Kate: luôn bản tối (xem lightMode()).
+//      Kate: luôn bản tối (xem lightMode()).
+//  81. Konsole bản sáng (user 2026-10-20: "như Windows Terminal"): dải tab,
+//      menu, hộp thoại sáng; vùng chữ GIỮ TỐI (Samhie.colorscheme một bản) —
+//      tab đang mở + vùng dưới dải tab tô nền terminal (paneColor), chữ và
+//      × trên tab đó màu bản tối. Tab khác chữ thường của chế độ.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -872,9 +876,21 @@ void clearAlternateBase(T *target, const QPalette &from)
     target->setPalette(pal);
 }
 
-QColor paneColor()
+// Mục 81: dải tab Konsole (TabbedViewContainer) — hoặc dải tab của nó.
+bool isKonsoleTabs(const QWidget *w)
 {
-    QColor c(samhie::PANE);
+    for (int i = 0; w && i < 2; ++i, w = w->parentWidget()) {
+        if (w->inherits("Konsole::TabbedViewContainer"))
+            return true;
+    }
+    return false;
+}
+
+// Mục 81: Konsole tô vùng dưới dải tab + tab đang mở bằng nền TERMINAL ở cả
+// hai chế độ — vùng chữ (Samhie.colorscheme) luôn tối.
+QColor paneColor(const QWidget *w = nullptr)
+{
+    QColor c(isKonsoleTabs(w) ? samhie::TERMINAL : samhie::PANE);
     c.setAlphaF(samhie::WINDOW_OPACITY);
     return c;
 }
@@ -961,15 +977,21 @@ private:
     // Mục 27: dock Terminal là thẻ thứ hai dưới vùng file, cách TERMINAL_GAP
     // (phần trên dock để trống — nền cửa sổ): nền card bo góc trên-trái, viền
     // trên + trái. Konsole tô nền cùng màu (Samhie.colorscheme) trong phần
-    // lùi vào, góc bo nằm ngoài nó.
+    // lùi vào, góc bo nằm ngoài nó. Mục 81: thẻ lấy nền terminal (tối cả hai
+    // chế độ, như Konsole); viền chỉ khi thẻ cùng màu vùng file (bản tối) —
+    // thẻ tối trên nền cửa sổ sáng đã tự tách.
     static void paintTerminalDock(QWidget *dock)
     {
         const QRect all = dock->rect().adjusted(0, TERMINAL_GAP, 0, 0);
+        QColor fill(samhie::TERMINAL);
+        fill.setAlphaF(samhie::WINDOW_OPACITY);
         QPainter p(dock);
         p.setRenderHint(QPainter::Antialiasing);
         p.setCompositionMode(QPainter::CompositionMode_Source);
-        p.fillPath(leftOutline(QRectF(all), PANE_RADIUS, 0, true), paneColor());
+        p.fillPath(leftOutline(QRectF(all), PANE_RADIUS, 0, true), fill);
         p.setCompositionMode(QPainter::CompositionMode_SourceOver);
+        if (QColor(samhie::PANE) != QColor(samhie::TERMINAL))
+            return;
         p.setPen(QPen(QColor(samhie::FRAME_LINE), 1));
         p.setBrush(Qt::NoBrush);
         p.drawPath(leftOutline(QRectF(all).adjusted(0.5, 0.5, 0, 0), PANE_RADIUS, 0, false));
@@ -995,7 +1017,7 @@ private:
             ? leftOutline(QRectF(pane), pane.top() == all.top() ? PANE_RADIUS : 0, bottomRad, true)
             : rectPath(QRectF(pane));
         p.setCompositionMode(QPainter::CompositionMode_Source);
-        p.fillPath(fill, paneColor());
+        p.fillPath(fill, paneColor(tw));
         p.setCompositionMode(QPainter::CompositionMode_SourceOver);
 
         if (dolphin) {
@@ -3104,6 +3126,7 @@ public:
     explicit SamhieStyle(bool light)
         : QProxyStyle((samhie::useLight(light),
                        QStyleFactory::create(light ? QStringLiteral("kvantum") : QStringLiteral("kvantum-dark"))))
+        , m_light(light)
     {
         watchColorMode(light);
     }
@@ -3544,6 +3567,20 @@ public:
         // Mục 36. Danh sách trang được polish ngay lúc KPageView tạo nó (trang
         // đầu tiên vừa thêm, model còn rỗng — đo container 2026-10-07) → làm
         // sau một nhịp, khi hộp thoại đã thêm đủ trang.
+        // Mục 77: chữ trang đang chọn là HighlightedText (KDE tô — dạng icon
+        // trong KPageListViewDelegate, dạng danh sách ở drawControl dưới).
+        // Bản sáng HighlightedText = chữ trên ô cyan (trắng) → trên ô
+        // PAGE_ITEM_SELECTED xám mất chữ (container 2026-10-20) → chữ thường.
+        // Đặt lại mỗi lần polish (đổi chế độ = style mới), lấy từ bảng màu
+        // của theme Kvantum đang nạp.
+        if (w->inherits("KDEPrivate::KPageListView") || w->inherits("KDEPrivate::KPageTreeView")) {
+            const QPalette theme = standardPalette();
+            QPalette pal = w->palette();
+            for (auto group : {QPalette::Active, QPalette::Inactive, QPalette::Disabled})
+                pal.setColor(group, QPalette::HighlightedText,
+                             theme.color(group, m_light ? QPalette::Text : QPalette::HighlightedText));
+            w->setPalette(pal);
+        }
         if (w->inherits("KDEPrivate::KPageListView")) {
             QTimer::singleShot(0, w, [w] {
                 // Mục 36 (Dolphin) và 56 (Konsole): tên gốc → tên riêng.
@@ -3811,6 +3848,24 @@ public:
     {
         if (pe == PE_IndicatorTabTearLeft || pe == PE_IndicatorTabTearRight)
             return;  // mục 63
+        // Mục 81: × trên tab đang mở của Konsole (nền terminal, tối cả hai chế
+        // độ) — vẽ như phần tử tab-close của Kvantum bản tối (tools/kvantum.py:
+        // nét 1,2 trong hộp 16, thường text-muted, trỏ/bấm text).
+        if (pe == PE_IndicatorTabClose && w && isKonsoleTabs(w->parentWidget())) {
+            auto *bar = qobject_cast<const QTabBar *>(w->parentWidget());
+            const int cur = bar ? bar->currentIndex() : -1;
+            if (cur >= 0 && (bar->tabButton(cur, QTabBar::RightSide) == w || bar->tabButton(cur, QTabBar::LeftSide) == w)) {
+                const bool hot = opt->state & (State_MouseOver | State_Sunken);
+                const QPointF c = QRectF(opt->rect).center();
+                p->save();
+                p->setRenderHint(QPainter::Antialiasing);
+                p->setPen(QPen(QColor(hot ? samhie::TERMINAL_TEXT : samhie::TERMINAL_TEXT_MUTED), 1.2, Qt::SolidLine, Qt::RoundCap));
+                p->drawLine(c + QPointF(-3.5, -3.5), c + QPointF(3.5, 3.5));
+                p->drawLine(c + QPointF(3.5, -3.5), c + QPointF(-3.5, 3.5));
+                p->restore();
+                return;
+            }
+        }
         // Mục 61: đường nhánh cây Projects của Kate. opt->rect là một cột
         // thụt lề (QTreeView::drawBranches, toạ độ vùng hiển thị).
         // Mục 70: nền dòng chọn/trỏ của cây Projects, hết bề ngang. Qt vẽ nền
@@ -4334,7 +4389,23 @@ public:
             p->save();
             p->setRenderHint(QPainter::Antialiasing);
             p->setCompositionMode(QPainter::CompositionMode_Source);
-            p->fillPath(path, paneColor());
+            p->fillPath(path, paneColor(w));
+            p->restore();
+            return;
+        }
+        // Mục 81: chữ tab đang mở của Konsole nằm trên nền terminal (tối cả
+        // hai chế độ) → chữ bản tối. Kvantum lấy màu chữ tab từ kvconfig, bỏ
+        // qua palette → Kvantum vẽ phần còn lại (icon), chữ vẽ ở đây, cùng ô
+        // chữ và căn giữa như Kvantum (CE_TabBarTabLabel).
+        if (ce == CE_TabBarTabLabel && tab && (tab->state & State_Selected) && isKonsoleTabs(w)) {
+            QStyleOptionTab o(*tab);
+            o.text.clear();
+            QProxyStyle::drawControl(ce, &o, p, w);
+            const QRect r = subElementRect(SE_TabBarTabText, tab, w);
+            p->save();
+            p->setPen(QColor(samhie::TERMINAL_TEXT));
+            p->drawText(r, Qt::AlignCenter | Qt::TextShowMnemonic | Qt::TextSingleLine,
+                        p->fontMetrics().elidedText(tab->text, bar && bar->elideMode() != Qt::ElideNone ? bar->elideMode() : Qt::ElideRight, r.width(), Qt::TextShowMnemonic));
             p->restore();
             return;
         }
@@ -4744,6 +4815,7 @@ private:
     }
 
     PanePainter m_pane;
+    bool m_light;
     PopupPainter m_popup;
     CardPainter m_card;
     EditorAlpha m_editorAlpha;
@@ -4930,13 +5002,12 @@ void watchFolderChanges(const QString &dir, const QString &symbol, const QString
 // Mục 80.
 // Đọc tay một khoá: QSettings (IniFormat) đọc kdeglobals của KDE ra rỗng
 // (container 2026-10-20: file có ColorScheme=SamhieLight vẫn ra tối).
-// Konsole và Kate giữ bản tối cho tới khi có bản sáng riêng: vùng terminal/
-// code của chúng tối (bảng màu riêng) — dải tab sáng ghép vùng chữ tối chưa
-// ai thiết kế (Konsole sáng, container 2026-10-20).
+// Kate giữ bản tối cho tới khi có bản sáng riêng: vùng code tối (bảng màu
+// riêng). Konsole: mục 81.
 bool lightMode()
 {
     const QString app = QCoreApplication::applicationName();
-    if (app == QLatin1String("konsole") || app == QLatin1String("kate"))
+    if (app == QLatin1String("kate"))
         return false;
     QFile file(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
                + QStringLiteral("/kdeglobals"));
@@ -4952,6 +5023,25 @@ bool lightMode()
     }
     return light;
 }
+
+// Mục 81: lớp bọc thay MenuStyle của Konsole khi nạp lại style.
+class AltKeyStyle : public QProxyStyle
+{
+public:
+    AltKeyStyle(QStyle *base, int altKey)
+        : QProxyStyle(base)
+        , m_altKey(altKey)
+    {
+    }
+
+    int styleHint(StyleHint hint, const QStyleOption *opt, const QWidget *w, QStyleHintReturn *ret) const override
+    {
+        return hint == SH_MenuBar_AltKeyNavigation ? m_altKey : QProxyStyle::styleHint(hint, opt, w, ret);
+    }
+
+private:
+    int m_altKey;
+};
 
 class ColorModeWatcher : public QObject
 {
@@ -4973,8 +5063,18 @@ public Q_SLOTS:
         // Sau khi tín hiệu này xử lý xong: setStyle xoá style cũ — có thể là
         // style đang gọi tới đây.
         QTimer::singleShot(0, qApp, [] {
-            if (qApp->style()->name().compare(QLatin1String("samhie"), Qt::CaseInsensitive) == 0)
+            QStyle *style = qApp->style();
+            if (dynamic_cast<SamhieStyle *>(style)) {
                 QApplication::setStyle(QStringLiteral("samhie"));
+                return;
+            }
+            // Mục 81: Konsole bọc style app trong MenuStyle (main.cpp: một
+            // QProxyStyle chỉ đổi SH_MenuBar_AltKeyNavigation) — style()->name()
+            // RỖNG (container 2026-10-20). Thay bằng lớp bọc giữ đúng gợi ý đó.
+            auto *outer = qobject_cast<QProxyStyle *>(style);
+            if (outer && dynamic_cast<SamhieStyle *>(outer->baseStyle()))
+                QApplication::setStyle(new AltKeyStyle(QStyleFactory::create(QStringLiteral("samhie")),
+                                                       style->styleHint(QStyle::SH_MenuBar_AltKeyNavigation)));
         });
     }
 };

@@ -46,6 +46,10 @@ inline void useLight(bool light)
     SIDEBAR_TAB_OPEN = light ? "#c3c3c3" : "#444445";
 }
 
+inline const char *const TERMINAL = "#171717";  // [terminal] background — vùng chữ + tab đang mở Konsole
+inline const char *const TERMINAL_TEXT = "#bdbec1";  // dark.text — chữ tab đang mở Konsole, × khi trỏ
+inline const char *const TERMINAL_TEXT_MUTED = "#8f8f8f";  // dark.text-muted — × tab đang mở Konsole
+
 constexpr double WINDOW_OPACITY = 0.9;  // [window] opacity
 constexpr int ITEM_RADIUS = 10;  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)
 constexpr int MENUITEM_RADIUS = 6;  // góc ô hover dòng menu = RADIUS["menuitem"] (tools/kvantum.py)

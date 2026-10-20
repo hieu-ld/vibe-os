@@ -419,6 +419,26 @@ void padGutter(KTextEditor::View *view)
     }
 }
 
+// Mục 8: đổi style (bật/tắt chế độ tối lúc Kate đang mở) → KTextEditor
+// dựng lại bố cục view (setupLayout khi StyleChange), ô đệm về cỡ cũ — đệm
+// lại sau khi nó xong (container 2026-10-20: cột số dòng lệch trái 10px).
+class GutterStyleWatch : public QObject
+{
+public:
+    using QObject::QObject;
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() == QEvent::StyleChange) {
+            auto *view = static_cast<KTextEditor::View *>(obj);
+            QTimer::singleShot(0, view, [view] {
+                padGutter(view);
+            });
+        }
+        return false;
+    }
+};
+
 // Mục 7: gửi lại QResizeEvent (cùng cỡ) để QTabBar tính lại độ cuộn
 void refreshTabScroll(QWidget *viewSpace)
 {
@@ -1295,6 +1315,9 @@ void cardResults(QTreeView *tree)
     if (QAbstractItemDelegate *inner = tree->itemDelegate()) {
         tree->setItemDelegate(new ElideDelegate(inner, tree));
     }
+    // Kate tô kết quả bằng màu theme code (luôn tối) → thẻ tối cả hai chế độ
+    // (style mục 82)
+    results->setProperty("samhieDarkCard", true);
     markCard(results);
 }
 
@@ -1873,6 +1896,7 @@ public:
             connect(view, &KTextEditor::View::configChanged, view, [view] {
                 padGutter(view);
             });
+            view->installEventFilter(new GutterStyleWatch(view));
         };
         for (KTextEditor::View *view : m_mw->views()) {
             watchGutter(view);
@@ -2134,6 +2158,9 @@ public:
                 auto *edit = static_cast<QWidget *>(obj);
                 if (!edit->property("samhieCard").toBool() && edit->parentWidget() && edit->parentWidget()->layout()) {
                     edit->parentWidget()->layout()->setContentsMargins(CARD_GAP, 0, CARD_GAP, CARD_GAP);
+                    // Nhật ký tô bằng màu theme code (luôn tối) → thẻ tối cả
+                    // hai chế độ (style mục 82)
+                    edit->setProperty("samhieDarkCard", true);
                     markCard(edit);
                 }
             }

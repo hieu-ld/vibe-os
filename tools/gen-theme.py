@@ -631,13 +631,14 @@ def style_colors_h(pal):
             "inline void useLight(bool light)", "{"]
     out += [f'    {n} = light ? "{lc}" : "{dc}";' for (n, dc, _), (_, lc, _) in zip(dark, light)]
     out += ["}", ""]
-    # Vùng chữ Konsole tối ở CẢ HAI chế độ (user 2026-10-20, như Windows
-    # Terminal): tab đang mở + vùng dưới dải tab lấy nền terminal, chữ và ×
-    # trên tab đó lấy màu bản tối.
+    # Vùng chữ Konsole + thẻ code Kate tối ở CẢ HAI chế độ (user 2026-10-20,
+    # như Windows Terminal): tab đang mở + thẻ lấy nền terminal, chữ, × và
+    # chữ trỏ (breadcrumb Kate) trên đó lấy màu bản tối.
     t, d = pal["terminal"], pal["dark"]
     out += [f'inline const char *const TERMINAL = "{t["background"]}";  // [terminal] background — vùng chữ + tab đang mở Konsole',
             f'inline const char *const TERMINAL_TEXT = "{d["text"]}";  // dark.text — chữ tab đang mở Konsole, × khi trỏ',
-            f'inline const char *const TERMINAL_TEXT_MUTED = "{d["text-muted"]}";  // dark.text-muted — × tab đang mở Konsole', ""]
+            f'inline const char *const TERMINAL_TEXT_MUTED = "{d["text-muted"]}";  // dark.text-muted — × tab đang mở Konsole',
+            f'inline const char *const TERMINAL_ACCENT = "{d["accent-text"]}";  // dark.accent-text — chữ breadcrumb Kate đang trỏ', ""]
     out += [f'constexpr double WINDOW_OPACITY = {pal["window"]["opacity"]};  // [window] opacity']
     out += [f'constexpr int ITEM_RADIUS = {kvantum.RADIUS["itemview"]};  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)']
     out += [f'constexpr int MENUITEM_RADIUS = {kvantum.RADIUS["menuitem"]};  // góc ô hover dòng menu = RADIUS["menuitem"] (tools/kvantum.py)']

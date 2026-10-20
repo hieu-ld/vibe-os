@@ -49,6 +49,7 @@ inline void useLight(bool light)
 inline const char *const TERMINAL = "#171717";  // [terminal] background — vùng chữ + tab đang mở Konsole
 inline const char *const TERMINAL_TEXT = "#bdbec1";  // dark.text — chữ tab đang mở Konsole, × khi trỏ
 inline const char *const TERMINAL_TEXT_MUTED = "#8f8f8f";  // dark.text-muted — × tab đang mở Konsole
+inline const char *const TERMINAL_ACCENT = "#00c0e8";  // dark.accent-text — chữ breadcrumb Kate đang trỏ
 
 constexpr double WINDOW_OPACITY = 0.9;  // [window] opacity
 constexpr int ITEM_RADIUS = 10;  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)

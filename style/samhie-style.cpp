@@ -526,6 +526,11 @@
 //      menu, hộp thoại sáng; vùng chữ GIỮ TỐI (Samhie.colorscheme một bản) —
 //      tab đang mở + vùng dưới dải tab tô nền terminal (paneColor), chữ và
 //      × trên tab đó màu bản tối. Tab khác chữ thường của chế độ.
+//  82. Kate bản sáng (user 2026-10-20): khung, cột icon, panel sáng; THẺ CODE
+//      tối trọn như Konsole (tab đang mở + breadcrumb + code, theme "Samhie"
+//      một bản) và thẻ kết quả Search tối (Kate tô kết quả bằng màu theme
+//      code — plugin đánh dấu samhieDarkCard; khung Output cũng vậy). Nhãn tab đang mở tô một màu
+//      chữ bản tối (mục 81); icon breadcrumb lấy bản Selected (nét sáng).
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -876,21 +881,25 @@ void clearAlternateBase(T *target, const QPalette &from)
     target->setPalette(pal);
 }
 
-// Mục 81: dải tab Konsole (TabbedViewContainer) — hoặc dải tab của nó.
-bool isKonsoleTabs(const QWidget *w)
+// Mục 81, 82: nền luôn tối (nền terminal) ở cả hai chế độ — w nằm trong
+// (hoặc là) khung tab Konsole, view space Kate (thẻ code + dải tab của nó),
+// hay thẻ plugin Kate đánh dấu samhieDarkCard (kết quả Search: Kate tô bằng
+// màu theme code). Breadcrumb Kate nằm sâu 4 cấp trong view space.
+bool darkPane(const QWidget *w)
 {
-    for (int i = 0; w && i < 2; ++i, w = w->parentWidget()) {
-        if (w->inherits("Konsole::TabbedViewContainer"))
+    for (int i = 0; w && i < 5; ++i, w = w->parentWidget()) {
+        if (w->inherits("Konsole::TabbedViewContainer") || w->inherits("KateViewSpace")
+            || w->property("samhieDarkCard").toBool())
             return true;
     }
     return false;
 }
 
 // Mục 81: Konsole tô vùng dưới dải tab + tab đang mở bằng nền TERMINAL ở cả
-// hai chế độ — vùng chữ (Samhie.colorscheme) luôn tối.
+// hai chế độ — vùng chữ (Samhie.colorscheme) luôn tối. Mục 82: thẻ Kate cũng vậy.
 QColor paneColor(const QWidget *w = nullptr)
 {
-    QColor c(isKonsoleTabs(w) ? samhie::TERMINAL : samhie::PANE);
+    QColor c(darkPane(w) ? samhie::TERMINAL : samhie::PANE);
     c.setAlphaF(samhie::WINDOW_OPACITY);
     return c;
 }
@@ -1151,7 +1160,12 @@ public:
     void detach(QWidget *w)
     {
         w->removeEventFilter(this);
-        qDeleteAll(CardCorner::of(w));
+        // Ẩn, KHÔNG xoá: detach chạy trong QApplication::setStyle (đổi chế độ
+        // sáng/tối, mục 80), lúc Qt đang duyệt danh sách mọi widget — xoá góc
+        // ở đây thì Qt chạm widget đã xoá → Kate crash (container 2026-10-20,
+        // gdb: QApplication::setStyle → testAttribute_helper). attach dùng lại.
+        for (CardCorner *corner : CardCorner::of(w))
+            corner->hide();
     }
 
     bool eventFilter(QObject *obj, QEvent *event) override
@@ -1180,7 +1194,7 @@ public:
             p.setCompositionMode(QPainter::CompositionMode_Source);
             QPainterPath path;
             path.addRoundedRect(QRectF(cardRect(w)), CARD_RADIUS, CARD_RADIUS);
-            p.fillPath(path, paneColor());
+            p.fillPath(path, paneColor(w));
             // Cây: nền thẻ thay khung Kvantum (QFrame::paintEvent)
             return qobject_cast<QAbstractScrollArea *>(w) != nullptr;
         }
@@ -3911,7 +3925,7 @@ public:
         // Mục 81: × trên tab đang mở của Konsole (nền terminal, tối cả hai chế
         // độ) — vẽ như phần tử tab-close của Kvantum bản tối (tools/kvantum.py:
         // nét 1,2 trong hộp 16, thường text-muted, trỏ/bấm text).
-        if (pe == PE_IndicatorTabClose && w && isKonsoleTabs(w->parentWidget())) {
+        if (pe == PE_IndicatorTabClose && w && darkPane(w->parentWidget())) {
             auto *bar = qobject_cast<const QTabBar *>(w->parentWidget());
             const int cur = bar ? bar->currentIndex() : -1;
             if (cur >= 0 && (bar->tabButton(cur, QTabBar::RightSide) == w || bar->tabButton(cur, QTabBar::LeftSide) == w)) {
@@ -4345,9 +4359,17 @@ public:
                     o.features &= ~QStyleOptionViewItem::HasCheckIndicator;
                 // Mục 73: breadcrumb Kate không ô hover/chọn — trỏ vào thì chữ
                 // cyan như thanh đường dẫn Dolphin (dấu › Kate tự bỏ trạng thái trỏ)
+                // Mục 82: thẻ code tối cả hai chế độ → bản sáng chữ + icon bản tối
+                // (icon: bản Selected của bộ icon = nét sáng).
                 if (w && w->inherits("BreadCrumbView")) {
+                    const bool dark = g_light && darkPane(w);
+                    if (dark) {
+                        o.palette.setColor(QPalette::Text, QColor(samhie::TERMINAL_TEXT));
+                        if (!o.icon.isNull())
+                            o.icon = QIcon(o.icon.pixmap(o.decorationSize, p->device() ? p->device()->devicePixelRatioF() : 1.0, QIcon::Selected));
+                    }
                     if (o.state & State_MouseOver)
-                        o.palette.setColor(QPalette::Text, QColor(samhie::HOVER_ACCENT));
+                        o.palette.setColor(QPalette::Text, QColor(dark ? samhie::TERMINAL_ACCENT : samhie::HOVER_ACCENT));
                     o.state &= ~(State_Selected | State_MouseOver);
                 }
                 if (w && w->property("samhieTreeLines").toBool()) {  // mục 70: nền ở PE_PanelItemViewRow
@@ -4455,18 +4477,24 @@ public:
         }
         // Mục 81: chữ tab đang mở của Konsole nằm trên nền terminal (tối cả
         // hai chế độ) → chữ bản tối. Kvantum lấy màu chữ tab từ kvconfig, bỏ
-        // qua palette → Kvantum vẽ phần còn lại (icon), chữ vẽ ở đây, cùng ô
-        // chữ và căn giữa như Kvantum (CE_TabBarTabLabel).
-        if (ce == CE_TabBarTabLabel && tab && (tab->state & State_Selected) && isKonsoleTabs(w)) {
-            QStyleOptionTab o(*tab);
-            o.text.clear();
-            QProxyStyle::drawControl(ce, &o, p, w);
-            const QRect r = subElementRect(SE_TabBarTabText, tab, w);
-            p->save();
-            p->setPen(QColor(samhie::TERMINAL_TEXT));
-            p->drawText(r, Qt::AlignCenter | Qt::TextShowMnemonic | Qt::TextSingleLine,
-                        p->fontMetrics().elidedText(tab->text, bar && bar->elideMode() != Qt::ElideNone ? bar->elideMode() : Qt::ElideRight, r.width(), Qt::TextShowMnemonic));
-            p->restore();
+        // qua palette → Kvantum vẽ nhãn (icon + chữ, đúng bố cục của nó) vào
+        // ảnh tạm, rồi tô cả nhãn một màu chữ bản tối. Mục 82: tab Kate có icon
+        // file — icon Samhie là nét một màu nên tô chung được.
+        if (ce == CE_TabBarTabLabel && tab && (tab->state & State_Selected) && darkPane(w)) {
+            const qreal dpr = p->device() ? p->device()->devicePixelRatioF() : 1.0;
+            QImage label(tab->rect.size() * dpr, QImage::Format_ARGB32_Premultiplied);
+            label.setDevicePixelRatio(dpr);
+            label.fill(Qt::transparent);
+            {
+                QPainter ip(&label);
+                ip.setFont(p->font());
+                ip.translate(-tab->rect.topLeft());
+                QProxyStyle::drawControl(ce, tab, &ip, w);
+                ip.resetTransform();
+                ip.setCompositionMode(QPainter::CompositionMode_SourceIn);
+                ip.fillRect(QRectF(QPointF(0, 0), QSizeF(tab->rect.size())), QColor(samhie::TERMINAL_TEXT));
+            }
+            p->drawImage(tab->rect.topLeft(), label);
             return;
         }
         auto *button = qstyleoption_cast<const QStyleOptionButton *>(opt);
@@ -5066,9 +5094,6 @@ void watchFolderChanges(const QString &dir, const QString &symbol, const QString
 // riêng). Konsole: mục 81.
 bool lightMode()
 {
-    const QString app = QCoreApplication::applicationName();
-    if (app == QLatin1String("kate"))
-        return false;
     QFile file(QStandardPaths::writableLocation(QStandardPaths::GenericConfigLocation)
                + QStringLiteral("/kdeglobals"));
     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))

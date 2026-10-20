@@ -68,7 +68,8 @@ hover         = "#262626"  # nền ô đang trỏ chuột TRÊN NỀN CARD: dòn
                            # công cụ, dải tab) hover nâng một bậc = sub-secondary.
 item-selected-border = "#097389"  # viền ô file đang chọn (Dolphin, cả Icons lẫn Details) —
                                  # user 2026-10-05: cyan accent chói → tối lại, hợp tông
-                                 # thư mục + hover: = thân thư mục mặc định ([folders] default)
+                                 # thư mục + hover: = thân thư mục cyan mặc định cũ (default
+                                 # thành xám Ubuntu 2026-10-20 — giữ viền cyan này)
 scrollbar         = "#5f5f5f"  # thanh cuộn (tự ẩn) — user 2026-10-05: ĐỤC, cùng độ sáng
                                # như bản cũ (text-muted 60% trên card = #5f5f5f)
 scrollbar-hover   = "#6a6a6a"  # đang trỏ chuột
@@ -168,21 +169,23 @@ icon-theme     = { dark = "Samhie", light = "breeze" }
 # thân. Giống nhau ở cả tối lẫn sáng (như Breeze).
 # Đây là màu NỘI DUNG (icon), không phải giao diện — nên mặc định là cyan dù
 # "CÁCH DÙNG MÀU" ở trên dành cyan cho thứ đang chọn.
-#   default: từ ảnh mẫu user gửi (đo điểm ảnh: thân #0b819a, nắp #076174 —
-#            OKLCH thân L 0,558 C 0,098, nắp L × 0,816, C × 0,814). User thấy
-#            vẫn chói khi nhìn lâu (2026-10-04) → L và C cả hai × 0,92.
-#   Ký hiệu: = màu nắp, như ảnh mẫu (1,56:1 với thân — mờ mờ, user thích
-#            vậy). Đã thử bản đậm L × 0,55, C × 0,6 của thân (2,88:1) trong máy
-#            ảo 2026-10-04 — user chọn giữ bản mờ. Tách riêng để chỉnh sau.
+#   default (2026-10-20, user: "mang màu thư mục Ubuntu qua", cho có tương
+#            phản với các thư mục màu): thư mục Yaru (Ubuntu 24.04, đo
+#            /usr/share/icons/Yaru/256x256/places/folder.png) — thân xám
+#            #6d→#73 (lấy #707070), nắp gradient ngang tím #7b2a52 → cam
+#            #e05423 (nắp = ["#trái", "#phải"]), ký hiệu sáng #c6c6c6 như Yaru
+#            (user chọn sáng, không mờ). Chỉ lấy màu, vỏ vẫn của user.
+#            Trước đó: cyan #097389/#055667 từ ảnh mẫu user (2026-10-04).
+#   Ký hiệu 8 màu kia: = màu nắp (mờ mờ, user thích vậy 2026-10-04).
 #            Riêng important: màu đỏ riêng, bảng [folder-symbols] bên dưới.
 #   8 màu kia: cùng độ đậm, chỉ đổi sắc (H); vàng/cam sáng hơn chút (L 0,66 /
 #            0,60) vì cùng L thì vàng ra màu bùn; nâu L 0,50 C 0,065; xám C 0,012.
-# Thanh "màu thư mục" của Dolphin: Default = inode-directory (= default).
-# cyan từng trùng default (như Breeze: folder-blue trùng thư mục mặc định) —
-# user thấy hai ô giống nhau (2026-10-05) → cyan ngả ngọc lam (H 190, default
-# H 218), L 0,565 C 0,095 như các màu kia.
+# Thanh "màu thư mục" của Dolphin: Default = inode-directory (= default),
+# Red, Yellow, Teal, Blue (Blue thay Grey 2026-10-20: default xám thì Grey
+# trùng). cyan từng trùng default cyan cũ (2026-10-05) → ngả ngọc lam (H 190),
+# L 0,565 C 0,095 như các màu kia.
 [folders]
-default = ["#097389", "#055667", "#055667"]
+default = ["#707070", ["#7b2a52", "#e05423"], "#c6c6c6"]
 red     = ["#ac5853", "#82413d", "#82413d"]   # H 25
 orange  = ["#b26d3a", "#87512a", "#87512a"]   # H 55
 yellow  = ["#ab8f3e", "#826c2e", "#826c2e"]   # H 90

@@ -278,7 +278,8 @@
 //      dưới thoáng bằng khe giữa hai mục (user 2026-10-08). Chỉ có khi có mục
 //      ghim. Delegate riêng cho dòng Recycle Bin (PinnedGapDelegate).
 //  47. Hàng màu thư mục (menu chuột phải thư mục, user 2026-10-08):
-//      [Default] [Red] [Yellow] [Teal] [Grey] [Symbol ▾]; Symbol = No Symbol +
+//      [Default] [Red] [Yellow] [Teal] [Blue] [Symbol ▾] (Blue thay Grey
+//      2026-10-20: thư mục mặc định thành xám như Ubuntu); Symbol = No Symbol +
 //      14 ký hiệu (FOLDER_SYMBOLS). Màu và ký hiệu đổi độc lập: plugin
 //      Dolphin vẫn ghi .directory, FolderChangeWatcher (nghe KDirNotify qua
 //      D-Bus) sửa lại Icon=folder-<ký hiệu>-<màu> và lưu hai khoá
@@ -2147,7 +2148,8 @@ void enableMenuIcons(QMenu *menu)
         a->setText(indent + a->text());
     }
 }
-// Màu bỏ khỏi hàng (user 2026-10-08: còn Default, Red, Yellow, Teal, Grey).
+// Màu bỏ khỏi hàng (user 2026-10-08: còn Default, Red, Yellow, Teal + Blue —
+// Blue thay Grey 2026-10-20).
 const QSet<QString> FOLDER_COLORS_DROPPED = {QStringLiteral("orange"), QStringLiteral("green")};
 
 // Mục 47: khoá trong [Desktop Entry] của <thư mục>/.directory.
@@ -2265,7 +2267,7 @@ QString folderUnderCursor()
 // Mục 47: hàng màu thư mục trong menu chuột phải của Dolphin
 // (setfoldericonitemaction.cpp 26.08.1 — 5 nút màu + nút Other mở menu gồm
 // Default, 4 màu nữa và các ký hiệu). User 2026-10-08:
-//   [Default] [Red] [Yellow] [Teal] [Grey]  [Symbol ▾]
+//   [Default] [Red] [Yellow] [Teal] [Blue]  [Symbol ▾]
 // Symbol mở menu No Symbol + ký hiệu; màu và ký hiệu đổi độc lập (đổi màu giữ
 // ký hiệu…). Plugin chỉ ghi Icon=<tên icon của nút> vào .directory rồi báo
 // KDirNotify.FilesChanged(url thư mục); đường dẫn thư mục nằm trong biến
@@ -2288,12 +2290,12 @@ void setupFolderColorRow(QMenu *menu)
                 continue;
             QMenu *sub = (*other)->menu();
             QPointer<QAction> carrier;  // hành động Default của plugin
-            QAction *grey = nullptr;
+            QAction *blue = nullptr;
             for (QAction *s : sub->actions()) {
                 if (s->icon().name() == QLatin1String("inode-directory"))
                     carrier = s;
-                else if (s->icon().name() == QLatin1String("folder-grey"))
-                    grey = s;
+                else if (s->icon().name() == QLatin1String("folder-blue"))
+                    blue = s;
             }
             if (!carrier)
                 return;  // plugin đổi — để nguyên hàng của KDE
@@ -2330,8 +2332,8 @@ void setupFolderColorRow(QMenu *menu)
                 layout->insertWidget(at, b);
             };
             addButton(QStringLiteral("inode-directory"), QString(), QStringLiteral("Set folder color to Default"), 0);
-            if (grey)
-                addButton(QStringLiteral("folder-grey"), QStringLiteral("grey"), QStringLiteral("Set folder color to Grey"),
+            if (blue)
+                addButton(QStringLiteral("folder-blue"), QStringLiteral("blue"), QStringLiteral("Set folder color to Blue"),
                           layout->indexOf(*other));
             (*other)->setText(QStringLiteral("Symbol"));
             (*other)->setToolTip(QStringLiteral("Folder symbol"));
@@ -2427,7 +2429,7 @@ void setupNewFolderDialog(QWidget *dialog)
     const QList<QPair<QString, QString>> colorList = {
         {QString(), QStringLiteral("Default")}, {QStringLiteral("red"), QStringLiteral("Red")},
         {QStringLiteral("yellow"), QStringLiteral("Yellow")}, {QStringLiteral("cyan"), QStringLiteral("Teal")},
-        {QStringLiteral("grey"), QStringLiteral("Grey")},
+        {QStringLiteral("blue"), QStringLiteral("Blue")},
     };
     for (int i = 0; i < colorList.size(); ++i) {
         const QString color = colorList[i].first;

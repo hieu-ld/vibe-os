@@ -8,7 +8,8 @@ Sinh bộ thư mục Dolphin tô màu của Samhie (Samhie/places/scalable/).
 VỎ THƯ MỤC: user vẽ trên Figma 2026-10-04, khung 64 — hai nét (nắp phía sau,
 thân phía trước) ghi thẳng ở BACK/FRONT bên dưới. Nắp và thân tô kín (fill +
 stroke cùng màu, hình to đúng bằng mép ngoài nét vẽ): thân màu [0], nắp màu
-[1] tối hơn (bảng [folders] của theme/palette.toml). Nắp bị CẮT, chỉ còn phần
+[1] tối hơn (bảng [folders] của theme/palette.toml) — hoặc [1] là cặp màu
+["#trái", "#phải"]: nắp gradient ngang (default 2026-10-20, như Yaru). Nắp bị CẮT, chỉ còn phần
 phía trên y=26: nắp gốc kéo xuống tận đáy, trùng mép với thân, khử răng cưa
 thì lộ viền tối mảnh quanh thân (đo rsvg 64px). Cắt bằng hình học — QtSvg bỏ
 qua clipPath (xem build-app-icons.py).
@@ -93,8 +94,11 @@ def palette():
     if set(folders) != want:
         sys.exit(f"[folders] trong palette.toml phải có đúng: {', '.join(sorted(want))}")
     for name, trio in folders.items():
-        if not (isinstance(trio, list) and len(trio) == 3 and all(is_hex(c) for c in trio)):
-            sys.exit(f"[folders] {name}: phải là [\"#thân\", \"#nắp\", \"#ký hiệu\"] chữ thường")
+        lid_ok = len(trio) == 3 and (is_hex(trio[1]) or (
+            isinstance(trio[1], list) and len(trio[1]) == 2 and all(is_hex(c) for c in trio[1])))
+        if not (isinstance(trio, list) and lid_ok and is_hex(trio[0]) and is_hex(trio[2])):
+            sys.exit(f"[folders] {name}: phải là [\"#thân\", \"#nắp\" hoặc [\"#trái\", \"#phải\"], "
+                     "\"#ký hiệu\"] chữ thường")
     own = pal.get("folder-symbols", {})
     for name, c in own.items():
         if name not in SYMBOLS:
@@ -131,6 +135,14 @@ def symbol_group(name, color):
 def folder(color_name, colors, symbol=None, symbol_color=None):
     body, lid, ink = colors
     root = ET.Element(q("svg"), {"viewBox": "0 0 64 64", "fill": "none"})
+    if isinstance(lid, list):
+        # Nắp gradient ngang trái → phải (default 2026-10-20: như thư mục Yaru
+        # của Ubuntu, tím → cam), trải hết bề ngang vỏ 4..60.
+        grad = ET.SubElement(ET.SubElement(root, q("defs")), q("linearGradient"), {
+            "id": "lid", "gradientUnits": "userSpaceOnUse", "x1": "4", "y1": "0", "x2": "60", "y2": "0"})
+        for offset, c in zip(("0", "1"), lid):
+            ET.SubElement(grad, q("stop"), {"offset": offset, "stop-color": c})
+        lid = "url(#lid)"
     for d, c in ((BACK_CUT, lid), (FRONT, body)):
         ET.SubElement(root, q("path"), {"d": d, "stroke": c, "stroke-width": "2", "fill": c})
     if symbol:

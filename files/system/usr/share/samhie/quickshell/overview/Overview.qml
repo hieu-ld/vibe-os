@@ -23,6 +23,7 @@
 // đang chạy — không mất nhịp. Hyprland KHÔNG làm hiệu ứng cho lớp này nữa
 // (layer rule no_anim trong samhie.lua).
 import QtQuick
+import QtQuick.Effects
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Wayland
@@ -267,6 +268,18 @@ PanelWindow {
             readonly property real finalW: Math.round(sw * k)
             readonly property real finalH: Math.round(sh * k)
             readonly property real finalX: Math.round((width - finalW) / 2)
+
+            // Bóng nhẹ dưới khung lớn (user 2026-10-20: nền xám phẳng bản sáng
+            // "thiếu gì đó"): lệch xuống như bóng cửa sổ Windows 11. Hiện dần
+            // theo hiệu ứng — lúc progress 0 khung là cả màn hình, không bóng.
+            RectangularShadow {
+                anchors.fill: preview
+                visible: preview.visible
+                radius: preview.radius
+                offset.y: 8
+                blur: 36
+                color: Qt.alpha(Theme.c.overviewShadow, (Theme.light ? 0.28 : 0.5) * page.p)
+            }
 
             WorkspacePreview {
                 id: preview

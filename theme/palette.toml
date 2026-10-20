@@ -56,6 +56,7 @@ dock-dot         = "#e8e8e8"  # chấm "đang chạy" dưới ô (= bar-text)
 dock-dot-active  = "#00c0e8"  # chấm của app đang focus (= bar-accent)
 overview         = "#171717"  # nền màn tổng quan (= card)
 overview-raised  = "#393939"  # ô tìm kiếm + viền trỏ chuột ô màn ảo trên nền tổng quan (= sub-secondary)
+overview-shadow  = "#0a0a0a"  # bóng dưới khung màn ảo lớn — QML vẽ mờ (= black)
 card          = "#171717"  # vùng nội dung, popup, tooltip   (Figma: Card)
 card-alt      = "#171717"  # hàng xen kẽ trong danh sách — bản tối cố ý KHÔNG kẻ sọc
 secondary     = "#262626"  # khung cửa sổ, sidebar, thanh tab (Figma: Secondary)
@@ -126,6 +127,7 @@ dock-dot-active  = "#00c0e8"  # cyan gốc như bản Figma — bar-accent #0d72
 # được. Ô tìm sáng trên nền xám — sub-secondary #d0d0d0 thì chìm.
 overview         = "#d4d4d4"
 overview-raised  = "#f3f3f3"
+overview-shadow  = "#0a0a0a"  # bóng khung lớn (user 2026-10-20: nền xám phẳng "thiếu gì đó")
 card          = "#fafafa"
 card-alt      = "#f4f4f4"
 secondary     = "#ededed"

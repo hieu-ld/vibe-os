@@ -205,11 +205,15 @@ hl.config({
         dim_inactive = true,
         dim_strength = 0.15,
 
+        -- Bóng đổ xuống kiểu Windows 11 (user 2026-10-20): bản cũ toả đều bốn
+        -- phía, đen 40%, 12px — trên hình nền sáng thành "quầng" quanh cửa sổ.
+        -- Giờ lệch xuống 4px, toả 20px, nhạt 25% (0x40).
         shadow = {
             enabled      = true,
-            range        = 12,
+            range        = 20,
             render_power = 3,
-            color        = 0x66000000,
+            offset       = { 0, 4 },  -- dạng { x = , y = } stub cho phép nhưng Hyprland báo lỗi (đo)
+            color        = "rgba(" .. color.shadow .. "40)",
         },
 
         -- Blur chỉ hiện ra sau những cửa sổ có nền trong suốt: Dolphin/Konsole

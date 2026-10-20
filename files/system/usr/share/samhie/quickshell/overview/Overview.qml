@@ -278,7 +278,7 @@ PanelWindow {
                 radius: preview.radius
                 offset.y: 8
                 blur: 36
-                color: Qt.alpha(Theme.c.overviewShadow, (Theme.light ? 0.28 : 0.5) * page.p)
+                color: Qt.alpha(Theme.c.shadow, (Theme.light ? 0.28 : 0.5) * page.p)
             }
 
             WorkspacePreview {

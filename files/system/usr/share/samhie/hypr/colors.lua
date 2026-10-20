@@ -14,7 +14,7 @@ return {
     dockDotActive = "00c0e8",
     overview      = "171717",
     overviewRaised = "393939",
-    overviewShadow = "0a0a0a",
+    shadow        = "0a0a0a",
     card          = "171717",
     cardAlt       = "171717",
     secondary     = "262626",

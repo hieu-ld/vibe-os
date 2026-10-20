@@ -465,6 +465,12 @@ KATE_SYNTAX = {
     "region-marker": ["RegionMarker"],
 }
 KATE_SYNTAX_BOLD = {"Alert"}  # giữ in đậm — dấu TODO phải nổi
+# Kiểu "chữ đậm" của Markdown (thường, trong danh sách, trong trích dẫn)
+MARKDOWN_STRONG = [
+    "Strong Text", "Strong-Emphasis Text",
+    "List: Strong Text", "List: Strong-Emphasis Text",
+    "Blockquote: Strong Text", "Blockquote: Strong-Emphasis Text",
+]
 # Nhóm user CHỌN dưới 4,5:1 trên card: comment (mờ có chủ ý); cảnh báo / lỗi
 # giữ đỏ Breeze #da4453 = 4,21:1 (user 2026-10-20; màu gần nhất đạt 4,5 là
 # #e14b59 — đã báo). Chữ lỗi còn gạch chân / nền nên không chỉ dựa vào màu.
@@ -475,7 +481,7 @@ def kate_syntax_colors(pal):
     """Màu từng nhóm [syntax] (cả bracket-default) + lỗi tương phản (dưới 4,5:1
     trên card, trừ comment; brackets nhắc nhóm không có)."""
     d, errors, colors = pal["dark"], [], {}
-    for group in (*KATE_SYNTAX, "bracket-default"):
+    for group in (*KATE_SYNTAX, "bracket-default", "markdown-strong"):
         colors[group] = syntax_color(pal["syntax"][group], d["text"], pal["syntax"])
         ratio = contrast(colors[group], d["card"])
         if group not in SYNTAX_LOW_CONTRAST and ratio < 4.5:
@@ -549,6 +555,14 @@ def kate_theme(pal):
             styles[name].update({"text-color": colors[group], "selected-text-color": colors[group]})
             if name not in KATE_SYNTAX_BOLD:
                 styles[name].pop("bold", None)
+    # Chữ **đậm** của Markdown (kiểu "Strong Text" = chữ thường + đậm,
+    # markdown.xml của KSyntaxHighlighting 6.30) tô màu nhóm markdown-strong
+    # (user 2026-10-20: "cho nó nổi", như def / import). Theme tô riêng từng
+    # kiểu của từng ngôn ngữ bằng custom-styles.
+    strong = {"text-color": colors["markdown-strong"], "selected-text-color": colors["markdown-strong"]}
+    theme.setdefault("custom-styles", {})["Markdown"] = {
+        name: dict(strong) for name in MARKDOWN_STRONG
+    }
     return json.dumps(theme, ensure_ascii=False, indent=4) + "\n"
 
 

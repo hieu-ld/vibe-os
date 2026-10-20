@@ -276,6 +276,9 @@
 //
 // 27. Bộ đếm "1/4" trong hộp tìm (MatchCounter — xem chỗ khai báo).
 //
+// 28. Chữ các panel bên trái (cây Projects, Git, Symbols, kết quả Search) cỡ
+//    SIDEBAR_FONT_SIZE — cao bằng chữ code (user 2026-10-20).
+//
 // 26. Thanh Find/Replace/Go to Line là hộp nổi góc trên phải vùng code như
 //    VS Code (user 2026-10-13, "giao diện nào cũ thì làm hết") thay dải dưới
 //    đáy cửa sổ. Kate để mọi thanh của KTextEditor (tìm, Go to Line…) trong
@@ -381,6 +384,12 @@ constexpr int FIND_INPUT_WIDTH = 280; // ô Find/Replace tối thiểu
 // của đường dẫn này to, đường dẫn kia nhỏ"), lề trong như Quick Open
 constexpr int CRUMB_POPUP_WIDTH = 280;
 constexpr int CRUMB_POPUP_MAX_HEIGHT = 600; // như Kate
+// Mục 28: chữ các panel bên trái (cây Projects, Git, Symbols, kết quả Search)
+// cao bằng chữ code (user 2026-10-20 "cho bằng font code"): Dongle 20 → chữ
+// hoa 11px, Fira Code 11 → 10px (đo container) → Dongle 18 ≈ 10px. Chỉ các
+// panel này — cỡ chữ giao diện chung ([fonts] size của palette.toml) giữ 20.
+constexpr int SIDEBAR_FONT_SIZE = 18;
+
 // Mục 21: bề rộng khung bên trái (Projects…) như máy ảo user trước khi lỡ kéo
 // (ảnh 2026-10-13 11:02: thẻ cây 281px + khe CARD_GAP bên trái)
 constexpr int SIDEBAR_WIDTH = 287;
@@ -1262,8 +1271,19 @@ private:
 
 // Mục 15: thẻ kết quả — Results (cha của ResultsTreeView) là thẻ, cây nằm
 // trong cách mép CARD_GAP (vùng hiển thị của cây không giữ lề: padTreeTop).
+// Mục 28
+void sidebarFont(QWidget *w)
+{
+    if (w->font().pointSize() != SIDEBAR_FONT_SIZE) {
+        QFont f = w->font();
+        f.setPointSize(SIDEBAR_FONT_SIZE);
+        w->setFont(f);
+    }
+}
+
 void cardResults(QTreeView *tree)
 {
+    sidebarFont(tree); // mục 28
     QWidget *results = tree->parentWidget();
     if (!results || !results->layout() || results->property("samhieCard").toBool()) {
         return;
@@ -1296,6 +1316,7 @@ void cardSideTree(QTreeView *tree)
     }
     layout->setContentsMargins(CARD_GAP, 0, 0, CARD_GAP);
     tree->setAllColumnsShowFocus(false);
+    sidebarFont(tree); // mục 28
     // Chọn/trỏ dòng như cây Projects (style samhie mục 61, 70) — Kvantum vẽ
     // dòng chọn có viền cyan. Git tự bỏ đường nhánh (GitWidgetTreeView).
     tree->setProperty("samhieTreeLines", true);
@@ -2086,6 +2107,7 @@ public:
                 m_projectTree = tree;
                 schedulePlaceMenuButton();  // căn đỉnh thẻ (alignProjectCard)
                 tree->setProperty("samhieTreeLines", true);  // style samhie mục 61
+                sidebarFont(tree);                            // mục 28
                 // Khung focus cyan cả dòng khi cây giữ focus (bấm vào cây, bấm
                 // chỗ trống): QTreeView::drawRow vẽ PE_FrameFocusRect KHÔNG kèm
                 // widget khi allColumnsShowFocus (Kate bật,

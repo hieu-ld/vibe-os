@@ -433,6 +433,32 @@
                 "selected-text-color": "#af81ff",
                 "text-color": "#8e44ad"
             }
+        },
+        "Markdown": {
+            "Strong Text": {
+                "text-color": "#f04f80",
+                "selected-text-color": "#f04f80"
+            },
+            "Strong-Emphasis Text": {
+                "text-color": "#f04f80",
+                "selected-text-color": "#f04f80"
+            },
+            "List: Strong Text": {
+                "text-color": "#f04f80",
+                "selected-text-color": "#f04f80"
+            },
+            "List: Strong-Emphasis Text": {
+                "text-color": "#f04f80",
+                "selected-text-color": "#f04f80"
+            },
+            "Blockquote: Strong Text": {
+                "text-color": "#f04f80",
+                "selected-text-color": "#f04f80"
+            },
+            "Blockquote: Strong-Emphasis Text": {
+                "text-color": "#f04f80",
+                "selected-text-color": "#f04f80"
+            }
         }
     },
     "editor-colors": {

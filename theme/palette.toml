@@ -233,6 +233,7 @@ warning       = "#da4453"   # cảnh báo / lỗi giữ màu Breeze Dark (user 2
 error         = "#da4453"
 alert         = "#5ccfe6"   # TODO / FIXME, in đậm
 region-marker = "function"  # #region / BEGIN…END
+markdown-strong = "keyword"  # **chữ đậm** của Markdown — nổi như def / import (user 2026-10-20)
 
 # Cặp ngoặc tô màu (plugin Colored Brackets của Kate, 5 màu xoay vòng). VS Code
 # của user tô theo tầng lồng: tầng 0 và 3 = number, 1 = operator, 4 = attribute

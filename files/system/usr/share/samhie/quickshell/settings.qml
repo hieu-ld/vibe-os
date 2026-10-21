@@ -119,6 +119,7 @@ ShellRoot {
                         about: "settings/AboutPage.qml",
                         display: "settings/DisplayPage.qml",
                         bluetooth: "settings/BluetoothPage.qml",
+                        datetime: "settings/DateTimePage.qml",
                         sound: "settings/SoundPage.qml",
                     })[root.current.id]
                         ?? "settings/ComingSoon.qml"

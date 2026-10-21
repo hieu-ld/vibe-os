@@ -415,7 +415,9 @@ hl.window_rule({
 -- Hyprland không tự cho nổi) thì nổi với cỡ APP TỰ CHỌN, không 80%:
 --   org.kde.keditfiletype: nút "Change…" của Properties (KMimeTypeEditor) —
 --   user 2026-10-09: xếp kín thì nằm dưới Dolphin; nổi cỡ riêng 620×755 gọn.
-local helpers = { "org.kde.keditfiletype" }
+--   org.quickshell: cửa sổ thường của Quickshell — app Settings
+--   (quickshell/settings.qml) tự chọn cỡ 900×640 như System Settings macOS.
+local helpers = { "org.kde.keditfiletype", "org.quickshell" }
 
 local function class_regex(classes)
     local parts = {}

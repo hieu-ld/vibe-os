@@ -1,0 +1,8 @@
+#!/bin/sh
+# Mở app Settings (Quickshell, /usr/share/samhie/quickshell/settings.qml).
+#
+#     settings [trang]     # trang: display sound bluetooth datetime appearance
+#                          #        input updates about (mặc định appearance)
+#
+# `-n`: đang mở rồi thì thoát luôn, không mở cửa sổ thứ hai.
+exec env SAMHIE_SETTINGS_PAGE="${1:-}" quickshell -n -p /usr/share/samhie/quickshell/settings.qml

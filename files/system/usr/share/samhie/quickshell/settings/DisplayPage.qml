@@ -17,8 +17,9 @@
 // Đọc: `hyprctl monitors all -j` (cả màn đang tắt). Đổi: chạy ngay
 // `hl.monitor({…})` trong Hyprland (Hyprland.dispatch một hàm Lua — đo
 // container 2026-10-21: độ phân giải, scale, xoay ăn ngay, không cần nạp lại).
-// Đổi độ phân giải / tần số / scale / xoay / tắt màn: hiện "Keep these
-// display settings?" đếm 15 s, không bấm Keep thì tự quay về như cũ — màn
+// Đổi độ phân giải / tần số / scale / xoay / tắt màn: hộp thoại "Keep these
+// display settings?" giữa mọi màn (ConfirmDialog.qml) đếm 15 s, không bấm
+// Keep thì tự quay về như cũ — màn
 // đen vì chọn chế độ màn không chạy được thì cứ đợi là xong. Kéo xếp chỗ thì
 // lưu luôn (không làm hỏng hình được).
 //
@@ -296,44 +297,14 @@ Column {
     spacing: 20
 
     // ── Xác nhận ───────────────────────────────────────────────────────────
-    Group {
-        visible: root.undo !== null
-        Item {
-            width: parent.width
-            height: 60
-            Column {
-                x: 16
-                anchors.verticalCenter: parent.verticalCenter
-                Text {
-                    text: "Keep these display settings?"
-                    color: Theme.c.text
-                    font.family: Colors.fonts.ui
-                    font.weight: Colors.fonts.uiWeight
-                    font.pixelSize: 26
-                }
-                Text {
-                    text: "Reverting in " + root.countdown + " s"
-                    color: Theme.c.textMuted
-                    font.family: Colors.fonts.ui
-                    font.weight: Colors.fonts.uiWeight
-                    font.pixelSize: 22
-                }
-            }
-            Row {
-                anchors.right: parent.right
-                anchors.rightMargin: 16
-                anchors.verticalCenter: parent.verticalCenter
-                spacing: 8
-                Button {
-                    label: "Revert"
-                    onClicked: root.revert()
-                }
-                Button {
-                    label: "Keep"
-                    primary: true
-                    onClicked: root.keep()
-                }
-            }
+    // Hộp thoại giữa MỌI màn (user 2026-10-21: khung trong trang khó thấy /
+    // khó bấm) — chế độ vừa chọn làm một màn đen thì vẫn bấm ở màn kia.
+    Variants {
+        model: root.undo !== null ? Quickshell.screens : []
+        ConfirmDialog {
+            countdown: root.countdown
+            onKept: root.keep()
+            onReverted: root.revert()
         }
     }
 

@@ -329,6 +329,9 @@ hl.layer_rule({ match = { namespace = "^samhie-overview$" }, no_anim = true })
 hl.layer_rule({ match = { namespace = "^samhie-dock$" }, no_anim = true })
 -- Popup thông báo: từng thẻ tự trượt vào trong QML (quickshell/notifications).
 hl.layer_rule({ match = { namespace = "^samhie-notifications$" }, no_anim = true })
+-- Hộp thoại phủ cả màn của app Settings ("Keep these display settings?"):
+-- hiệu ứng mở layer sẽ trượt/phóng cả lớp nền tối — tắt, hiện ngay.
+hl.layer_rule({ match = { namespace = "^samhie-dialog$" }, no_anim = true })
 -- Hình nền (swaybg, namespace "wallpaper") đổi theo sáng/tối: bản mới lên
 -- trên rồi tắt bản cũ — có hiệu ứng thì bản cũ mờ dần ĐÈ lên bản mới, chớp
 -- lại hình cũ (đo container 2026-10-20). Không hiệu ứng: đổi gọn một nhịp.

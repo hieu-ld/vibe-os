@@ -64,6 +64,30 @@ hl.monitor({
     scale    = "auto",
 })
 
+-- Màn hình người dùng chỉnh trong app Settings (trang Display) — phần RIÊNG,
+-- ~/.config/hypr/displays.lua, chỉ là một bảng `return { {output=…}, … }`.
+-- Nạp bằng load() với môi trường RỖNG: file chỉ trả về dữ liệu được, không
+-- gọi được hàm nào. File hỏng thì bỏ qua (màn về mặc định), không làm hỏng
+-- cả cấu hình. hl.monitor viết trong hyprland.lua chạy sau nên vẫn đè lên.
+-- Đọc bằng io.open (không require) để Hyprland không theo dõi file này:
+-- app ghi file là Hyprland KHÔNG nạp lại cấu hình — app đã tự áp dụng rồi.
+do
+    local config = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
+    local f = io.open(config .. "/hypr/displays.lua")
+    if f then
+        local chunk = load(f:read("a"), "displays.lua", "t", {})
+        f:close()
+        local ok, list = pcall(chunk or error)
+        if ok and type(list) == "table" then
+            for _, spec in ipairs(list) do
+                if type(spec) == "table" and type(spec.output) == "string" then
+                    pcall(hl.monitor, spec)
+                end
+            end
+        end
+    end
+end
+
 --------------------------
 ---- BIẾN MÔI TRƯỜNG ----
 --------------------------

@@ -377,6 +377,12 @@ MAP = {
     "output-headphones": [("devices", "audio-headphones")],
     "output-display":    [("devices", "video-display")],
     "input-mic":         [("devices", "audio-input-microphone")],  # Input của trang Sound (app Settings)
+    # Loại thiết bị ở trang Bluetooth (app Settings) — theo `icon` của BlueZ.
+    "bt-mouse":    [("devices", "input-mouse")],
+    "bt-keyboard": [("devices", "input-keyboard")],
+    "bt-phone":    [("devices", "phone")],
+    "bt-gamepad":  [("devices", "input-gaming")],
+    "bt-laptop":   [("devices", "computer-laptop")],
     # Terminal ở THƯ MỤC CỠ 16 (nhóm "apps/16"): chỗ 16px (Dolphin "Open
     # Terminal Here") lấy hình này, cỡ khác (dock 32, thanh trên 18) vẫn lấy
     # icon app nhiều màu ở apps/scalable (tools/build-app-icons.py). Thư mục
@@ -436,7 +442,8 @@ SIZE = {
          "storage", "place-folder", "recent", "dark-mode", "bell-off", "night-light", "wired",
          "bluetooth", "wifi", "wifi-2", "wifi-1", "wifi-0",
          "volume-mute", "volume-35", "volume-70", "volume-full",
-         "output-speaker", "output-headphones", "output-display", "input-mic"],
+         "output-speaker", "output-headphones", "output-display", "input-mic",
+         "bt-mouse", "bt-keyboard", "bt-phone", "bt-gamepad", "bt-laptop"],
     22: ["icons", "details", "menu", "search", "prev", "next"],
     32: ["context-menu", "interface", "konsole-general", "konsole-profiles", "memory",
          "tab-bar", "temp-files", "thumbnails",
@@ -510,6 +517,9 @@ NUDGE = {
     "noti-off": (18, -0.5, 0),
     "bell-off": (20, 0, -0.5),           # mờ 0.40 → 0.31
     "bluetooth": (20, -0.375, -0.5),     # mờ 0.45 → 0.29
+    "bt-keyboard": (20, -0.375, 0.375),  # mờ 0.47 → 0.34
+    "bt-laptop": (20, -0.5, -0.375),     # mờ 0.51 → 0.26
+    "bt-mouse": (20, -0.5, -0.5),        # mờ 0.44 → 0.29
     "check": (16, 0, -0.5),              # mờ 0.53 → 0.41
     "copy": (16, 0.125, 0.125),          # mờ 0.46 → 0.39
     "cut": (16, -0.25, -0.25),           # mờ 0.51 → 0.44

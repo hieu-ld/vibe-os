@@ -115,7 +115,11 @@ ShellRoot {
                     id: loader
                     x: 32
                     width: scroller.width - 64
-                    source: ({ about: "settings/AboutPage.qml", sound: "settings/SoundPage.qml" })[root.current.id]
+                    source: ({
+                        about: "settings/AboutPage.qml",
+                        bluetooth: "settings/BluetoothPage.qml",
+                        sound: "settings/SoundPage.qml",
+                    })[root.current.id]
                         ?? "settings/ComingSoon.qml"
                     onLoaded: if (item.title !== undefined) item.title = root.current.title
                 }

@@ -76,6 +76,11 @@ sau): `output-speaker` (`speaker`), `output-headphones` (`headphones`),
 `output-display` (`computer`); thêm `input-mic` (`mic-01`) cho trang Sound
 của app Settings — Claude lấy thẳng từ repo ở commit trên, đổi `#141B34` →
 `currentColor`.
+Trang Bluetooth của app Settings (2026-10-21, Claude chọn): `bt-mouse`
+(`mouse-02`), `bt-keyboard` (`keyboard`, trùng nét `keyboard` — cỡ 20 thay
+32, bảng NUDGE khác), `bt-phone` (`smart-phone-01`), `bt-gamepad`
+(`game-controller-03`), `bt-laptop` (`laptop`) — Claude lấy thẳng từ repo ở
+commit trên, đổi `#141B34` → `currentColor`.
 Ba file đã sửa (MIT cho sửa):
 - `star-full`: `star` tô kín (fill `currentColor`) — sao Rating đã chọn.
 - `trash-full`: `waste` thêm ba vạch dọc user tự vẽ.
@@ -115,6 +120,11 @@ Ba file đã sửa (MIT cho sửa):
 | `bookmark` | `bookmark-02` |
 | `bookmark-plus` | `bookmark-add-02` |
 | `browse` | `folder-search` |
+| `bt-gamepad` | `game-controller-03` |
+| `bt-keyboard` | `keyboard` |
+| `bt-laptop` | `laptop` |
+| `bt-mouse` | `mouse-02` |
+| `bt-phone` | `smart-phone-01` |
 | `bug` | `bug-01` |
 | `cancel` | `cancel-circle` |
 | `check` | `check` |

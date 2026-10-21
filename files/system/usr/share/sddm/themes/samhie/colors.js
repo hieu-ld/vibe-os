@@ -76,7 +76,7 @@ var light = {
     secondary: "#ededed",
     subSecondary: "#d0d0d0",
     windowBorder: "#c9c9c9",
-    hover: "#ededed",
+    hover: "#e6e6e6",
     scrollbar: "#a4a4a4",
     scrollbarHover: "#989898",
     scrollbarPressed: "#8c8c8c",

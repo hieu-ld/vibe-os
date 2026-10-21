@@ -140,8 +140,11 @@ secondary     = "#ededed"
 sub-secondary = "#d0d0d0"
 window-border = "#c9c9c9"  # viền cửa sổ Hyprland bản sáng (samhie.lua đổi theo chế độ) — vẽ ra
                            # #c8c8c8 (đo container 2026-10-20), nét mảnh quanh cửa sổ #ececec
-hover         = "#ededed"  # = secondary, như bản tối — duyệt ở đợt bản sáng
-scrollbar         = "#a4a4a4"  # tạm, cùng ý bản tối: text-muted 60% trên card, đậm dần khi trỏ/kéo
+hover         = "#e6e6e6"  # user chốt 2026-10-21 (so 3 mức vẽ trong container): 1,20:1 trên
+                           # card = đúng nấc bản tối (#262626 trên #171717: 1,18:1); #ededed
+                           # (= secondary) chỉ 1,12:1. Trên thẻ tối style đổi về hover bản tối.
+scrollbar         = "#a4a4a4"  # user chốt 2026-10-21 (so 3 mức): 2,39:1 trên card, gần bản tối
+                               # (2,81:1); đậm dần khi trỏ/kéo. Trên thẻ tối: màu bản tối (style mục 83)
 scrollbar-hover   = "#989898"
 scrollbar-pressed = "#8c8c8c"
 # Núm thanh trượt bản sáng (user 2026-10-21, chọn từ 4 mẫu vẽ trong container):

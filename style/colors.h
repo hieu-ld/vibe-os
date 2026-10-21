@@ -34,9 +34,9 @@ inline void useLight(bool light)
     POPUP = light ? "#ededed" : "#262626";
     POPUP_BORDER = light ? "#d0d0d0" : "#393939";
     FOCUS_RING = light ? "#b30d728f" : "#b300c0e8";
-    ROW_HOVER = light ? "#ededed" : "#262626";
+    ROW_HOVER = light ? "#e6e6e6" : "#262626";
     ROW_SELECTED = light ? "#d0d0d0" : "#393939";
-    KEY_FOCUS_FILL = light ? "#ededed" : "#262626";
+    KEY_FOCUS_FILL = light ? "#e6e6e6" : "#262626";
     KEY_FOCUS_FILL_RAISED = light ? "#d0d0d0" : "#393939";
     POPUP_ITEM = light ? "#d0d0d0" : "#393939";
     KEYCAP = light ? "#1f1c1c1c" : "#1fbdbec1";
@@ -51,8 +51,11 @@ inline const char *const TERMINAL_TEXT = "#bdbec1";  // dark.text — chữ tab 
 inline const char *const TERMINAL_TEXT_MUTED = "#8f8f8f";  // dark.text-muted — × tab đang mở Konsole
 inline const char *const TERMINAL_ACCENT = "#00c0e8";  // dark.accent-text — chữ breadcrumb Kate đang trỏ
 
-inline const char *const DARKEN_FROM[] = {"#fafafa", "#ededed", "#d0d0d0"};  // light card / secondary / sub-secondary
-inline const char *const DARKEN_TO[] = {"#171717", "#262626", "#393939"};  // dark — cùng vai trò, cùng thứ tự
+inline const char *const DARKEN_FROM[] = {"#fafafa", "#ededed", "#e6e6e6", "#d0d0d0"};  // light card / secondary / hover / sub-secondary
+inline const char *const DARKEN_TO[] = {"#171717", "#262626", "#262626", "#393939"};  // dark — cùng vai trò, cùng thứ tự
+
+inline const char *const SCROLLBAR_FROM[] = {"#a4a4a4", "#989898", "#8c8c8c"};  // light scrollbar / scrollbar-hover / scrollbar-pressed
+inline const char *const SCROLLBAR_TO[] = {"#5f5f5f", "#6a6a6a", "#767676"};  // dark — cùng vai trò, cùng thứ tự
 
 constexpr double WINDOW_OPACITY = 0.9;  // [window] opacity
 constexpr int ITEM_RADIUS = 10;  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)

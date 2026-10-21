@@ -538,6 +538,7 @@
 //      nâng khỏi thẻ đúng nấc bản tối (giữ đúng dáng ô/nút của Kvantum).
 //      Bảng kiểu chữ Theme Editor (KateStyleTreeWidget — nền/chữ màu theme
 //      code) cũng là vùng tối: tiêu đề cột, ô "None set" (user 2026-10-21).
+//      Thanh cuộn trên thẻ tối: màu thanh cuộn bản tối (user 2026-10-21).
 //  84. Tiêu đề trang hộp cài đặt ("Appearance", KPageView) đổi màu theo chế
 //      độ (máy ảo user 2026-10-21: sáng → tối thì chữ vẫn đen trên nền tối,
 //      tối → sáng thì chữ sáng mờ). KPageView chép cứng bảng màu app vào
@@ -992,6 +993,44 @@ void paintDarkened(QPainter *p, const QRect &r, Paint &&paint, const QColor &bas
         p->setOpacity(base.alphaF());
         p->drawImage(r.topLeft(), shape);
         p->restore();
+    }
+    p->drawImage(r.topLeft(), img);
+}
+
+// Mục 83: thanh cuộn trên thẻ tối ở bản sáng — vẽ bản sáng vào ảnh tạm rồi
+// đổi ĐÚNG màu thanh cuộn bản sáng sang màu bản tối, giữ độ đục từng điểm
+// (mép khử răng cưa, thanh vô hiệu hoá 50%, lúc tự ẩn mờ dần). Thanh cuộn
+// đục nên đổi thẳng màu, không qua lớp trắng mờ như paintDarkened.
+template<typename Paint>
+void paintScrollbarDarkened(QPainter *p, const QRect &r, Paint &&paint)
+{
+    static const auto table = [] {
+        std::array<std::pair<QRgb, QRgb>, std::size(samhie::SCROLLBAR_FROM)> t;
+        for (size_t i = 0; i < t.size(); ++i)
+            t[i] = {QColor(samhie::SCROLLBAR_FROM[i]).rgb() & RGB_MASK, QColor(samhie::SCROLLBAR_TO[i]).rgb() & RGB_MASK};
+        return t;
+    }();
+    const qreal dpr = p->device() ? p->device()->devicePixelRatioF() : 1.0;
+    QImage img(r.size() * dpr, QImage::Format_ARGB32);  // không premultiplied: đọc thẳng màu
+    img.setDevicePixelRatio(dpr);
+    img.fill(Qt::transparent);
+    {
+        QPainter ip(&img);
+        ip.translate(-r.topLeft());
+        paint(&ip);
+    }
+    for (int y = 0; y < img.height(); ++y) {
+        auto *line = reinterpret_cast<QRgb *>(img.scanLine(y));
+        for (int x = 0; x < img.width(); ++x) {
+            if (!qAlpha(line[x]))
+                continue;
+            for (const auto &[from, to] : table) {
+                if ((line[x] & RGB_MASK) == from) {
+                    line[x] = (line[x] & ~RGB_MASK) | to;
+                    break;
+                }
+            }
+        }
     }
     p->drawImage(r.topLeft(), img);
 }
@@ -4415,6 +4454,11 @@ public:
                 o.rect = centeredSquare(o.rect, side);
             }
             QProxyStyle::drawComplexControl(cc, &o, p, w);
+            return;
+        }
+        // Mục 83: thanh cuộn trên thẻ tối ở bản sáng mang màu bản tối.
+        if (cc == CC_ScrollBar && g_light && darkPane(w)) {
+            paintScrollbarDarkened(p, opt->rect, [&](QPainter *ip) { QProxyStyle::drawComplexControl(cc, opt, ip, w); });
             return;
         }
         // Mục 33: thanh trượt không khung focus, không sáng khi trỏ.

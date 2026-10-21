@@ -61,7 +61,7 @@ ICONS = {
     # tên icon: (thứ tự các phần tử viền vẽ vào trong, độ sáng viền, mô tả)
     "org.kde.dolphin": ((1,), None, "Dolphin — thư mục"),
     "utilities-terminal": ((0, 1, 4), None, "Konsole — terminal \"$_\""),
-    "preferences-system": ((1,), None, "bánh răng — app cài đặt (CHƯA có app nào: dock tạm ẩn)"),
+    "preferences-system": ((1,), None, "bánh răng — app Settings của Samhie (samhie-settings.desktop)"),
 }
 
 HEADER = """<!-- SINH TỰ ĐỘNG bởi tools/build-app-icons.py từ theme/icons/apps/{name}.svg

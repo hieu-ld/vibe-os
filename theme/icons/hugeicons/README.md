@@ -73,8 +73,9 @@ nửa" cùng kiểu). Claude lấy thẳng từ repo ở commit trên, đổi `#
 file này, tô màu theo palette (xem chú thích ở đó).
 Trang Sound Output của quick settings (2026-10-21, Claude chọn, user duyệt
 sau): `output-speaker` (`speaker`), `output-headphones` (`headphones`),
-`output-display` (`computer`) — Claude lấy thẳng từ repo ở commit trên, đổi
-`#141B34` → `currentColor`.
+`output-display` (`computer`); thêm `input-mic` (`mic-01`) cho trang Sound
+của app Settings — Claude lấy thẳng từ repo ở commit trên, đổi `#141B34` →
+`currentColor`.
 Ba file đã sửa (MIT cho sửa):
 - `star-full`: `star` tô kín (fill `currentColor`) — sao Rating đã chọn.
 - `trash-full`: `waste` thêm ba vạch dọc user tự vẽ.
@@ -155,6 +156,7 @@ Ba file đã sửa (MIT cho sửa):
 | `hide` | `eye-closed` |
 | `icons` | `grid-view` |
 | `info` | `information-circle` |
+| `input-mic` | `mic-01` |
 | `interface` | `dashboard-browsing` |
 | `invert-selection` | `contrast` |
 | `kate-behavior` | `cursor-in-window` |

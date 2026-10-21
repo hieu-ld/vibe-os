@@ -4,5 +4,16 @@
 #     settings [trang]     # trang: display sound bluetooth datetime appearance
 #                          #        input updates about (mặc định appearance)
 #
-# `-n`: đang mở rồi thì thoát luôn, không mở cửa sổ thứ hai.
-exec env SAMHIE_SETTINGS_PAGE="${1:-}" quickshell -n -p /usr/share/samhie/quickshell/settings.qml
+# App đang mở rồi: chuyển sang trang đó (IPC) và đưa cửa sổ lên trước — không
+# mở cửa sổ thứ hai. Cửa sổ thường của Quickshell (class org.quickshell) chỉ
+# có app này.
+qml=/usr/share/samhie/quickshell/settings.qml
+if quickshell ipc -p "$qml" call settings open "${1:-}" >/dev/null 2>&1; then
+    # Cửa sổ nổi: focus không tự đưa lên trên (container 2026-10-21) → thêm
+    # alter_zorder như snap.lua.
+    w='"class:^org\\.quickshell$"'
+    hyprctl dispatch "hl.dsp.focus({ window = $w })" >/dev/null
+    hyprctl dispatch "hl.dsp.window.alter_zorder({ mode = \"top\", window = $w })" >/dev/null
+    exit 0
+fi
+exec env SAMHIE_SETTINGS_PAGE="${1:-}" quickshell -n -p "$qml"

@@ -376,6 +376,7 @@ MAP = {
     "output-speaker":    [("devices", "audio-speakers")],
     "output-headphones": [("devices", "audio-headphones")],
     "output-display":    [("devices", "video-display")],
+    "input-mic":         [("devices", "audio-input-microphone")],  # Input của trang Sound (app Settings)
     # Terminal ở THƯ MỤC CỠ 16 (nhóm "apps/16"): chỗ 16px (Dolphin "Open
     # Terminal Here") lấy hình này, cỡ khác (dock 32, thanh trên 18) vẫn lấy
     # icon app nhiều màu ở apps/scalable (tools/build-app-icons.py). Thư mục
@@ -435,7 +436,7 @@ SIZE = {
          "storage", "place-folder", "recent", "dark-mode", "bell-off", "night-light", "wired",
          "bluetooth", "wifi", "wifi-2", "wifi-1", "wifi-0",
          "volume-mute", "volume-35", "volume-70", "volume-full",
-         "output-speaker", "output-headphones", "output-display"],
+         "output-speaker", "output-headphones", "output-display", "input-mic"],
     22: ["icons", "details", "menu", "search", "prev", "next"],
     32: ["context-menu", "interface", "konsole-general", "konsole-profiles", "memory",
          "tab-bar", "temp-files", "thumbnails",

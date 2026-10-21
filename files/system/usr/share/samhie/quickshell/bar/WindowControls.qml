@@ -41,7 +41,7 @@ Item {
         return t
     }
     readonly property string appId: window && window.wayland ? window.wayland.appId : ""
-    readonly property var entry: appId !== "" ? DesktopEntries.heuristicLookup(appId) : null
+    readonly property var entry: Windows.entryOf(appId)
     readonly property bool maximized: Windows.isMaximized(window)
 
     readonly property int iconSize: 18

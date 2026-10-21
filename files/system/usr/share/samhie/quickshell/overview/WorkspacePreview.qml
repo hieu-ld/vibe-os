@@ -168,7 +168,7 @@ ClippingRectangle {
             readonly property var slot: root.slots ? root.slots[index] : null
             readonly property bool hovered: winArea.containsMouse || close.hovered
             readonly property string appId: modelData.wayland ? modelData.wayland.appId : ""
-            readonly property var entry: appId !== "" ? DesktopEntries.heuristicLookup(appId) : null
+            readonly property var entry: Windows.entryOf(appId)
 
             // Đang rê chuột thì nổi lên trên cửa sổ bên cạnh (nút X, tên).
             z: hovered ? 1 : 0

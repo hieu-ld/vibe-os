@@ -1,5 +1,5 @@
 <!-- SINH TỰ ĐỘNG bởi tools/build-app-icons.py từ theme/icons/apps/preferences-system.svg
-     (bánh răng — app cài đặt (CHƯA có app nào: dock tạm ẩn)) — đừng sửa tay: sửa bản Figma rồi chạy lại script.
+     (bánh răng — app Settings của Samhie (samhie-settings.desktop)) — đừng sửa tay: sửa bản Figma rồi chạy lại script.
      Khung 32 ở giữa; viền ngoài vẽ vào trong + viền bắt sáng (xem script). -->
 <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 32 32" fill="none">
   <defs>

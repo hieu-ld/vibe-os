@@ -3,13 +3,14 @@
 import QtQuick
 import ".."
 import "../colors.js" as Colors
+import "rows.js" as Rows
 
 Item {
     id: root
 
     property string label
     property string value
-    readonly property bool first: parent && parent.children[0] === root
+    readonly property bool first: Rows.isFirst(root)
 
     width: parent.width
     height: 48

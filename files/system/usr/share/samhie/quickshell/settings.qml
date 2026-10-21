@@ -35,6 +35,16 @@ ShellRoot {
     ]
     readonly property var current: pages.find(p => p.id === page) ?? pages[0]
 
+    // `settings <trang>` khi app đang mở: đổi trang thay vì mở cửa sổ thứ
+    // hai (/usr/libexec/samhie/settings gọi qua `quickshell ipc`).
+    IpcHandler {
+        target: "settings"
+        function open(page: string): void {
+            if (page !== "")
+                root.page = page
+        }
+    }
+
     FileView {
         path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/samhie/settings.json"
         blockLoading: true
@@ -105,7 +115,8 @@ ShellRoot {
                     id: loader
                     x: 32
                     width: scroller.width - 64
-                    source: root.current.id === "about" ? "settings/AboutPage.qml" : "settings/ComingSoon.qml"
+                    source: ({ about: "settings/AboutPage.qml", sound: "settings/SoundPage.qml" })[root.current.id]
+                        ?? "settings/ComingSoon.qml"
                     onLoaded: if (item.title !== undefined) item.title = root.current.title
                 }
             }

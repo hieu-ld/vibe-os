@@ -94,7 +94,7 @@ Item {
                                 readonly property bool minimized: Windows.isMinimized(modelData)
                                 readonly property bool current: Windows.focused === modelData
                                 readonly property string appId: modelData.wayland ? modelData.wayland.appId : ""
-                                readonly property var entry: appId !== "" ? DesktopEntries.heuristicLookup(appId) : null
+                                readonly property var entry: Windows.entryOf(appId)
 
                                 width: list.width
                                 height: 40

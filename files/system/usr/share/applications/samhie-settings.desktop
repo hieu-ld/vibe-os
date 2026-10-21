@@ -1,0 +1,11 @@
+[Desktop Entry]
+Type=Application
+Name=Settings
+Comment=Display, sound, Bluetooth, appearance and updates
+Exec=/usr/libexec/samhie/settings
+Icon=preferences-system
+# Cửa sổ thường của Quickshell mang class org.quickshell — app Settings là cửa
+# sổ duy nhất như vậy → thanh trên / dock nhận ra nó qua dòng này.
+StartupWMClass=org.quickshell
+Categories=Settings;System;
+Keywords=settings;preferences;display;sound;volume;bluetooth;appearance;dark;update;about;

@@ -118,15 +118,25 @@ Singleton {
         return !!o && ((o.fullscreen ?? 0) === 1 || (o.tags ?? []).indexOf("samhie-maximized") >= 0)
     }
 
-    // Cửa sổ của một app (file .desktop) — app id của cửa sổ không phải lúc
+    // File .desktop của một cửa sổ (theo app id) — app id không phải lúc
     // nào cũng trùng tên file (.desktop của VS Code là com.microsoft.VSCode,
-    // cửa sổ là "code") nên tra qua heuristicLookup. Dùng gần đây nhất trước.
+    // cửa sổ là "code") nên tra qua heuristicLookup. Riêng `org.quickshell`:
+    // cửa sổ thường duy nhất của Quickshell là app Settings, nhưng gói
+    // quickshell có sẵn org.quickshell.desktop (tên "Quickshell") khớp trước
+    // StartupWMClass của samhie-settings.desktop (container 2026-10-21), và
+    // Quickshell không cho đổi app id.
+    readonly property var appIdEntry: ({ "org.quickshell": "samhie-settings" })
+    function entryOf(appId) {
+        if (appId === "")
+            return null
+        const own = appIdEntry[appId]
+        return (own ? DesktopEntries.byId(own) : null) ?? DesktopEntries.heuristicLookup(appId)
+    }
+
+    // Cửa sổ của một app (file .desktop). Dùng gần đây nhất trước.
     function windowsOf(entry) {
         const list = windows.filter(t => {
-            const id = t.wayland ? t.wayland.appId : ""
-            if (id === "")
-                return false
-            const e = DesktopEntries.heuristicLookup(id)
+            const e = entryOf(t.wayland ? t.wayland.appId : "")
             return e !== null && e.id === entry.id
         })
         return list.sort((a, b) => rank(a) - rank(b))

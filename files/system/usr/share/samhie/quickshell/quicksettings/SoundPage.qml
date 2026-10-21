@@ -6,7 +6,7 @@
 //   (loa)  Built-in Audio              ✓
 //   (màn)  HDMI / DisplayPort
 //   ─────────────────────────────────────
-//   Sound Settings                          ← pavucontrol (tới khi có app Settings)
+//   Sound Settings                          ← trang Sound của app Settings
 //
 // Chọn ngõ ra = Pipewire.preferredDefaultAudioSink (module của Quickshell,
 // không gọi lệnh); ngõ đang dùng có dấu ✓.
@@ -16,6 +16,7 @@ import Quickshell.Services.Pipewire
 import "../bar"
 import ".."
 import "../colors.js" as Colors
+import "../audio.js" as Audio
 
 Column {
     id: root
@@ -31,21 +32,8 @@ Column {
         objects: root.visible ? root.sinks : []
     }
 
-    // Loại ngõ ra → icon: HDMI/DisplayPort = màn hình, tai nghe (form-factor
-    // hoặc Bluetooth) = tai nghe, còn lại = loa.
-    function kind(node) {
-        const p = node.properties ?? {}
-        const text = (node.name + " " + (node.description ?? "")).toLowerCase()
-        const form = (p["device.form-factor"] ?? "").toLowerCase()
-        if (/hdmi|displayport/.test(text))
-            return "display"
-        if (/headphone|headset|hands-free/.test(form + " " + text) || node.name.startsWith("bluez_output"))
-            return "headphones"
-        return "speaker"
-    }
-
     function openSettings() {
-        Quickshell.execDetached(["pavucontrol", "--tab=3"])
+        Quickshell.execDetached(["/usr/libexec/samhie/settings", "sound"])
         qs.bar.popup = ""
     }
 
@@ -103,7 +91,6 @@ Column {
                 id: row
                 required property PwNode modelData
                 readonly property bool current: root.sink !== null && root.sink.id === modelData.id
-                readonly property string kind: root.kind(modelData)
 
                 width: parent.width
                 height: 44
@@ -116,8 +103,7 @@ Column {
                     category: "devices"
                     size: 20
                     color: Theme.c.text
-                    iconName: row.kind === "display" ? "video-display"
-                        : row.kind === "headphones" ? "audio-headphones" : "audio-speakers"
+                    iconName: Audio.outputIcon(row.modelData)
                 }
                 Text {
                     x: 42
@@ -125,7 +111,7 @@ Column {
                     height: parent.height
                     verticalAlignment: Text.AlignVCenter
                     elide: Text.ElideRight
-                    text: row.modelData.description || row.modelData.nickname || row.modelData.name
+                    text: Audio.deviceName(row.modelData)
                     color: Theme.c.text
                     font.family: Colors.fonts.ui
                     font.weight: Colors.fonts.uiWeight

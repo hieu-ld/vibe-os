@@ -28,8 +28,8 @@
 // Chấm dưới icon: mỗi cửa sổ một chấm (tối đa 3), `dock-dot-active` khi app
 // đang focus.
 //
-// Icon bánh răng (Settings) trong bản vẽ TẠM ẨN (user chốt 2026-10-01): image
-// chưa có app cài đặt. Có rồi thì thêm id vào `pinned`.
+// Icon bánh răng (Settings) trong bản vẽ: tạm ẩn từ 2026-10-01 vì chưa có
+// app, bật lại 2026-10-21 khi có app Settings (samhie-settings.desktop).
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
@@ -40,7 +40,7 @@ Item {
     id: root
 
     // id của file .desktop (không có đuôi). App nào chưa cài thì bỏ qua.
-    property var pinned: ["org.kde.dolphin", "org.kde.konsole", "org.kde.kate", "com.microsoft.Edge"]
+    property var pinned: ["org.kde.dolphin", "org.kde.konsole", "org.kde.kate", "com.microsoft.Edge", "samhie-settings"]
     // Đọc qua applications.values (không dùng byId) để danh sách TỰ CẬP NHẬT:
     // lúc dock dựng mà Quickshell chưa đọc xong file .desktop thì byId trả
     // null và dock trống luôn (đo 2026-10-01).

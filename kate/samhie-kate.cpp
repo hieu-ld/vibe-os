@@ -257,6 +257,8 @@
 //    theo (Ctrl+M, F1, Shift+F1) và Find Action không liệt kê (style mục 41).
 //    Toolbars Shown được KXmlGui dựng lại mỗi khi plugin nạp
 //    (ktoolbarhandler.cpp 6.30) → ẩn thêm lúc mỗi menu polish / sắp hiện.
+//    Selection chỉ hiện khi có mục (tab code đang mở; tab terminal thì trống
+//    — user 2026-10-21).
 //
 // 24. Popup Ctrl+Tab (Last Used Views, plugin tabswitcher) là thẻ như Quick
 //    Open (user 2026-10-13: "giao diện nào cũ thì làm hết"): popup chính là
@@ -304,6 +306,12 @@
 //    tô kết quả trong file. Chỗ tìm, Aa, .* và lịch sử ô Find (▾) giữ. Thu
 //    cột (bấm lại icon Search) thì GIỮ kết quả — chỉ là thu lại cho code
 //    rộng. Hộp Ctrl+F không đụng tới. Xem resetSearchPanel.
+//
+// 30. Nhật ký Output bỏ icon đầu dòng (user 2026-10-21): Kate chèn icon
+//    16px vào văn bản (<img>, kateoutputview.cpp 26.08.1 — ảnh nạp qua
+//    loadResource của nó, không đổi màu theo thẻ tối được: ở bản sáng icon
+//    nét tối nằm trên thẻ tối). Mỗi lần nhật ký thêm chữ, xoá ký tự ảnh +
+//    dấu cách sau nó trong phần mới. Xem stripOutputIcons.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -350,6 +358,10 @@
 #include <QSplitter>
 #include <QStackedWidget>
 #include <QPainter>
+#include <QTextBlock>
+#include <QTextCursor>
+#include <QTextDocument>
+#include <QTextEdit>
 #include <QTextLayout>
 #include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
@@ -568,6 +580,14 @@ void hideMenuActions(const QList<QAction *> &actions)
     for (QAction *a : actions) {
         if (a->isVisible() && MENU_HIDDEN.contains(a->objectName())) {
             a->setVisible(false);
+        }
+        // Selection (katepart5ui.rc) chỉ có mục khi tab code đang mở — tab
+        // terminal thì trống, bấm không ra gì (máy ảo user 2026-10-21) → ẩn
+        if (QMenu *sub = a->menu(); sub && sub->objectName() == QLatin1String("selection")) {
+            const QList<QAction *> items = sub->actions();
+            a->setVisible(std::any_of(items.begin(), items.end(), [](QAction *x) {
+                return x->isVisible() && !x->isSeparator();
+            }));
         }
     }
 }
@@ -1520,6 +1540,57 @@ void resetSearchPanel(QWidget *dialog, int tries = 20)
     }
 }
 
+// Mục 30: xoá icon (ký tự ảnh) trong nhật ký Output từ vị trí đã ghi ở
+// thuộc tính samhieIconScanFrom tới cuối, kèm một dấu cách sau ảnh (Kate
+// viết "giờ <img> nhóm" — bỏ ảnh còn hai dấu cách).
+void stripOutputIcons(QTextEdit *edit)
+{
+    const QVariant from = edit->property("samhieIconScanFrom");
+    edit->setProperty("samhieIconScanFrom", QVariant());
+    QTextDocument *doc = edit->document();
+    if (!from.isValid()) {
+        return;
+    }
+    QList<int> images;
+    for (QTextBlock b = doc->findBlock(from.toInt()); b.isValid(); b = b.next()) {
+        for (auto it = b.begin(); !it.atEnd(); ++it) {
+            const QTextFragment f = it.fragment();
+            if (f.isValid() && f.charFormat().isImageFormat()) {
+                for (int i = 0; i < f.length(); ++i) {
+                    images.append(f.position() + i);
+                }
+            }
+        }
+    }
+    QTextCursor c(doc);
+    for (auto i = images.crbegin(); i != images.crend(); ++i) {
+        c.setPosition(*i);
+        c.setPosition(*i + (doc->characterAt(*i + 1) == QLatin1Char(' ') ? 2 : 1), QTextCursor::KeepAnchor);
+        c.removeSelectedText();
+    }
+}
+
+// Mục 30: gom các lần thêm chữ trong một nhịp, xoá ảnh một lần sau đó
+void watchOutputIcons(QTextEdit *edit)
+{
+    QObject::connect(edit->document(), &QTextDocument::contentsChange, edit, [edit](int pos, int, int added) {
+        if (added <= 0) {
+            return; // lần xoá của chính mục này
+        }
+        const QVariant from = edit->property("samhieIconScanFrom");
+        if (from.isValid()) {
+            edit->setProperty("samhieIconScanFrom", qMin(from.toInt(), pos));
+            return;
+        }
+        edit->setProperty("samhieIconScanFrom", pos);
+        QTimer::singleShot(0, edit, [edit] {
+            stripOutputIcons(edit);
+        });
+    });
+    edit->setProperty("samhieIconScanFrom", 0); // nhật ký có sẵn trước khi plugin thấy khung
+    stripOutputIcons(edit);
+}
+
 // Mục 15: một hàng của panel Search — dải ngang riêng, không chung cột lưới
 // với hàng khác (chung cột thì nút Replace rộng bóp ô chỗ tìm còn "⌄").
 QWidget *searchRow(QWidget *dialog, const char *name, int spacing, const QList<QWidget *> &widgets)
@@ -2215,6 +2286,9 @@ public:
                     // hai chế độ (style mục 82)
                     edit->setProperty("samhieDarkCard", true);
                     markCard(edit);
+                    if (auto *text = qobject_cast<QTextEdit *>(edit)) {
+                        watchOutputIcons(text); // mục 30
+                    }
                 }
             }
             if (isViewSpace(obj)) {

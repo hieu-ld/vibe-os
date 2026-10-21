@@ -536,6 +536,13 @@
 //      ⤢ góc thẻ sáng). Kvantum chỉ nạp một bộ SVG theo chế độ → vẽ bản sáng
 //      vào ảnh tạm, đổi xám card/secondary/sub-secondary thành lớp trắng mờ
 //      nâng khỏi thẻ đúng nấc bản tối (giữ đúng dáng ô/nút của Kvantum).
+//      Bảng kiểu chữ Theme Editor (KateStyleTreeWidget — nền/chữ màu theme
+//      code) cũng là vùng tối: tiêu đề cột, ô "None set" (user 2026-10-21).
+//  84. Tiêu đề trang hộp cài đặt ("Appearance", KPageView) đổi màu theo chế
+//      độ (máy ảo user 2026-10-21: sáng → tối thì chữ vẫn đen trên nền tối,
+//      tối → sáng thì chữ sáng mờ). KPageView chép cứng bảng màu app vào
+//      KTitleWidget lúc dựng (kpageview.cpp:166, KF 6.31) → chép lại mỗi lần
+//      bảng màu app đổi / style nạp lại.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -891,13 +898,14 @@ void clearAlternateBase(T *target, const QPalette &from)
 // Mục 81, 82: nền luôn tối (nền terminal) ở cả hai chế độ — w nằm trong
 // (hoặc là) khung tab Konsole, view space Kate (thẻ code + dải tab của nó),
 // hay thẻ plugin Kate đánh dấu samhieDarkCard (kết quả Search: Kate tô bằng
-// màu theme code). Breadcrumb Kate nằm sâu 4 cấp trong view space. Dừng ở mép
+// màu theme code; bảng kiểu chữ Theme Editor cũng vậy — mục 83). Breadcrumb
+// Kate nằm sâu 4 cấp trong view space. Dừng ở mép
 // cửa sổ: popup gợi ý gõ là con của view code nhưng là cửa sổ sáng riêng.
 bool darkPane(const QWidget *w)
 {
     for (int i = 0; w && i < 5; ++i, w = w->parentWidget()) {
         if (w->inherits("Konsole::TabbedViewContainer") || w->inherits("KateViewSpace")
-            || w->property("samhieDarkCard").toBool())
+            || w->inherits("KateStyleTreeWidget") || w->property("samhieDarkCard").toBool())
             return true;
         if (w->isWindow())
             return false;
@@ -1573,6 +1581,26 @@ public:
     bool eventFilter(QObject *, QEvent *event) override
     {
         return event->type() == QEvent::Paint;
+    }
+};
+
+// Mục 84: widget giữ bảng màu app chép cứng (tiêu đề KPageView) — chép lại
+// khi bảng màu app đổi.
+class FollowAppPalette : public QObject
+{
+public:
+    using QObject::QObject;
+
+    static void sync(QWidget *w)
+    {
+        w->setPalette(QApplication::palette(w));
+    }
+
+    bool eventFilter(QObject *obj, QEvent *event) override
+    {
+        if (event->type() == QEvent::ApplicationPaletteChange)
+            sync(static_cast<QWidget *>(obj));
+        return false;
     }
 };
 
@@ -3321,6 +3349,10 @@ public:
             m_card.attach(w);  // mục 60
         if (w->inherits("KMultiTabBarTab"))
             w->installEventFilter(&m_sidebarTab);  // mục 66 — sau bộ lọc Kvantum
+        if (w->inherits("KTitleWidget") && w->objectName().startsWith(QLatin1String("KPageView::TitleWidget"))) {
+            FollowAppPalette::sync(w);  // mục 84 — style nạp lại lúc đổi chế độ
+            w->installEventFilter(&m_followAppPalette);
+        }
         if (EditorAlpha::wants(w))
             w->installEventFilter(&m_editorAlpha);  // mục 62
         auto *tw = qobject_cast<QTabWidget *>(w);
@@ -3933,6 +3965,7 @@ public:
         w->removeEventFilter(&m_hideDock);
         w->removeEventFilter(&m_popupAnchor);
         w->removeEventFilter(&m_noPaint);
+        w->removeEventFilter(&m_followAppPalette);
         w->removeEventFilter(&m_sidebarTab);
         w->removeEventFilter(&m_keepCommandBarFocus);
         w->removeEventFilter(&m_crumbIndent);
@@ -4589,22 +4622,37 @@ public:
             return;
         }
         auto *button = qstyleoption_cast<const QStyleOptionButton *>(opt);
-        // Mục 83: nút trên thẻ tối (⤢ tách kết quả Search Kate) — mặt + viền
-        // bản tối, icon (nét một màu) tô màu chữ bản tối
+        // Mục 83: nút trên vùng tối (⤢ tách kết quả Search Kate, ô màu "None
+        // set" của Theme Editor) — mặt + viền bản tối; nhãn (chữ + icon nét
+        // một màu) Kvantum vẽ vào ảnh tạm rồi tô một màu chữ bản tối — Kvantum
+        // lấy màu chữ nút từ kvconfig, bỏ qua palette (đo container: chữ mất).
+        // Ô "None set" Kate vẽ không cờ Enabled (bản sáng Kvantum làm mờ chữ:
+        // đo 99 so với 189 bản tối) → nhãn vẽ như đang bật; nút THẬT bị tắt thì
+        // tô màu chữ mờ. Lót nền thẻ chỉ cho nút thật (⤢ nằm đè lên kết quả).
         if (ce == CE_PushButton && button && g_light && darkPane(w)) {
             QStyleOptionButton o(*button);
             o.state &= ~State_HasFocus;
-            paintDarkened(p, o.rect, [&](QPainter *ip) { QProxyStyle::drawControl(CE_PushButtonBevel, &o, ip, w); }, paneColor(w));
-            if (!o.icon.isNull()) {
-                QPixmap pm = o.icon.pixmap(o.iconSize, p->device() ? p->device()->devicePixelRatioF() : 1.0);
-                QPainter ip(&pm);
+            const bool real = qobject_cast<const QAbstractButton *>(w);
+            paintDarkened(p, o.rect, [&](QPainter *ip) { QProxyStyle::drawControl(CE_PushButtonBevel, &o, ip, w); },
+                          real ? paneColor(w) : QColor());
+            const bool disabled = real && !(o.state & State_Enabled);
+            o.state |= State_Enabled;
+            const qreal dpr = p->device() ? p->device()->devicePixelRatioF() : 1.0;
+            QImage label(o.rect.size() * dpr, QImage::Format_ARGB32_Premultiplied);
+            label.setDevicePixelRatio(dpr);
+            label.fill(Qt::transparent);
+            {
+                QPainter ip(&label);
+                ip.setFont(p->font());
+                ip.translate(-o.rect.topLeft());
+                o.rect = subElementRect(SE_PushButtonContents, button, w);
+                QProxyStyle::drawControl(CE_PushButtonLabel, &o, &ip, w);
+                ip.resetTransform();
                 ip.setCompositionMode(QPainter::CompositionMode_SourceIn);
-                ip.fillRect(QRect(QPoint(0, 0), pm.size()), QColor(samhie::TERMINAL_TEXT));
-                ip.end();
-                o.icon = QIcon(pm);
+                ip.fillRect(QRectF(QPointF(0, 0), QSizeF(button->rect.size())),
+                            QColor(disabled ? samhie::TERMINAL_TEXT_MUTED : samhie::TERMINAL_TEXT));
             }
-            o.palette.setColor(QPalette::ButtonText, QColor(samhie::TERMINAL_TEXT));
-            QProxyStyle::drawControl(CE_PushButtonLabel, &o, p, w);
+            p->drawImage(button->rect.topLeft(), label);
             return;
         }
         if (ce == CE_PushButton && button && (button->state & State_HasFocus)) {  // mục 16, 28
@@ -4646,6 +4694,33 @@ public:
             return;
         }
         auto *header = qstyleoption_cast<const QStyleOptionHeader *>(opt);
+        // Mục 83: tiêu đề cột trên vùng tối (bảng kiểu chữ Theme Editor Kate) —
+        // nền ô như ô dòng; chữ + icon (B I U S, nét một màu) Kvantum vẽ vào
+        // ảnh tạm rồi tô một màu chữ bản tối (như nhãn tab, mục 81)
+        if (ce == CE_Header && header && g_light && darkPane(w)) {
+            paintDarkened(p, header->rect, [&](QPainter *ip) { QProxyStyle::drawControl(CE_HeaderSection, header, ip, w); });
+            const qreal dpr = p->device() ? p->device()->devicePixelRatioF() : 1.0;
+            QImage label(header->rect.size() * dpr, QImage::Format_ARGB32_Premultiplied);
+            label.setDevicePixelRatio(dpr);
+            label.fill(Qt::transparent);
+            {
+                QPainter ip(&label);
+                ip.setFont(p->font());
+                ip.translate(-header->rect.topLeft());
+                QStyleOptionHeader o(*header);
+                o.rect = subElementRect(SE_HeaderLabel, header, w);
+                QProxyStyle::drawControl(CE_HeaderLabel, &o, &ip, w);
+                if (header->sortIndicator != QStyleOptionHeader::None) {
+                    o.rect = subElementRect(SE_HeaderArrow, header, w);
+                    QProxyStyle::drawPrimitive(PE_IndicatorHeaderArrow, &o, &ip, w);
+                }
+                ip.resetTransform();
+                ip.setCompositionMode(QPainter::CompositionMode_SourceIn);
+                ip.fillRect(QRectF(QPointF(0, 0), QSizeF(header->rect.size())), QColor(samhie::TERMINAL_TEXT));
+            }
+            p->drawImage(header->rect.topLeft(), label);
+            return;
+        }
         if (ce == CE_Header && header && isDolphinView(w)) {  // mục 14
             p->save();
             p->setCompositionMode(QPainter::CompositionMode_Source);
@@ -5022,6 +5097,7 @@ private:
     HideDock m_hideDock;
     PopupAnchor m_popupAnchor;
     NoPaint m_noPaint;
+    FollowAppPalette m_followAppPalette;
     SidebarTabPaint m_sidebarTab;
     KeepCommandBarFocus m_keepCommandBarFocus;
     CrumbIndent m_crumbIndent;

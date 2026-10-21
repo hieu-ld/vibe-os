@@ -545,6 +545,8 @@
 //      bảng màu app đổi / style nạp lại. Hộp About (Dolphin, Kate) mở lúc đổi
 //      chế độ (user 2026-10-21): dòng mô tả dưới tên người/thành phần, link,
 //      tiêu đề "Tên / Version" (to ra) — xem FollowAppPalette.
+//  85. Tab thường có icon + chữ (Configure Dolphin › View): icon đứng sát chữ,
+//      cả cụm giữa tab (Kvantum đặt icon ở mép trái tab, chữ canh giữa).
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -682,6 +684,9 @@ constexpr int TOOL_PADDING = 6;    // nút icon trên thanh công cụ: icon + 6
 constexpr int TOOLBAR_SEPARATOR_HEIGHT = 18;  // icon thanh công cụ cao ~20px (mục 23)
 constexpr int KEY_FOCUS_PAD = 6;   // ô nền focus bàn phím rộng hơn vòng radio + chữ (mục 25, 28)
 constexpr int PAGE_LIST_GAP = 4;   // danh sách trang hộp thoại cài đặt: khe quanh mỗi ô (mục 32)
+constexpr int TAB_LABEL_GAP = 6;  // mục 85: icon ↔ chữ trên tab thường (đo container)
+constexpr int TAB_LABEL_PAD = 12; // mục 85: đệm hai bên nhãn — đủ để Kvantum không cắt "…" chữ
+constexpr int TAB_LABEL_SLACK = 40; // mục 85: tab rộng hơn nội dung chừng này mới tính là bị giãn
 constexpr int TERMINAL_PAD = 6;    // panel Terminal Dolphin: lề trong thêm (mục 27)
 constexpr int TERMINAL_GAP = 7;    // khe trên panel Terminal: + vạch ngăn dock 1px = 8 (mục 27)
 constexpr int POPUP_MARGIN = 8;    // thẻ tìm cách mép vùng file
@@ -4677,6 +4682,25 @@ public:
             p->fillPath(path, paneColor(w));
             p->restore();
             return;
+        }
+        // Mục 85: tab thường có icon + chữ (Configure Dolphin › View: General,
+        // Content Display…) — Kvantum đặt icon sát mép trái tab, chữ canh giữa
+        // phần còn lại → tab dàn hết bề ngang thì icon trôi xa chữ, như thuộc
+        // tab bên cạnh. Thu khung nhãn về bề rộng nội dung, đặt giữa tab.
+        // Chỉ tab bị giãn (dư hơn TAB_LABEL_SLACK) và không có nút × — tab
+        // Kate/Konsole vừa khít nội dung, có ×.
+        if (ce == CE_TabBarTabLabel && tab && !tab->icon.isNull() && !tab->text.isEmpty()
+            && tab->rightButtonSize.isEmpty() && tab->leftButtonSize.isEmpty()
+            && (tab->shape == QTabBar::RoundedNorth || tab->shape == QTabBar::RoundedSouth)) {
+            QString text = tab->text;
+            text.replace(QLatin1String("&&"), QLatin1String("\x01")).remove(QLatin1Char('&')).replace(QLatin1Char('\x01'), QLatin1Char('&'));
+            const int content = tab->iconSize.width() + TAB_LABEL_GAP + tab->fontMetrics.horizontalAdvance(text) + 2 * TAB_LABEL_PAD;
+            if (tab->rect.width() > content + TAB_LABEL_SLACK) {
+                QStyleOptionTab o(*tab);
+                o.rect = QRect(tab->rect.center().x() + 1 - content / 2, tab->rect.y(), content, tab->rect.height());
+                drawControl(ce, &o, p, w);
+                return;
+            }
         }
         // Mục 81: chữ tab đang mở của Konsole nằm trên nền terminal (tối cả
         // hai chế độ) → chữ bản tối. Kvantum lấy màu chữ tab từ kvconfig, bỏ

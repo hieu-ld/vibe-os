@@ -146,6 +146,28 @@ ShellRoot {
             clipboard.toggle()
         }
     }
+    // Hình nền cho màn tổng quan (đường dẫn thật, không symlink). Lúc mở:
+    // SAMHIE_WALLPAPER(_LIGHT) do samhie.lua đặt. App Settings (trang
+    // Appearance) chọn hình / về mặc định → `wallpaper set <tối> <sáng>`.
+    property string wallpaperDark: Quickshell.env("SAMHIE_WALLPAPER") || "/usr/share/backgrounds/samhie/samhie.png"
+    property string wallpaperLight: Quickshell.env("SAMHIE_WALLPAPER_LIGHT") || "/usr/share/backgrounds/samhie/samhie-light.png"
+    IpcHandler {
+        target: "wallpaper"
+        function set(dark: string, light: string): void {
+            samhie.wallpaperDark = dark
+            samhie.wallpaperLight = light
+        }
+    }
+
+    // Sáng/tối từ app Settings (trang Appearance) — đổi giống bấm ô Dark mode
+    // của quick settings (quicksettings/Settings.qml lưu + áp dụng).
+    IpcHandler {
+        target: "prefs"
+        function setLightMode(on: bool): void {
+            samhie.prefs.lightMode = on
+        }
+    }
+
     // Đổi múi giờ (app Settings gọi `clock refresh` sau timedatectl
     // set-timezone): SystemClock của đồng hồ thanh trên giữ giờ cũ tới khi
     // sang phút mới (máy ảo 2026-10-21) — báo để nó đọc lại (bar/Clock.qml).

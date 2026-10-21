@@ -26,6 +26,7 @@ modules:
         - swaybg                  # hình nền
         - libnotify               # notify-send (script chụp màn hình, màn khoá)
         - gammastep               # Night light của quick settings (477 KiB, không kéo gói nào)
+        - kdialog                 # hộp chọn file KDE cho app Settings (hình nền) — 797 KiB, không kéo gói nào
 
         # Màn hình đăng nhập, chạy trên Wayland (không cần X server). Compositor
         # cho greeter là KWin (sddm-wayland-plasma, như Fedora KDE), KHÔNG phải

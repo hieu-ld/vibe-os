@@ -35,6 +35,7 @@ Item {
         }
         TextInput {
             id: search
+            cursorDelegate: Caret { input: search; color: Theme.c.text; size: 17 }
             x: 38
             width: parent.width - x - 12
             height: parent.height

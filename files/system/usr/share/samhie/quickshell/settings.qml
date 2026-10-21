@@ -117,6 +117,7 @@ ShellRoot {
                     width: scroller.width - 64
                     source: ({
                         about: "settings/AboutPage.qml",
+                        appearance: "settings/AppearancePage.qml",
                         display: "settings/DisplayPage.qml",
                         bluetooth: "settings/BluetoothPage.qml",
                         datetime: "settings/DateTimePage.qml",

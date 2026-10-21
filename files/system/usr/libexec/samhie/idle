@@ -1,0 +1,40 @@
+#!/bin/sh
+# Chạy hypridle (Hyprland mở lúc đăng nhập — samhie.lua; app Settings chạy lại
+# khi đổi "Lock screen after": `idle restart`).
+#
+# - Có ~/.config/hypr/hypridle.conf của người dùng: dùng nguyên file đó.
+# - Không: bản mặc định /etc/xdg/hypr/hypridle.conf, thời gian khoá lấy từ
+#   ~/.local/state/samhie/lock-after (số giây; 0 = Never) do Settings ghi.
+#   Chép bản mặc định ra $XDG_RUNTIME_DIR, chỉ đổi số giây của hai listener
+#   đánh dấu "# samhie:lock" / "# samhie:display-off" (tắt màn = khoá + 30 s;
+#   0 = bỏ cả hai) — phần còn lại vẫn theo image, sửa mặc định là tới tay
+#   người dùng. Gập máy / ngủ vẫn khoá (before_sleep_cmd) kể cả khi Never.
+default=/etc/xdg/hypr/hypridle.conf
+user=${XDG_CONFIG_HOME:-$HOME/.config}/hypr/hypridle.conf
+state=${XDG_STATE_HOME:-$HOME/.local/state}/samhie/lock-after
+
+[ "$1" = restart ] && pkill -x hypridle
+[ -f "$user" ] && exec hypridle -c "$user"
+
+secs=$(cat "$state" 2>/dev/null)
+case "$secs" in
+    ''|*[!0-9]*) exec hypridle -c "$default" ;;   # chưa chọn / file hỏng
+esac
+
+conf=${XDG_RUNTIME_DIR:-/tmp}/samhie-hypridle.conf
+awk -v lock="$secs" '
+    /^# samhie:lock$/        { mark = "lock"; next }
+    /^# samhie:display-off$/ { mark = "off"; next }
+    mark != "" && /^listener/ { inblock = 1; buf = $0 "\n"; next }
+    inblock {
+        if ($1 == "timeout") $0 = "    timeout = " (mark == "lock" ? lock : lock + 30)
+        buf = buf $0 "\n"
+        if ($0 ~ /^}/) {
+            if (lock > 0) printf "%s", buf
+            inblock = 0; mark = ""
+        }
+        next
+    }
+    { print }
+' "$default" > "$conf.tmp" && mv "$conf.tmp" "$conf" || exec hypridle -c "$default"
+exec hypridle -c "$conf"

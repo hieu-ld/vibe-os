@@ -56,12 +56,9 @@ PanelWindow {
     // riêng; không thì dock của tổng quan hiện dần theo hiệu ứng.
     property bool dockFromDesktop: false
 
-    // Hình nền: shell.qml được chạy với SAMHIE_WALLPAPER(_LIGHT) =
-    // samhie.wallpaper(_light) (samhie.lua), chọn theo chế độ sáng/tối. Đổi
-    // hình nền lúc đang chạy thì phải chạy lại Quickshell.
-    readonly property string wallpaper: "file://" + (Theme.light
-        ? Quickshell.env("SAMHIE_WALLPAPER_LIGHT") || "/usr/share/backgrounds/samhie/samhie-light.png"
-        : Quickshell.env("SAMHIE_WALLPAPER") || "/usr/share/backgrounds/samhie/samhie.png")
+    // Hình nền theo chế độ sáng/tối: shell.qml giữ đường dẫn (lúc mở lấy từ
+    // SAMHIE_WALLPAPER(_LIGHT) của samhie.lua, app Settings đổi qua IPC).
+    readonly property string wallpaper: "file://" + (Theme.light ? shell.wallpaperLight : shell.wallpaperDark)
 
     // Màn ảo đang xem trong khung lớn.
     property int viewWs: 1

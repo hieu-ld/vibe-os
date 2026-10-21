@@ -127,10 +127,11 @@ hl.env("ELECTRON_OZONE_PLATFORM_HINT", "auto")
 ---- TỰ KHỞI ĐỘNG ----
 -------------------
 
--- hypridle đọc ~/.config/hypr/hypridle.conf nếu người dùng có, không thì dùng
--- bản mặc định của Samhie. Không có file nào thì hypridle không chạy, tức là
--- máy KHÔNG tự khoá — nên luôn phải có bản mặc định.
-local idleCmd = "test -f ~/.config/hypr/hypridle.conf && exec hypridle || exec hypridle -c /etc/xdg/hypr/hypridle.conf"
+-- Tự khoá: /usr/libexec/samhie/idle chạy hypridle — ~/.config/hypr/hypridle.conf
+-- của người dùng nếu có, không thì bản mặc định với thời gian khoá app
+-- Settings lưu (trang Appearance). Không có file nào thì hypridle không chạy,
+-- tức là máy KHÔNG tự khoá — nên luôn phải có bản mặc định.
+local idleCmd = "exec /usr/libexec/samhie/idle"
 
 -- Lệnh chạy qua shell nên đường dẫn được đặt trong ngoặc kép, thoát các ký
 -- tự đặc biệt; ~/ thành $HOME/.
@@ -138,26 +139,45 @@ local function quoted(path)
     return '"' .. path:gsub('[\\"$`]', "\\%0"):gsub("^~/", "$HOME/") .. '"'
 end
 
+local DEFAULT_WALLPAPER = "/usr/share/backgrounds/samhie/samhie.png"
+local DEFAULT_WALLPAPER_LIGHT = "/usr/share/backgrounds/samhie/samhie-light.png"
+-- Hình app Settings chép về khi bấm Choose… (trang Appearance): symlink tới
+-- bản chép. Xét lúc CHẠY lệnh (shell), không lúc nạp cấu hình — chọn hình
+-- mới không cần nạp lại Hyprland.
+local CUSTOM_WALLPAPER = '"${XDG_DATA_HOME:-$HOME/.local/share}/samhie/wallpaper"'
+
 local function lightWallpaper()
     if samhie.wallpaper_light then return samhie.wallpaper_light end
-    if samhie.wallpaper == "/usr/share/backgrounds/samhie/samhie.png" then
-        return "/usr/share/backgrounds/samhie/samhie-light.png"
-    end
+    if samhie.wallpaper == DEFAULT_WALLPAPER then return DEFAULT_WALLPAPER_LIGHT end
     return samhie.wallpaper
 end
 
+-- Lệnh shell đặt $img = hình nền của một chế độ. Thứ tự: samhie.wallpaper(_light)
+-- người dùng ghi trong hyprland.lua → hình chọn trong app Settings (dùng cho
+-- cả hai chế độ) → mặc định của Samhie.
+local function imgCmd(light)
+    local img = light and lightWallpaper() or samhie.wallpaper
+    local cmd = "img=" .. quoted(img) .. "; "
+    local fromLua = samhie.wallpaper ~= DEFAULT_WALLPAPER or (light and samhie.wallpaper_light)
+    if not fromLua then
+        cmd = cmd .. "[ -e " .. CUSTOM_WALLPAPER .. " ] && img=" .. CUSTOM_WALLPAPER .. "; "
+    end
+    return cmd
+end
+
 -- Hình nền do swaybg vẽ (TẠM, giai đoạn 3 Quickshell làm thay), theo chế độ
--- sáng/tối. `light` nil (khởi động, nạp lại cấu hình): đọc chế độ đã lưu ở
--- settings.json (quicksettings/Settings.qml ghi). Đổi hình: bật swaybg mới
--- TRƯỚC, vẽ xong mới tắt cái cũ — tắt trước thì chớp màu nền Hyprland.
+-- sáng/tối. `light` nil (khởi động, nạp lại cấu hình, app Settings đổi
+-- hình): đọc chế độ đã lưu ở settings.json (quicksettings/Settings.qml ghi).
+-- Đổi hình: bật swaybg mới TRƯỚC, vẽ xong mới tắt cái cũ — tắt trước thì
+-- chớp màu nền Hyprland.
 local function wallpaperCmd(light)
     local pick
     if light == nil then
-        pick = "img=" .. quoted(samhie.wallpaper) .. "; grep -qs '\"lightMode\": *true' "
-            .. '"${XDG_STATE_HOME:-$HOME/.local/state}/samhie/settings.json" && img='
-            .. quoted(lightWallpaper()) .. "; "
+        pick = "if grep -qs '\"lightMode\": *true' "
+            .. '"${XDG_STATE_HOME:-$HOME/.local/state}/samhie/settings.json"; then '
+            .. imgCmd(true) .. "else " .. imgCmd(false) .. "fi; "
     else
-        pick = "img=" .. quoted(light and lightWallpaper() or samhie.wallpaper) .. "; "
+        pick = imgCmd(light)
     end
     return pick .. 'old=$(pgrep -x swaybg); swaybg -m fill -i "$img" & sleep 1; [ -n "$old" ] && kill $old'
 end
@@ -186,14 +206,23 @@ function samhie_color_mode(light)
     hl.config({ general = { col = borderColors(light) } })
 end
 
+-- Toàn cục cho app Settings (trang Appearance) gọi sau khi chọn hình nền /
+-- về mặc định: vẽ lại hình nền theo chế độ đang lưu.
+function samhie_wallpaper_refresh()
+    hl.exec_cmd(wallpaperCmd())
+end
+
 -- -n: đang có một bản chạy rồi thì không mở thêm. SAMHIE_WALLPAPER(_LIGHT):
--- màn tổng quan vẽ hình nền trong ô màn ảo (đổi hình nền thì phải chạy lại
--- Quickshell mới thấy trong tổng quan).
+-- màn tổng quan vẽ hình nền trong ô màn ảo — đường dẫn THẬT (readlink -f:
+-- hình chọn trong Settings là symlink; mỗi lần chọn là một bản chép mới tên
+-- khác, nên Image của Qt không giữ ảnh cũ trong bộ nhớ đệm). Đổi hình lúc
+-- shell đang chạy: app Settings báo qua IPC `wallpaper set` (shell.qml).
+-- SAMHIE_SHELL: app mở từ shell (dock → Settings) biết gọi IPC vào đâu.
 local function shellCmd()
-    -- SAMHIE_SHELL: app mở từ shell (dock → Settings) biết gọi IPC vào đâu.
-    return "SAMHIE_SHELL=" .. quoted(samhie.shell)
-        .. " SAMHIE_WALLPAPER=" .. quoted(samhie.wallpaper)
-        .. " SAMHIE_WALLPAPER_LIGHT=" .. quoted(lightWallpaper())
+    return imgCmd(false) .. 'dark=$(readlink -f "$img"); '
+        .. imgCmd(true) .. 'light=$(readlink -f "$img"); '
+        .. "SAMHIE_SHELL=" .. quoted(samhie.shell)
+        .. ' SAMHIE_WALLPAPER="$dark" SAMHIE_WALLPAPER_LIGHT="$light"'
         .. " exec quickshell -n -p " .. quoted(samhie.shell)
 end
 

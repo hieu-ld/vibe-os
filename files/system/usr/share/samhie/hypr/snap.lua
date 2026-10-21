@@ -22,6 +22,9 @@ local M = {}
 -- 2026-10-08); Konsole 60% (user 2026-10-09; trước 50%).
 M.float = {
     ["org.kde.konsole"] = 0.6,
+    -- Hộp chọn file KDE của app Settings (nút Choose… hình nền): tự chọn cỡ
+    -- 1728×972 trên màn 1920×1080 — che cả Settings (container 2026-10-21).
+    ["org.kde.kdialog"] = 0.6,
 }
 M.default = 0.8
 

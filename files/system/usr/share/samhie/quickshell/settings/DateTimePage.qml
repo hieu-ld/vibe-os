@@ -162,6 +162,7 @@ Column {
                     color: Qt.alpha(Theme.c.text, 0.08)
                     TextInput {
                         id: manual
+                        cursorDelegate: Caret { input: manual; color: Theme.c.text; size: 16 }
                         // dd/mm/yyyy hh:mm → "yyyy-mm-dd hh:mm:00" cho timedatectl.
                         readonly property var parts: text.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})$/)
                         readonly property bool valid: parts !== null && +parts[1] >= 1 && +parts[1] <= 31
@@ -299,6 +300,7 @@ Column {
                             }
                             TextInput {
                                 id: find
+                                cursorDelegate: Caret { input: find; color: Theme.c.text; size: 16 }
                                 x: 34
                                 width: parent.width - x - 10
                                 height: parent.height

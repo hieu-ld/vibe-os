@@ -29,7 +29,9 @@
 // đang focus.
 //
 // Icon bánh răng (Settings) trong bản vẽ: tạm ẩn từ 2026-10-01 vì chưa có
-// app, bật lại 2026-10-21 khi có app Settings (samhie-settings.desktop).
+// app, bật lại 2026-10-21 khi có app Settings (samhie-settings.desktop) —
+// đứng ĐẦU dãy (user 2026-10-21). Dock chưa cho kéo đổi chỗ icon: thứ tự là
+// mảng `pinned`.
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
@@ -40,7 +42,7 @@ Item {
     id: root
 
     // id của file .desktop (không có đuôi). App nào chưa cài thì bỏ qua.
-    property var pinned: ["org.kde.dolphin", "org.kde.konsole", "org.kde.kate", "com.microsoft.Edge", "samhie-settings"]
+    property var pinned: ["samhie-settings", "org.kde.dolphin", "org.kde.konsole", "org.kde.kate", "com.microsoft.Edge"]
     // Đọc qua applications.values (không dùng byId) để danh sách TỰ CẬP NHẬT:
     // lúc dock dựng mà Quickshell chưa đọc xong file .desktop thì byId trả
     // null và dock trống luôn (đo 2026-10-01).

@@ -88,7 +88,8 @@ modules:
         - swappy
         - playerctl
         - brightnessctl
-        - pavucontrol
+        # pavucontrol: gỡ 2026-10-21 — trang Sound của app Settings thay (pactl
+        # của pulseaudio-utils có sẵn trong image nền).
         - NetworkManager-tui
 
         # Font: Noto Sans (bản variable, mọi độ đậm) có sẵn trong image nền —

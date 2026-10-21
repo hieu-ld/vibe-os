@@ -542,7 +542,9 @@
 //      độ (máy ảo user 2026-10-21: sáng → tối thì chữ vẫn đen trên nền tối,
 //      tối → sáng thì chữ sáng mờ). KPageView chép cứng bảng màu app vào
 //      KTitleWidget lúc dựng (kpageview.cpp:166, KF 6.31) → chép lại mỗi lần
-//      bảng màu app đổi / style nạp lại.
+//      bảng màu app đổi / style nạp lại. Hộp About (Dolphin, Kate) mở lúc đổi
+//      chế độ (user 2026-10-21): dòng mô tả dưới tên người/thành phần, link,
+//      tiêu đề "Tên / Version" (to ra) — xem FollowAppPalette.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -1584,8 +1586,14 @@ public:
     }
 };
 
-// Mục 84: widget giữ bảng màu app chép cứng (tiêu đề KPageView) — chép lại
-// khi bảng màu app đổi.
+// Mục 84: chỗ KDE chụp màu lúc dựng, không theo khi đổi chế độ lúc đang mở:
+//  - samhieFollowPalette: widget giữ bảng màu app chép cứng (tiêu đề
+//    KPageView); samhieFollowAlpha: chữ mờ đi (dòng mô tả hộp About, 85%)
+//  - samhieRelink: nhãn có link — Qt tô màu link lúc đọc HTML, theo bảng màu
+//    app LÚC ĐÓ → đặt lại chữ cho nó đọc lại
+//  - samhieRichTitle: chữ HTML trong KTitleWidget (tiêu đề hộp About) — đổi
+//    màu thì KTitleWidget gắn stylesheet cỡ chữ ×1,4 lúc mở chưa có (chữ to
+//    ra) → gỡ đi, màu chữ đã theo palette của nhãn
 class FollowAppPalette : public QObject
 {
 public:
@@ -1593,13 +1601,63 @@ public:
 
     static void sync(QWidget *w)
     {
-        w->setPalette(QApplication::palette(w));
+        if (w->property("samhieFollowPalette").toBool()) {
+            QPalette pal = QApplication::palette(w);
+            const QVariant alpha = w->property("samhieFollowAlpha");
+            if (alpha.isValid()) {
+                QColor text = pal.color(QPalette::WindowText);
+                text.setAlphaF(alpha.toDouble());
+                pal.setColor(QPalette::WindowText, text);
+            }
+            w->setPalette(pal);
+        }
+        if (w->property("samhieRelink").toBool()) {
+            auto *label = static_cast<QLabel *>(w);
+            const QString text = label->text();
+            label->setText(QString());  // cùng chữ thì QLabel bỏ qua
+            label->setText(text);
+        }
+    }
+
+    static void unstyleTitle(QLabel *label)
+    {
+        if (!label->styleSheet().isEmpty() && Qt::mightBeRichText(label->text()))
+            label->setStyleSheet(QString());
+    }
+
+    // Gỡ ở nhịp sau, KHÔNG ngay lúc polish / lúc sự kiện: KTitleWidget đặt
+    // stylesheet SAU bộ lọc (changeEvent của nó), và đổi stylesheet giữa lúc
+    // QApplication::setStyle duyệt widget làm Kate crash (gdb 2026-10-21:
+    // KTitleWidget::changeEvent → setStyle_helper trên style đã xoá)
+    static void unstyleTitleLater(QLabel *label)
+    {
+        QPointer<QLabel> guard = label;
+        QTimer::singleShot(0, label, [guard] {
+            if (guard)
+                unstyleTitle(guard);
+        });
+    }
+
+    // Đổi chế độ = style nạp lại: MỌI widget nhận StyleChange, nhưng không phải
+    // widget nào cũng nhận ApplicationPaletteChange (đo container: nhãn
+    // "File Manager…" của hộp About không nhận) → làm cả hai, ở nhịp sau
+    // (lúc đó bảng màu app đã là bản mới)
+    static void syncLater(QWidget *w)
+    {
+        QPointer<QWidget> guard = w;
+        QTimer::singleShot(0, w, [guard] {
+            if (guard)
+                sync(guard);
+        });
     }
 
     bool eventFilter(QObject *obj, QEvent *event) override
     {
-        if (event->type() == QEvent::ApplicationPaletteChange)
-            sync(static_cast<QWidget *>(obj));
+        auto *w = static_cast<QWidget *>(obj);
+        if (event->type() == QEvent::ApplicationPaletteChange || event->type() == QEvent::StyleChange)
+            syncLater(w);
+        if (event->type() == QEvent::StyleChange && w->property("samhieRichTitle").toBool())
+            unstyleTitleLater(static_cast<QLabel *>(w));
         return false;
     }
 };
@@ -3349,8 +3407,29 @@ public:
             m_card.attach(w);  // mục 60
         if (w->inherits("KMultiTabBarTab"))
             w->installEventFilter(&m_sidebarTab);  // mục 66 — sau bộ lọc Kvantum
-        if (w->inherits("KTitleWidget") && w->objectName().startsWith(QLatin1String("KPageView::TitleWidget"))) {
-            FollowAppPalette::sync(w);  // mục 84 — style nạp lại lúc đổi chế độ
+        // Mục 84 (polish lại = style nạp lại lúc đổi chế độ → sync luôn)
+        if (w->inherits("KTitleWidget") && w->objectName().startsWith(QLatin1String("KPageView::TitleWidget")))
+            w->setProperty("samhieFollowPalette", true);
+        if (auto *label = qobject_cast<QLabel *>(w)) {
+            const QWidget *win = w->window();
+            const bool about = win->inherits("KAboutApplicationDialog") || win->inherits("KAboutPluginDialog");
+            // kabstractaboutdialog_p.cpp (KF 6.31): dòng mô tả = chữ 85%
+            if (about && w->testAttribute(Qt::WA_SetPalette) && !w->property("samhieFollowPalette").isValid()
+                && qAbs(w->palette().color(QPalette::WindowText).alphaF() - 0.85) < 0.01) {
+                w->setProperty("samhieFollowPalette", true);
+                w->setProperty("samhieFollowAlpha", 0.85);
+            }
+            if (label->text().contains(QLatin1String("<a "), Qt::CaseInsensitive))
+                w->setProperty("samhieRelink", true);
+            if (w->parentWidget() && w->parentWidget()->inherits("KTitleWidget")) {
+                w->setProperty("samhieRichTitle", true);
+                FollowAppPalette::unstyleTitleLater(label);
+            }
+        }
+        if (w->property("samhieFollowPalette").toBool() || w->property("samhieRelink").toBool()
+            || w->property("samhieRichTitle").toBool()) {
+            if (w->property("samhieFollowPalette").toBool())
+                FollowAppPalette::sync(w);
             w->installEventFilter(&m_followAppPalette);
         }
         if (EditorAlpha::wants(w))

@@ -82,8 +82,22 @@ Column {
             root.error = code === 0 ? "" : action.what
             if (code !== 0)
                 console.warn("timedatectl:", actionErr.text)
+            else
+                root.clockChanged()
             root.refresh()
         }
+    }
+    // Giờ / múi giờ vừa đổi: đồng hồ của trang này và của thanh trên vẽ lại
+    // ngay, không đợi sang phút mới. SystemClock giữ giờ "treo tường" cũ
+    // (`date` đọc ra vẫn 22 giờ sau khi sang Tokyo — container 2026-10-21;
+    // new Date() thì đúng ngay) → tắt/bật lại để nó đọc giờ mới. Shell
+    // chính: IPC `clock refresh` (shell.qml); SAMHIE_SHELL do samhie.lua đặt
+    // khi mở shell — mở app từ terminal thì không có, dùng đường dẫn mặc định.
+    function clockChanged() {
+        clock.enabled = false
+        clock.enabled = true
+        Quickshell.execDetached(["quickshell", "ipc", "-p",
+            Quickshell.env("SAMHIE_SHELL") || "/usr/share/samhie/quickshell", "call", "clock", "refresh"])
     }
     function run(args, what) {
         if (action.running)

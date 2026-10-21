@@ -27,6 +27,15 @@ Item {
         id: clock
         precision: SystemClock.Minutes
     }
+    // Đổi múi giờ (IPC `clock refresh`, shell.qml): SystemClock giữ giờ cũ
+    // tới phút sau — tắt/bật lại để nó đọc giờ mới ngay.
+    Connections {
+        target: root.bar.shell
+        function onClockSerialChanged() {
+            clock.enabled = false
+            clock.enabled = true
+        }
+    }
 
     implicitWidth: label.implicitWidth + 16
     implicitHeight: bar.height

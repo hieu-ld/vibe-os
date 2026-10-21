@@ -190,7 +190,9 @@ end
 -- màn tổng quan vẽ hình nền trong ô màn ảo (đổi hình nền thì phải chạy lại
 -- Quickshell mới thấy trong tổng quan).
 local function shellCmd()
-    return "SAMHIE_WALLPAPER=" .. quoted(samhie.wallpaper)
+    -- SAMHIE_SHELL: app mở từ shell (dock → Settings) biết gọi IPC vào đâu.
+    return "SAMHIE_SHELL=" .. quoted(samhie.shell)
+        .. " SAMHIE_WALLPAPER=" .. quoted(samhie.wallpaper)
         .. " SAMHIE_WALLPAPER_LIGHT=" .. quoted(lightWallpaper())
         .. " exec quickshell -n -p " .. quoted(samhie.shell)
 end

@@ -146,6 +146,17 @@ ShellRoot {
             clipboard.toggle()
         }
     }
+    // Đổi múi giờ (app Settings gọi `clock refresh` sau timedatectl
+    // set-timezone): SystemClock của đồng hồ thanh trên giữ giờ cũ tới khi
+    // sang phút mới (máy ảo 2026-10-21) — báo để nó đọc lại (bar/Clock.qml).
+    property int clockSerial: 0
+    IpcHandler {
+        target: "clock"
+        function refresh(): void {
+            samhie.clockSerial++
+        }
+    }
+
     IpcHandler {
         target: "clipboard"
         function toggle(): void { clipboard.toggle() }

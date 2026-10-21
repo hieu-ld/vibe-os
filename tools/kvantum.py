@@ -338,11 +338,15 @@ def indicators(roles):
         out.append(_icon(f"checkbox-tristate-{st}", 16, f'<g{op}>{ticked("checkbox-tristate", (acc, acc))}</g>'))
         out.append(_icon(f"radio-checked-{st}", 16,
                          f'<g{op}>{ticked("radio-checked", (acc, acc), mark_fill=on_acc)}</g>'))
+    # Núm thanh trượt: vai trò slider-* (bản sáng trắng viền xám, user
+    # 2026-10-21). Vô hiệu hoá thì mờ 40% như ô tích.
     sub = roles["sub-secondary"]
     for st in ("normal", "focused", "pressed", "disabled"):
-        fill = roles["text"] if st in ("focused", "pressed") else roles["text-muted"]
+        down = "-pressed" if st in ("focused", "pressed") else ""
+        op = ' opacity="0.4"' if st == "disabled" else ""
         out.append(_icon(f"slidercursor-{st}", 16,
-                         f'<circle cx="8" cy="8" r="6" fill="{fill}" stroke="{sub}"/>'))
+                         f'<circle cx="8" cy="8" r="6" fill="{roles["slider-knob" + down]}" '
+                         f'stroke="{roles["slider-knob-rim" + down]}"{op}/>'))
     out.append(_icon("header-separator", 16,
                      f'<rect x="7.5" y="3" width="1" height="10" fill="{sub}"/>'))
     out.append(_icon("toolbar-handle", 16, ""))

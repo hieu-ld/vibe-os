@@ -78,6 +78,12 @@ scrollbar         = "#5f5f5f"  # thanh cuộn (tự ẩn) — user 2026-10-05: �
                                # như bản cũ (text-muted 60% trên card = #5f5f5f)
 scrollbar-hover   = "#6a6a6a"  # đang trỏ chuột
 scrollbar-pressed = "#767676"  # đang kéo: "sáng hơn 1 chút thôi" (trước là text, chói)
+# Núm thanh trượt (QSlider, Kvantum): núm tròn đặc + viền. Bản tối: xám
+# text-muted, đang kéo sáng lên = text.
+slider-knob             = "#8f8f8f"  # = text-muted
+slider-knob-pressed     = "#bdbec1"  # = text
+slider-knob-rim         = "#393939"  # = sub-secondary
+slider-knob-rim-pressed = "#393939"
 
 text       = "#bdbec1"     # user đổi 2026-10-03 (bản vẽ Konsole/Dolphin): dịu mắt khi nhìn lâu.
                            # 8,1:1 trên secondary, 6,2:1 trên sub-secondary
@@ -138,6 +144,13 @@ hover         = "#ededed"  # = secondary, như bản tối — duyệt ở đợ
 scrollbar         = "#a4a4a4"  # tạm, cùng ý bản tối: text-muted 60% trên card, đậm dần khi trỏ/kéo
 scrollbar-hover   = "#989898"
 scrollbar-pressed = "#8c8c8c"
+# Núm thanh trượt bản sáng (user 2026-10-21, chọn từ 4 mẫu vẽ trong container):
+# TRẮNG viền xám, không chấm giữa ("bản tối cũng đâu có chấm") — trước là xám
+# text-muted, kéo thì #1c1c1c, trông như núm đen. Đang kéo: viền đậm lên.
+slider-knob             = "#fafafa"  # = card
+slider-knob-pressed     = "#fafafa"
+slider-knob-rim         = "#a4a4a4"  # = scrollbar
+slider-knob-rim-pressed = "#6b6b6b"  # = text-muted
 
 text       = "#1c1c1c"
 text-muted = "#6b6b6b"

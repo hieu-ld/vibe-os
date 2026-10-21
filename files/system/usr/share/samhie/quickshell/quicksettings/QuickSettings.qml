@@ -5,7 +5,8 @@
 //   Wired · Wi-Fi · Bluetooth · Night light · Do not disturb · Dark mode
 // Ô nào máy không có phần cứng thì ẩn (lẻ hàng không sao — user chốt ở 1.0).
 // Ô Wi-Fi tách đôi kiểu Windows 11: phần trái bật/tắt sóng, mũi tên bên phải
-// mở trang chọn mạng (WifiPage.qml) thay chỗ cả bảng.
+// mở trang chọn mạng (WifiPage.qml) thay chỗ cả bảng; nút › cạnh thanh âm
+// lượng mở trang chọn ngõ ra (SoundPage.qml) cũng vậy.
 //
 // Trạng thái mạng hỏi `nmcli` CHỈ KHI BẢNG ĐANG MỞ (mỗi 2 s) — bảng đóng gần
 // như suốt ngày, khỏi tốn (bài học bản 1.0). Bấm ô là đổi hình NGAY, 600 ms
@@ -24,7 +25,8 @@ Item {
     required property var bar
     readonly property var shell: bar.shell
     readonly property bool open: bar.popup === "quick"
-    // Trang đang xem: "" = bảng chính, "wifi" = chọn mạng. Đóng bảng thì về
+    // Trang đang xem: "" = bảng chính, "wifi" = chọn mạng, "sound" = chọn
+    // ngõ ra âm thanh. Đóng bảng thì về
     // bảng chính.
     property string page: ""
     onOpenChanged: if (!open) page = ""
@@ -183,6 +185,13 @@ Item {
             VolumeRow {
                 visible: root.page === ""
                 width: parent.width
+                onMoreClicked: root.page = "sound"
+            }
+
+            SoundPage {
+                visible: root.page === "sound"
+                width: parent.width
+                qs: root
             }
 
             WifiPage {

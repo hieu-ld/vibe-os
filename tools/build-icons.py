@@ -371,6 +371,11 @@ MAP = {
     "volume-35":  [("status", "audio-volume-low")],
     "volume-70":  [("status", "audio-volume-medium")],
     "volume-full": [("status", "audio-volume-high")],
+    # Loại ngõ ra trong trang Sound Output (SoundPage.qml): loa / tai nghe
+    # (cả Bluetooth) / HDMI-DisplayPort.
+    "output-speaker":    [("devices", "audio-speakers")],
+    "output-headphones": [("devices", "audio-headphones")],
+    "output-display":    [("devices", "video-display")],
     # Terminal ở THƯ MỤC CỠ 16 (nhóm "apps/16"): chỗ 16px (Dolphin "Open
     # Terminal Here") lấy hình này, cỡ khác (dock 32, thanh trên 18) vẫn lấy
     # icon app nhiều màu ở apps/scalable (tools/build-app-icons.py). Thư mục
@@ -429,7 +434,8 @@ SIZE = {
          "smart-home", "download", "network", "trash-empty", "trash-full",
          "storage", "place-folder", "recent", "dark-mode", "bell-off", "night-light", "wired",
          "bluetooth", "wifi", "wifi-2", "wifi-1", "wifi-0",
-         "volume-mute", "volume-35", "volume-70", "volume-full"],
+         "volume-mute", "volume-35", "volume-70", "volume-full",
+         "output-speaker", "output-headphones", "output-display"],
     22: ["icons", "details", "menu", "search", "prev", "next"],
     32: ["context-menu", "interface", "konsole-general", "konsole-profiles", "memory",
          "tab-bar", "temp-files", "thumbnails",

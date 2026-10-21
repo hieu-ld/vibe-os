@@ -3,7 +3,8 @@
 //   * icon loa đổi theo mức: 4 bậc 25/50/75/100% + tắt tiếng (user vẽ
 //     2026-10-06); bấm vào là tắt/bật tiếng;
 //   * kéo/bấm/lăn chuột trên thanh để đổi mức;
-//   * nút ˅ (chỉ hiện khi có hơn một ngõ ra) mở danh sách chọn ngõ ra.
+//   * nút › mở trang Sound Output (SoundPage.qml — chọn loa/tai nghe/HDMI),
+//     như mũi tên của ô Wi-Fi; luôn hiện vì trang có cả "Sound Settings".
 // Đọc/ghi thẳng qua Pipewire (module của Quickshell), không gọi lệnh — đổi ở
 // chỗ khác (phím âm lượng, app) thì hàng này tự đổi theo.
 import QtQuick
@@ -20,9 +21,7 @@ Column {
     readonly property bool ready: sink !== null && sink.audio !== null
     readonly property real volume: ready ? sink.audio.volume : 0
     readonly property bool muted: ready && sink.audio.muted
-    // Ngõ ra thật (loa, tai nghe, HDMI…), không tính luồng của app.
-    readonly property var sinks: Pipewire.nodes.values.filter(n => n.isSink && !n.isStream && n.audio)
-    property bool choosing: false
+    signal moreClicked()
 
     // Thuộc tính âm thanh của node chỉ có giá trị khi node được "theo dõi".
     PwObjectTracker {
@@ -121,8 +120,8 @@ Column {
 
         Text {
             id: percent
-            anchors.right: chooser.visible ? chooser.left : parent.right
-            anchors.rightMargin: chooser.visible ? 4 : 2
+            anchors.right: chooser.left
+            anchors.rightMargin: 4
             anchors.verticalCenter: parent.verticalCenter
             width: 40
             horizontalAlignment: Text.AlignRight
@@ -135,16 +134,15 @@ Column {
 
         Rectangle {
             id: chooser
-            visible: root.sinks.length > 1
             anchors.right: parent.right
             anchors.verticalCenter: parent.verticalCenter
             width: 28
             height: 28
             radius: 6
-            color: chooserMouse.containsMouse || root.choosing ? Theme.c.secondary : "transparent"
+            color: chooserMouse.containsMouse ? Theme.c.secondary : "transparent"
             SamhieIcon {
                 anchors.centerIn: parent
-                iconName: root.choosing ? "arrow-up" : "arrow-down"
+                iconName: "arrow-right"
                 size: 14
                 color: Theme.c.text
             }
@@ -152,45 +150,7 @@ Column {
                 id: chooserMouse
                 anchors.fill: parent
                 hoverEnabled: true
-                onClicked: root.choosing = !root.choosing
-            }
-        }
-    }
-
-    // Danh sách ngõ ra — ngõ đang dùng có chữ cyan.
-    Column {
-        visible: root.choosing
-        width: parent.width
-        Repeater {
-            model: root.sinks
-            delegate: Rectangle {
-                id: sinkRow
-                required property PwNode modelData
-                readonly property bool current: root.sink !== null && root.sink.id === modelData.id
-                width: parent.width
-                height: 34
-                radius: 6
-                color: sinkMouse.containsMouse ? Theme.c.secondary : "transparent"
-                Text {
-                    x: 40
-                    width: parent.width - x - 8
-                    anchors.verticalCenter: parent.verticalCenter
-                    elide: Text.ElideRight
-                    text: sinkRow.modelData.description || sinkRow.modelData.nickname || sinkRow.modelData.name
-                    color: sinkRow.current ? Theme.c.accentText : Theme.c.text
-                    font.family: Colors.fonts.ui
-                    font.weight: Colors.fonts.uiWeight
-                    font.pixelSize: 24
-                }
-                MouseArea {
-                    id: sinkMouse
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    onClicked: {
-                        Pipewire.preferredDefaultAudioSink = sinkRow.modelData
-                        root.choosing = false
-                    }
-                }
+                onClicked: root.moreClicked()
             }
         }
     }

@@ -71,6 +71,10 @@ Panel Search của Kate gọn như VS Code (2026-10-13, user nhờ sắp xếp):
 nửa" cùng kiểu). Claude lấy thẳng từ repo ở commit trên, đổi `#141B34` →
 `currentColor`. KHÔNG qua build-icons.py: `tools/kvantum.py` đọc nét từ các
 file này, tô màu theo palette (xem chú thích ở đó).
+Trang Sound Output của quick settings (2026-10-21, Claude chọn, user duyệt
+sau): `output-speaker` (`speaker`), `output-headphones` (`headphones`),
+`output-display` (`computer`) — Claude lấy thẳng từ repo ở commit trên, đổi
+`#141B34` → `currentColor`.
 Ba file đã sửa (MIT cho sửa):
 - `star-full`: `star` tô kín (fill `currentColor`) — sao Rating đã chọn.
 - `trash-full`: `waste` thêm ba vạch dọc user tự vẽ.
@@ -188,6 +192,9 @@ Ba file đã sửa (MIT cho sửa):
 | `noti-off` | `bell-off` |
 | `open-folder` | `folder-open` |
 | `open-with` | `dashboard-square-add` |
+| `output-display` | `computer` |
+| `output-headphones` | `headphones` |
+| `output-speaker` | `speaker` |
 | `paste` | `file-paste` |
 | `pin` | `pin` |
 | `place-folder` | `folder-01` (bản chép của `folder`, căn lưới cỡ 20) |

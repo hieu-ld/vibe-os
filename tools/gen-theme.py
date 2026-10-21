@@ -639,6 +639,13 @@ def style_colors_h(pal):
             f'inline const char *const TERMINAL_TEXT = "{d["text"]}";  // dark.text — chữ tab đang mở Konsole, × khi trỏ',
             f'inline const char *const TERMINAL_TEXT_MUTED = "{d["text-muted"]}";  // dark.text-muted — × tab đang mở Konsole',
             f'inline const char *const TERMINAL_ACCENT = "{d["accent-text"]}";  // dark.accent-text — chữ breadcrumb Kate đang trỏ', ""]
+    # Phần tử Kvantum (ô dòng, nút) trên thẻ tối ở bản sáng: style vẽ bản sáng
+    # rồi đổi xám từng vai trò sang xám bản tối (style mục 83).
+    roles = ("card", "secondary", "sub-secondary")
+    out += ["inline const char *const DARKEN_FROM[] = {" + ", ".join(f'"{pal["light"][r]}"' for r in roles)
+            + "};  // light " + " / ".join(roles),
+            "inline const char *const DARKEN_TO[] = {" + ", ".join(f'"{d[r]}"' for r in roles)
+            + "};  // dark — cùng vai trò, cùng thứ tự", ""]
     out += [f'constexpr double WINDOW_OPACITY = {pal["window"]["opacity"]};  // [window] opacity']
     out += [f'constexpr int ITEM_RADIUS = {kvantum.RADIUS["itemview"]};  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)']
     out += [f'constexpr int MENUITEM_RADIUS = {kvantum.RADIUS["menuitem"]};  // góc ô hover dòng menu = RADIUS["menuitem"] (tools/kvantum.py)']

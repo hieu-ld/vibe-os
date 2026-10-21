@@ -531,9 +531,16 @@
 //      một bản) và thẻ kết quả Search tối (Kate tô kết quả bằng màu theme
 //      code — plugin đánh dấu samhieDarkCard; khung Output cũng vậy). Nhãn tab đang mở tô một màu
 //      chữ bản tối (mục 81); icon breadcrumb lấy bản Selected (nét sáng).
+//  83. Phần tử Kvantum trên thẻ tối ở bản sáng (máy ảo user 2026-10-20: dòng
+//      kết quả Search trỏ/chọn là dải SÁNG, chữ theme code trên đó mờ đi; nút
+//      ⤢ góc thẻ sáng). Kvantum chỉ nạp một bộ SVG theo chế độ → vẽ bản sáng
+//      vào ảnh tạm, đổi xám card/secondary/sub-secondary thành lớp trắng mờ
+//      nâng khỏi thẻ đúng nấc bản tối (giữ đúng dáng ô/nút của Kvantum).
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
+
+#include <array>
 
 #include <QAbstractButton>
 #include <QApplication>
@@ -884,15 +891,94 @@ void clearAlternateBase(T *target, const QPalette &from)
 // Mục 81, 82: nền luôn tối (nền terminal) ở cả hai chế độ — w nằm trong
 // (hoặc là) khung tab Konsole, view space Kate (thẻ code + dải tab của nó),
 // hay thẻ plugin Kate đánh dấu samhieDarkCard (kết quả Search: Kate tô bằng
-// màu theme code). Breadcrumb Kate nằm sâu 4 cấp trong view space.
+// màu theme code). Breadcrumb Kate nằm sâu 4 cấp trong view space. Dừng ở mép
+// cửa sổ: popup gợi ý gõ là con của view code nhưng là cửa sổ sáng riêng.
 bool darkPane(const QWidget *w)
 {
     for (int i = 0; w && i < 5; ++i, w = w->parentWidget()) {
         if (w->inherits("Konsole::TabbedViewContainer") || w->inherits("KateViewSpace")
             || w->property("samhieDarkCard").toBool())
             return true;
+        if (w->isWindow())
+            return false;
     }
     return false;
+}
+
+// Mục 83: paint vẽ (toạ độ của p) vào ảnh tạm cỡ r rồi đặt lại vào r, xám bản
+// sáng đổi thành lớp TRẮNG MỜ: bản tối nâng secondary/sub-secondary lên khỏi
+// card một nấc (#171717 → #262626 = trắng 6,5%) → đổi đúng nấc đó. Thẻ tối ở
+// bản sáng trong 90% trên nền sáng (#2b2b2a, đo container) — tô xám tối đặc
+// thì ô trỏ #262626 TỐI hơn thẻ, nút ⤢ như lõm xuống. Nội suy ở mép giữa hai
+// vai trò (viền khử răng cưa, mặt giáp viền); màu khác giữ nguyên — trừ sát
+// mép dưới: góc bo khử răng cưa làm tròn #d0 thành #cf (đo container).
+// base hợp lệ: lót màu đó trong dáng phần tử trước (nút che nội dung sau nó
+// như mặt nút đặc bản tối; lớp trắng mờ thì lộ chữ).
+template<typename Paint>
+void paintDarkened(QPainter *p, const QRect &r, Paint &&paint, const QColor &base = QColor())
+{
+    // độ xám bản sáng → độ đục lớp trắng (0…1), -1 = giữ nguyên
+    static const std::array<qreal, 256> lift = [] {
+        constexpr int n = std::size(samhie::DARKEN_FROM);
+        const auto gray = [](const char *c) { return QColor(c).red(); };
+        const auto alpha = [&](int i) {
+            const int card = gray(samhie::DARKEN_TO[0]);
+            return qreal(gray(samhie::DARKEN_TO[i]) - card) / (255 - card);
+        };
+        std::array<qreal, 256> t;
+        const int lo = gray(samhie::DARKEN_FROM[n - 1]);
+        for (int v = 0; v < 256; ++v) {
+            t[v] = v < lo && v >= lo - 16 ? alpha(n - 1) : -1;
+            for (int i = 0; i + 1 < n; ++i) {
+                const int a = gray(samhie::DARKEN_FROM[i]), b = gray(samhie::DARKEN_FROM[i + 1]);
+                if (v <= a && v >= b) {
+                    t[v] = alpha(i) + (alpha(i + 1) - alpha(i)) * (a - v) / qMax(1, a - b);
+                    break;
+                }
+            }
+        }
+        return t;
+    }();
+    const qreal dpr = p->device() ? p->device()->devicePixelRatioF() : 1.0;
+    QImage img(r.size() * dpr, QImage::Format_ARGB32);  // không premultiplied: đọc thẳng màu
+    img.setDevicePixelRatio(dpr);
+    img.fill(Qt::transparent);
+    {
+        QPainter ip(&img);
+        ip.translate(-r.topLeft());
+        paint(&ip);
+    }
+    QImage shape;  // dáng phần tử, đục hết (mép khử răng cưa: lót cả pixel)
+    if (base.isValid()) {
+        shape = QImage(img.size(), QImage::Format_ARGB32);
+        shape.setDevicePixelRatio(dpr);
+        shape.fill(Qt::transparent);
+    }
+    const QRgb opaqueBase = base.isValid() ? QColor(base.red(), base.green(), base.blue()).rgba() : 0;
+    for (int y = 0; y < img.height(); ++y) {
+        auto *line = reinterpret_cast<QRgb *>(img.scanLine(y));
+        for (int x = 0; x < img.width(); ++x) {
+            const QRgb c = line[x];
+            if (!qAlpha(c))
+                continue;
+            if (!shape.isNull())
+                reinterpret_cast<QRgb *>(shape.scanLine(y))[x] = opaqueBase;
+            const qreal a = lift[qRed(c)];
+            if (a >= 0 && qRed(c) == qGreen(c) && qGreen(c) == qBlue(c))
+                line[x] = qRgba(255, 255, 255, qRound(qAlpha(c) * a));
+        }
+    }
+    if (!shape.isNull()) {
+        // xoá nội dung dưới dáng rồi lót base (độ đục của base: thẻ trong 90%)
+        p->save();
+        p->setCompositionMode(QPainter::CompositionMode_DestinationOut);
+        p->drawImage(r.topLeft(), shape);
+        p->setCompositionMode(QPainter::CompositionMode_SourceOver);
+        p->setOpacity(base.alphaF());
+        p->drawImage(r.topLeft(), shape);
+        p->restore();
+    }
+    p->drawImage(r.topLeft(), img);
 }
 
 // Mục 81: Konsole tô vùng dưới dải tab + tab đang mở bằng nền TERMINAL ở cả
@@ -4372,6 +4458,11 @@ public:
                         o.palette.setColor(QPalette::Text, QColor(dark ? samhie::TERMINAL_ACCENT : samhie::HOVER_ACCENT));
                     o.state &= ~(State_Selected | State_MouseOver);
                 }
+                // Mục 83: dòng kết quả Search Kate (chữ theme code, luôn sáng)
+                if (g_light && (o.state & (State_Selected | State_MouseOver)) && darkPane(w)) {
+                    paintDarkened(p, o.rect, [&](QPainter *ip) { QProxyStyle::drawPrimitive(PE_PanelItemViewItem, &o, ip, w); });
+                    o.state &= ~(State_Selected | State_MouseOver);
+                }
                 if (w && w->property("samhieTreeLines").toBool()) {  // mục 70: nền ở PE_PanelItemViewRow
                     o.state &= ~(State_Selected | State_MouseOver);
                     QProxyStyle::drawControl(ce, &o, p, w);
@@ -4498,6 +4589,24 @@ public:
             return;
         }
         auto *button = qstyleoption_cast<const QStyleOptionButton *>(opt);
+        // Mục 83: nút trên thẻ tối (⤢ tách kết quả Search Kate) — mặt + viền
+        // bản tối, icon (nét một màu) tô màu chữ bản tối
+        if (ce == CE_PushButton && button && g_light && darkPane(w)) {
+            QStyleOptionButton o(*button);
+            o.state &= ~State_HasFocus;
+            paintDarkened(p, o.rect, [&](QPainter *ip) { QProxyStyle::drawControl(CE_PushButtonBevel, &o, ip, w); }, paneColor(w));
+            if (!o.icon.isNull()) {
+                QPixmap pm = o.icon.pixmap(o.iconSize, p->device() ? p->device()->devicePixelRatioF() : 1.0);
+                QPainter ip(&pm);
+                ip.setCompositionMode(QPainter::CompositionMode_SourceIn);
+                ip.fillRect(QRect(QPoint(0, 0), pm.size()), QColor(samhie::TERMINAL_TEXT));
+                ip.end();
+                o.icon = QIcon(pm);
+            }
+            o.palette.setColor(QPalette::ButtonText, QColor(samhie::TERMINAL_TEXT));
+            QProxyStyle::drawControl(CE_PushButtonLabel, &o, p, w);
+            return;
+        }
         if (ce == CE_PushButton && button && (button->state & State_HasFocus)) {  // mục 16, 28
             QStyleOptionButton o(*button);
             o.state &= ~State_HasFocus;

@@ -51,6 +51,9 @@ inline const char *const TERMINAL_TEXT = "#bdbec1";  // dark.text — chữ tab 
 inline const char *const TERMINAL_TEXT_MUTED = "#8f8f8f";  // dark.text-muted — × tab đang mở Konsole
 inline const char *const TERMINAL_ACCENT = "#00c0e8";  // dark.accent-text — chữ breadcrumb Kate đang trỏ
 
+inline const char *const DARKEN_FROM[] = {"#fafafa", "#ededed", "#d0d0d0"};  // light card / secondary / sub-secondary
+inline const char *const DARKEN_TO[] = {"#171717", "#262626", "#393939"};  // dark — cùng vai trò, cùng thứ tự
+
 constexpr double WINDOW_OPACITY = 0.9;  // [window] opacity
 constexpr int ITEM_RADIUS = 10;  // góc ô file = RADIUS["itemview"] (tools/kvantum.py)
 constexpr int MENUITEM_RADIUS = 6;  // góc ô hover dòng menu = RADIUS["menuitem"] (tools/kvantum.py)

@@ -298,6 +298,12 @@
 //    thay với nút "chỉ trong vùng chọn"). Ô trạng thái của Kate ẩn — bộ đếm
 //    (mục 27) thay.
 //    Kate dựng lại thanh mỗi lần đổi chế độ → xếp lúc thanh polish.
+//
+// 29. Panel Search về như lúc đầu khi bấm sang panel khác ở cột icon (user
+//    2026-10-20): ô Find + ô Replace trống, Replace đóng, không kết quả, hết
+//    tô kết quả trong file. Chỗ tìm, Aa, .* và lịch sử ô Find (▾) giữ. Thu
+//    cột (bấm lại icon Search) thì GIỮ kết quả — chỉ là thu lại cho code
+//    rộng. Hộp Ctrl+F không đụng tới. Xem resetSearchPanel.
 
 #include <KActionCollection>
 #include <KMessageBox>
@@ -1467,6 +1473,53 @@ void syncResultChecks(QWidget *dialog)
     }
 }
 
+// Mục 29: đi đường của Kate (SearchPlugin.cpp 26.08.1) để khỏi sót trạng
+// thái: tab tìm mới (nút + ẩn ở mục 15 — addTab chép chỗ tìm/Aa/.* hiện tại)
+// rồi đóng các tab cũ (tabCloseRequested: huỷ tìm, xoá tab, ô Find lấy chữ
+// của tab mới — trống, dọn dấu tô trong file). Nền xanh "có kết quả" của ô
+// Find Kate không tự gỡ (indicateMatch) → gỡ như nhánh "không kết quả" của
+// nó. Đang tìm thì bấm ■ trước; Kate khoá nút + tới khi dừng hẳn (dừng tìm
+// trong file đang mở là bất đồng bộ) → thử lại sau từng nhịp ngắn.
+void resetSearchPanel(QWidget *dialog, int tries = 20)
+{
+    QWidget *container = dialog->parentWidget(); // ContainerWidget: [dải tab kết quả, SearchDialog]
+    auto *bar = container ? container->findChild<QTabBar *>(QString(), Qt::FindDirectChildrenOnly) : nullptr;
+    auto *newTab = dialog->findChild<QToolButton *>(QStringLiteral("newTabButton"));
+    auto *stopAndNext = dialog->findChild<QStackedWidget *>(QStringLiteral("stopAndNext"));
+    auto *stop = dialog->findChild<QPushButton *>(QStringLiteral("stopButton"));
+    auto *find = dialog->findChild<QComboBox *>(QStringLiteral("searchCombo"));
+    auto *replace = dialog->findChild<QComboBox *>(QStringLiteral("replaceCombo"));
+    if (!bar || !newTab || !stopAndNext || !stop || !find || !find->lineEdit() || !replace) {
+        return;
+    }
+    if (stopAndNext->currentWidget() == stop) {
+        stop->click();
+    }
+    if (!newTab->isEnabled()) {
+        if (tries > 0) {
+            QTimer::singleShot(50, dialog, [dialog, tries] {
+                resetSearchPanel(dialog, tries - 1);
+            });
+        }
+        return;
+    }
+    const int old = bar->count();
+    newTab->click();
+    if (bar->count() != old + 1) {
+        return;
+    }
+    for (int i = old - 1; i >= 0; --i) {
+        Q_EMIT bar->tabCloseRequested(i);
+    }
+    find->lineEdit()->setPalette(QPalette());
+    replace->setEditText(QString());
+    QWidget *row = dialog->findChild<QWidget *>(QStringLiteral("samhieReplaceRow"), Qt::FindDirectChildrenOnly);
+    auto *toggle = dialog->findChild<QToolButton *>(QStringLiteral("samhieReplaceToggle"));
+    if (row && !row->isHidden() && toggle) {
+        toggle->click(); // đóng ô Replace (mục 15) — › về như cũ, kết quả bỏ ô tích
+    }
+}
+
 // Mục 15: một hàng của panel Search — dải ngang riêng, không chung cột lưới
 // với hàng khác (chung cột thì nút Replace rộng bóp ô chỗ tìm còn "⌄").
 QWidget *searchRow(QWidget *dialog, const char *name, int spacing, const QList<QWidget *> &widgets)
@@ -2185,6 +2238,22 @@ public:
         case QEvent::Resize:
             if (isViewSpace(obj)) {
                 schedulePlaceMenuButton();
+            }
+            // Mục 29: panel Search ẩn vì ngăn xếp của khu đã lật sang panel
+            // khác (MultiTabBar::setTabActive → QStackedWidget::setCurrentWidget).
+            // Thu cột thì cả ngăn xếp ẩn, trang hiện tại vẫn là Search → giữ.
+            if (event->type() == QEvent::Hide && obj->objectName() == QLatin1String("SearchDialog")) {
+                auto *dialog = static_cast<QWidget *>(obj);
+                QTimer::singleShot(0, dialog, [dialog] {
+                    QWidget *tool = dialog;
+                    while (tool && !tool->inherits("KateMDI::ToolView")) {
+                        tool = tool->parentWidget();
+                    }
+                    auto *stack = tool ? qobject_cast<QStackedWidget *>(tool->parentWidget()) : nullptr;
+                    if (stack && stack->currentWidget() != tool) {
+                        resetSearchPanel(dialog);
+                    }
+                });
             }
             if (event->type() == QEvent::Resize && m_findCard && obj == m_mw->activeView()) {
                 placeFindCard(); // mục 26

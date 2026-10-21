@@ -95,15 +95,22 @@ Column {
                 radius: 2
                 color: Theme.c.accent
             }
+            // Núm: bản sáng trắng viền xám như núm thanh trượt Qt (vai trò
+            // slider-knob*, user 2026-10-21 — `text` bản sáng ra núm đen);
+            // bản tối giữ núm `text` không viền.
             Rectangle {
                 width: 14
                 height: 14
                 radius: 7
                 anchors.verticalCenter: parent.verticalCenter
                 x: Math.round(track.shown * (parent.width - width))
-                color: Theme.c.text
+                color: !Theme.light ? Theme.c.text
+                    : trackMouse.pressed ? Theme.c.sliderKnobPressed : Theme.c.sliderKnob
+                border.width: Theme.light ? 1 : 0
+                border.color: trackMouse.pressed ? Theme.c.sliderKnobRimPressed : Theme.c.sliderKnobRim
             }
             MouseArea {
+                id: trackMouse
                 anchors.fill: parent
                 function at(mx) { return mx / width }
                 onPressed: mouse => root.setVolume(at(mouse.x))

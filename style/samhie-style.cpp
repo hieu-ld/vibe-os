@@ -548,6 +548,11 @@
 //      tiêu đề "Tên / Version" (to ra) — xem FollowAppPalette.
 //  85. Tab thường có icon + chữ (Configure Dolphin › View): icon đứng sát chữ,
 //      cả cụm giữa tab (Kvantum đặt icon ở mép trái tab, chữ canh giữa).
+//  86. Bảng màu Theme Editor của Kate (KateColorTreeWidget): ô hover nằm
+//      DƯỚI ô màu + nút reset (máy ảo user 2026-10-21: ô hover đục che mất ô
+//      màu, cả hai chế độ). Delegate của KTextEditor vẽ ô màu rồi mới gọi
+//      QStyledItemDelegate::paint (nền ô) → bọc delegate, tô nền trước
+//      (HoverUnderRow), CE_ItemViewItem của bảng đó bỏ nền.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -2053,6 +2058,64 @@ public:
         o.state &= ~(QStyle::State_Selected | QStyle::State_MouseOver);
         m_inner->paint(p, o, index);
     }
+
+    bool editorEvent(QEvent *e, QAbstractItemModel *m, const QStyleOptionViewItem &o, const QModelIndex &i) override
+    {
+        return m_inner->editorEvent(e, m, o, i);
+    }
+
+    bool helpEvent(QHelpEvent *e, QAbstractItemView *v, const QStyleOptionViewItem &o, const QModelIndex &i) override
+    {
+        return m_inner->helpEvent(e, v, o, i);
+    }
+
+private:
+    QAbstractItemDelegate *m_inner;
+};
+
+// Mục 86: bọc delegate bảng màu Theme Editor Kate — nền ô trỏ tô TRƯỚC, ô màu
+// + nút reset của KTextEditor vẽ đè lên. Dòng tiêu đề nhóm ("Editor Background
+// Colors") KTextEditor không tô nền → giữ vậy. Trạng thái trỏ vẫn đưa xuống
+// (nút reset sáng lên khi trỏ); nền ô thì CE_ItemViewItem bỏ (mục 86 ở đó).
+class HoverUnderRow : public QAbstractItemDelegate
+{
+public:
+    HoverUnderRow(QAbstractItemDelegate *inner, QAbstractItemView *view)
+        : QAbstractItemDelegate(view)
+        , m_inner(inner)
+    {
+    }
+
+    static void attach(QAbstractItemView *view)
+    {
+        QAbstractItemDelegate *inner = view->itemDelegate();
+        if (inner && !dynamic_cast<HoverUnderRow *>(inner))
+            view->setItemDelegate(new HoverUnderRow(inner, view));
+    }
+
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        return m_inner->sizeHint(option, index);
+    }
+
+    void paint(QPainter *p, const QStyleOptionViewItem &option, const QModelIndex &index) const override
+    {
+        // Nền ô = CE_ItemViewItem không chữ/icon: Kvantum tô ô trỏ ở đó,
+        // PE_PanelItemViewItem gọi riêng thì nó không tô (container 2026-10-21)
+        if ((option.state & QStyle::State_MouseOver) && index.parent().isValid()) {
+            QStyleOptionViewItem o(option);
+            o.index = index;
+            o.state &= ~(QStyle::State_Selected | QStyle::State_HasFocus);
+            o.features = QStyleOptionViewItem::None;
+            QStyle *style = option.widget ? option.widget->style() : QApplication::style();
+            s_panel = true;
+            style->drawControl(QStyle::CE_ItemViewItem, &o, p, option.widget);
+            s_panel = false;
+        }
+        m_inner->paint(p, option, index);
+    }
+
+    static inline bool s_panel = false;  // đang tô nền ô (CE_ItemViewItem giữ trạng thái trỏ)
 
     bool editorEvent(QEvent *e, QAbstractItemModel *m, const QStyleOptionViewItem &o, const QModelIndex &i) override
     {
@@ -3894,6 +3957,8 @@ public:
                              theme.color(group, m_light ? QPalette::Text : QPalette::HighlightedText));
             w->setPalette(pal);
         }
+        if (w->inherits("KateColorTreeWidget"))  // mục 86 (delegate đặt sẵn trong constructor)
+            HoverUnderRow::attach(static_cast<QAbstractItemView *>(w));
         if (w->inherits("KDEPrivate::KPageListView")) {
             PageListRow::attach(static_cast<QAbstractItemView *>(w));
             QTimer::singleShot(0, w, [w] {
@@ -4619,6 +4684,8 @@ public:
                         o.palette.setColor(QPalette::Text, QColor(dark ? samhie::TERMINAL_ACCENT : samhie::HOVER_ACCENT));
                     o.state &= ~(State_Selected | State_MouseOver);
                 }
+                if (w && w->inherits("KateColorTreeWidget") && !HoverUnderRow::s_panel)  // mục 86: nền đã tô ở HoverUnderRow
+                    o.state &= ~(State_Selected | State_MouseOver);
                 // Mục 83: dòng kết quả Search Kate (chữ theme code, luôn sáng)
                 if (g_light && (o.state & (State_Selected | State_MouseOver)) && darkPane(w)) {
                     paintDarkened(p, o.rect, [&](QPainter *ip) { QProxyStyle::drawPrimitive(PE_PanelItemViewItem, &o, ip, w); });

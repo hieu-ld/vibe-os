@@ -150,6 +150,7 @@ scrollbar-pressed = "#8c8c8c"
 # Núm thanh trượt bản sáng (user 2026-10-21, chọn từ 4 mẫu vẽ trong container):
 # TRẮNG viền xám, không chấm giữa ("bản tối cũng đâu có chấm") — trước là xám
 # text-muted, kéo thì #1c1c1c, trông như núm đen. Đang kéo: viền đậm lên.
+# Núm âm lượng quick settings (VolumeRow.qml) cũng dùng — bản tối thì không.
 slider-knob             = "#fafafa"  # = card
 slider-knob-pressed     = "#fafafa"
 slider-knob-rim         = "#a4a4a4"  # = scrollbar

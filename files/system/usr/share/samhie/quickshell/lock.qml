@@ -13,6 +13,13 @@
 // Bố cục user chốt 2026-10-01: gọn như hyprlock — giờ to + ngày tiếng Việt,
 // một ô mật khẩu có dấu nháy nhấp nháy (hyprlock không có — lý do làm lại),
 // nền là hình nền mờ sẵn giống màn hình đăng nhập SDDM.
+//
+// Theo chế độ sáng/tối (user 2026-10-21; trước đó luôn tối): đọc `lightMode`
+// trong ~/.local/state/samhie/settings.json lúc khoá → bảng màu + lớp phủ
+// sáng hay tối. Nền: bản mờ của hình người dùng chọn trong Settings
+// (~/.local/share/samhie/wallpaper-blur.png, /usr/libexec/samhie/wallpaper
+// làm), không có thì bản mờ mặc định của chế độ đó (samhie-blur.png /
+// samhie-light-blur.png). Màn đăng nhập SDDM vẫn luôn tối.
 import QtQuick
 import QtQuick.Controls.Basic
 import Quickshell
@@ -24,8 +31,21 @@ import "colors.js" as Colors
 ShellRoot {
     id: root
 
-    readonly property var c: Colors.dark
-    readonly property string background: "/usr/share/backgrounds/samhie/samhie-blur.png"
+    property bool light: false
+    FileView {
+        path: (Quickshell.env("XDG_STATE_HOME") || Quickshell.env("HOME") + "/.local/state") + "/samhie/settings.json"
+        // Đọc chặn (vài chục byte): khung đầu tiên đã đúng chế độ.
+        blockLoading: true
+        onLoaded: root.light = adapter.lightMode
+        JsonAdapter {
+            property bool lightMode: false
+        }
+    }
+    readonly property var c: light ? Colors.light : Colors.dark
+    readonly property string customBackground: (Quickshell.env("XDG_DATA_HOME") || Quickshell.env("HOME") + "/.local/share")
+        + "/samhie/wallpaper-blur.png"
+    readonly property string defaultBackground: light ? "/usr/share/backgrounds/samhie/samhie-light-blur.png"
+        : "/usr/share/backgrounds/samhie/samhie-blur.png"
 
     // Trạng thái dùng chung cho mọi màn hình: gõ ở màn nào thì ô ở các màn
     // khác cũng hiện cùng số chấm.
@@ -133,12 +153,17 @@ ShellRoot {
 
             Image {
                 anchors.fill: parent
-                source: root.background
+                // Thử bản mờ của hình tự chọn trước; không có (Image.Error) thì
+                // bản mặc định. File cục bộ nạp đồng bộ → không chớp.
+                property bool fallback: false
+                source: "file://" + (fallback ? root.defaultBackground : root.customBackground)
+                onStatusChanged: if (status === Image.Error) fallback = true
                 fillMode: Image.PreserveAspectCrop
                 // Ảnh đã mờ sẵn ở 960x540; smooth để phóng lên không ra ô vuông.
                 smooth: true
             }
-            // Tối đi một nửa như SDDM để chữ trắng đọc được.
+            // Tối đi một nửa như SDDM để chữ trắng đọc được (chế độ sáng: sáng
+            // đi một nửa, chữ tối — `bar` của bảng sáng).
             Rectangle {
                 anchors.fill: parent
                 color: root.c.bar

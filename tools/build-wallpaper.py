@@ -16,8 +16,11 @@ NGUỒN là theme/wallpaper/samhie.webp — giữ nguyên byte user đưa (file 
     khoá: cắt giữa về 16:9 rồi làm mờ lúc dựng thay vì bằng shader lúc chạy,
     máy không có tăng tốc đồ hoạ vẫn hiện đúng.
   * samhie-light.png — bản SÁNG (user đưa 2026-10-20, theme/wallpaper/
-    samhie-light.webp), hiện khi bật chế độ sáng (samhie.lua). Không có bản
-    mờ: màn đăng nhập + màn khoá luôn tối.
+    samhie-light.webp), hiện khi bật chế độ sáng (samhie.lua).
+  * samhie-light-blur.png — bản mờ của bản sáng cho màn hình khoá ở chế độ
+    sáng (user 2026-10-21; màn đăng nhập SDDM vẫn luôn tối).
+Hình người dùng tự chọn (Settings → Appearance) được làm mờ CÙNG cách lúc
+chọn — /usr/libexec/samhie/wallpaper, giữ BLUR_* hai nơi khớp nhau.
 
 --check chỉ dùng thư viện chuẩn: so sha256 của nguồn và hai file sinh ra với
 theme/wallpaper/SHA256SUMS (script ghi lúc sinh). Đổi ảnh nguồn mà quên chạy
@@ -35,7 +38,8 @@ SUMS = ROOT / "theme/wallpaper/SHA256SUMS"
 PNG_PATH = ROOT / "files/system/usr/share/backgrounds/samhie/samhie.png"
 BLUR_PATH = PNG_PATH.with_name("samhie-blur.png")
 LIGHT_PATH = PNG_PATH.with_name("samhie-light.png")
-FILES = (SRC, PNG_PATH, BLUR_PATH, SRC_LIGHT, LIGHT_PATH)
+LIGHT_BLUR_PATH = PNG_PATH.with_name("samhie-light-blur.png")
+FILES = (SRC, PNG_PATH, BLUR_PATH, SRC_LIGHT, LIGHT_PATH, LIGHT_BLUR_PATH)
 # Bản mờ nhỏ 960x540 rồi để SDDM phóng lên: đã mờ thì độ phân giải không còn
 # thấy được, file nhỏ. Bán kính 16 ở cỡ này ≈ 64px ở 4K — mạnh cỡ hyprlock cũ
 # (blur_passes 4, blur_size 8): còn thấy dáng hình, hết chi tiết.
@@ -50,23 +54,30 @@ def sums_text():
     return "".join(f"{sha256(p)}  {p.relative_to(ROOT)}\n" for p in FILES)
 
 
-def build():
+def blur(im, path):
     from PIL import Image, ImageFilter
+    # Cắt giữa về đúng tỉ lệ bản mờ (như `fill`), rồi thu nhỏ + làm mờ.
+    w = min(im.width, round(im.height * BLUR_W / BLUR_H))
+    h = round(w * BLUR_H / BLUR_W)
+    box = ((im.width - w) // 2, (im.height - h) // 2, (im.width + w) // 2, (im.height + h) // 2)
+    small = im.crop(box).resize((BLUR_W, BLUR_H), Image.LANCZOS)
+    small.filter(ImageFilter.GaussianBlur(BLUR_RADIUS)).save(path, optimize=True)
+    print(f"đã sinh {path.relative_to(ROOT)} ({BLUR_W}x{BLUR_H}, mờ {BLUR_RADIUS})", file=sys.stderr)
+
+
+def build():
+    from PIL import Image
     with Image.open(SRC) as im:
         im = im.convert("RGB")
         PNG_PATH.parent.mkdir(parents=True, exist_ok=True)
         im.save(PNG_PATH, optimize=True)
         print(f"đã sinh {PNG_PATH.relative_to(ROOT)} ({im.width}x{im.height})", file=sys.stderr)
-        # Cắt giữa về đúng tỉ lệ bản mờ (như `fill`), rồi thu nhỏ + làm mờ.
-        w = min(im.width, round(im.height * BLUR_W / BLUR_H))
-        h = round(w * BLUR_H / BLUR_W)
-        box = ((im.width - w) // 2, (im.height - h) // 2, (im.width + w) // 2, (im.height + h) // 2)
-        small = im.crop(box).resize((BLUR_W, BLUR_H), Image.LANCZOS)
-        small.filter(ImageFilter.GaussianBlur(BLUR_RADIUS)).save(BLUR_PATH, optimize=True)
-        print(f"đã sinh {BLUR_PATH.relative_to(ROOT)} ({BLUR_W}x{BLUR_H}, mờ {BLUR_RADIUS})", file=sys.stderr)
+        blur(im, BLUR_PATH)
     with Image.open(SRC_LIGHT) as im:
-        im.convert("RGB").save(LIGHT_PATH, optimize=True)
+        im = im.convert("RGB")
+        im.save(LIGHT_PATH, optimize=True)
         print(f"đã sinh {LIGHT_PATH.relative_to(ROOT)} ({im.width}x{im.height})", file=sys.stderr)
+        blur(im, LIGHT_BLUR_PATH)
     SUMS.write_text(sums_text())
 
 

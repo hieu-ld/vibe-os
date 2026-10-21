@@ -14,8 +14,9 @@
 // Sáng/tối: shell chính giữ (quicksettings/Settings.qml) → gọi IPC `prefs
 // setLightMode`; trang này đổi màu theo settings.json như cả app.
 // Hình nền: Choose… mở hộp chọn file KDE (kdialog), CHÉP ảnh về
-// ~/.local/share/samhie/wallpaper-<giờ> + symlink `wallpaper` (xoá/dời file
-// gốc vẫn còn hình nền; user chốt 2026-10-21), một hình cho cả hai chế độ.
+// ~/.local/share/samhie/ + làm bản mờ cho màn khoá (/usr/libexec/samhie/
+// wallpaper; xoá/dời file gốc vẫn còn hình nền; user chốt 2026-10-21), một
+// hình cho cả hai chế độ.
 // samhie.lua đọc symlink đó (sau samhie.wallpaper của hyprland.lua) →
 // `samhie_wallpaper_refresh()` vẽ lại ngay; màn tổng quan nhận đường dẫn
 // mới qua IPC `wallpaper set`.
@@ -74,26 +75,29 @@ Column {
             }
         }
     }
-    // Chép: bản mới tên theo giờ (ảnh cũ trong bộ nhớ đệm của Qt không bị
-    // dùng nhầm), symlink `wallpaper` trỏ sang, xoá bản cũ.
+    // Chép + làm bản mờ cho màn khoá: /usr/libexec/samhie/wallpaper (ảnh
+    // không đọc được → giữ hình cũ, mã lỗi → dòng chữ đỏ).
+    property bool wallFailed: false
     Process {
         id: wallCopy
         property string source
-        command: ["sh", "-c", '
-            dir=$1; src=$2; new=wallpaper-$(date +%s)
-            mkdir -p "$dir" && cp -- "$src" "$dir/$new.tmp" && mv "$dir/$new.tmp" "$dir/$new" &&
-            ln -sfn "$new" "$dir/wallpaper" && printf %s "${src##*/}" > "$dir/wallpaper.name" &&
-            find "$dir" -maxdepth 1 -name "wallpaper-*" ! -name "$new" -delete',
-            "sh", root.dataDir, source]
+        command: ["/usr/libexec/samhie/wallpaper", "set", source]
         stderr: StdioCollector {
             onStreamFinished: if (text !== "") console.warn("wallpaper:", text)
         }
-        onExited: root.wallpaperChanged()
+        onExited: code => {
+            root.wallFailed = code !== 0
+            if (code === 0)
+                root.wallpaperChanged()
+        }
     }
     Process {
         id: wallReset
-        command: ["sh", "-c", 'rm -f "$1/wallpaper" "$1/wallpaper.name" "$1"/wallpaper-*', "sh", root.dataDir]
-        onExited: root.wallpaperChanged()
+        command: ["/usr/libexec/samhie/wallpaper", "reset"]
+        onExited: {
+            root.wallFailed = false
+            root.wallpaperChanged()
+        }
     }
     function wallpaperChanged() {
         Hyprland.dispatch("function() samhie_wallpaper_refresh() end")
@@ -297,8 +301,9 @@ Column {
                     width: parent.width
                     elide: Text.ElideMiddle
                     text: root.fromLua ? "Set in ~/.config/hypr/hyprland.lua"
+                        : root.wallFailed ? "Couldn't use that picture"
                         : root.custom !== "" ? (root.customName || "Custom picture") : "Samhie (default)"
-                    color: Theme.c.textMuted
+                    color: root.wallFailed ? Theme.c.danger : Theme.c.textMuted
                     font.family: Colors.fonts.ui
                     font.weight: Colors.fonts.uiWeight
                     font.pixelSize: 22

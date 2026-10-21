@@ -3,8 +3,9 @@
 // Mọi phần giao diện đọc màu ở đây: `Theme.c.card`, `Theme.c.barText`…
 // (thư mục con: `import ".."`). Màu sinh từ theme/palette.toml (colors.js).
 //
-// KHÔNG theo chế độ: màn hình khoá (lock.qml — luôn tối như SDDM) và lớp
-// chụp màn hình (screenshot-*.qml — màu Colors.shared).
+// KHÔNG qua đây: màn hình khoá (lock.qml — tiến trình riêng, tự đọc
+// lightMode trong settings.json) và lớp chụp màn hình (screenshot-*.qml —
+// màu Colors.shared).
 pragma Singleton
 import QtQuick
 import Quickshell

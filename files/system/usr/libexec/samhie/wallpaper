@@ -1,0 +1,56 @@
+#!/bin/sh
+# Hình nền người dùng chọn trong Settings → Appearance.
+#
+#     wallpaper set <ảnh>    # chép ảnh + làm bản mờ cho màn khoá
+#     wallpaper reset        # về hình mặc định của Samhie
+#
+# Chép vào ~/.local/share/samhie/ (xoá/dời file gốc vẫn còn hình nền):
+#   wallpaper-<giờ ns>        bản chép (tên mới mỗi lần — Qt không dùng nhầm
+#                             ảnh cũ trong bộ nhớ đệm)
+#   wallpaper-<giờ ns>-blur.png  bản mờ cho màn khoá (lock.qml)
+#   wallpaper, wallpaper-blur.png   symlink tới hai file trên
+#   wallpaper.name            tên file gốc (Settings hiện ra)
+# samhie.lua đọc symlink `wallpaper`. Làm mờ CÙNG cách tools/build-wallpaper.py
+# làm samhie-blur.png (cắt giữa 16:9 → 960x540 → Gaussian bán kính 16) —
+# đổi một bên thì đổi cả bên kia. Ảnh không đọc được (Pillow lỗi) → giữ hình
+# cũ, thoát mã lỗi.
+set -u
+dir=${XDG_DATA_HOME:-$HOME/.local/share}/samhie
+
+case ${1:-} in
+set)
+    src=$2
+    new=wallpaper-$(date +%s%N)
+    mkdir -p "$dir" || exit 1
+    cp -- "$src" "$dir/$new.tmp" || exit 1
+    if ! python3 -I - "$dir/$new.tmp" "$dir/$new-blur.png" <<'PY'
+import sys
+from PIL import Image, ImageFilter
+W, H, R = 960, 540, 16
+with Image.open(sys.argv[1]) as im:
+    im = im.convert("RGB")
+    w = min(im.width, round(im.height * W / H))
+    h = round(w * H / W)
+    box = ((im.width - w) // 2, (im.height - h) // 2, (im.width + w) // 2, (im.height + h) // 2)
+    small = im.crop(box).resize((W, H), Image.LANCZOS)
+    small.filter(ImageFilter.GaussianBlur(R)).save(sys.argv[2])
+PY
+    then
+        rm -f "$dir/$new.tmp" "$dir/$new-blur.png"
+        exit 1
+    fi
+    mv "$dir/$new.tmp" "$dir/$new"
+    ln -sfn "$new" "$dir/wallpaper"
+    ln -sfn "$new-blur.png" "$dir/wallpaper-blur.png"
+    printf %s "${src##*/}" > "$dir/wallpaper.name"
+    # Bản chép cũ (không xoá hai symlink, cũng tên wallpaper-…).
+    find "$dir" -maxdepth 1 -type f -name "wallpaper-*" ! -name "$new" ! -name "$new-blur.png" -delete
+    ;;
+reset)
+    rm -f "$dir/wallpaper" "$dir/wallpaper-blur.png" "$dir/wallpaper.name" "$dir"/wallpaper-*
+    ;;
+*)
+    echo "usage: wallpaper set <image> | reset" >&2
+    exit 2
+    ;;
+esac

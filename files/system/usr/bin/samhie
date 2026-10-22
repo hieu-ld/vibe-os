@@ -1,0 +1,97 @@
+#!/bin/sh
+# Lệnh gọn cho việc hay làm (user chốt 2026-10-22) — chỉ là đường tắt, mọi
+# lệnh gốc (rpm-ostree, flatpak, ujust…) vẫn dùng bình thường:
+#   samhie update     hệ thống (rpm-ostree upgrade) + app Flatpak
+#   samhie status     bản đang chạy, bản chờ khởi động lại, bản trước
+#   samhie rollback   quay về bản trước (hỏi lại) rồi khởi động lại
+#   samhie list       danh sách lệnh (cũng là `samhie` trống / help)
+# Không cần sudo: polkit cho người đang ngồi trước máy cập nhật không mật
+# khẩu; quay về thì người nhóm wheel không bị hỏi, người khác hỏi mật khẩu
+# admin (như trang Settings → Updates). Chữ in ra tiếng Anh như giao diện.
+set -u
+
+# "44.20261022" → "2026-10-22 · Fedora 44" (như Settings → Updates).
+pretty() {
+    case $1 in
+    [0-9]*.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*)
+        f=${1%%.*}
+        d=${1#*.}
+        rest=${d#????????}
+        d=${d%"$rest"}
+        echo "$(echo "$d" | sed 's/\(....\)\(..\)\(..\)/\1-\2-\3/')${rest:+$rest} · Fedora $f"
+        ;;
+    "") echo "unknown" ;;
+    *) echo "$1" ;;
+    esac
+}
+
+# Phiên bản theo vai: booted | pending | previous (rỗng nếu không có).
+version_of() {
+    rpm-ostree status --json | jq -r --arg role "$1" '
+        .deployments as $d
+        | ($d | map(.booted) | index(true)) as $i
+        | if $i == null then empty
+          elif $role == "booted" then $d[$i].version
+          elif $role == "pending" then (if $i > 0 then $d[0].version else empty end)
+          else (if $i + 1 < ($d | length) then $d[$i + 1].version else empty end)
+          end // empty'
+}
+
+usage() {
+    cat <<'EOF'
+Usage: samhie <command>
+
+  update     Update Samhie and your apps (applies after a restart)
+  status     Show the running version and any update waiting for a restart
+  rollback   Go back to the previous version and restart
+  list       Show this list
+
+Samhie also updates itself every day; `rpm-ostree`, `flatpak` and `ujust`
+still work as usual.
+EOF
+}
+
+case ${1:-} in
+update | upgrade)
+    echo "==> Samhie"
+    rpm-ostree upgrade || exit
+    echo
+    echo "==> Apps"
+    flatpak update -y --noninteractive || exit
+    if [ -n "$(version_of pending)" ]; then
+        echo
+        echo "Samhie $(pretty "$(version_of pending)") is ready — restart to finish."
+    fi
+    ;;
+status)
+    booted=$(version_of booted) || exit
+    echo "Running:   $(pretty "$booted")"
+    pending=$(version_of pending)
+    [ -n "$pending" ] && echo "Ready:     $(pretty "$pending") (restart to finish)"
+    previous=$(version_of previous)
+    [ -n "$previous" ] && echo "Previous:  $(pretty "$previous")"
+    exit 0
+    ;;
+rollback)
+    previous=$(version_of previous) || exit
+    if [ -z "$previous" ]; then
+        echo "There's no previous version to go back to." >&2
+        exit 1
+    fi
+    printf 'Go back to %s and restart now? [y/N] ' "$(pretty "$previous")"
+    read -r answer
+    case $answer in
+    [yY] | [yY][eE][sS]) exec rpm-ostree rollback --reboot ;;
+    *) echo "Cancelled." ;;
+    esac
+    ;;
+"" | list | help | -h | --help)
+    usage
+    ;;
+*)
+    echo "samhie: unknown command '$1'" >&2
+    echo >&2
+    usage >&2
+    exit 2
+    ;;
+esac

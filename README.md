@@ -1,82 +1,100 @@
 # Samhie
 
-Distro Linux cá nhân dựng trên **Fedora Atomic**, desktop **Hyprland**, giao
-diện tự vẽ bằng **Quickshell**. Làm để dùng hằng ngày cho việc code và làm việc,
-chia sẻ cho bạn bè dùng cùng.
+A personal Linux build on **Fedora Atomic**, **Hyprland** and **Quickshell**.
 
-> ⚠️ Đang trong giai đoạn dựng khung — chưa dùng được hằng ngày. Tiến độ:
-> [docs/PLAN.md](docs/PLAN.md).
+<!-- Screenshots: dark + light desktop, overview, Settings -->
 
-## Vì sao an toàn
+## What's inside
 
-- **Hệ thống gốc chỉ đọc.** Phần mềm độc hại không sửa được file hệ thống.
-- **SELinux** bật ở chế độ enforcing, **tường lửa** chặn mọi kết nối từ ngoài vào.
-- **Tự cập nhật mỗi ngày.** Image được build lại hằng ngày bằng bản vá mới nhất
-  của Fedora; máy tự tải về và áp dụng ở lần khởi động sau.
-- **Cập nhật lỗi thì quay lại được** — chọn bản cũ ngay trong menu khởi động.
-- **Image được ký số.** Máy kiểm chữ ký trước khi nhận bản cập nhật.
+- **Apps:** Dolphin, Konsole, Kate, Ark, Microsoft Edge, Gwenview (images), Okular (PDF), and more.
+- **Vietnamese input:** fcitx5 + Unikey (Telex, VNI).
+- **System stats in the top bar:** CPU, temperature, RAM, swap; plus your Claude 5-hour / weekly limits (when you use Claude Code).
+- **Windows-style split view:** `Win + ←/→`.
 
-## Chọn bản nào
+## Security
 
-| Máy của bạn | Image |
+- **Read-only base system.** Malware can't modify system files.
+- **SELinux** is on, and the **firewall** blocks every incoming connection.
+- **Daily automatic updates.** The image is rebuilt every day with Fedora's latest fixes; your computer downloads it at 4 AM and applies it on the next restart.
+- **Roll back a bad update** — one button in Settings → Updates, or pick the previous version in the boot menu.
+- **Signed images.** Your computer checks the signature before accepting an update.
+- **Packages come mainly from Fedora's official repositories;** everyday apps run sandboxed as Flatpaks. The lock screen, password keyring and admin prompt are all the official versions.
+
+## Which image
+
+| Your computer | Image |
 |---|---|
-| Card AMD hoặc Intel | `ghcr.io/hieu-ld/samhie` |
-| Card NVIDIA (GTX 16xx / RTX 20xx trở lên) | `ghcr.io/hieu-ld/samhie-nvidia` |
+| AMD or Intel graphics | `ghcr.io/hieu-ld/samhie` |
+| NVIDIA graphics (GTX 16xx / RTX 20xx or newer) | `ghcr.io/hieu-ld/samhie-nvidia` |
 
-## Cài đặt
+## Install
 
-1. Cài một bản **Fedora Atomic** bất kỳ (ví dụ [Fedora Kinoite](https://fedoraproject.org/atomic-desktops/kinoite/))
-   — **nhớ tích "Encrypt my data"** để mã hoá ổ đĩa.
-2. Mở terminal, chuyển sang Samhie (thay `samhie` bằng `samhie-nvidia` nếu máy có card NVIDIA):
+1. Install any **Fedora Atomic** edition (for example [Fedora Kinoite](https://fedoraproject.org/atomic-desktops/kinoite/)) — **remember to tick "Encrypt my data"** to encrypt your disk.
+2. Open a terminal and switch to Samhie (use `samhie-nvidia` instead of `samhie` on NVIDIA computers):
 
    ```bash
-   # Lần đầu: tải bản chưa kiểm chữ ký để nhận khoá và chính sách kiểm chữ ký của Samhie
+   # First time: an unverified pull to get Samhie's signing key and verification policy
    rpm-ostree rebase ostree-unverified-registry:ghcr.io/hieu-ld/samhie:latest
    systemctl reboot
 
-   # Sau khi khởi động lại: chuyển sang bản CÓ kiểm chữ ký — từ giờ mọi cập nhật đều được kiểm
+   # After the restart: switch to the SIGNED image — every update is verified from now on
    rpm-ostree rebase ostree-image-signed:docker://ghcr.io/hieu-ld/samhie:latest
    systemctl reboot
    ```
 
-3. **Chỉ máy NVIDIA, nếu bật Secure Boot:** nạp khoá của driver một lần, rồi khởi
-   động lại và làm theo màn hình xanh (MOK) hiện ra:
+3. **NVIDIA only, with Secure Boot on:** enroll the driver key once, then restart and follow the blue (MOK) screen:
 
    ```bash
    ujust enroll-secure-boot-key
    ```
 
-## Quay lại bản trước
+## Updating and rolling back
 
-Bản cập nhật mới bị lỗi? Khởi động lại và chọn mục thứ hai trong menu khởi
-động, hoặc:
+Samhie updates itself — nothing to do. To check right away: **Settings → Updates → Check Now**; when an update is ready, click **Restart to Update**.
+
+A new version broke something? **Settings → Updates → Go Back…**, pick the second entry in the boot menu, or run:
 
 ```bash
-rpm-ostree rollback
-systemctl reboot
+samhie rollback
 ```
 
-## Phím tắt chính
+Short terminal commands (`samhie list` shows them):
 
-| Phím | Việc |
+| Command | What it does |
 |---|---|
-| `Win + E` | Mở quản lý file (Dolphin) |
-| `Win + R` hoặc `Win + Space` | Mở app |
-| `Win + T` hoặc `Ctrl + Alt + T` | Mở terminal |
-| `Win + L` | Khoá máy |
-| `Win + V` | Lịch sử clipboard |
-| `Win + Shift + S` | Chụp một vùng màn hình |
-| `Alt + F4` hoặc `Win + Q` | Đóng cửa sổ |
-| `Win + 1…0` | Chuyển workspace |
+| `samhie update` | Update Samhie and your apps (applies on the next restart) |
+| `samhie status` | Show the running version and any update waiting for a restart |
+| `samhie rollback` | Go back to the previous version and restart (asks first) |
 
-## Tuỳ chỉnh cho riêng mình
+The usual commands (`rpm-ostree`, `flatpak`, `ujust`) still work as before.
 
-Sửa `~/.config/hypr/hyprland.lua`. File đó nạp cấu hình mặc định của Samhie
-trước, nên bạn chỉ cần viết lại đúng thứ muốn đổi — bản cập nhật của Samhie
-không bao giờ ghi đè lên phần của bạn.
+## Keyboard shortcuts
 
-## Kiểm chữ ký image
+| Keys | Action |
+|---|---|
+| `Win` | Overview — start typing to search apps |
+| `Win + E` | Files (Dolphin) |
+| `Win + T` or `Ctrl + Alt + T` | Terminal |
+| `Win + V` | Clipboard history |
+| `Win + L` | Lock |
+| `Print` / `Win + Shift + S` | Screenshot of the whole screen / a region |
+| `Win + ←` / `Win + →` | Snap window to the left / right half |
+| `Win + ↑` / `Win + ↓` | Maximize / restore |
+| `Alt + F4` or `Win + Q` | Close window |
+| `Win + 1…0` | Switch workspace (add `Shift` to take the window along) |
+
+## Make it yours
+
+Edit `~/.config/hypr/hyprland.lua`. It loads Samhie's defaults first, so you only write what you want to change — Samhie updates never overwrite your part. Changes made in the Settings app also live in `~/.config` and never touch the system.
+
+## Verify the image signature
 
 ```bash
 cosign verify --key cosign.pub ghcr.io/hieu-ld/samhie
 ```
+
+## License
+
+[Apache-2.0](LICENSE).
+
+Icons are based on the free edition of [Hugeicons](https://hugeicons.com) (MIT); the [Dongle](https://fonts.google.com/specimen/Dongle) font is under the SIL OFL — each comes with its license in its own folder.

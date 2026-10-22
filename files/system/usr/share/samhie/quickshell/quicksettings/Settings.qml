@@ -9,7 +9,8 @@
 // Sáng/tối: /usr/libexec/samhie/color-mode (app KDE + GTK/Flatpak); giao
 // diện Quickshell đọc `lightMode` (giai đoạn 3, mục "Bản sáng"); hình nền
 // + viền cửa sổ đổi qua Hyprland (samhie_color_mode trong samhie.lua — lúc
-// đăng nhập / nạp lại cấu hình nó tự đọc file này).
+// đăng nhập / nạp lại cấu hình nó tự đọc file này). Màn đăng nhập SDDM:
+// /usr/libexec/samhie/greeter-sync chép chế độ + nền ra chỗ greeter đọc được.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
@@ -56,9 +57,13 @@ Scope {
             // người dùng nhận bản mới.
             if (root.lightMode)
                 colorMode.apply()
+            greeterSync.apply()
         }
         // Lần đầu chưa có file: dùng mặc định, ghi ra ở lần đổi đầu tiên.
-        onLoadFailed: root.loaded = true
+        onLoadFailed: {
+            root.loaded = true
+            greeterSync.apply()
+        }
 
         JsonAdapter {
             property bool doNotDisturb: false
@@ -83,6 +88,7 @@ Scope {
         save()
         if (loaded) {
             colorMode.apply()
+            greeterSync.apply()
             Hyprland.dispatch("function() samhie_color_mode(" + lightMode + ") end")
         }
     }
@@ -118,6 +124,26 @@ Scope {
                 return
             }
             command = ["/usr/libexec/samhie/color-mode", root.lightMode ? "light" : "dark"]
+            running = true
+        }
+        onExited: if (pending) {
+            pending = false
+            apply()
+        }
+    }
+
+    // Màn đăng nhập theo chế độ (và nền) của người dùng — xem greeter-sync.
+    // Chạy cả lúc đăng nhập: người đã đổi chế độ trước khi có tính năng này,
+    // hay thư mục greeter mới có, vẫn được đồng bộ.
+    Process {
+        id: greeterSync
+        property bool pending: false
+        function apply() {
+            if (running) {
+                pending = true
+                return
+            }
+            command = ["/usr/libexec/samhie/greeter-sync", root.lightMode ? "light" : "dark"]
             running = true
         }
         onExited: if (pending) {

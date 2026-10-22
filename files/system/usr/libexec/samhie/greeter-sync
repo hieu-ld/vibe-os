@@ -1,0 +1,54 @@
+#!/bin/sh
+# Đưa sáng/tối + nền mờ của người dùng ra cho màn đăng nhập (SDDM).
+#
+#     greeter-sync light | dark   # chế độ mới (quicksettings/Settings.qml:
+#                                 # lúc đăng nhập và mỗi lần đổi)
+#     greeter-sync                # giữ chế độ đã ghi, cập nhật nền (wallpaper
+#                                 # set/reset gọi)
+#
+# Chạy dưới CHÍNH người dùng, ghi vào /var/lib/samhie-greeter/<tên>/ (root
+# tạo sẵn, chủ là người dùng — /usr/libexec/samhie/greeter-dirs). Trong đó chỉ
+# có MỘT file, tên là chế độ, nội dung là nền:
+#   light.png | dark.png   bản chép wallpaper-blur.png (hình tự chọn), hoặc
+#                          symlink tới bản mờ mặc định của chế độ đó
+# Greeter (sddm/themes/samhie/Main.qml) thử light.png rồi dark.png; không có
+# cái nào (lần đầu, chưa có thư mục) → mặc định tối. Thư mục chưa có (tài
+# khoản mới, SDDM chưa khởi động lại) thì lặng lẽ bỏ qua.
+set -u
+dir=/var/lib/samhie-greeter/$(id -un)
+[ -d "$dir" ] && [ ! -L "$dir" ] && [ -O "$dir" ] || exit 0
+
+case ${1:-} in
+light | dark) mode=$1 ;;
+"")
+    if [ -e "$dir/light.png" ] || [ -L "$dir/light.png" ]; then
+        mode=light
+    else
+        mode=dark
+    fi
+    ;;
+*)
+    echo "usage: greeter-sync [light | dark]" >&2
+    exit 2
+    ;;
+esac
+if [ "$mode" = light ]; then
+    other=dark
+    default=/usr/share/backgrounds/samhie/samhie-light-blur.png
+else
+    other=light
+    default=/usr/share/backgrounds/samhie/samhie-blur.png
+fi
+
+blur=${XDG_DATA_HOME:-$HOME/.local/share}/samhie/wallpaper-blur.png
+tmp=$dir/.$mode.png.tmp
+rm -f "$tmp"
+if [ -f "$blur" ]; then
+    # Chép (-L: wallpaper-blur.png là symlink) — greeter không đọc được ~.
+    cp -L -- "$blur" "$tmp" && chmod 644 "$tmp" || exit 1
+else
+    ln -s "$default" "$tmp" || exit 1
+fi
+# Đổi tên một phát: greeter không bao giờ thấy file đang ghi dở.
+mv -fT "$tmp" "$dir/$mode.png" || exit 1
+rm -f "$dir/$other.png"

@@ -8,7 +8,9 @@
 // Chỉ dùng module của Qt (QtQuick, QtQuick.Controls.Basic) — không Plasma,
 // không Kirigami, không shader: máy không có tăng tốc đồ hoạ vẫn chạy.
 // SDDM đưa vào: sddm, userModel, sessionModel, keyboard, config.
-// Màu: colors.js sinh từ theme/palette.toml (bản tối — nền luôn tối).
+// Màu: colors.js sinh từ theme/palette.toml. Sáng/tối + nền theo người dùng
+// đang chọn (user chốt 2026-10-22, y như màn hình khoá) — mục "Sáng/tối"
+// dưới; chưa biết gì về người đó thì tối.
 
 import QtQuick
 import QtQuick.Controls.Basic
@@ -17,7 +19,7 @@ import "colors.js" as Colors
 Rectangle {
     id: root
 
-    readonly property var c: Colors.dark
+    readonly property var c: light ? Colors.light : Colors.dark
     // Font giao diện của Samhie (palette.toml [fonts]): Dongle Light. Dongle
     // "lùn" nên cỡ chữ lớn hơn font thường nhiều (Dongle 20 ≈ chữ 11 của Hack).
     readonly property string uiFont: "Dongle"
@@ -47,6 +49,33 @@ Rectangle {
         delegate: QtObject {
             required property string name
         }
+    }
+
+    // ── Sáng/tối + nền theo người dùng ────────────────────────────────────
+    // Greeter chạy dưới tài khoản sddm, không đọc được ~ (700). Người dùng tự
+    // chép ra /var/lib/samhie-greeter/<tên>/ (/usr/libexec/samhie/greeter-sync,
+    // lúc đăng nhập + mỗi lần đổi chế độ/hình nền) MỘT file: light.png hoặc
+    // dark.png — tên là chế độ, nội dung là nền mờ. Không có file nào (lần
+    // đầu đăng nhập, tài khoản mới, phải gõ tên) → tối + nền mặc định. Chọn
+    // người khác trong menu thì đổi theo người đó.
+    // Nạp KHÔNG đồng bộ: file do người dùng đặt (có thể là FIFO…) không được
+    // làm treo màn đăng nhập của mọi người.
+    readonly property string userDir: currentUser ? "file:///var/lib/samhie-greeter/" + currentUser.name + "/" : ""
+    property bool light: false
+    readonly property bool probing: lightBg.status === Image.Loading || darkBg.status === Image.Loading
+    // Đổi chế độ khi đã đọc xong cả hai file — đang nạp thì giữ chế độ cũ.
+    onProbingChanged: if (!probing) decide()
+    function decide() {
+        light = lightBg.status === Image.Ready
+        revealed = true
+    }
+    // Lần đầu: che màn tới khi biết chế độ (vài chục ms) → không chớp tối rồi
+    // mới sáng. Quá 500 ms (file treo) thì thôi chờ.
+    property bool revealed: false
+    Timer {
+        interval: 500
+        running: !root.revealed
+        onTriggered: root.decide()
     }
 
     function userLabel(u) {
@@ -80,6 +109,8 @@ Rectangle {
     }
 
     // ── Nền ────────────────────────────────────────────────────────────────
+    // Dưới cùng: nền mặc định (tối). Trên: nền của người dùng nếu có — chế độ
+    // sáng thì luôn có light.png (bản chép hoặc symlink tới nền sáng mặc định).
     Image {
         anchors.fill: parent
         source: config.background
@@ -88,7 +119,28 @@ Rectangle {
         smooth: true
         asynchronous: false
     }
-    // Tối đi một nửa (như hyprlock cũ, brightness = 0.5) để chữ trắng đọc được.
+    Image {
+        id: darkBg
+        anchors.fill: parent
+        source: root.userDir !== "" ? root.userDir + "dark.png" : ""
+        asynchronous: true
+        fillMode: Image.PreserveAspectCrop
+        smooth: true
+        opacity: status === Image.Ready && !root.light ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 200 } }
+    }
+    Image {
+        id: lightBg
+        anchors.fill: parent
+        source: root.userDir !== "" ? root.userDir + "light.png" : ""
+        asynchronous: true
+        fillMode: Image.PreserveAspectCrop
+        smooth: true
+        opacity: status === Image.Ready && root.light ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: 200 } }
+    }
+    // Tối đi một nửa (như hyprlock cũ, brightness = 0.5) để chữ trắng đọc được
+    // (chế độ sáng: sáng đi một nửa, chữ tối — như màn hình khoá).
     Rectangle {
         anchors.fill: parent
         color: root.c.bar
@@ -190,6 +242,7 @@ Rectangle {
                     font.pixelSize: 36
                 }
                 SamhieIcon {
+                    c: root.c
                     visible: userButton.enabled
                     anchors.verticalCenter: parent.verticalCenter
                     iconName: "arrow-down"
@@ -201,9 +254,11 @@ Rectangle {
 
         SamhieMenu {
             id: userMenu
+            c: root.c
             Repeater {
                 model: users.count
                 delegate: SamhieMenuItem {
+                    c: root.c
                     required property int index
                     text: root.userLabel(users.objectAt(index))
                     checked: index === root.userIndex
@@ -220,6 +275,7 @@ Rectangle {
 
         SamhieField {
             id: userField
+            c: root.c
             visible: root.typeUserName
             placeholderText: "Username"
             onAccepted: password.forceActiveFocus()
@@ -227,6 +283,7 @@ Rectangle {
 
         SamhieField {
             id: password
+            c: root.c
             echoMode: TextInput.Password
             placeholderText: "Password"
             enabled: !root.busy
@@ -252,6 +309,7 @@ Rectangle {
                 }
                 contentItem: Item {
                     SamhieIcon {
+                        c: root.c
                         anchors.centerIn: parent
                         iconName: "samhie-log-in"
                         size: 20
@@ -298,6 +356,7 @@ Rectangle {
         }
         contentItem: Item {
             SamhieIcon {
+                c: root.c
                 anchors.centerIn: parent
                 iconName: "samhie-power"
                 size: 22
@@ -306,6 +365,7 @@ Rectangle {
 
         SamhieMenu {
             id: powerMenu
+            c: root.c
             // Mở lên trên, mép phải thẳng mép phải nút.
             x: power.width - width
             y: -height - 8
@@ -315,6 +375,7 @@ Rectangle {
             Repeater {
                 model: sessions.count > 1 ? sessions.count : 0
                 delegate: SamhieMenuItem {
+                    c: root.c
                     required property int index
                     text: sessions.objectAt(index).name
                     checked: index === root.sessionIndex
@@ -330,6 +391,7 @@ Rectangle {
                 }
             }
             SamhieMenuItem {
+                c: root.c
                 text: "Sleep"
                 iconName: "system-suspend"
                 visible: sddm.canSuspend
@@ -337,6 +399,7 @@ Rectangle {
                 onTriggered: sddm.suspend()
             }
             SamhieMenuItem {
+                c: root.c
                 text: "Restart"
                 iconName: "system-reboot"
                 visible: sddm.canReboot
@@ -344,6 +407,7 @@ Rectangle {
                 onTriggered: sddm.reboot()
             }
             SamhieMenuItem {
+                c: root.c
                 text: "Shut Down"
                 iconName: "system-shutdown"
                 visible: sddm.canPowerOff
@@ -353,7 +417,19 @@ Rectangle {
         }
     }
 
+    // Che lúc mới mở (xem `revealed`), mờ dần khi đã biết chế độ.
+    Rectangle {
+        anchors.fill: parent
+        color: Colors.dark.bar
+        opacity: root.revealed ? 0 : 1
+        visible: opacity > 0
+        Behavior on opacity { NumberAnimation { duration: 200 } }
+    }
+
     Component.onCompleted: {
+        // Không có file nào để nạp (gõ tên tay) thì biết luôn: tối.
+        if (!probing)
+            decide()
         if (typeUserName)
             userField.forceActiveFocus()
         else

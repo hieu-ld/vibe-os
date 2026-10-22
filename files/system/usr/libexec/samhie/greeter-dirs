@@ -1,0 +1,40 @@
+#!/bin/sh
+# Thư mục cho màn đăng nhập (SDDM) biết sáng/tối + nền của từng người dùng.
+# Chạy dưới root, trước mỗi lần SDDM khởi động (sddm.service.d/samhie-greeter.conf).
+#
+#   /var/lib/samhie-greeter/            root:root 755 — chỉ root tạo được gì trong này
+#   /var/lib/samhie-greeter/<tên>/      chủ là người dùng đó, 755
+#
+# Greeter chạy dưới tài khoản `sddm`, không đọc được ~ (700) — nên người
+# dùng tự ghi ra đây (/usr/libexec/samhie/greeter-sync, chạy dưới chính họ).
+# Root CHỈ tạo thư mục, không bao giờ đọc file trong ~ hay trong các thư mục
+# con này: không có chỗ nào để lừa root bằng symlink. Thư mục cha chỉ root
+# ghi được → người này không tạo trước được thư mục mang tên người khác.
+# Tài khoản tạo giữa chừng (useradd lúc đang dùng) có thư mục ở lần SDDM
+# khởi động sau; trước đó greeter dùng mặc định tối.
+set -u
+base=/var/lib/samhie-greeter
+
+install -d -m 755 -o root -g root "$base" || exit 1
+
+# Người dùng thật: UID trong khoảng của /etc/login.defs, có shell đăng nhập.
+uid_min=$(awk '$1 == "UID_MIN" { print $2 }' /etc/login.defs 2>/dev/null)
+uid_max=$(awk '$1 == "UID_MAX" { print $2 }' /etc/login.defs 2>/dev/null)
+uid_min=${uid_min:-1000}
+uid_max=${uid_max:-60000}
+
+getent passwd | while IFS=: read -r name _ uid gid _ _ shell; do
+    [ "$uid" -ge "$uid_min" ] 2>/dev/null && [ "$uid" -le "$uid_max" ] || continue
+    case $shell in */nologin | */false | "") continue ;; esac
+    # Tên lạ (/, .., khoảng trắng…) thì bỏ — tên dùng làm đường dẫn.
+    case $name in "" | .* | *[!A-Za-z0-9._-]*) continue ;; esac
+    install -d -m 755 -o "$uid" -g "$gid" "$base/$name"
+done
+
+# Tài khoản đã xoá: xoá thư mục của nó (UID có thể được cấp lại cho người
+# mới — đừng để người mới thấy nền của người cũ). rm -r không theo symlink.
+for d in "$base"/*; do
+    [ -d "$d" ] || continue
+    getent passwd "${d##*/}" >/dev/null || rm -rf -- "$d"
+done
+exit 0

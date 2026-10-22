@@ -15,7 +15,8 @@ App GTK / Flatpak / Electron (Edge, VS Code): gsettings color-scheme — portal
 GTK (hyprland;gtk trong hyprland-portals.conf) đọc khoá này cho app.
 
 KHÔNG đổi: Konsole (profile Samhie riêng, terminal tối như Windows Terminal),
-màn hình khoá, SDDM. Giao diện Quickshell tự đổi theo cùng thiết lập.
+màn hình khoá (tự đọc thiết lập lúc khoá), SDDM (greeter-sync, Settings.qml
+gọi). Giao diện Quickshell tự đổi theo cùng thiết lập.
 """
 
 import configparser

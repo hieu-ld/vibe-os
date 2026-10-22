@@ -8,9 +8,10 @@ IconImage {
     // Không đặt tên `name`: IconImage đã có `name` (tên trong bộ icon hệ thống).
     property string iconName
     property int size: 20
+    property var c: Colors.dark
 
     // Mọi icon màn hình đăng nhập dùng đều nằm trong actions/.
     source: iconName !== "" ? "file:///usr/share/icons/Samhie/actions/scalable/" + iconName + ".svg" : ""
     sourceSize: Qt.size(size, size)
-    color: Colors.dark.text
+    color: c.text
 }

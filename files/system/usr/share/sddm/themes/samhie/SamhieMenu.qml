@@ -4,13 +4,15 @@ import QtQuick.Controls.Basic
 import "colors.js" as Colors
 
 Menu {
+    property var c: Colors.dark
+
     padding: 6
     implicitWidth: 200
 
     background: Rectangle {
         radius: 8
-        color: Colors.dark.card
+        color: c.card
         border.width: 1
-        border.color: Colors.dark.subSecondary
+        border.color: c.subSecondary
     }
 }

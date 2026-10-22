@@ -19,7 +19,7 @@
 // sáng hay tối. Nền: bản mờ của hình người dùng chọn trong Settings
 // (~/.local/share/samhie/wallpaper-blur.png, /usr/libexec/samhie/wallpaper
 // làm), không có thì bản mờ mặc định của chế độ đó (samhie-blur.png /
-// samhie-light-blur.png). Màn đăng nhập SDDM vẫn luôn tối.
+// samhie-light-blur.png). Màn đăng nhập SDDM cũng theo (greeter-sync).
 import QtQuick
 import QtQuick.Controls.Basic
 import Quickshell

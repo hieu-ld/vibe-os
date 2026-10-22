@@ -13,7 +13,7 @@
 # samhie.lua đọc symlink `wallpaper`. Làm mờ CÙNG cách tools/build-wallpaper.py
 # làm samhie-blur.png (cắt giữa 16:9 → 960x540 → Gaussian bán kính 16) —
 # đổi một bên thì đổi cả bên kia. Ảnh không đọc được (Pillow lỗi) → giữ hình
-# cũ, thoát mã lỗi.
+# cũ, thoát mã lỗi. Xong thì greeter-sync đưa bản mờ ra cho màn đăng nhập.
 set -u
 dir=${XDG_DATA_HOME:-$HOME/.local/share}/samhie
 
@@ -54,3 +54,5 @@ reset)
     exit 2
     ;;
 esac
+# Lỗi ở đây không phải lỗi hình nền (Settings báo đỏ theo mã thoát).
+/usr/libexec/samhie/greeter-sync || :

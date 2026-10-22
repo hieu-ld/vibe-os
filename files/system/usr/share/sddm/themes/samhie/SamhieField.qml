@@ -5,7 +5,9 @@ import "colors.js" as Colors
 
 TextField {
     id: field
-    property color borderColor: Colors.dark.subSecondary
+    // Bảng màu (Colors.dark / Colors.light) — Main.qml đưa theo chế độ.
+    property var c: Colors.dark
+    property color borderColor: c.subSecondary
 
     anchors.horizontalCenter: parent.horizontalCenter
     width: 320
@@ -14,10 +16,10 @@ TextField {
     rightPadding: 18
     verticalAlignment: TextInput.AlignVCenter
 
-    color: Colors.dark.text
-    placeholderTextColor: Colors.dark.textMuted
-    selectionColor: Colors.dark.selection
-    selectedTextColor: Colors.dark.onSelection
+    color: c.text
+    placeholderTextColor: c.textMuted
+    selectionColor: c.selection
+    selectedTextColor: c.onSelection
     // Dấu chấm mật khẩu của Dongle chỉ cao 3px (đo trong máy ảo 2026-09-30)
     // → ô mật khẩu ĐANG CÓ CHỮ dùng Noto Sans; chữ mờ "Password" vẫn Dongle.
     readonly property bool dots: echoMode === TextInput.Password && text !== ""
@@ -29,7 +31,7 @@ TextField {
 
     background: Rectangle {
         radius: 12
-        color: Colors.dark.card
+        color: c.card
         border.width: 1
         border.color: field.borderColor
     }

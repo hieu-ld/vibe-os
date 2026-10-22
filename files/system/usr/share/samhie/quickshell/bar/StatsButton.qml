@@ -42,7 +42,7 @@ Item {
         color: root.color
         font.family: Colors.fonts.ui
         font.weight: Colors.fonts.uiWeight
-        font.pointSize: Colors.fonts.size
+        font.pointSize: Colors.fonts.size - 2  // = tên app (WindowControls), user 2026-10-22
     }
     component Value: Label {
         property int value: -1

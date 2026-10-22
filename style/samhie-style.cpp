@@ -276,7 +276,7 @@
 //  46. Sidebar: vạch ngang 1px màu FRAME_LINE giữa mục mặc định (… Recycle
 //      Bin) và thư mục người dùng ghim thêm, hai đầu cách viền như icon, trên
 //      dưới thoáng bằng khe giữa hai mục (user 2026-10-08). Chỉ có khi có mục
-//      ghim. Delegate riêng theo dòng (PlacesRowDelegate).
+//      ghim. Delegate riêng cho dòng Recycle Bin (PinnedGapDelegate).
 //  47. Hàng màu thư mục (menu chuột phải thư mục, user 2026-10-08):
 //      [Default] [Red] [Yellow] [Teal] [Blue] [Symbol ▾] (Blue thay Grey
 //      2026-10-20: thư mục mặc định thành xám như Ubuntu); Symbol = No Symbol +
@@ -553,10 +553,6 @@
 //      màu, cả hai chế độ). Delegate của KTextEditor vẽ ô màu rồi mới gọi
 //      QStyledItemDelegate::paint (nền ô) → bọc delegate, tô nền trước
 //      (HoverUnderRow), CE_ItemViewItem của bảng đó bỏ nền.
-//  87. Sidebar Places: chữ cách ô icon 12px thay vì 4 (user 2026-10-22:
-//      "thoáng hơn"). KIO đặt chữ cố định, không hỏi style → delegate theo
-//      dòng (PlacesRowDelegate, chung với khe mục 46) vẽ dòng hai lần, phần
-//      chữ dời phải 8px.
 //
 // Kvantum chủ động hỗ trợ bị bọc trong QProxyStyle (Kvantum.cpp
 // setSurfaceFormat: "qt5ct uses QProxyStyle").
@@ -2289,31 +2285,22 @@ QString strokePlaceIcon(const QString &icon)
 // dòng ghim đầu tiên cao thêm ở trên, vạch ở ranh giới — rê chuột/bấm vào
 // nửa khe nào thì trúng dòng gần nó, như phần đệm của các dòng khác.
 // Qt hỏi cỡ dòng KHÔNG kèm số dòng (QListViewPrivate::itemSize, qtbase
-// 6.11) nên style không nới được một dòng → gắn delegate riêng theo dòng
-// (setItemDelegateForRow). Delegate chung của KIO giữ nguyên — KIO ép kiểu
-// nó ở nhiều chỗ (xem mục 2) — và vẫn vẽ nội dung dòng.
-// Mục 87: chữ cách icon thêm TEXT_SHIFT (user 2026-10-22: "thoáng hơn").
-// KFilePlacesViewDelegate::paint (KIO 6.30) đặt chữ cố định 4px sau icon,
-// không hỏi style → delegate này gắn cho MỌI dòng, vẽ dòng HAI lần bằng
-// delegate của KIO: lần 1 cắt tới hết icon (cả tiêu đề nhóm), lần 2 cắt từ
-// chỗ chữ và dời sang phải. Lần 2 vẽ trong ô hẹp hơn TEXT_SHIFT nên chữ dài
-// cắt "…" sớm hơn và nút eject (bên phải) dời về đúng chỗ cũ — vùng bấm của
-// nó (KIO tự tính) vẫn khớp. Nền dòng trong suốt (mục 2) nên vẽ hai lần
-// không đậm thêm; save/restore mỗi lần vì KIO đổi độ mờ của painter.
-class PlacesRowDelegate : public QAbstractItemDelegate
+// 6.11) nên style không nới được một dòng → gắn delegate riêng cho đúng hai
+// dòng đó (setItemDelegateForRow). Delegate chung của KIO giữ nguyên — KIO ép
+// kiểu nó ở nhiều chỗ (xem mục 2) — và vẫn vẽ nội dung dòng.
+class PinnedGapDelegate : public QAbstractItemDelegate
 {
 public:
-    explicit PlacesRowDelegate(QListView *view)
+    explicit PinnedGapDelegate(QListView *view)
         : QAbstractItemDelegate(view)
         , m_view(view)
     {
-        setObjectName(QStringLiteral("samhie-places-row"));
+        setObjectName(QStringLiteral("samhie-pinned-gap"));
     }
 
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override
     {
-        const QSize s = base()->sizeHint(option, index);
-        return isGapRow(index.row()) ? s + QSize(0, HALF_GAP) : s;
+        return base()->sizeHint(option, index) + QSize(0, HALF_GAP);
     }
 
     void paint(QPainter *p, const QStyleOptionViewItem &option, const QModelIndex &index) const override
@@ -2323,13 +2310,13 @@ public:
         QStyleOptionViewItem o(option);
         if (above)
             o.rect.setBottom(o.rect.bottom() - HALF_GAP);
-        else if (index.row() == m_below)
+        else
             o.rect.setTop(o.rect.top() + HALF_GAP);
-        paintShifted(p, o, index);
+        base()->paint(p, o, index);
         if (!above)
             return;
         // Lề trái thẳng icon; phải bớt 1: khung sidebar 1px nằm ngoài ô bên
-        // trái nhưng trong ô bên phải → hai đầu cách viền 12px (đo
+        // trái nhưng trong ô bên phải → hai đầu cùng cách viền 12px (đo
         // container 2026-10-08; viewport đã lùi SIDEBAR_INDENT). Hàng điểm
         // ảnh cuối của dòng: rê chuột dòng dưới không xoá vạch.
         const int y = option.rect.bottom();
@@ -2351,9 +2338,9 @@ public:
         return base()->helpEvent(e, v, o, i);
     }
 
-    // Gắn cho mọi dòng (dòng mới thêm cũng vậy), rồi tìm dòng Recycle Bin có
-    // ngay sau nó một dòng hiện cùng nhóm — hai dòng đó có khe (dòng xê dịch
-    // khi thêm/bớt/kéo mục, KIO ẩn/hiện dòng).
+    // Tìm dòng Recycle Bin có ngay sau nó một dòng hiện cùng nhóm, gắn
+    // delegate cho hai dòng đó; gỡ khỏi dòng cũ (dòng xê dịch khi thêm/bớt/
+    // kéo mục, KIO ẩn/hiện dòng).
     void update()
     {
         constexpr int URL_ROLE = 0x069CD12B, GROUP_ROLE = 0x0a5b64ee;  // kfileplacesmodel.h
@@ -2361,11 +2348,9 @@ public:
         if (!model)
             return;
         int above = -1, below = -1;
-        for (int r = 0; r < model->rowCount(); ++r) {
-            if (m_view->itemDelegateForRow(r) != this)
-                m_view->setItemDelegateForRow(r, this);
+        for (int r = 0; r < model->rowCount() && above < 0; ++r) {
             const QModelIndex i = model->index(r, 0);
-            if (above >= 0 || m_view->isRowHidden(r) || i.data(URL_ROLE).toUrl().scheme() != QLatin1String("trash"))
+            if (m_view->isRowHidden(r) || i.data(URL_ROLE).toUrl().scheme() != QLatin1String("trash"))
                 continue;
             int next = r + 1;
             while (next < model->rowCount() && m_view->isRowHidden(next))
@@ -2377,9 +2362,16 @@ public:
         }
         if (above == m_above && below == m_below)
             return;
+        for (int r : {m_above, m_below}) {
+            if (r >= 0 && m_view->itemDelegateForRow(r) == this)
+                m_view->setItemDelegateForRow(r, nullptr);
+        }
         m_above = above;
         m_below = below;
-        m_view->doItemsLayout();  // cỡ dòng khe đổi
+        for (int r : {above, below}) {
+            if (r >= 0)
+                m_view->setItemDelegateForRow(r, this);
+        }
     }
 
 private:
@@ -2387,48 +2379,8 @@ private:
     // giữa hai mục (dòng 41, icon 20 — hình icon nét không kín khung; đo
     // container 2026-10-08).
     static constexpr int HALF_GAP = 12;
-    // Chữ cách ô icon 4 + 8 = 12px — bằng app Settings (icon 20 + 12).
-    static constexpr int TEXT_SHIFT = 8;
 
     QAbstractItemDelegate *base() const { return m_view->itemDelegate(); }
-    bool isGapRow(int row) const { return row == m_above || row == m_below; }
-
-    void paintShifted(QPainter *p, const QStyleOptionViewItem &o, const QModelIndex &index) const
-    {
-        constexpr int LATERAL_MARGIN = 4;
-        constexpr int GROUP_ROLE = 0x0a5b64ee;
-        if (o.direction != Qt::LeftToRight) {
-            base()->paint(p, o, index);
-            return;
-        }
-        // Dòng đầu nhóm có tiêu đề ở trên (KIO indexIsSectionHeader +
-        // sectionHeaderHeight): phần đó vẽ một lần, không dời.
-        int prev = index.row() - 1;
-        while (prev >= 0 && m_view->isRowHidden(prev))
-            --prev;
-        const bool header = !m_view->isRowHidden(index.row())
-            && (prev < 0 || index.model()->index(prev, 0).data(GROUP_ROLE) != index.data(GROUP_ROLE));
-        const int spacing = LATERAL_MARGIN + m_view->spacing();
-        const int headerHeight = header ? m_view->fontMetrics().height() + 3 * spacing : 0;
-        const QRect item = o.rect.adjusted(0, headerHeight, 0, 0);
-        // Giữa mép phải ô icon (lề 4 + icon) và chỗ chữ của KIO (thêm 4).
-        const int split = o.rect.left() + LATERAL_MARGIN + m_view->iconSize().width() + LATERAL_MARGIN / 2;
-
-        p->save();
-        QRegion first(o.rect.adjusted(0, 0, 0, -item.height()));
-        first += QRect(item.left(), item.top(), split - item.left(), item.height());
-        p->setClipRegion(first, Qt::IntersectClip);
-        base()->paint(p, o, index);
-        p->restore();
-
-        p->save();
-        QStyleOptionViewItem narrow(o);
-        narrow.rect.setRight(o.rect.right() - TEXT_SHIFT);
-        p->translate(TEXT_SHIFT, 0);
-        p->setClipRect(QRect(QPoint(split, item.top()), QPoint(narrow.rect.right(), item.bottom())), Qt::IntersectClip);
-        base()->paint(p, narrow, index);
-        p->restore();
-    }
 
     QListView *m_view;
     int m_above = -1;
@@ -3937,8 +3889,8 @@ public:
                 // Mục 46: mỗi view một delegate khe (model có thể dùng chung).
                 // Xét lại sau một nhịp mỗi khi danh sách đổi — KIO ẩn/hiện
                 // dòng (setRowHidden) ngay sau khi model báo.
-                if (!w->findChild<QObject *>(QStringLiteral("samhie-places-row"), Qt::FindDirectChildrenOnly)) {
-                    auto *gap = new PlacesRowDelegate(static_cast<QListView *>(w));
+                if (!w->findChild<QObject *>(QStringLiteral("samhie-pinned-gap"), Qt::FindDirectChildrenOnly)) {
+                    auto *gap = new PinnedGapDelegate(static_cast<QListView *>(w));
                     auto later = [gap] { QTimer::singleShot(0, gap, [gap] { gap->update(); }); };
                     QObject::connect(model, &QAbstractItemModel::rowsInserted, gap, later);
                     QObject::connect(model, &QAbstractItemModel::rowsRemoved, gap, later);

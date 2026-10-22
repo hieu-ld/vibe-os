@@ -21,7 +21,29 @@ PanelWindow {
     readonly property int gap: 6   // khe giữa đáy thanh và popup
 
     screen: bar.screen
-    visible: bar.popup !== ""
+    // Đóng xong vẫn hiện thêm một nhịp cho popup kịp mờ đi (PopupMotion,
+    // 120 ms). Trong nhịp đó lớp vẫn nuốt cú bấm — không đáng kể.
+    // `held` chỉ đổi ở đây: viết `visible: popup !== "" || closing` thì binding
+    // tắt lớp TRƯỚC khi handler kịp bật `closing` → lớp tắt rồi hiện lại một
+    // khung (đo container 2026-10-22: lịch nháy mất một khung lúc đóng).
+    visible: held
+    property bool held: false
+    Connections {
+        target: layer.bar
+        function onPopupChanged() {
+            if (layer.bar.popup !== "") {
+                closingTimer.stop()
+                layer.held = true
+            } else {
+                closingTimer.restart()
+            }
+        }
+    }
+    Timer {
+        id: closingTimer
+        interval: 140
+        onTriggered: layer.held = false
+    }
     color: "transparent"
 
     anchors { top: true; bottom: true; left: true; right: true }

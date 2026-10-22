@@ -107,6 +107,9 @@ PanelWindow {
             dockFromDesktop = desktopDock !== null && desktopDock.reveal > 0.5
         started = true
         anim.to = open ? 1 : 0
+        // Mở 350 ms ≈ nhịp mở app (user 2026-10-22: 250 thấy "hiện liền"),
+        // đóng nhanh hơn như cửa sổ app.
+        anim.duration = open ? 350 : 250
         anim.restart()
     }
     property bool started: false
@@ -122,7 +125,6 @@ PanelWindow {
         id: anim
         target: root
         property: "progress"
-        duration: 250
         easing.type: Easing.OutCubic
     }
 

@@ -17,7 +17,7 @@ import Quickshell.Widgets
 import ".."
 import "../colors.js" as Colors
 
-Item {
+PopupMotion {
     id: root
 
     required property var bar
@@ -36,7 +36,9 @@ Item {
             .map(ws => ({ title: ws > 0 ? "Workspace " + ws : "Minimized", windows: byWs[ws] }))
     }
 
-    visible: open
+    // Hiện/ẩn có hiệu ứng (PopupMotion).
+    showing: open
+    transformOrigin: Item.TopLeft
     // Icon ⤢ / thu về của từng dòng cần lastIpcObject mới.
     onOpenChanged: if (open) Hyprland.refreshToplevels()
     width: card.width

@@ -20,7 +20,7 @@ import ".."
 import "../colors.js" as Colors
 import "lunar.js" as Lunar
 
-Item {
+PopupMotion {
     id: root
 
     required property var bar
@@ -96,7 +96,9 @@ Item {
     readonly property var shownLunar: Lunar.solar2Lunar(1, shownMonth.getMonth() + 1, shownMonth.getFullYear())
     readonly property var todayLunar: Lunar.solar2Lunar(now.getDate(), now.getMonth() + 1, now.getFullYear())
 
-    visible: open
+    // Hiện/ẩn có hiệu ứng (PopupMotion).
+    showing: open
+    transformOrigin: Item.Top
     width: card.width
     height: card.height
 

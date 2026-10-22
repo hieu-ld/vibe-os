@@ -41,9 +41,11 @@ PanelWindow {
         width: parent.width
         spacing: root.gap
 
-        // Thẻ mới trượt vào từ mép phải.
+        // Thẻ mới hiện như popup của thanh (PopupMotion): 95% → 100% + mờ
+        // dần, 200 ms (user 2026-10-22, thay kiểu trượt vào từ mép phải).
         add: Transition {
-            NumberAnimation { property: "x"; from: 380; duration: 200; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "opacity"; from: 0; to: 1; duration: 200; easing.type: Easing.OutCubic }
+            NumberAnimation { property: "scale"; from: 0.95; to: 1; duration: 200; easing.type: Easing.OutCubic }
         }
         move: Transition {
             NumberAnimation { property: "y"; duration: 150; easing.type: Easing.OutCubic }
@@ -58,15 +60,33 @@ PanelWindow {
                 id: card
                 required property var modelData
                 entry: modelData
+                transformOrigin: Item.TopRight
+
+                // Tự tắt / bấm ✕: mờ đi (120 ms, như popup đóng) rồi mới bỏ
+                // khỏi danh sách. Bấm vào thẻ / nút hành động thì bỏ ngay —
+                // app vừa được gọi lên, thẻ đứng lại chỉ vướng.
+                property var leaveThen: null
+                function leave(fn) {
+                    if (leaveThen)
+                        return
+                    leaveThen = fn
+                    leaveAnim.start()
+                }
+                ParallelAnimation {
+                    id: leaveAnim
+                    NumberAnimation { target: card; property: "opacity"; to: 0; duration: 120; easing.type: Easing.InCubic }
+                    NumberAnimation { target: card; property: "scale"; to: 0.95; duration: 120; easing.type: Easing.InCubic }
+                    onFinished: card.leaveThen()
+                }
 
                 onActivated: root.notifs.activate(modelData)
-                onCloseClicked: root.notifs.dismiss(modelData)
+                onCloseClicked: leave(() => root.notifs.dismiss(modelData))
                 onActionClicked: action => root.notifs.invokeAction(modelData, action)
 
                 Timer {
-                    running: !card.hovered
+                    running: !card.hovered && !card.leaveThen
                     interval: card.modelData.timeout
-                    onTriggered: root.notifs.timeoutPopup(card.modelData)
+                    onTriggered: card.leave(() => root.notifs.timeoutPopup(card.modelData))
                 }
             }
         }

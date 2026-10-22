@@ -11,7 +11,7 @@ import Quickshell.Widgets
 import ".."
 import "../colors.js" as Colors
 
-Item {
+PopupMotion {
     id: root
 
     required property var bar
@@ -23,7 +23,8 @@ Item {
     readonly property var handle: stack.length > 0 ? stack[stack.length - 1]
         : bar.trayItem ? bar.trayItem.menu : null
 
-    onOpenChanged: stack = []
+    // Về menu gốc khi đã ẩn hẳn (đổi giữa lúc mờ dần thì thấy giật).
+    onVisibleChanged: if (!visible) stack = []
 
     function back() {
         stack = stack.slice(0, -1)
@@ -34,7 +35,9 @@ Item {
         menu: root.open ? root.handle : null
     }
 
-    visible: open
+    // Hiện/ẩn có hiệu ứng (PopupMotion).
+    showing: open
+    transformOrigin: Item.Top
     width: card.width
     height: card.height
 

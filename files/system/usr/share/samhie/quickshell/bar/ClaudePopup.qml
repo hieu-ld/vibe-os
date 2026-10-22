@@ -16,7 +16,7 @@ import Quickshell.Io
 import ".."
 import "../colors.js" as Colors
 
-Item {
+PopupMotion {
     id: root
 
     required property var bar
@@ -137,7 +137,9 @@ Item {
         }
     }
 
-    visible: open
+    // Hiện/ẩn có hiệu ứng (PopupMotion).
+    showing: open
+    transformOrigin: Item.TopRight
     width: card.width
     height: card.height
 

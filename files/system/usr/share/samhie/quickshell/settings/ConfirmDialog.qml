@@ -31,8 +31,39 @@ PanelWindow {
     readonly property bool focusedScreen: Hyprland.focusedMonitor !== null
         && Hyprland.focusedMonitor.name === modelData.name
 
+    // Hiện: nền tối + thẻ 95% → 100% mờ dần 200 ms; bấm nút / Enter / Esc:
+    // chạy ngược 120 ms RỒI mới báo nơi dùng (nơi dùng huỷ hộp ngay khi nhận
+    // tín hiệu) — như popup của thanh (bar/PopupMotion.qml), user 2026-10-22.
+    property real shown: 0
+    property string pending: ""
+    function finish(which) {
+        if (pending !== "")
+            return
+        pending = which
+        anim.stop()
+        anim.to = 0
+        anim.duration = 120
+        anim.easing.type = Easing.InCubic
+        anim.start()
+    }
+    NumberAnimation {
+        id: anim
+        target: root
+        property: "shown"
+        to: 1
+        duration: 200
+        easing.type: Easing.OutCubic
+        onFinished: {
+            if (root.pending === "confirm")
+                root.confirmed()
+            else if (root.pending === "cancel")
+                root.cancelled()
+        }
+    }
+    Component.onCompleted: anim.start()
+
     screen: modelData
-    color: Qt.alpha(Colors.shared.black, 0.45)
+    color: Qt.alpha(Colors.shared.black, 0.45 * shown)
     anchors { top: true; bottom: true; left: true; right: true }
     exclusionMode: ExclusionMode.Ignore
     WlrLayershell.layer: WlrLayer.Overlay
@@ -53,12 +84,14 @@ PanelWindow {
         color: Theme.c.card
         border.width: 1
         border.color: Theme.c.subSecondary
+        opacity: root.shown
+        scale: 0.95 + 0.05 * root.shown
 
         Item {
             focus: true
-            Keys.onReturnPressed: root.confirmed()
-            Keys.onEnterPressed: root.confirmed()
-            Keys.onEscapePressed: root.cancelled()
+            Keys.onReturnPressed: root.finish("confirm")
+            Keys.onEnterPressed: root.finish("confirm")
+            Keys.onEscapePressed: root.finish("cancel")
             Component.onCompleted: forceActiveFocus()
         }
 
@@ -96,12 +129,12 @@ PanelWindow {
                 spacing: 8
                 Button {
                     label: root.cancelLabel
-                    onClicked: root.cancelled()
+                    onClicked: root.finish("cancel")
                 }
                 Button {
                     label: root.confirmLabel
                     primary: true
-                    onClicked: root.confirmed()
+                    onClicked: root.finish("confirm")
                 }
             }
         }

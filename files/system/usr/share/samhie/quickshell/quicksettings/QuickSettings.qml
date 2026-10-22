@@ -17,9 +17,10 @@ import Quickshell
 import Quickshell.Bluetooth
 import Quickshell.Io
 import ".."
+import "../bar"
 import "../colors.js" as Colors
 
-Item {
+PopupMotion {
     id: root
 
     required property var bar
@@ -29,9 +30,12 @@ Item {
     // ngõ ra âm thanh. Đóng bảng thì về
     // bảng chính.
     property string page: ""
-    onOpenChanged: if (!open) page = ""
+    // Về trang chính khi đã ẩn hẳn — đổi giữa lúc mờ dần thì thấy giật.
+    onVisibleChanged: if (!visible) page = ""
 
-    visible: open
+    // Hiện/ẩn có hiệu ứng (PopupMotion).
+    showing: open
+    transformOrigin: Item.TopRight
     width: card.width
     height: card.height
 

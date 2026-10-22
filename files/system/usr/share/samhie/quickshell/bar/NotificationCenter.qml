@@ -11,7 +11,7 @@ import "../notifications"
 import ".."
 import "../colors.js" as Colors
 
-Item {
+PopupMotion {
     id: root
 
     required property var bar
@@ -20,7 +20,9 @@ Item {
 
     onOpenChanged: notifs.centerOpen = open
 
-    visible: open
+    // Hiện/ẩn có hiệu ứng (PopupMotion).
+    showing: open
+    transformOrigin: Item.TopRight
     width: card.width
     height: card.height
 

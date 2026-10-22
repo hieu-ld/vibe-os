@@ -18,7 +18,7 @@ import Quickshell.Hyprland
 import ".."
 import "../colors.js" as Colors
 
-Item {
+PopupMotion {
     id: root
 
     required property var bar
@@ -54,7 +54,9 @@ Item {
             Hyprland.dispatch("hl.dsp.exit()")
     }
 
-    visible: open
+    // Hiện/ẩn có hiệu ứng (PopupMotion).
+    showing: open
+    transformOrigin: Item.TopRight
     width: card.width
     height: card.height
 

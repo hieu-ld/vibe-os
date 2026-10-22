@@ -3,10 +3,9 @@ name: build
 on:
   schedule:
     # 06:00 UTC (13:00 giờ Việt Nam) — sau khi Universal Blue build xong image
-    # nền. TẠM mỗi thứ Hai: repo đang private (user chốt 2026-09-30) nên chỉ có
-    # 2000 phút Actions/tháng, build hằng ngày cả hai bản dễ vượt. Chuyển public
-    # thì về lại hằng ngày ("00 06 * * *") để bản vá bảo mật vào trong ngày.
-    - cron: "00 06 * * 1"
+    # nền. Hằng ngày để bản vá bảo mật vào trong ngày (repo public: phút
+    # Actions không giới hạn).
+    - cron: "00 06 * * *"
   # Chỉ main: không có dòng này thì mỗi PR (kể cả của Dependabot) chạy HAI lần
   # — một cho push lên nhánh, một cho pull_request — tốn gấp đôi phút Actions.
   push:

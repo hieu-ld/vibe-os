@@ -9,3 +9,9 @@ cosign.private
 /.bluebuild-scripts_*
 __pycache__/
 .cache/
+
+# Ghi chú riêng (repo private hieu-ld/samhie-notes, lồng ở private/);
+# CLAUDE.md và docs/ ở gốc chỉ là liên kết tới đó.
+/private/
+/CLAUDE.md
+/docs

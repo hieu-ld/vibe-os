@@ -188,8 +188,8 @@ modules:
       # — màn hình "About", fastfetch… đọc khoá này. ID vẫn là fedora: đổi ID
       # làm hỏng việc nhận diện kho COPR (README module os-release).
       LOGO: samhie
-      HOME_URL: https://github.com/hieu-ld/samhie
-      BUG_REPORT_URL: https://github.com/hieu-ld/samhie/issues
+      HOME_URL: https://github.com/hieu-ld/vibe-os
+      BUG_REPORT_URL: https://github.com/hieu-ld/vibe-os/issues
 
   # ── 4. Dịch vụ hệ thống ────────────────────────────────────────────────────
   - type: systemd

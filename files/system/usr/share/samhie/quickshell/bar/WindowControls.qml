@@ -118,7 +118,8 @@ Item {
                 color: picker.lit ? root.bar.hoverColor : root.bar.textColor
                 font.family: Colors.fonts.ui
                 font.weight: Colors.fonts.uiWeight
-                font.pointSize: Colors.fonts.size
+                // Nhỏ hơn đồng hồ một cỡ (user 2026-10-22).
+                font.pointSize: Colors.fonts.size - 2
             }
 
             SamhieIcon {

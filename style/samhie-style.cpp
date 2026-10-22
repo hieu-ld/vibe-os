@@ -1,6 +1,6 @@
 // Widget style "samhie": bọc theme Kvantum (QProxyStyle) để vẽ thêm vài chỗ
 // mà theme Kvantum KHÔNG vẽ được bằng SVG/kvconfig — đã đọc mã Kvantum 1.1.6,
-// xem docs/PLAN.md giai đoạn 4. Mọi thứ còn lại chuyển nguyên cho Kvantum.
+// xem docs/NOTES.md giai đoạn 4. Mọi thứ còn lại chuyển nguyên cho Kvantum.
 //
 //   1. Khung thanh đường dẫn Dolphin. KUrlNavigator vẽ khung bằng
 //      PE_FrameLineEdit, Kvantum bỏ qua lệnh này (chỉ vẽ cho LibreOffice).

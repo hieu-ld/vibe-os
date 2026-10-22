@@ -42,7 +42,7 @@ modules:
         # Weston (sddm-wayland-generic): Weston 15 chỉ bật chuột ở sự kiện chuột
         # đầu tiên, lúc greeter đã mở, rồi gửi wl_pointer.enter với serial 0 —
         # Qt bỏ qua serial 0 nên không bao giờ đặt con trỏ (đo 2026-10-01, xem
-        # PLAN). Thêm ~43 MiB (kwin, kscreenlocker, plasma-keyboard…), toàn kho
+        # docs/NOTES.md). Thêm ~43 MiB (kwin, kscreenlocker, plasma-keyboard…), toàn kho
         # Fedora. KWin chỉ chạy cho màn hình đăng nhập; phiên làm việc vẫn Hyprland.
         - sddm
         - sddm-wayland-plasma
@@ -124,7 +124,7 @@ modules:
   # Platform theme "kde" cho app Qt ngoài Plasma: Dolphin/Konsole đọc màu, icon,
   # font, widget style từ kdeglobals — gồm cả /etc/xdg/kdeglobals của image —
   # y như trong Plasma. Thay qt6ct (chỉ đọc ~/.config, bảng màu định dạng riêng;
-  # đo 2026-09-28, xem PLAN). Weak deps kéo ~40 gói Plasma (kglobalacceld,
+  # đo 2026-09-28, xem docs/NOTES.md). Weak deps kéo ~40 gói Plasma (kglobalacceld,
   # kactivitymanagerd, aurorae…); tắt thì còn 6 gói / 35 MB, gồm con trỏ Breeze.
   - type: dnf
     install:

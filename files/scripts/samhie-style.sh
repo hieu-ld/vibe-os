@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Build widget style "samhie" (style/samhie-style.cpp: QProxyStyle bọc Kvantum,
-# vẽ những chỗ theme Kvantum không vẽ được — docs/PLAN.md giai đoạn 4).
+# vẽ những chỗ theme Kvantum không vẽ được — docs/NOTES.md giai đoạn 4).
 # kdeglobals chọn nó (widgetStyle=samhie). Mã nguồn được containerfile module
 # chép vào /tmp/samhie-style (recipes/common.yml).
 #

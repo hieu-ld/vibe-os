@@ -4,7 +4,7 @@ Ba bộ, ba script:
 
 - **Icon nét một màu** (`hugeicons/`) — bộ free của [Hugeicons](https://hugeicons.com),
   user chọn và tải 2026-10-06 thay cho bộ tự vẽ trên Figma (nét 1px của bộ vẽ
-  tay mỏng và lấm tấm ở đường cong — đo ở `docs/PLAN.md`). Sinh bằng
+  tay mỏng và lấm tấm ở đường cong — đo ở `docs/NOTES.md`). Sinh bằng
   `python3 tools/build-icons.py`; giấy phép, nguồn và cách thêm hình: xem
   `hugeicons/README.md`. Bộ vẽ tay cũ còn trong lịch sử git (commit `4805dac`).
 - **Icon app nhiều màu** (`apps/`) — user vẽ, mục bên dưới.

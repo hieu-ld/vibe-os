@@ -1,5 +1,5 @@
 // Màn tổng quan kiểu Ubuntu — theo bản vẽ của user (2026-10-01, khung
-// 1920×1200, số đo trong docs/PLAN.md):
+// 1920×1200, số đo trong docs/NOTES.md):
 //   - nền `overview` phủ màn hình (trừ thanh trên — thanh vẫn bấm được),
 //   - ô tìm kiếm 320×40 cách thanh 24px: gõ là lọc app, kết quả thay chỗ
 //     khung lớn (AppResults), Enter mở app,

@@ -1,4 +1,4 @@
-// Trang Sound — thay pavucontrol (PLAN, user chốt 2026-10-21), dáng trang
+// Trang Sound — thay pavucontrol (docs/NOTES.md, user chốt 2026-10-21), dáng trang
 // Sound của macOS System Settings:
 //
 //   Output          (loa)  Built-in Audio            ✓

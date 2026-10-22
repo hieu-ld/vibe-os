@@ -53,6 +53,24 @@ local samhie = {
 local terminal    = "konsole"
 local fileManager = "dolphin"
 
+-- Phần RIÊNG app Settings ghi (~/.config/hypr/displays.lua, input.lua): chỉ
+-- là một bảng `return { … }`. Nạp bằng load() với môi trường RỖNG: file chỉ
+-- trả về dữ liệu được, không gọi được hàm nào. Không có / hỏng → nil (về
+-- mặc định), không làm hỏng cả cấu hình. Đọc bằng io.open (không require)
+-- để Hyprland không theo dõi file: app ghi file là Hyprland KHÔNG nạp lại cấu
+-- hình — app đã tự áp dụng rồi.
+local function userTable(name)
+    local config = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
+    local f = io.open(config .. "/hypr/" .. name)
+    if not f then
+        return nil
+    end
+    local chunk = load(f:read("a"), name, "t", {})
+    f:close()
+    local ok, t = pcall(chunk or error)
+    return ok and type(t) == "table" and t or nil
+end
+
 -------------------
 ---- MÀN HÌNH ----
 -------------------
@@ -65,26 +83,11 @@ hl.monitor({
 })
 
 -- Màn hình người dùng chỉnh trong app Settings (trang Display) — phần RIÊNG,
--- ~/.config/hypr/displays.lua, chỉ là một bảng `return { {output=…}, … }`.
--- Nạp bằng load() với môi trường RỖNG: file chỉ trả về dữ liệu được, không
--- gọi được hàm nào. File hỏng thì bỏ qua (màn về mặc định), không làm hỏng
--- cả cấu hình. hl.monitor viết trong hyprland.lua chạy sau nên vẫn đè lên.
--- Đọc bằng io.open (không require) để Hyprland không theo dõi file này:
--- app ghi file là Hyprland KHÔNG nạp lại cấu hình — app đã tự áp dụng rồi.
-do
-    local config = os.getenv("XDG_CONFIG_HOME") or (os.getenv("HOME") .. "/.config")
-    local f = io.open(config .. "/hypr/displays.lua")
-    if f then
-        local chunk = load(f:read("a"), "displays.lua", "t", {})
-        f:close()
-        local ok, list = pcall(chunk or error)
-        if ok and type(list) == "table" then
-            for _, spec in ipairs(list) do
-                if type(spec) == "table" and type(spec.output) == "string" then
-                    pcall(hl.monitor, spec)
-                end
-            end
-        end
+-- ~/.config/hypr/displays.lua: `return { {output=…}, … }` (userTable ở trên).
+-- hl.monitor viết trong hyprland.lua chạy sau nên vẫn đè lên.
+for _, spec in ipairs(userTable("displays.lua") or {}) do
+    if type(spec) == "table" and type(spec.output) == "string" then
+        pcall(hl.monitor, spec)
     end
 end
 
@@ -321,12 +324,59 @@ hl.config({
     input = {
         kb_layout    = "us",
         follow_mouse = 1,
-        sensitivity  = 0,
-        touchpad = {
-            natural_scroll = true,
-        },
     },
 })
+
+-- Chuột + bàn phím: mặc định ở đây, người dùng chỉnh trong app Settings
+-- (trang Mouse & Keyboard) → ~/.config/hypr/input.lua, chỉ ghi khoá khác
+-- mặc định: `return { sensitivity = 0.3, touchpad = { tap_to_click = false } }`.
+-- Chỉ nhận đúng các khoá dưới, đúng kiểu. Toàn cục để app gọi sau mỗi lần
+-- ghi/xoá file: `function() samhie_input_apply() end` — áp lại TỪ mặc định,
+-- nên xoá file là về mặc định ngay. input trong hyprland.lua chạy sau nên
+-- vẫn đè lên lúc khởi động/nạp lại.
+local inputDefaults = {
+    sensitivity    = 0,       -- tốc độ con trỏ, -1…1 (libinput)
+    natural_scroll = false,   -- chuột
+    scroll_factor  = 1.0,     -- chuột
+    repeat_delay   = 600,     -- ms giữ phím trước khi lặp
+    repeat_rate    = 25,      -- lần lặp mỗi giây
+    touchpad = {
+        natural_scroll = true,
+        tap_to_click   = true,
+    },
+}
+-- Khoảng nhận cho số (ngoài khoảng / NaN → mặc định).
+local inputRange = {
+    sensitivity   = { -1, 1 },
+    scroll_factor = { 0.1, 10 },
+    repeat_delay  = { 100, 2000 },
+    repeat_rate   = { 1, 100 },
+}
+local function mergeInput(defaults, user)
+    local out = {}
+    for k, v in pairs(defaults) do
+        local u = nil
+        if type(user) == "table" then
+            u = user[k]
+        end
+        local range = inputRange[k]
+        if type(v) == "table" then
+            out[k] = mergeInput(v, u)
+        elseif type(u) ~= type(v) or (range and not (u >= range[1] and u <= range[2])) then
+            out[k] = v
+        else
+            out[k] = u
+        end
+    end
+    return out
+end
+function samhie_input_apply()
+    local input = mergeInput(inputDefaults, userTable("input.lua"))
+    input.repeat_delay = math.floor(input.repeat_delay)
+    input.repeat_rate = math.floor(input.repeat_rate)
+    pcall(hl.config, { input = input })
+end
+samhie_input_apply()
 
 -- Chuyển động: giữ đúng bộ đường cong của mẫu upstream, chỉnh sau khi đã thấy tận mắt.
 hl.curve("easeOutQuint", { type = "bezier", points = { {0.23, 1},  {0.32, 1} } })

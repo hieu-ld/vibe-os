@@ -123,6 +123,7 @@ ShellRoot {
                         datetime: "settings/DateTimePage.qml",
                         input: "settings/InputPage.qml",
                         sound: "settings/SoundPage.qml",
+                        updates: "settings/UpdatesPage.qml",
                     })[root.current.id]
                         ?? "settings/ComingSoon.qml"
                     onLoaded: if (item.title !== undefined) item.title = root.current.title

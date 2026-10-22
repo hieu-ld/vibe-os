@@ -302,9 +302,12 @@ Column {
     Variants {
         model: root.undo !== null ? Quickshell.screens : []
         ConfirmDialog {
-            countdown: root.countdown
-            onKept: root.keep()
-            onReverted: root.revert()
+            title: "Keep these display settings?"
+            message: "Reverting to the previous settings in " + root.countdown + " s"
+            cancelLabel: "Revert"
+            confirmLabel: "Keep"
+            onConfirmed: root.keep()
+            onCancelled: root.revert()
         }
     }
 

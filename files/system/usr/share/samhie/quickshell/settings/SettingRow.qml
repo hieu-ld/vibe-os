@@ -13,6 +13,7 @@ Item {
 
     property string label
     property string sub: ""
+    property color subColor: Theme.c.textMuted   // lỗi: Theme.c.danger
     // Bề rộng dành cho nhãn; phần còn lại cho điều khiển.
     property real labelWidth: width * 0.4
     default property alias control: slot.data
@@ -47,7 +48,7 @@ Item {
             width: parent.width
             elide: Text.ElideRight
             text: root.sub
-            color: Theme.c.textMuted
+            color: root.subColor
             font.family: Colors.fonts.ui
             font.weight: Colors.fonts.uiWeight
             font.pixelSize: 22

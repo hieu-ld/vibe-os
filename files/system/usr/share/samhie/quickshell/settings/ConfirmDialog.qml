@@ -1,15 +1,15 @@
-// Hộp thoại "Keep these display settings?" của trang Display — một lớp phủ
-// cả màn (layer-shell Overlay, nền tối mờ, che cả thanh trên), thẻ ở giữa:
+// Hộp thoại xác nhận — một lớp phủ cả màn (layer-shell Overlay, nền tối mờ,
+// che cả thanh trên), thẻ ở giữa. Chữ do nơi dùng đưa vào, vd trang Display:
 //
 //   ┌────────────────────────────────────────────┐
-//   │ Keep these display settings?               │
-//   │ Reverting to the previous settings in 12 s │
-//   │                         [Revert]  [Keep]   │
+//   │ Keep these display settings?               │  title
+//   │ Reverting to the previous settings in 12 s │  message
+//   │                         [Revert]  [Keep]   │  cancelLabel, confirmLabel
 //   └────────────────────────────────────────────┘
 //
-// Mỗi màn một bản (Variants ở DisplayPage). Bàn phím chỉ ở bản trên màn đang
-// focus: Enter = Keep, Esc = Revert. Bấm ra ngoài thẻ KHÔNG làm gì — chỉ hai
-// nút (đếm hết giờ thì tự Revert).
+// Mỗi màn một bản (Variants ở nơi dùng). Bàn phím chỉ ở bản trên màn đang
+// focus: Enter = nút chính, Esc = nút kia. Bấm ra ngoài thẻ KHÔNG làm gì —
+// chỉ hai nút.
 import QtQuick
 import Quickshell
 import Quickshell.Wayland
@@ -21,9 +21,12 @@ PanelWindow {
     id: root
 
     required property var modelData
-    property int countdown
-    signal kept()
-    signal reverted()
+    property string title
+    property string message
+    property string cancelLabel: "Cancel"
+    property string confirmLabel: "OK"
+    signal confirmed()
+    signal cancelled()
 
     readonly property bool focusedScreen: Hyprland.focusedMonitor !== null
         && Hyprland.focusedMonitor.name === modelData.name
@@ -53,9 +56,9 @@ PanelWindow {
 
         Item {
             focus: true
-            Keys.onReturnPressed: root.kept()
-            Keys.onEnterPressed: root.kept()
-            Keys.onEscapePressed: root.reverted()
+            Keys.onReturnPressed: root.confirmed()
+            Keys.onEnterPressed: root.confirmed()
+            Keys.onEscapePressed: root.cancelled()
             Component.onCompleted: forceActiveFocus()
         }
 
@@ -69,7 +72,7 @@ PanelWindow {
             Text {
                 width: parent.width
                 wrapMode: Text.Wrap
-                text: "Keep these display settings?"
+                text: root.title
                 color: Theme.c.text
                 font.family: Colors.fonts.ui
                 font.weight: Colors.fonts.uiWeight
@@ -78,7 +81,7 @@ PanelWindow {
             Text {
                 width: parent.width
                 wrapMode: Text.Wrap
-                text: "Reverting to the previous settings in " + root.countdown + " s"
+                text: root.message
                 color: Theme.c.textMuted
                 font.family: Colors.fonts.ui
                 font.weight: Colors.fonts.uiWeight
@@ -92,13 +95,13 @@ PanelWindow {
                 anchors.right: parent.right
                 spacing: 8
                 Button {
-                    label: "Revert"
-                    onClicked: root.reverted()
+                    label: root.cancelLabel
+                    onClicked: root.cancelled()
                 }
                 Button {
-                    label: "Keep"
+                    label: root.confirmLabel
                     primary: true
-                    onClicked: root.kept()
+                    onClicked: root.confirmed()
                 }
             }
         }

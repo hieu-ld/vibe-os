@@ -49,6 +49,11 @@ ShellRoot {
         notifs: notifications
     }
 
+    // CPU · nhiệt độ · RAM · Swap cho cụm số trên thanh (một tiến trình đo
+    // cho mọi màn hình).
+    readonly property alias stats: systemStats
+    SystemStats { id: systemStats }
+
     // Tên màn hình (Hyprland) đang mở tổng quan; "" = đóng.
     property string overviewMonitor: ""
 

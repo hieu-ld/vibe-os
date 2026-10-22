@@ -89,6 +89,13 @@ PanelWindow {
         y: layer.gap
     }
 
+    // Mép phải thẳng mép phải cụm CPU/RAM vừa bấm.
+    ClaudePopup {
+        bar: layer.bar
+        x: Math.max(6, Math.round(layer.bar.claudeX - width))
+        y: layer.gap
+    }
+
     // Giữa icon vừa bấm, không tràn khỏi màn hình.
     TrayMenu {
         bar: layer.bar

@@ -1,0 +1,31 @@
+#!/bin/sh
+# Nút Connect của bảng Claude (bar/ClaudePopup.qml): thêm statusLine trỏ tới
+# claude-statusline vào ~/.claude/settings.json của người dùng. Chỉ chạy khi
+# người dùng BẤM — image không tự ghi vào file của người dùng.
+#   0  đã nối (hoặc vốn đã nối)
+#   3  Claude Code đã có statusLine khác — KHÔNG đè, in lệnh đang dùng ra stderr
+#   1  lỗi khác (settings.json hỏng…), lý do ra stderr
+set -u
+cmd=/usr/libexec/samhie/claude-statusline
+f=${CLAUDE_CONFIG_DIR:-$HOME/.claude}/settings.json
+
+mkdir -p "${f%/*}" || exit 1
+[ -s "$f" ] || printf '{}\n' >"$f" || exit 1
+cur=$(jq -r '.statusLine.command // empty' "$f" 2>/dev/null) || {
+    echo "Claude Code's settings.json isn't valid JSON" >&2
+    exit 1
+}
+[ "$cur" = "$cmd" ] && exit 0
+if [ -n "$cur" ]; then
+    echo "Claude Code already uses another status line: $cur" >&2
+    exit 3
+fi
+
+tmp=$f.samhie-tmp
+jq --arg c "$cmd" '.statusLine = {type: "command", command: $c}' "$f" >"$tmp" &&
+    chmod --reference="$f" "$tmp" &&
+    mv -f "$tmp" "$f" || {
+    rm -f "$tmp"
+    echo "Couldn't write $f" >&2
+    exit 1
+}

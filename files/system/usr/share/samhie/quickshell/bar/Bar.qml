@@ -12,8 +12,8 @@ PanelWindow {
 
     required property var shell   // shell.qml — trạng thái chung (màn tổng quan)
 
-    // Popup đang mở: "", "calendar", "power", "tray", "quick", "notifications"
-    // hoặc "windows". Mỗi lúc chỉ một cái;
+    // Popup đang mở: "", "calendar", "power", "tray", "quick", "notifications",
+    // "windows" hoặc "claude". Mỗi lúc chỉ một cái;
     // vẽ trong PopupLayer — bấm ra ngoài hoặc Esc là đóng.
     property string popup: ""
     function toggle(name) {
@@ -35,6 +35,8 @@ PanelWindow {
 
     // Mép trái ô tên app (WindowControls) — danh sách cửa sổ xổ ngay dưới.
     property real windowListX: 0
+    // Mép phải cụm CPU/RAM (StatsButton) — bảng Claude xổ thẳng mép đó.
+    property real claudeX: 0
 
     // Menu khay đang mở cho app nào, và tâm ngang của icon app đó trên thanh.
     property var trayItem: null
@@ -109,6 +111,8 @@ PanelWindow {
         anchors.rightMargin: 6
         anchors.verticalCenter: parent.verticalCenter
         spacing: 2
+
+        StatsButton { bar: bar }
 
         Tray { bar: bar }
 

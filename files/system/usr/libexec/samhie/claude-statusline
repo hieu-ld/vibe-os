@@ -1,0 +1,30 @@
+#!/bin/sh
+# Dòng trạng thái của Claude Code (statusLine trong ~/.claude/settings.json —
+# nút Connect của bảng Claude trên thanh trên ghi giúp: claude-connect).
+#
+# Claude Code đưa JSON vào stdin mỗi lần cập nhật (tính năng chính thức, đo
+# bản 2.1.308): model, context_window.used_percentage, rate_limits.five_hour /
+# seven_day { used_percentage, resets_at } — rate_limits chỉ có với tài khoản
+# gói Claude, sau lần trả lời đầu.
+#   1. Có rate_limits → ghi ~/.cache/samhie/claude.json cho thanh trên
+#      (bar/ClaudePopup.qml). Không có thì GIỮ file cũ — đừng xoá số đang hiện.
+#   2. In một dòng dưới ô gõ: "Opus 5.5 · context 15% · 5h 34% · 7d 52%".
+# Không đụng token đăng nhập, không gọi mạng.
+set -u
+in=$(cat)
+
+dir=${XDG_CACHE_HOME:-$HOME/.cache}/samhie
+if printf '%s' "$in" | jq -e '.rate_limits.five_hour or .rate_limits.seven_day' >/dev/null 2>&1; then
+    mkdir -p "$dir" &&
+        printf '%s' "$in" | jq -c '{at: (now | floor), rate_limits: .rate_limits}' >"$dir/.claude.json.$$" &&
+        mv -f "$dir/.claude.json.$$" "$dir/claude.json"
+    rm -f "$dir/.claude.json.$$"
+fi
+
+printf '%s' "$in" | jq -r '
+    def pct: if . == null then empty else "\(. | floor)%" end;
+    [ .model.display_name // empty,
+      (.context_window.used_percentage | pct | "context " + .),
+      (.rate_limits.five_hour.used_percentage | pct | "5h " + .),
+      (.rate_limits.seven_day.used_percentage | pct | "7d " + .)
+    ] | join(" · ")' 2>/dev/null

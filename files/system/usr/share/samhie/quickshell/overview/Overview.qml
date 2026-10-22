@@ -225,7 +225,8 @@ PanelWindow {
                     font.family: Colors.fonts.ui
                     font.weight: Colors.fonts.uiWeight
                     font.pointSize: Colors.fonts.size
-                    cursorDelegate: Caret { input: search; color: Theme.c.text; size: 18 }
+                    // 14: vạch nhô 1px trên chữ hoa, 2px dưới chân chữ (đo container — 18 cao quá, user 2026-10-22)
+                    cursorDelegate: Caret { input: search; color: Theme.c.text; size: 14 }
 
                     Component.onCompleted: forceActiveFocus()
 

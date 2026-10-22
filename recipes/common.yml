@@ -13,6 +13,15 @@
 #      trong sandbox.
 
 modules:
+  # ── 0. Gỡ gói của image nền ────────────────────────────────────────────────
+  # Firefox (+langpacks, 342 MB): trùng vai trò với Edge (Flatpak, mục 5) —
+  # user chốt 2026-10-22. Ai cần thì cài bản Flatpak của Mozilla trên Flathub.
+  - type: dnf
+    remove:
+      packages:
+        - firefox
+        - firefox-langpacks
+
   # ── 1. Gói từ kho chính thức Fedora ────────────────────────────────────────
   # Cài TRƯỚC module COPR. Như vậy quickshell, qt6ct… chắc chắn là bản Fedora;
   # sang module sau, dnf thấy chúng đã có nên không kéo bản COPR đè lên.
@@ -228,6 +237,7 @@ modules:
       - samhie-style.sh
       - kate-plugin.sh
       - qmlls.sh
+      - hide-apps.sh
 
   # ── 5. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────
   # Edge cài bằng Flatpak chứ không đưa bản RPM vào image: image là công khai,

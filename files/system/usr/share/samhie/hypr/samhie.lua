@@ -325,6 +325,14 @@ hl.config({
         kb_layout    = "us",
         follow_mouse = 1,
     },
+
+    -- Không bao giờ tự kéo con trỏ, như Windows/macOS. Mặc định Hyprland đưa
+    -- con trỏ về giữa cửa sổ mỗi lần đổi focus bằng lệnh: Win → bấm app khác
+    -- trong tổng quan là con trỏ nhảy về giữa màn hình (user 2026-10-23; đo
+    -- máy thật: focus Dolphin → con trỏ 734,593 → 960,615; bật thì đứng yên).
+    cursor = {
+        no_warps = true,
+    },
 })
 
 -- Chuột + bàn phím: mặc định ở đây, người dùng chỉnh trong app Settings

@@ -35,6 +35,9 @@ ClippingRectangle {
     // nó 0 → 1 lúc mở: cửa sổ đi từ chỗ thật ra hàng, như Ubuntu.
     property real spreadAmount: 1
     property bool interactive: false
+    // Cửa sổ vừa bấm chọn: lúc đóng tổng quan nó lên trên cùng (activate) —
+    // hình chụp cũng phải nằm trên cùng, xem `z` của từng cửa sổ.
+    property var raised: null
     // Cỡ nạp ảnh nền. Mặc định = cỡ đang vẽ (ô nhỏ nạp nhỏ cho nhẹ); khung đổi
     // cỡ liên tục (hiệu ứng mở) thì đặt cố định, không thì nạp lại mỗi khung.
     property size imageSize: Qt.size(width, height)
@@ -170,8 +173,13 @@ ClippingRectangle {
             readonly property string appId: modelData.wayland ? modelData.wayland.appId : ""
             readonly property var entry: Windows.entryOf(appId)
 
+            // Chồng đúng như desktop: focusHistoryID 0 = cửa sổ focus gần nhất
+            // = nằm trên cùng (Hyprland đưa cửa sổ nổi được focus lên trên).
+            // Xếp theo thứ tự danh sách thì lúc mở/đóng (cửa sổ ở vị trí thật,
+            // chồng nhau) cửa sổ phía sau trồi lên trên rồi biến mất khi lớp
+            // tắt — "nháy" (user 2026-10-23, quay khung máy thật: Edge đè Konsole).
             // Đang rê chuột thì nổi lên trên cửa sổ bên cạnh (nút X, tên).
-            z: hovered ? 1 : 0
+            z: hovered ? 2000 : modelData === root.raised ? 1000 : 500 - (ipc.focusHistoryID ?? 0)
             // Vị trí thật (thu theo khung) và ô dàn hàng; trộn theo spreadAmount.
             readonly property real realX: (ipc.at[0] - root.monitor.x) * root.k
             readonly property real realY: (ipc.at[1] - root.monitor.y) * root.k

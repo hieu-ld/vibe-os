@@ -302,6 +302,7 @@ PanelWindow {
                 interactive: page.p === 1
                 onBackgroundClicked: root.goWorkspace(root.viewWs)
                 onWindowClicked: toplevel => {
+                    preview.raised = toplevel
                     toplevel.wayland.activate()
                     root.close()
                 }

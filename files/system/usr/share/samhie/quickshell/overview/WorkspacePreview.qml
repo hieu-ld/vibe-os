@@ -196,11 +196,27 @@ ClippingRectangle {
                 radius: root.spread ? 8 : 2
                 color: root.windowBackdrop   // chưa có hình (vừa mở / thu nhỏ)
 
-                ScreencopyView {
-                    id: capture
-                    anchors.fill: parent
-                    captureSource: win.modelData.wayland
-                    live: root.live
+                // Hình chụp vẽ ở CỠ THẬT vào một lớp có mipmap rồi mới thu
+                // nhỏ: thu thẳng ScreencopyView (~0,4–0,55 lần) thì GPU chỉ
+                // lấy mẫu vài điểm ảnh — chữ trong cửa sổ vỡ, nhòe (user
+                // 2026-10-23). Mipmap lọc qua các bậc 1/2, 1/4… như macOS.
+                Item {
+                    width: win.ipc.size[0]
+                    height: win.ipc.size[1]
+                    transform: Scale {
+                        xScale: win.width / win.ipc.size[0]
+                        yScale: win.height / win.ipc.size[1]
+                    }
+                    layer.enabled: true
+                    layer.mipmap: true
+                    layer.smooth: true
+
+                    ScreencopyView {
+                        id: capture
+                        anchors.fill: parent
+                        captureSource: win.modelData.wayland
+                        live: root.live
+                    }
                 }
             }
 

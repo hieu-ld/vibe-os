@@ -1,0 +1,8 @@
+# Cho KWin của màn đăng nhập SDDM (greeter chạy trên kwin_wayland): bật Num
+# Lock. `Numlock=on` trong sddm.conf chỉ có tác dụng với greeter X11 — đo
+# 2026-10-23 máy thật: ô mật khẩu ổ và màn khoá đã bật, riêng SDDM vẫn tắt.
+# KWin đọc kcminputrc nhóm [Keyboard] khoá NumLock: 0 = bật, 1 = tắt,
+# 2 = giữ nguyên (TriState của kcm keyboard trong plasma-desktop).
+# Phiên Hyprland không chạy KWin nên file này không đụng gì tới desktop.
+[Keyboard]
+NumLock=0

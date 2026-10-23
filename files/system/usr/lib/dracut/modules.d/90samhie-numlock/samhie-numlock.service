@@ -1,0 +1,11 @@
+# Initramfs: bật Num Lock trên tty1–6 trước khi hỏi mật khẩu ổ đĩa
+# (module-setup.sh cùng thư mục). Lỗi thì bỏ qua — không bao giờ chặn khởi động.
+[Unit]
+Description=Turn on Num Lock before the disk password prompt
+DefaultDependencies=no
+After=systemd-vconsole-setup.service
+Before=sysinit.target cryptsetup-pre.target
+
+[Service]
+Type=oneshot
+ExecStart=-/usr/bin/bash -c 'for t in /dev/tty[1-6]; do setleds -D +num < "$t"; done; exit 0'

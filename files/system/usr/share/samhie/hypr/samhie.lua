@@ -324,6 +324,8 @@ hl.config({
     input = {
         kb_layout    = "us",
         follow_mouse = 1,
+        -- Bàn phím số luôn gõ ra số (user 2026-10-23), như SDDM và ô mật khẩu ổ.
+        numlock_by_default = true,
     },
 
     -- Không bao giờ tự kéo con trỏ, như Windows/macOS. Mặc định Hyprland đưa

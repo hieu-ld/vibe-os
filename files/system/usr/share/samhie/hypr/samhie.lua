@@ -319,11 +319,6 @@ hl.config({
         -- /usr/libexec/samhie/lock chạy một bản mới nhận lại, khỏi phải
         -- khởi động lại máy.
         allow_session_lock_restore = true,
-        -- App xin hiện lên (xdg-activation) thì cho hiện: mở file từ Dolphin
-        -- vào Kate đang chạy, Kate nhận file nhưng nằm sau — tưởng chưa mở
-        -- (user 2026-10-24). Đo máy thật: tắt → Konsole vẫn focus; bật → Kate
-        -- lên trước. Cái giá: app đang chạy có thể tự giành focus.
-        focus_on_activate = true,
     },
 
     input = {
@@ -525,6 +520,18 @@ hl.bind("XF86AudioPrev",         hl.dsp.exec_cmd("playerctl previous"),   { lock
 ------------------------
 ---- LUẬT CỬA SỔ ----
 ------------------------
+
+-- App xin hiện lên (xdg-activation): CHỈ cho app KDE (danh sách), còn lại
+-- bỏ qua (misc.focus_on_activate mặc định false). Mở file từ Dolphin vào Kate
+-- đang chạy thì Kate phải lên trước — không thì tưởng chưa mở (user
+-- 2026-10-24). Bật chung thì Edge đang phát YouTube xin hiện lên ~5 giây một
+-- lần (log máy thật 12:43:12→:43) và giành focus khỏi Kate/Konsole liên tục.
+-- Đo máy thật: luật này + chung false → `kate file` vẫn đưa Kate lên trước.
+hl.window_rule({
+    name  = "activate-kde-apps",
+    match = { class = "^(org\\.kde\\.(kate|dolphin|konsole|okular|gwenview))$" },
+    focus_on_activate = true,
+})
 
 -- Mẫu upstream khuyên dùng: app tự ý phóng to thì bỏ qua, để Hyprland xếp.
 hl.window_rule({

@@ -323,7 +323,11 @@ hl.config({
 
     input = {
         kb_layout    = "us",
-        follow_mouse = 1,
+        -- Bấm mới chuyển app, như Windows/macOS/Ubuntu (user 2026-10-24, máy
+        -- thật): focus theo chuột (1) làm cửa sổ to phía sau giành focus khi
+        -- đưa chuột từ Konsole/Settings (nhỏ hơn) lên thanh trên → nút ⊗ của
+        -- thanh đóng nhầm app. 2 = rê chuột chỉ để cuộn, bấm mới đổi focus.
+        follow_mouse = 2,
         -- Bàn phím số luôn gõ ra số (user 2026-10-23), như SDDM và ô mật khẩu ổ.
         numlock_by_default = true,
     },

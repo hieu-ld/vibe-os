@@ -319,6 +319,11 @@ hl.config({
         -- /usr/libexec/samhie/lock chạy một bản mới nhận lại, khỏi phải
         -- khởi động lại máy.
         allow_session_lock_restore = true,
+        -- App xin hiện lên (xdg-activation) thì cho hiện: mở file từ Dolphin
+        -- vào Kate đang chạy, Kate nhận file nhưng nằm sau — tưởng chưa mở
+        -- (user 2026-10-24). Đo máy thật: tắt → Konsole vẫn focus; bật → Kate
+        -- lên trước. Cái giá: app đang chạy có thể tự giành focus.
+        focus_on_activate = true,
     },
 
     input = {

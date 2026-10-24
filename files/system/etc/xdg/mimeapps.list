@@ -11,7 +11,12 @@
 #
 # text/plain phủ luôn các kiểu "con" của nó (.conf, .sh, .py, .json…) — KService
 # tự tính kế thừa kiểu MIME.
+#
+# PDF → Edge (2026-10-24, Okular bỏ khỏi danh sách cài sẵn — user chọn). Đo
+# máy thật: chỉ Edge và Okular (Flatpak) khai application/pdf. Ai tự cài lại
+# Okular thì đặt nó làm mặc định trong ~/.config/mimeapps.list.
 
 [Default Applications]
 text/plain=org.kde.kate.desktop
 inode/directory=org.kde.dolphin.desktop
+application/pdf=com.microsoft.Edge.desktop

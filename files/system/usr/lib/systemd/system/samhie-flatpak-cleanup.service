@@ -1,0 +1,14 @@
+# Gỡ một lần Flatpak Gwenview/Okular cũ (/usr/libexec/samhie/flatpak-cleanup).
+# Chỉ chạy khi image đã có Gwenview RPM — không bao giờ để máy mất trình xem ảnh.
+[Unit]
+Description=Remove Flatpak apps that Samhie no longer ships
+ConditionPathExists=!/var/lib/samhie/flatpak-cleanup-1
+ConditionPathExists=/usr/bin/gwenview
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/samhie/flatpak-cleanup
+
+[Install]
+WantedBy=multi-user.target

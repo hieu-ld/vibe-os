@@ -1,0 +1,18 @@
+#!/bin/sh
+# Gỡ MỘT LẦN các app Flatpak Samhie từng cài sẵn mà nay bỏ (2026-10-24):
+#   org.kde.gwenview  thay bằng RPM trong image (style "samhie" như Dolphin).
+#                     Hai bản trùng tên .desktop, thư mục Flatpak đứng trước
+#                     /usr/share trong XDG_DATA_DIRS → còn Flatpak là còn mở
+#                     bản cũ.
+#   org.kde.okular    bỏ (user chọn) — PDF mở bằng Edge.
+# Rồi gỡ runtime không còn ai dùng (org.kde.Platform 1,1 GB chỉ hai app này
+# cần). Chạy xong ghi dấu: ai tự cài lại Okular sau này thì không bị gỡ nữa.
+# Chạy bởi samhie-flatpak-cleanup.service (root, lúc khởi động).
+set -u
+for app in org.kde.gwenview org.kde.okular; do
+    if flatpak info --system "$app" >/dev/null 2>&1; then
+        flatpak uninstall --system --noninteractive "$app" || exit 1
+    fi
+done
+flatpak uninstall --system --noninteractive --unused || exit 1
+mkdir -p /var/lib/samhie && touch /var/lib/samhie/flatpak-cleanup-1

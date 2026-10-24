@@ -132,6 +132,17 @@ modules:
       packages:
         - plasma-integration
 
+  # Xem ảnh: Gwenview (2026-10-24, thay bản Flatpak). Bản Flatpak chạy Qt của
+  # runtime KDE nên không nạp được style "samhie" — RPM thì giống Dolphin/Kate.
+  # Đo dnf5: +23 MB (17 gói); kéo weak deps thì 327 MB — signon-ui (đăng nhập
+  # tài khoản online cho menu Share) kéo QtWebEngine 277 MB. Bản Flatpak cũ
+  # trên máy đang chạy: /usr/libexec/samhie/flatpak-cleanup gỡ.
+  - type: dnf
+    install:
+      install-weak-deps: false
+      packages:
+        - gwenview
+
   # Máy chủ ngôn ngữ cho Kate (2026-10-12). qmlls (QML/Quickshell) không có gói
   # riêng — files/scripts/qmlls.sh tách nó từ gói Fedora. Bỏ qua: clangd (+171
   # MB, thiếu header Qt/KF6 ở máy thật thì file C++ nào cũng báo lỗi đỏ),
@@ -197,6 +208,8 @@ modules:
       enabled:
         - sddm.service
         - firewalld.service
+        # Gỡ một lần Flatpak Gwenview/Okular cũ (Gwenview giờ là RPM).
+        - samhie-flatpak-cleanup.service
     user:
       enabled:
         # Lần đăng nhập đầu của mỗi tài khoản: thư mục Storage + sidebar
@@ -261,8 +274,8 @@ modules:
         install:
           - com.microsoft.Edge
           - com.github.tchx84.Flatseal   # xem và thu hồi quyền của app Flatpak
-          - org.kde.gwenview             # xem ảnh
-          - org.kde.okular               # đọc PDF
+          # Gwenview: RPM từ 2026-10-24 (khối dnf ở trên). Okular bỏ cùng ngày
+          # (user chọn) — PDF mở bằng Edge (/etc/xdg/mimeapps.list).
 
   # Dựng lại initramfs để theme Plymouth (plymouth.sh ở trên) có mặt lúc khởi
   # động — màn hình boot hiện TRƯỚC khi ổ đĩa thật được mount, nên nó chỉ thấy

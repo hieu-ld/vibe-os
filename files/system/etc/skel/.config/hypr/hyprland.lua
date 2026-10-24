@@ -15,6 +15,10 @@ local samhie = require("/usr/share/samhie/hypr/samhie")
 -- Ví dụ: đổi bo góc cửa sổ
 -- hl.config({ decoration = { rounding = 16 } })
 
+-- Chuột, bàn phím: chỉnh trong Settings → Mouse & Keyboard (lưu ở
+-- ~/.config/hypr/input.lua). Viết hl.config({ input = … }) ở đây cũng được,
+-- nhưng mỗi lần đổi trong Settings là phần đó về theo Settings tới lần nạp lại.
+
 -- Màn hình: chỉnh trong Settings → Display (lưu ở ~/.config/hypr/displays.lua).
 -- Viết hl.monitor ở đây thì đè lên cả phần đó.
 -- Ví dụ: màn hình và độ phân giải cụ thể (xem tên màn hình bằng `hyprctl monitors`)

@@ -194,18 +194,6 @@ MAP = {
     "sort":       [("actions", "view-sort")],
     "hide":       [("actions", "hide_table_row"),        # tên của plugin Hide (KIO)
                    ("actions", "view-hidden")],
-    # … và tên RIÊNG, style "samhie" gán cho đúng dòng (mục 39): tên gốc là
-    # icon app Ark / icon LOẠI FILE (text-x-makefile, application-x-cd-image —
-    # đổi chung thì file Makefile, .iso trong Dolphin đổi theo) / code-class
-    # chung cho mọi hệ quản lý phiên bản.
-    "compress":   [("actions", "samhie-compress")],
-    "extract":    [("actions", "samhie-extract")],
-    "makefile-action": [("actions", "samhie-makefile")],
-    "disk-image": [("actions", "samhie-disk-image")],
-    "git":        [("actions", "samhie-git")],
-    "folder-export": [("actions", "samhie-copy-move-to")],   # 'Copy To' and 'Move To'
-    "play-square": [("actions", "samhie-run-in-konsole")],   # Run In Konsole
-    "folder-edit": [("actions", "samhie-folder-icon")],      # Set Folder Icon
     # Nút "Download Services…" (KNewStuff). Hình download của sidebar trông nhỏ
     # trên nút (user 2026-10-07) → hình riêng.
     "download-service": [("actions", "get-hot-new-stuff")],
@@ -425,7 +413,11 @@ MAP["symbol-development"].append(("actions", "format-text-code"))    # LSP Clien
 
 # Có sẵn, chưa lắp. `wifi-lock`: chỉ có bản sóng đầy — danh sách Wi-Fi cần
 # khoá đi cùng cả bốn mức, nên vẫn dùng ổ khoá nhỏ đè góc (WifiPage.qml).
-UNUSED = {"wifi-lock"}
+# Tám hình cuối từng là icon đầu dòng của Configure Dolphin → Context Menu
+# (samhie-compress…, style mục 39); từ 2026-10-22 các dòng đó không có icon
+# → gỡ khỏi bộ icon 2026-10-24, nguồn giữ lại.
+UNUSED = {"wifi-lock", "compress", "extract", "makefile-action", "disk-image",
+          "git", "folder-export", "play-square", "folder-edit"}
 
 # Ô tích + nút tròn của theme Kvantum: tools/kvantum.py đọc nét và tô màu,
 # không phải icon của bộ Samhie.
@@ -529,20 +521,13 @@ NUDGE = {
     "filter": (16, 0, -0.5),             # mờ 0.60 → 0.33
     "browse": (16, 0, -0.375),           # mờ 0.49 → 0.34
     "bookmark-plus": (16, -0.5, 0.125),  # mờ 0.55 → 0.42
-    "compress": (16, 0.125, -0.5),       # mờ 0.52 → 0.35
     "content-display": (16, -0.5, 0.125),  # mờ 0.51 → 0.39
     "copy-link": (16, -0.5, -0.5),       # mờ 0.70 → 0.33
-    "disk-image": (16, -0.5, -0.25),     # mờ 0.56 → 0.38
     "download-service": (16, 0.125, -0.5),  # mờ 0.57 → 0.33
     "duplicate": (16, -0.5, -0.5),       # mờ 0.54 → 0.41
-    "extract": (16, 0.125, -0.25),       # mờ 0.43 → 0.35
     "folder": (16, 0, -0.375),           # mờ 0.48 → 0.32
-    "folder-edit": (16, 0.125, -0.25),   # mờ 0.47 → 0.34
-    "folder-export": (16, 0.125, -0.375),  # mờ 0.50 → 0.35
     "general": (16, -0.5, -0.5),         # mờ 0.58 → 0.44
     "hide": (16, -0.5, -0.375),          # mờ 0.51 → 0.36
-    "makefile-action": (16, 0, -0.5),    # mờ 0.50 → 0.43
-    "play-square": (16, -0.5, -0.5),     # mờ 0.55 → 0.45
     "sort": (16, -0.5, 0.125),           # mờ 0.79 → 0.17
     "folder-new": (16, 0.125, -0.375),   # mờ 0.50 → 0.38
     "icons": (22, -0.5, -0.5),           # mờ 0.44 → 0.30

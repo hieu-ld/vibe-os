@@ -103,13 +103,18 @@ Column {
     }
 
     // "44.20261022" → "2026-10-22 · Fedora 44" (BlueBuild đặt version = bản
-    // Fedora + ngày build). Dạng khác thì hiện nguyên.
+    // Fedora + ngày build). Dạng khác thì hiện nguyên. Hai bản build cùng
+    // ngày cùng version → thêm giờ build (`timestamp` của deployment = giờ
+    // build image, đo 2026-10-24): "2026-10-24 12:52 · Fedora 44".
     function versionText(d, withFedora) {
         const v = d ? (d.version || "") : ""
+        const twin = v !== "" && [root.booted, root.pending, root.previous]
+            .some(o => o && o !== d && o.version === v)
+        const time = twin && d.timestamp ? " " + Qt.formatTime(new Date(d.timestamp * 1000), "HH:mm") : ""
         const m = v.match(/^(\d+)\.(\d{4})(\d{2})(\d{2})(\.\d+)?$/)
         if (!m)
-            return v !== "" ? v : "unknown"
-        return m[2] + "-" + m[3] + "-" + m[4] + (m[5] || "") + (withFedora ? " · Fedora " + m[1] : "")
+            return v !== "" ? v + time : "unknown"
+        return m[2] + "-" + m[3] + "-" + m[4] + (m[5] || "") + time + (withFedora ? " · Fedora " + m[1] : "")
     }
     function checkedText(ms) {
         if (ms <= 0)

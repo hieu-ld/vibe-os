@@ -11,30 +11,40 @@
 set -u
 
 # "44.20261022" → "2026-10-22 · Fedora 44" (như Settings → Updates).
+# "44.20261024 12:52" (kèm giờ build, xem version_of) → "2026-10-24 12:52 · Fedora 44".
 pretty() {
-    case $1 in
+    v=${1%% *}
+    t=${1#"$v"}
+    case $v in
     [0-9]*.[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9]*)
-        f=${1%%.*}
-        d=${1#*.}
+        f=${v%%.*}
+        d=${v#*.}
         rest=${d#????????}
         d=${d%"$rest"}
-        echo "$(echo "$d" | sed 's/\(....\)\(..\)\(..\)/\1-\2-\3/')${rest:+$rest} · Fedora $f"
+        echo "$(echo "$d" | sed 's/\(....\)\(..\)\(..\)/\1-\2-\3/')${rest:+$rest}$t · Fedora $f"
         ;;
     "") echo "unknown" ;;
-    *) echo "$1" ;;
+    *) echo "$v$t" ;;
     esac
 }
 
 # Phiên bản theo vai: booted | pending | previous (rỗng nếu không có).
+# Hai bản build cùng ngày cùng version (44.20261024) → thêm giờ build
+# (`timestamp` của deployment = giờ build image, đo 2026-10-24) cho khỏi trùng.
 version_of() {
     rpm-ostree status --json | jq -r --arg role "$1" '
         .deployments as $d
         | ($d | map(.booted) | index(true)) as $i
-        | if $i == null then empty
-          elif $role == "booted" then $d[$i].version
-          elif $role == "pending" then (if $i > 0 then $d[0].version else empty end)
-          else (if $i + 1 < ($d | length) then $d[$i + 1].version else empty end)
-          end // empty'
+        | def shown($k): $d[$k].version as $v
+            | if $v == null then empty
+              elif ($d | map(select(.version == $v)) | length) > 1
+                then $v + " " + ($d[$k].timestamp | strflocaltime("%H:%M"))
+              else $v end;
+          if $i == null then empty
+          elif $role == "booted" then shown($i)
+          elif $role == "pending" then (if $i > 0 then shown(0) else empty end)
+          else (if $i + 1 < ($d | length) then shown($i + 1) else empty end)
+          end'
 }
 
 usage() {

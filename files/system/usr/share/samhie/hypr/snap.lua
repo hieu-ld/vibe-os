@@ -271,4 +271,25 @@ hl.on("window.close", function(win)
     maximized[win.address] = nil
 end)
 
+-- Chọn lại app đang TOÀN MÀN HÌNH (phim, YouTube) thì nó phải đè lên cửa sổ
+-- vừa chọn trước đó. Hyprland không làm: cửa sổ nổi đã được focus lúc có
+-- cửa sổ toàn màn hình thì mang cờ allowed_over_fullscreen và cứ vẽ trên mãi
+-- (user 2026-10-24: phim → Win chọn Konsole → chọn lại phim, Konsole vẫn
+-- dính). Cờ chỉ được xoá khi một cửa sổ VÀO toàn màn hình → đặt lại riêng
+-- trạng thái phía Hyprland (internal 1 rồi 2), phía app (client) giữ nguyên:
+-- set lại cùng trạng thái thì Hyprland bỏ qua, còn thoát hẳn rồi vào lại thì
+-- trình duyệt tự thoát toàn màn hình. Đo máy thật (Kate toàn màn hình +
+-- Konsole): cờ của Konsole True → False, Kate đè lên; chọn Konsole lại lên trên.
+hl.on("window.active", function(win)
+    if not win or win.fullscreen ~= 2 or not win.workspace then return end
+    local client = win.fullscreen_client
+    for _, o in ipairs(hl.get_windows({ workspace = tostring(win.workspace.id) })) do
+        if o.address ~= win.address and o.allowed_over_fullscreen then
+            hl.dispatch(hl.dsp.window.fullscreen_state({ window = win, internal = 1, client = client }))
+            hl.dispatch(hl.dsp.window.fullscreen_state({ window = win, internal = 2, client = client }))
+            return
+        end
+    end
+end)
+
 return M

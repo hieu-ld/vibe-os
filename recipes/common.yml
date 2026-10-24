@@ -202,6 +202,13 @@ modules:
         # Lần đăng nhập đầu của mỗi tài khoản: thư mục Storage + sidebar
         # Dolphin (files/system/usr/libexec/samhie/user-setup).
         - samhie-user-setup.service
+        # Két mật khẩu (gnome-keyring) do systemd giữ, như GNOME: lúc đăng
+        # nhập PAM (pam_gnome_keyring auto_start) đưa mật khẩu vào socket này.
+        # Không bật thì PAM tự chạy một daemon riêng — trên máy thật nó chết
+        # lặng lẽ vài lần (2026-10-23/24), app hỏi két thì D-Bus bật daemon
+        # mới không có mật khẩu → hộp thoại "Choose password for new
+        # keyring" / gh treo chờ mở khoá.
+        - gnome-keyring-daemon.socket
       masked:
         # Autostart của gói nvidia-settings (chỉ có ở bản NVIDIA): nạp cấu hình
         # cho X11, vô dụng dưới Hyprland. Lệnh `[ -e /dev/nvidia0 ] && …` của

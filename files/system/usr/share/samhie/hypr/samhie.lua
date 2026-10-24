@@ -321,6 +321,14 @@ hl.config({
         allow_session_lock_restore = true,
     },
 
+    -- Không hiện bảng "Hyprland updated to …" và bảng xin ủng hộ. Hyprland
+    -- lên bản mới cùng image, cấu hình do Samhie lo, không có plugin để
+    -- build lại — bảng đó chỉ làm người dùng hoang mang (user 2026-10-24).
+    ecosystem = {
+        no_update_news  = true,
+        no_donation_nag = true,
+    },
+
     input = {
         kb_layout    = "us",
         -- Bấm mới chuyển app, như Windows/macOS/Ubuntu (user 2026-10-24, máy

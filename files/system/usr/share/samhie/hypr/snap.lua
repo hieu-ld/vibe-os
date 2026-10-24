@@ -292,4 +292,17 @@ hl.on("window.active", function(win)
     end
 end)
 
+-- Ra khỏi toàn màn hình thì Hyprland trả cửa sổ về chỗ CŨ trong thứ tự xếp
+-- chồng — cửa sổ nổi khác (Kate, Konsole) lại đè lên dù nó đang được chọn
+-- (user 2026-10-24: YouTube thoát toàn màn hình → Konsole dính trên. Đo máy
+-- thật bằng F11 của Edge qua send_shortcut: thoát ra Kate đè Edge; thêm cái
+-- này → Edge trên cùng). Cửa sổ đang chọn thì đưa lên trên cùng.
+hl.on("window.fullscreen", function(win)
+    if not win or win.fullscreen ~= 0 then return end
+    local active = hl.get_active_window()
+    if active and active.address == win.address then
+        hl.dispatch(hl.dsp.window.alter_zorder({ mode = "top", window = win }))
+    end
+end)
+
 return M

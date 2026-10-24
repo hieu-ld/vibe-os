@@ -1,4 +1,4 @@
-// Ảnh xem trước sau khi chụp CẢ màn hình (Print) — /usr/libexec/samhie/
+// Ảnh xem trước sau khi chụp CẢ màn hình (Shift+Print) — /usr/libexec/samhie/
 // screenshot gọi file này bằng `quickshell -p` sau khi grim đã lưu ảnh, truyền
 // đường dẫn ảnh qua biến SAMHIE_SHOT_FILE.
 //

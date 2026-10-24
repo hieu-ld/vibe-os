@@ -468,7 +468,10 @@ hl.bind(mod .. " + V",         hl.dsp.global("samhie:clipboard"))
 -- Chụp màn hình kiểu Windows: tự lưu vào Storage/Pictures/Screenshots + copy
 -- vào clipboard; bấm vào thông báo để vẽ lên ảnh (swappy).
 hl.bind(mod .. " + SHIFT + S", hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot region"))  -- chọn vùng
-hl.bind("Print",               hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot"))         -- cả màn hình
+-- Print chọn vùng như Ubuntu (user 2026-10-24: "quen cách đó"); Shift+Print
+-- cả màn hình như GNOME.
+hl.bind("Print",               hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot region"))  -- chọn vùng
+hl.bind("SHIFT + Print",       hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot"))         -- cả màn hình
 
 hl.bind("ALT + F4",            hl.dsp.window.close())
 hl.bind(mod .. " + Q",         hl.dsp.window.close())

@@ -136,6 +136,17 @@ PopupMotion {
         run(["nmcli", "radio", "wifi", on ? "on" : "off"])
     }
 
+    // Bật/tắt Bluetooth bằng rfkill như GNOME: systemd-rfkill nhớ trạng thái
+    // qua mỗi lần khởi động. Chỉ tắt nguồn (adapter.enabled) thì BlueZ
+    // (AutoEnable) bật lại lúc khởi động (user 2026-10-24). Mở khoá thì BlueZ
+    // tự bật nguồn (đo máy thật); vẫn đặt enabled cho trường hợp đang tắt
+    // nguồn mà không bị khoá. Trang Bluetooth của Settings làm y hệt.
+    function setBluetooth(on) {
+        Quickshell.execDetached(["rfkill", on ? "unblock" : "block", "bluetooth"])
+        if (on)
+            btAdapter.enabled = true
+    }
+
     function toggle(id) {
         switch (id) {
         case "wired": {
@@ -151,7 +162,7 @@ PopupMotion {
             setWifi(!wifiRadio)
             break
         case "bluetooth":
-            btAdapter.enabled = !btAdapter.enabled
+            setBluetooth(!btAdapter.enabled)
             break
         case "night":
             shell.prefs.nightLight = !shell.prefs.nightLight

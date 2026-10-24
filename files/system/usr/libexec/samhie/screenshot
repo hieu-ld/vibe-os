@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
-# Chụp màn hình kiểu Windows (user chốt 2026-09-29):
-#   screenshot          Print        — cả màn hình
-#   screenshot region   Win+Shift+S  — kéo chọn một vùng (Esc để huỷ)
+# Chụp màn hình (phím gắn trong samhie.lua; user 2026-10-24 đổi Print sang
+# chọn vùng như Ubuntu):
+#   screenshot          Shift+Print            — cả màn hình
+#   screenshot region   Print / Win+Shift+S    — kéo chọn một vùng (Esc để huỷ)
 # Ảnh TỰ LƯU vào <thư mục Pictures>/Screenshots (= Storage/Pictures/
 # Screenshots theo cấu trúc của Samhie), đồng thời copy vào clipboard, rồi hiện
 # thông báo. Bấm vào thông báo để mở swappy vẽ lên ảnh.

@@ -77,7 +77,7 @@ The usual commands (`rpm-ostree`, `flatpak`, `ujust`) still work as before.
 | `Win + T` or `Ctrl + Alt + T` | Terminal |
 | `Win + V` | Clipboard history |
 | `Win + L` | Lock |
-| `Print` / `Win + Shift + S` | Screenshot of the whole screen / a region |
+| `Print` or `Win + Shift + S` / `Shift + Print` | Screenshot of a region / the whole screen |
 | `Win + ←` / `Win + →` | Snap window to the left / right half |
 | `Win + ↑` / `Win + ↓` | Maximize / restore |
 | `Alt + F4` or `Win + Q` | Close window |

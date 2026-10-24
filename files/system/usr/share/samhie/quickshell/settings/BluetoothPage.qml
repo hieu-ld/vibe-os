@@ -246,13 +246,18 @@ Column {
         SettingRow {
             visible: root.adapter !== null
             label: "Bluetooth"
+            // Tắt = khoá rfkill (như quick settings, QuickSettings.qml
+            // setBluetooth) nên "Blocked" là trạng thái tắt bình thường.
             sub: root.adapter === null ? ""
-                : root.adapter.state === BluetoothAdapterState.Blocked ? "Blocked by rfkill"
                 : root.adapter.state === BluetoothAdapterState.Enabling ? "Turning on…"
                 : root.adapter.state === BluetoothAdapterState.Disabling ? "Turning off…" : ""
             Switch {
                 checked: root.powered
-                onToggled: on => root.adapter.enabled = on
+                onToggled: on => {
+                    Quickshell.execDetached(["rfkill", on ? "unblock" : "block", "bluetooth"])
+                    if (on)
+                        root.adapter.enabled = true
+                }
             }
         }
     }

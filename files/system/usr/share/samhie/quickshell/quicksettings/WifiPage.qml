@@ -582,7 +582,7 @@ Column {
 
                         Text {
                             anchors.verticalCenter: parent.verticalCenter
-                            visible: pw.text === ""
+                            visible: pw.displayText === ""
                             text: "Password"
                             color: Theme.c.textMuted
                             font: pw.font

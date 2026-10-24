@@ -314,7 +314,7 @@ Column {
                                 font.pixelSize: 24
                                 onAccepted: if (list.count > 0) picker.choose(list.model[0])
                                 Text {
-                                    visible: find.text === ""
+                                    visible: find.displayText === ""
                                     height: parent.height
                                     verticalAlignment: Text.AlignVCenter
                                     text: "Search city or region"
@@ -331,7 +331,7 @@ Column {
                             boundsBehavior: Flickable.StopAtBounds
                             // Khớp không phân biệt hoa thường, "_" = cách.
                             model: {
-                                const q = find.text.trim().toLowerCase().replace(/_/g, " ")
+                                const q = find.displayText.trim().toLowerCase().replace(/_/g, " ")
                                 return q === "" ? root.zones
                                     : root.zones.filter(z => z.toLowerCase().replace(/_/g, " ").includes(q))
                             }

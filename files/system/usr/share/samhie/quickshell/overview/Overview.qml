@@ -180,7 +180,7 @@ PanelWindow {
             readonly property int side: 12 + Math.round(sw * 0.076) + 24   // cột trái + khe
             // 0,75 như Ubuntu; màn thấp/hẹp thì co cho vừa.
             readonly property real k: Math.min(0.75, (height - previewTop - dockSpace) / sh, (width - 2 * side) / sw)
-            readonly property bool searching: search.text.trim() !== ""
+            readonly property bool searching: search.displayText.trim() !== ""
             readonly property real p: root.progress
             function mix(a, b) { return a + (b - a) * p }
 
@@ -232,9 +232,11 @@ PanelWindow {
 
                     Component.onCompleted: forceActiveFocus()
 
+                    // displayText (không phải text): tính cả chữ bộ gõ đang
+                    // gõ dở (Unikey preedit) — text rỗng tới lúc chữ được chốt.
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: search.text === ""
+                        visible: search.displayText === ""
                         text: "Type to search"
                         color: Theme.c.textMuted
                         font: search.font
@@ -315,7 +317,7 @@ PanelWindow {
                 y: page.previewTop
                 width: page.finalW
                 height: page.finalH
-                query: search.text
+                query: search.displayText
                 onLaunched: root.close()
             }
 

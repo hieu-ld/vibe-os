@@ -14,7 +14,7 @@ Item {
     required property string current
     signal picked(string id)
 
-    readonly property var shown: pages.filter(p => p.title.toLowerCase().includes(search.text.trim().toLowerCase()))
+    readonly property var shown: pages.filter(p => p.title.toLowerCase().includes(search.displayText.trim().toLowerCase()))
 
     // Ô tìm.
     Rectangle {
@@ -51,7 +51,7 @@ Item {
             onAccepted: if (root.shown.length > 0) root.picked(root.shown[0].id)
 
             Text {
-                visible: search.text === ""
+                visible: search.displayText === ""
                 height: parent.height
                 verticalAlignment: Text.AlignVCenter
                 text: "Search"

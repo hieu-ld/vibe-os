@@ -30,7 +30,7 @@ PanelWindow {
     property point cursor: Qt.point(0, 0)
 
     readonly property var shown: {
-        const q = search.text.trim().toLowerCase()
+        const q = search.displayText.trim().toLowerCase()
         return q === "" ? items : items.filter(i => i.thumb === "" && i.preview.toLowerCase().includes(q))
     }
 
@@ -204,7 +204,7 @@ PanelWindow {
 
                     Text {
                         anchors.verticalCenter: parent.verticalCenter
-                        visible: search.text === ""
+                        visible: search.displayText === ""
                         text: "Search clipboard"
                         color: Theme.c.textMuted
                         font: search.font
@@ -267,7 +267,7 @@ PanelWindow {
             height: 60
             horizontalAlignment: Text.AlignHCenter
             verticalAlignment: Text.AlignVCenter
-            text: search.text === "" ? "Nothing copied yet" : "No matches"
+            text: search.displayText === "" ? "Nothing copied yet" : "No matches"
             color: Theme.c.textMuted
             font.family: Colors.fonts.ui
             font.weight: Colors.fonts.uiWeight

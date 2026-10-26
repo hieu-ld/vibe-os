@@ -1,0 +1,22 @@
+#!/bin/bash
+# Tắt tính năng đăng nhập vân tay của authselect khi máy không có module vân
+# tay (samhie-authselect-cleanup.service, mỗi lần khởi động, trước đăng nhập).
+# Máy cài Kinoite rồi rebase sang Samhie giữ /etc/authselect của Kinoite
+# (with-fingerprint) mà image không có fprintd → mỗi lần sudo, pkexec, màn
+# khoá: "PAM unable to dlopen(pam_fprintd.so)" (đo 2026-10-26). Image mặc
+# định (/usr/etc/authselect) không bật tính năng này.
+# Không đụng gì khi: tính năng không bật; có pam_fprintd.so (người dùng tự
+# cài fprintd-pam); hoặc PAM đã ra khỏi tay authselect — `authselect check`
+# lỗi khi /etc/pam.d/* không còn là liên kết tới /etc/authselect/* (người
+# dùng thay bằng file riêng). check KHÔNG so nội dung (đo, container F44):
+# sửa thẳng file trong /etc/authselect/ thì authselect vốn ghi đè ở lần áp
+# dụng sau ("Do not modify this file manually").
+set -u
+conf=/etc/authselect/authselect.conf
+[ -f "$conf" ] && grep -qx with-fingerprint "$conf" || exit 0
+[ -e /usr/lib64/security/pam_fprintd.so ] && exit 0
+if ! authselect check >/dev/null 2>&1; then
+    echo "PAM is not managed by authselect any more; leaving it alone"
+    exit 0
+fi
+authselect disable-feature with-fingerprint

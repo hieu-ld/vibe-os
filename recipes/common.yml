@@ -221,6 +221,9 @@ modules:
         - firewalld.service
         # Gỡ một lần Flatpak Gwenview/Okular cũ (Gwenview giờ là RPM).
         - samhie-flatpak-cleanup.service
+        # Tắt đăng nhập vân tay sót từ Kinoite khi không có fprintd (lỗi PAM
+        # pam_fprintd.so mỗi lần sudo/màn khoá).
+        - samhie-authselect-cleanup.service
     user:
       enabled:
         # Lần đăng nhập đầu của mỗi tài khoản: thư mục Storage + sidebar

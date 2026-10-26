@@ -1,0 +1,15 @@
+# Tắt đăng nhập vân tay của authselect khi không có module vân tay
+# (/usr/libexec/samhie/authselect-cleanup). Chạy trước khi cho đăng nhập.
+[Unit]
+Description=Turn off fingerprint login when fprintd is not installed
+ConditionPathExists=/etc/authselect/authselect.conf
+ConditionPathExists=!/usr/lib64/security/pam_fprintd.so
+After=local-fs.target
+Before=systemd-user-sessions.service display-manager.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/libexec/samhie/authselect-cleanup
+
+[Install]
+WantedBy=multi-user.target

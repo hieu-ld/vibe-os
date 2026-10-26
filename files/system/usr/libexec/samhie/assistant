@@ -48,9 +48,14 @@ serve() {
     # tự tải bản mới. --log-driver passthrough: chữ của llama-server đi thẳng
     # ra stdout của dịch vụ; mặc định (journald) podman ghi một bản nữa → mỗi
     # dòng hai lần trong journal (đo).
+    # --cache-ram 0: llama-server giữ bộ đệm câu hỏi trong RAM, mặc định tới
+    # 8 GiB — đo 2026-10-26: sau vài trăm câu hỏi (sbot-eval) RSS 9,2 GB, RAM
+    # máy 72%. --parallel 1: một khung chat chỉ cần một chỗ (mặc định tự chọn
+    # 4); phần đầu câu hỏi vẫn được dùng lại trong ngữ cảnh trên GPU.
     exec ramalama serve --name "$NAME" --webui off --selinux true \
         --pull missing --env LLAMA_API_KEY --thinking false \
         --engine-args "--log-driver passthrough" \
+        --runtime-args "--cache-ram 0 --parallel 1" \
         -p "$PORT" -c 32768 "$MODEL"
 }
 

@@ -1,0 +1,11 @@
+; Cho container (container_t) dùng thiết bị card NVIDIA — cho trợ lý AI S-bot
+; (RamaLama chạy llama.cpp CUDA trong container, 2026-10-26).
+;
+; Thiết bị /dev/nvidia0, nvidiactl, nvidia-uvm, nvidia-modeset, nvidia-caps/*
+; mang nhãn xserver_misc_device_t. container-selinux không cho container_t
+; mở nhãn đó → llama.cpp báo "no CUDA-capable device" (đo máy thật). RamaLama
+; né bằng cách TẮT SELinux cho cả container (--selinux mặc định False).
+; Quy tắc này hẹp hơn hai lối kia: không tắt cách ly, không bật boolean
+; container_use_devices (mở MỌI thiết bị cho mọi container) — chỉ thiết bị
+; card NVIDIA.
+(allow container_t xserver_misc_device_t (chr_file (getattr ioctl map open read write)))

@@ -269,6 +269,7 @@ modules:
       - kate-plugin.sh
       - qmlls.sh
       - hide-apps.sh
+      - selinux-gpu.sh
 
   # ── 5. App Flatpak (cài ở lần khởi động đầu tiên) ──────────────────────────
   # Edge cài bằng Flatpak chứ không đưa bản RPM vào image: image là công khai,

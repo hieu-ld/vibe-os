@@ -241,6 +241,32 @@ PanelWindow {
         lastError = ""
     }
 
+    // Chép cả cuộc trò chuyện (chữ thường) vào clipboard để dán cho người
+    // khác xem — lịch sử vẫn KHÔNG ghi ra đĩa, chỉ chép khi bấm. Qua stdin
+    // của wl-copy: một đối số dòng lệnh tối đa 128 KiB.
+    function copyChat() {
+        const lines = []
+        for (let i = 0; i < chat.count; i++) {
+            const m = chat.get(i)
+            lines.push(m.role === "user" ? "You: " + m.text
+                : m.role === "note" ? "(" + m.text + ")"
+                : "S-bot: " + m.text)
+        }
+        copyProc.body = lines.join("\n\n") + "\n"
+        copyProc.running = true
+    }
+    Process {
+        id: copyProc
+        property string body
+        command: ["wl-copy"]
+        stdinEnabled: true
+        onStarted: {
+            write(body)
+            stdinEnabled = false
+        }
+        onExited: stdinEnabled = true
+    }
+
     function stopAnswer() {
         if (chatProc.running)
             chatProc.signal(15)
@@ -578,6 +604,17 @@ PanelWindow {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: 2
 
+                HeadButton {
+                    iconName: copiedFlash.running ? "dialog-ok" : "edit-copy"
+                    tip: "Copy conversation"
+                    enabled: chat.count > 0
+                    onClicked: root.copyChat()
+                    Timer { id: copiedFlash; interval: 1500 }
+                    Connections {
+                        target: copyProc
+                        function onExited(code) { if (code === 0) copiedFlash.restart() }
+                    }
+                }
                 HeadButton {
                     iconName: "edit-clear-history"
                     tip: "New chat"

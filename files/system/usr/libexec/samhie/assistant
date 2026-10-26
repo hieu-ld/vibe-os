@@ -91,94 +91,11 @@ tool_read_journal() {
         [[ $unit =~ ^[A-Za-z0-9@._:-]{1,80}$ ]] || { echo "invalid unit name"; return; }
         args+=(-u "$unit")
     fi
-    journalctl "${args[@]}" 2>/dev/null | python3 -I -c "$journal_py" "$priority"
+    journalctl "${args[@]}" 2>/dev/null | python3 -I "$(dirname "$0")/assistant-journal" "$priority"
     echo "(end of log)"
 }
 
-# Đọc journal dạng JSON rồi tự in, vì dòng chữ của journalctl không lọc chắc được:
-# - Bỏ dòng của chính S-bot theo trường journald đặt (_SYSTEMD_USER_UNIT):
-#   dịch vụ, hoặc container của nó (libpod-….scope, tên samhie-assistant do
-#   SyslogIdentifier của dịch vụ) — không theo chữ trong dòng.
-# - Dòng lặp gộp thành một "(×N)", lỗi (err trở lên) in trước: chương trình
-#   ghi tràn log không đẩy mất lỗi thật khỏi 80 dòng.
-# - Ký tự điều khiển/xuống dòng trong tin → khoảng trắng: tin không giả được
-#   "(end of log)" hay dòng mới.
-# - Lệnh sudo (COMMAND=…) ẩn đối số: có khi chứa mật khẩu/token.
-# - Đánh dấu "every boot" (lần khởi động trước cũng có) và "early boot" (từ
-#   initrd, trước khi vào hệ thống thật — nhận ra bằng tên máy "fedora" mặc
-#   định của initrd khác tên máy thật): model 9B kể mọi lỗi khởi động quen
-#   thuộc như sự cố mới rồi tự bịa nguyên nhân (user 2026-10-26).
-journal_py='
-import json, re, socket, subprocess, sys, time
-from collections import OrderedDict
-def text(v):
-    if isinstance(v, list):
-        v = bytes(x for x in v if isinstance(x, int) and 0 <= x < 256).decode("utf-8", "replace")
-    return v if isinstance(v, str) else ""
-def key_of(e):
-    ident = text(e.get("SYSLOG_IDENTIFIER")) or text(e.get("_COMM")) or "?"
-    msg = re.sub(r"[\x00-\x1f\x7f]+", " ", text(e.get("MESSAGE"))).strip()[:300]
-    return ident, msg, (ident, re.sub(r"\d+", "#", msg))
-prev = set()
-try:
-    out = subprocess.run(["journalctl", "-b", "-1", "-p", sys.argv[1], "-o", "json",
-                          "--output-fields=MESSAGE,SYSLOG_IDENTIFIER,_COMM"],
-                         capture_output=True, text=True, timeout=10).stdout
-    for line in out.splitlines():
-        prev.add(key_of(json.loads(line))[2])
-except Exception:
-    pass
-try:
-    this_boot = open("/proc/sys/kernel/random/boot_id").read().strip().replace("-", "")
-except Exception:
-    this_boot = ""
-host = socket.gethostname()
-seen = OrderedDict()
-for line in sys.stdin:
-    try:
-        e = json.loads(line)
-    except Exception:
-        continue
-    unit = text(e.get("_SYSTEMD_USER_UNIT"))
-    if unit == "samhie-assistant.service" or (
-            unit.startswith("libpod-") and text(e.get("SYSLOG_IDENTIFIER")) == "samhie-assistant"):
-        continue
-    ident, msg, key = key_of(e)
-    if ident == "sudo":
-        msg = re.sub(r"COMMAND=.*", "COMMAND=(hidden)", msg)
-    try:
-        prio = int(text(e.get("PRIORITY")) or 6)
-        t = time.strftime("%b %d %H:%M:%S", time.localtime(int(text(e.get("__REALTIME_TIMESTAMP"))) / 1e6))
-    except Exception:
-        prio, t = 6, "?"
-    boot = text(e.get("_BOOT_ID"))
-    early = host not in ("fedora", "localhost") and text(e.get("_HOSTNAME")) == "fedora"
-    n, boots, was_early = seen.pop(key, (0, set(), False))[:3]
-    boots = boots | {boot}
-    if boot == this_boot and key in prev:
-        boots = boots | {"prev"}
-    seen[key] = (n + 1, boots, was_early or early, prio, t, ident, msg)
-def fit(rows, budget):
-    # Dòng mới nhất trước, tới khi hết chỗ; in lại theo thứ tự thời gian.
-    out = []
-    for n, boots, early, prio, t, ident, msg in reversed(rows):
-        tags = ([f"x{n}"] if n > 1 else []) + (["every boot"] if len(boots) > 1 else []) \
-            + (["early boot"] if early else [])
-        s = f"{t} {ident}: {msg}" + (" (" + ", ".join(tags) + ")" if tags else "")
-        if len(out) >= 80 or budget < len(s) + 1:
-            break
-        budget -= len(s) + 1
-        out.append(s)
-    return out[::-1]
-# Mô hình chỉ có 32k ngữ cảnh: tối đa ~8000 ký tự, lỗi được tối đa một nửa.
-rows = list(seen.values())
-errors = fit([r for r in rows if r[3] <= 3], 4000)
-rest = fit([r for r in rows if r[3] > 3], 8000 - sum(len(s) + 1 for s in errors))
-if errors and rest:
-    print("Errors:", *errors, "Other lines:", *rest, sep="\n")
-elif errors or rest:
-    print(*(errors or rest), sep="\n")
-'
+# Cách in (nhóm, câu Summary, dòng đã biết): xem assistant-journal.
 
 tool_failed_services() {
     echo "System services that failed:"

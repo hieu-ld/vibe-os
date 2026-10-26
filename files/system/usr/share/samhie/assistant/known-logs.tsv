@@ -1,0 +1,14 @@
+# Dòng log ĐÃ BIẾT trên Samhie, kèm lời giải thích cho S-bot (assistant-journal
+# gắn vào dòng khớp). Model 9B gặp log lạ thì tự bịa nguyên nhân — ở đây chỉ
+# ghi điều ĐÃ ĐO (docs/NOTES.md "Nhiễu khởi động"); chưa rõ thì nói chưa rõ.
+# Cột cách nhau bằng TAB: tên tiến trình (regex, khớp cả tên), tin (regex,
+# tìm trong tin), lời giải thích (tiếng Anh, model dịch theo người hỏi), và
+# tuỳ chọn `early` = chỉ áp cho dòng in lúc khởi động sớm (initrd).
+kernel	ACPI.*AE_ALREADY_EXISTS|AE_ALREADY_EXISTS.*ACPI|Aborting method .*AE_ALREADY_EXISTS	A bug in the mainboard's BIOS (its ACPI tables); harmless, the system works normally. Only a BIOS update from the board maker could remove it.
+systemd-udevd|systemd-tmpfiles	Failed to resolve (group|user) '[^']+'.*Unknown (group|user)	Printed during early startup (the initrd), before the real system with all its groups and users is running; harmless.	early
+systemd-tmpfiles	"/(home|srv|root|mnt|opt)" already exists and is not a directory	Normal on Fedora Atomic: these folders are links into /var (/home -> /var/home); harmless.
+systemd-remount-fs|systemd	(/usr/bin/mount for / exited|systemd-remount-fs\.service)	Known Samhie issue: /etc/fstab has an entry for / but / is a read-only image (composefs), so remounting it fails. Harmless; the Samhie developers know about it.
+systemd	bootloader-update\.service	Known Samhie issue, cause not checked yet. Samhie still starts and updates normally; the Samhie developers know about it.
+systemd-cryptsetup	dictionary attack lock-out	The TPM refuses the disk PIN after too many wrong tries. It forgives wrong tries slowly while the computer stays on; restarting does not help. How long depends on the TPM chip and S-bot cannot read it, so give no number of hours or days: just say it takes hours. Until then the system asks for the long recovery password instead; data is safe.
+systemd-cryptsetup	Bad PIN	The disk PIN was refused (wrong PIN, or the TPM is locked after earlier wrong tries); the system then asks for the long recovery password.
+smartd	Data recovery specialists reported serious problems|older WD SMR HDDs	A general warning from smartd's drive list about this Western Digital model (SMR drives); not a sign that this drive is failing. `sudo smartctl -a` with the device from the line (e.g. /dev/sda) shows the drive's own health report.

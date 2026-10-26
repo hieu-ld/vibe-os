@@ -1,0 +1,167 @@
+# S-bot: in journal cho model đọc (assistant tool read_journal gọi:
+# `journalctl -o json … | python3 -I assistant-journal MỨC`). Tự in thay vì
+# dùng chữ của journalctl, vì model 9B kể mọi lỗi khởi động quen thuộc như sự
+# cố mới rồi tự bịa nguyên nhân (user 2026-10-26). Ở đây CODE quyết điều chắc
+# chắn được, model chỉ diễn đạt lại:
+# - Câu "Summary" đầu tiên: có gì mới ở lần khởi động này không.
+# - Chia nhóm bằng tiêu đề chữ thường (mới ở lần này / chỉ ở một lần trước /
+#   lần trước cũng có), không gắn nhãn kỹ thuật — model hay đọc lại nguyên
+#   nhãn cho người dùng.
+# - Dòng ĐÃ BIẾT (/usr/share/samhie/assistant/known-logs.tsv) kèm lời giải
+#   thích đã đo; các dòng cùng một lời giải thích gộp làm một.
+# - Bỏ dòng của chính S-bot theo trường journald đặt (_SYSTEMD_USER_UNIT):
+#   dịch vụ, hoặc container của nó (libpod-….scope, tên samhie-assistant do
+#   SyslogIdentifier của dịch vụ) — không theo chữ trong dòng.
+# - Dòng lặp gộp "(xN)"; ký tự điều khiển → khoảng trắng (tin không giả được
+#   "(end of log)"); sudo COMMAND=… ẩn (có khi chứa mật khẩu/token).
+# - Dòng từ initrd: tên máy "fedora" mặc định của initrd khác tên máy thật.
+import json
+import re
+import socket
+import subprocess
+import sys
+import time
+from collections import OrderedDict
+from pathlib import Path
+
+# Mô hình chỉ có 32k ngữ cảnh: tổng ~8000 ký tự.
+BUDGET = {"new": 4000, "once": 1500, "old": 8000}
+
+
+def text(v):
+    if isinstance(v, list):
+        v = bytes(x for x in v if isinstance(x, int) and 0 <= x < 256).decode("utf-8", "replace")
+    return v if isinstance(v, str) else ""
+
+
+def load_known():
+    # /usr/libexec/samhie/x → /usr/share/samhie/…; trong repo cũng đúng
+    # (files/system/usr/…), để thử khỏi build image.
+    path = Path(__file__).resolve().parents[2] / "share/samhie/assistant/known-logs.tsv"
+    known = []
+    try:
+        for line in path.read_text().splitlines():
+            if not line.strip() or line.startswith("#"):
+                continue
+            cols = line.split("\t")
+            known.append((re.compile(cols[0]), re.compile(cols[1]), cols[2],
+                          len(cols) > 3 and cols[3] == "early"))
+    except Exception:
+        pass
+    return known
+
+
+def key_of(e):
+    ident = text(e.get("SYSLOG_IDENTIFIER")) or text(e.get("_COMM")) or "?"
+    msg = re.sub(r"[\x00-\x1f\x7f]+", " ", text(e.get("MESSAGE"))).strip()[:300]
+    return ident, msg, (ident, re.sub(r"\d+", "#", msg))
+
+
+def main():
+    priority = sys.argv[1] if len(sys.argv) > 1 else "warning"
+    known = load_known()
+    prev = set()
+    try:
+        out = subprocess.run(["journalctl", "-b", "-1", "-p", priority, "-o", "json",
+                              "--output-fields=MESSAGE,SYSLOG_IDENTIFIER,_COMM"],
+                             capture_output=True, text=True, timeout=10).stdout
+        for line in out.splitlines():
+            prev.add(key_of(json.loads(line))[2])
+    except Exception:
+        pass
+    try:
+        this_boot = Path("/proc/sys/kernel/random/boot_id").read_text().strip().replace("-", "")
+    except Exception:
+        this_boot = ""
+    host = socket.gethostname()
+
+    seen = OrderedDict()
+    for line in sys.stdin:
+        try:
+            e = json.loads(line)
+        except Exception:
+            continue
+        unit = text(e.get("_SYSTEMD_USER_UNIT"))
+        if unit == "samhie-assistant.service" or (
+                unit.startswith("libpod-") and text(e.get("SYSLOG_IDENTIFIER")) == "samhie-assistant"):
+            continue
+        ident, msg, key = key_of(e)
+        if ident == "sudo":
+            msg = re.sub(r"COMMAND=.*", "COMMAND=(hidden)", msg)
+        try:
+            prio = int(text(e.get("PRIORITY")) or 6)
+            t = time.strftime("%b %d %H:%M:%S",
+                              time.localtime(int(text(e.get("__REALTIME_TIMESTAMP"))) / 1e6))
+        except Exception:
+            prio, t = 6, "?"
+        boot = text(e.get("_BOOT_ID"))
+        early = host not in ("fedora", "localhost") and text(e.get("_HOSTNAME")) == "fedora"
+        in_prev = boot == this_boot and key in prev
+        note = ""
+        for i, (ident_re, msg_re, n, only_early) in enumerate(known):
+            if ident_re.fullmatch(ident) and msg_re.search(msg) and (early or not only_early):
+                note, key = n, ("known", i)
+                break
+        r = seen.pop(key, None) or {"n": 0, "kinds": set(), "boots": set(), "early": False, "prio": 7}
+        r["n"] += 1
+        r["kinds"].add(re.sub(r"\d+", "#", msg))
+        r["boots"] |= {boot, "prev"} if in_prev else {boot}
+        r["early"] |= early
+        r["prio"] = min(r["prio"], prio)
+        r.update(t=t, ident=ident, msg=msg, note=note)
+        seen[key] = r
+
+    groups = {"new": [], "once": [], "old": []}
+    for i, r in enumerate(seen.values()):
+        r["order"] = i
+        if len(r["boots"]) > 1:
+            groups["old"].append(r)
+        elif r["boots"] == {this_boot}:
+            groups["new"].append(r)
+        else:
+            groups["once"].append(r)
+
+    new_err = sum(1 for r in groups["new"] if r["prio"] <= 3)
+    if not groups["new"]:
+        print("Summary: nothing new at this startup; everything below also happened before.")
+    else:
+        print(f"Summary: {len(groups['new'])} kind(s) of message new at this startup"
+              f" ({new_err} of them errors); the rest also happened before.")
+
+    def line_of(r):
+        extra = []
+        if r["n"] > 1:
+            extra.append(f"x{r['n']}")
+        if len(r["kinds"]) > 1:
+            extra.append(f"{len(r['kinds'])} similar lines")
+        if r["early"]:
+            extra.append("during early startup")
+        s = f"{r['t']} {r['ident']}: {r['msg']}" + (" (" + ", ".join(extra) + ")" if extra else "")
+        return s + (f"\n    Known: {r['note']}" if r["note"] else "")
+
+    used = 0
+    for name, title in (("new", "New at this startup:"),
+                        ("once", "Seen at only one earlier startup:"),
+                        ("old", "Also at earlier startups:")):
+        rows = groups[name]
+        if not rows:
+            continue
+        # Lỗi trước, mới nhất trước tới khi hết chỗ; in lại theo thứ tự thời gian.
+        budget = min(BUDGET[name], 8000 - used)
+        picked = []
+        for r in sorted(reversed(rows), key=lambda r: r["prio"] > 3):
+            s = line_of(r)
+            if len(picked) >= 30 or budget < len(s) + 1:
+                break
+            budget -= len(s) + 1
+            picked.append((r["order"], s))
+        if picked:
+            print(title)
+            for _, s in sorted(picked):
+                print(s)
+            used += sum(len(s) + 1 for _, s in picked)
+        if len(picked) < len(rows):
+            print(f"({len(rows) - len(picked)} more not shown)")
+
+
+main()

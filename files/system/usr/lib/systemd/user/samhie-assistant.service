@@ -7,6 +7,8 @@ Description=S-bot local AI model server
 [Service]
 Type=exec
 ExecStart=/usr/libexec/samhie/assistant serve
+# Tên trong journal: công cụ read_journal dựa vào nó để bỏ dòng của S-bot.
+SyslogIdentifier=samhie-assistant
 # Dừng tiến trình ramalama KHÔNG dừng container (đo: systemctl stop xong
 # container vẫn Up) → dừng hẳn bằng podman.
 ExecStop=/usr/bin/podman stop -t 10 samhie-assistant

@@ -18,6 +18,9 @@
 # để với tới card NVIDIA; Samhie cho riêng thiết bị card bằng
 # /usr/share/selinux/packages/samhie/samhie-gpu-container.cil.
 set -u
+# Mẫu kiểm đối số `[A-Za-z]` theo locale người dùng khớp cả `é`, `ａ` (đo) →
+# so theo mã ký tự.
+export LC_ALL=C.UTF-8
 
 MODEL=${SAMHIE_ASSISTANT_MODEL:-ollama://qwen3.5:9b}
 PORT=8083
@@ -42,9 +45,12 @@ serve() {
     # -c 32768: mặc định lấy ngữ cảnh tối đa của model (qwen3.5: 171k) → 10,7
     # GB VRAM; 32k → 6,3 GB (đo). --pull missing: không hỏi kho image mỗi lần
     # mở (chậm, hỏng khi mất mạng); RamaLama lên bản mới thì tag image đổi →
-    # tự tải bản mới.
+    # tự tải bản mới. --log-driver passthrough: chữ của llama-server đi thẳng
+    # ra stdout của dịch vụ; mặc định (journald) podman ghi một bản nữa → mỗi
+    # dòng hai lần trong journal (đo).
     exec ramalama serve --name "$NAME" --webui off --selinux true \
         --pull missing --env LLAMA_API_KEY --thinking false \
+        --engine-args "--log-driver passthrough" \
         -p "$PORT" -c 32768 "$MODEL"
 }
 
@@ -66,9 +72,9 @@ field() {
     python3 -I -c 'import json,sys
 try:
     v = json.loads(sys.argv[1]).get(sys.argv[2], "")
+    print(v if isinstance(v, str) else "")
 except Exception:
-    v = ""
-print(v if isinstance(v, str) else "")' "$1" "$2"
+    print("")' "$1" "$2"
 }
 
 clip() { tail -n "${1:-80}" | cut -c1-300 | tail -c 8000; }
@@ -80,15 +86,72 @@ tool_read_journal() {
     since=$(field "$1" since)
     case $priority in emerg|alert|crit|err|warning|notice|info) ;; *) priority=warning ;; esac
     [[ $since =~ ^[A-Za-z0-9\ :.-]{1,40}$ ]] || since=today
-    args=(--no-pager -o short -p "$priority" --since "$since")
+    args=(--no-pager -o json -p "$priority" --since "$since")
     if [ -n "$unit" ]; then
         [[ $unit =~ ^[A-Za-z0-9@._:-]{1,80}$ ]] || { echo "invalid unit name"; return; }
         args+=(-u "$unit")
     fi
-    # Bỏ dòng của chính S-bot (stderr của container vào journal ở mức err).
-    journalctl "${args[@]}" 2>&1 | grep -v -E "$NAME|ramalama" | clip 80
+    journalctl "${args[@]}" 2>/dev/null | python3 -I -c "$journal_py"
     echo "(end of log)"
 }
+
+# Đọc journal dạng JSON rồi tự in, vì dòng chữ của journalctl không lọc chắc được:
+# - Bỏ dòng của chính S-bot theo trường journald đặt (_SYSTEMD_USER_UNIT):
+#   dịch vụ, hoặc container của nó (libpod-….scope, tên samhie-assistant do
+#   SyslogIdentifier của dịch vụ) — không theo chữ trong dòng.
+# - Dòng lặp gộp thành một "(×N)", lỗi (err trở lên) in trước: chương trình
+#   ghi tràn log không đẩy mất lỗi thật khỏi 80 dòng.
+# - Ký tự điều khiển/xuống dòng trong tin → khoảng trắng: tin không giả được
+#   "(end of log)" hay dòng mới.
+# - Lệnh sudo (COMMAND=…) ẩn đối số: có khi chứa mật khẩu/token.
+journal_py='
+import json, re, sys, time
+from collections import OrderedDict
+def text(v):
+    if isinstance(v, list):
+        v = bytes(x for x in v if isinstance(x, int) and 0 <= x < 256).decode("utf-8", "replace")
+    return v if isinstance(v, str) else ""
+seen = OrderedDict()
+for line in sys.stdin:
+    try:
+        e = json.loads(line)
+    except Exception:
+        continue
+    unit = text(e.get("_SYSTEMD_USER_UNIT"))
+    if unit == "samhie-assistant.service" or (
+            unit.startswith("libpod-") and text(e.get("SYSLOG_IDENTIFIER")) == "samhie-assistant"):
+        continue
+    msg = re.sub(r"[\x00-\x1f\x7f]+", " ", text(e.get("MESSAGE"))).strip()[:300]
+    ident = text(e.get("SYSLOG_IDENTIFIER")) or text(e.get("_COMM")) or "?"
+    if ident == "sudo":
+        msg = re.sub(r"COMMAND=.*", "COMMAND=(hidden)", msg)
+    try:
+        prio = int(text(e.get("PRIORITY")) or 6)
+        t = time.strftime("%b %d %H:%M:%S", time.localtime(int(text(e.get("__REALTIME_TIMESTAMP"))) / 1e6))
+    except Exception:
+        prio, t = 6, "?"
+    key = (ident, re.sub(r"\d+", "#", msg))
+    n = seen.pop(key, (0,))[0] + 1
+    seen[key] = (n, prio, t, ident, msg)
+def fit(rows, budget):
+    # Dòng mới nhất trước, tới khi hết chỗ; in lại theo thứ tự thời gian.
+    out = []
+    for n, prio, t, ident, msg in reversed(rows):
+        s = f"{t} {ident}: {msg}" + (f" (x{n})" if n > 1 else "")
+        if len(out) >= 80 or budget < len(s) + 1:
+            break
+        budget -= len(s) + 1
+        out.append(s)
+    return out[::-1]
+# Mô hình chỉ có 32k ngữ cảnh: tối đa ~8000 ký tự, lỗi được tối đa một nửa.
+rows = list(seen.values())
+errors = fit([r for r in rows if r[1] <= 3], 4000)
+rest = fit([r for r in rows if r[1] > 3], 8000 - sum(len(s) + 1 for s in errors))
+if errors and rest:
+    print("Errors:", *errors, "Other lines:", *rest, sep="\n")
+elif errors or rest:
+    print(*(errors or rest), sep="\n")
+'
 
 tool_failed_services() {
     echo "System services that failed:"
@@ -103,8 +166,10 @@ tool_find_files() {
     [[ $pattern =~ ^[^/]{1,64}$ ]] || { echo "pattern must be a file name part, no slashes"; return; }
     [ -d /var/mnt/storage ] && roots+=(/var/mnt/storage)
     # Bỏ thư mục ẩn (cấu hình, bộ đệm, thùng rác…) — tìm file người dùng.
-    find "${roots[@]}" -xdev \( -name '.*' -prune \) -o -iname "*$pattern*" -print 2>/dev/null |
-        head -n 50 | sed "s|^$HOME|~|"
+    # -print0 + thay xuống dòng trong tên bằng "?": tên file không giả được
+    # dòng kết quả hay "(end of results…)".
+    find "${roots[@]}" -xdev \( -name '.*' -prune \) -o -iname "*$pattern*" -print0 2>/dev/null |
+        head -z -n 50 | tr '\n\0' '?\n' | sed "s|^$HOME|~|"
     echo "(end of results, at most 50)"
 }
 

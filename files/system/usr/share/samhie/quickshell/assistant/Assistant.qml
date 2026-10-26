@@ -444,20 +444,59 @@ PanelWindow {
             + Theme.c.accentText + ";\">" + c + "</span>")
     }
 
+    // Lưới an toàn: model 9B có lúc bịa lệnh phá máy dù system prompt cấm
+    // (đo 2026-10-26: hỏi "TPM khoá bao lâu" → 1/6 lần đưa `tpm2_clear`, xoá
+    // TPM). Code kiểm chắc hơn model: lệnh khớp thì hiện cảnh báo đỏ, khối
+    // lệnh mất nút Copy. Mỗi mục: [mẫu, lời cảnh báo].
+    readonly property var dangers: [
+        [/\btpm2_clear\b|\btpm2_changeauth\b|\btpm2_dictionarylockout\b.*(-c|--clear)/,
+         "This resets the TPM: the disk PIN stops working."],
+        [/systemd-cryptenroll\b.*--wipe-slot|cryptsetup\s+(luksKillSlot|luksRemoveKey|luksErase|luksFormat|erase)\b/,
+         "This removes a way to unlock the disk, or erases it."],
+        [/\bsetenforce\s+0\b|SELINUX\s*=\s*(disabled|permissive)/i,
+         "This turns SELinux protection off."],
+        [/systemctl\s+(stop|disable|mask)\s+(--now\s+)?firewalld|firewall-cmd\b.*(--set-default-zone=trusted|--panic-off)/,
+         "This turns the firewall off."],
+        [/mokutil\s+--disable-validation|sbctl\s+reset/,
+         "This weakens Secure Boot."],
+        [/\brm\s+(-[a-zA-Z]*\s+)*(\/|\/\*|~\/?|\$HOME\/?|\/(etc|usr|var|boot|home|mnt)\/?)(\s|$)/,
+         "This deletes a whole system or home folder."],
+        [/\b(mkfs(\.\w+)?|wipefs|blkdiscard)\s|\bdd\b[^\n]*\bof=\/dev\/|sgdisk\s+(-Z|--zap)|parted\b[^\n]*\bmklabel/,
+         "This erases a disk or partition."],
+        [/\b(curl|wget)\b[^\n|]*\|\s*(sudo\s+)?(ba|z)?sh\b/,
+         "This downloads a script and runs it straight away."],
+        [/chmod\s+(-R\s+)?[0-7]?777\s+\//,
+         "This lets every program change system files."],
+        [/efibootmgr\b[^\n]*(-B|--delete-bootnum)|\bpasswd\s+-d\b|:\(\)\s*\{\s*:\s*\|\s*:/,
+         "This can stop the computer from starting or remove your password."],
+    ]
+    function dangerOf(t) {
+        for (const d of dangers)
+            if (d[0].test(t))
+                return d[1]
+        return ""
+    }
+
     // Tách câu trả lời thành đoạn chữ (Markdown) và khối lệnh ``` (chữ mono +
-    // nút Copy). Khối chưa đóng (đang về dở) vẫn hiện là khối lệnh.
+    // nút Copy). Khối chưa đóng (đang về dở) vẫn hiện là khối lệnh. Đoạn nào
+    // có lệnh nguy hiểm thì có thêm dòng cảnh báo ngay trên nó.
     function segments(text) {
         const out = []
         const parts = text.split("```")
         for (let i = 0; i < parts.length; i++) {
+            let seg
             if (i % 2 === 0) {
-                if (parts[i].trim() !== "")
-                    out.push({ code: false, text: inlineCode(parts[i].trim()) })
+                if (parts[i].trim() === "")
+                    continue
+                seg = { code: false, text: inlineCode(parts[i].trim()), danger: dangerOf(parts[i]) }
             } else {
                 const nl = parts[i].indexOf("\n")
                 const body = nl >= 0 ? parts[i].slice(nl + 1) : ""
-                out.push({ code: true, text: body.replace(/\n$/, "") })
+                seg = { code: true, text: body.replace(/\n$/, ""), danger: dangerOf(body) }
             }
+            if (seg.danger !== "")
+                out.push({ warn: true, text: seg.danger })
+            out.push(seg)
         }
         return out
     }
@@ -703,7 +742,7 @@ PanelWindow {
                         delegate: Loader {
                             required property var modelData
                             width: reply.width
-                            sourceComponent: modelData.code ? codeBlock : prose
+                            sourceComponent: modelData.warn ? dangerNote : modelData.code ? codeBlock : prose
                             property var seg: modelData
                         }
                     }
@@ -732,19 +771,48 @@ PanelWindow {
             }
         }
         Component {
+            id: dangerNote
+            Row {
+                width: parent ? parent.width : 0
+                spacing: 6
+                SamhieIcon {
+                    id: warnIcon
+                    y: 3
+                    iconName: "dialog-warning-symbolic"
+                    size: 16
+                    color: Theme.c.danger
+                }
+                Text {
+                    width: parent.width - warnIcon.width - parent.spacing
+                    text: (parent.parent ? parent.parent.seg.text : "")
+                        + " S-bot can be wrong: don't run it unless you are sure."
+                    wrapMode: Text.Wrap
+                    color: Theme.c.danger
+                    font.family: Colors.fonts.ui
+                    font.weight: Colors.fonts.uiWeight
+                    font.pixelSize: 20
+                    lineHeight: 0.85
+                }
+            }
+        }
+        Component {
             id: codeBlock
             Rectangle {
                 id: block
                 readonly property string code: parent ? parent.seg.text : ""
+                // Lệnh nguy hiểm: không có nút Copy (phải tự gõ = phải đọc).
+                readonly property bool risky: parent ? parent.seg.danger !== "" : false
                 width: parent ? parent.width : 0
                 height: codeText.height + 16
                 radius: 8
                 color: Theme.c.bar
+                border.width: risky ? 1 : 0
+                border.color: Theme.c.danger
                 Text {
                     id: codeText
                     x: 10
                     y: 8
-                    width: parent.width - 20 - copy.width
+                    width: parent.width - 20 - (copy.visible ? copy.width : 0)
                     text: block.code
                     textFormat: Text.PlainText
                     wrapMode: Text.WrapAnywhere
@@ -757,6 +825,7 @@ PanelWindow {
                     anchors.right: parent.right
                     anchors.rightMargin: 4
                     y: 4
+                    visible: !block.risky
                     iconName: "edit-copy"
                     tip: "Copy"
                     tint: Theme.c.barText

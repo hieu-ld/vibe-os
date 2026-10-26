@@ -143,6 +143,17 @@ modules:
       packages:
         - gwenview
 
+  # Trợ lý AI local (giai đoạn 6, user chọn 2026-10-26): RamaLama — gói Fedora
+  # của đội Podman/containers, chạy model trong container (bản CUDA từ
+  # quay.io/ramalama khi có card NVIDIA, llama.cpp bên trong) và mở API kiểu
+  # OpenAI cho khung chat. Model KHÔNG nằm trong image: tải khi người dùng bật.
+  # Đo dnf5 repoquery: ramalama 2,1 MB + 8 gói python còn thiếu ≈ 8,2 MB.
+  - type: dnf
+    install:
+      install-weak-deps: false
+      packages:
+        - ramalama
+
   # Máy chủ ngôn ngữ cho Kate (2026-10-12). qmlls (QML/Quickshell) không có gói
   # riêng — files/scripts/qmlls.sh tách nó từ gói Fedora. Bỏ qua: clangd (+171
   # MB, thiếu header Qt/KF6 ở máy thật thì file C++ nào cũng báo lỗi đỏ),

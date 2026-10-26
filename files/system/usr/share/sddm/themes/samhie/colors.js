@@ -9,6 +9,7 @@ var shared = {
     cursorOutline: "#fafafa",
     captureFrame: "#fafafa",
     captureShade: "#0a0a0a",
+    mascotBlush: "#f14196",
 };
 
 var dark = {

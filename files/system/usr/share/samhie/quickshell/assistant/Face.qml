@@ -7,8 +7,8 @@
 //   thinking  chờ chữ đầu tiên — mắt liếc lên, ba chấm nháy
 //   typing    đang trả lời — mắt nhìn xuống, miệng mấp máy
 //   error     lỗi — mắt màu danger
-// Màu: Colors.shared (black/cyan/white) — mặt mascot giống nhau ở cả chế độ
-// sáng lẫn tối, như logo.
+// Màu: Colors.shared (black/cyan/white, má hồng mascotBlush) — mặt mascot
+// giống nhau ở cả chế độ sáng lẫn tối, như logo.
 import QtQuick
 import ".."
 import "../colors.js" as Colors
@@ -78,6 +78,26 @@ Rectangle {
 
     Eye { cx: face.width * 0.32 }
     Eye { cx: face.width * 0.68 }
+
+    // Má hồng: hai chấm dưới mỗi mắt, lệch ra ngoài (như bản vẽ). Ngủ thì mờ.
+    component Blush: Row {
+        property real cx
+        x: cx - width / 2
+        y: face.height * 0.62
+        spacing: face.height * 0.04
+        opacity: face.mood === "sleep" ? 0.4 : 0.9
+        Repeater {
+            model: 2
+            Rectangle {
+                width: face.height * 0.07
+                height: width
+                radius: width / 2
+                color: Colors.shared.mascotBlush
+            }
+        }
+    }
+    Blush { cx: face.width * 0.2 }
+    Blush { cx: face.width * 0.8 }
 
     // Miệng: vạch ngắn; lúc gõ thì co giãn như đang nói.
     Rectangle {

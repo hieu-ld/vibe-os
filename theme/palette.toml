@@ -38,6 +38,10 @@ cursor-outline = "#fafafa"
 # sáng vì chúng nằm đè lên ẢNH CHỤP, không phải lên giao diện Samhie.
 capture-frame = "#fafafa"
 capture-shade = "#0a0a0a"
+# Mặt S-bot (trợ lý AI, assistant/Face.qml): má hồng như bản vẽ mascot của
+# user (Figma, mascot.svg). Nhóm màu ấm — chỉ hai chấm nhỏ trên mặt, giống nhau
+# cả tối lẫn sáng như logo (user chốt 2026-10-26).
+mascot-blush = "#f14196"
 
 [dark]
 # Thang bề mặt 4 bậc — user chốt 2026-09-13 bằng ảnh chụp Dolphin (bản 1.0):

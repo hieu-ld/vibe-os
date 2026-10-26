@@ -12,9 +12,17 @@
 //
 // Lệnh: logind cho phép phiên đang ngồi trước máy tự tắt/khởi động lại/ngủ
 // mà không hỏi mật khẩu. Đăng xuất = thoát Hyprland, giống phím Win+Shift+M.
+//
+// Máy cài nhiều hệ điều hành (2026-10-26, máy user: Samhie + Bazzite) thì sau
+// Restart có thêm "Restart to <tên>" cho mỗi hệ khác: đặt BootNext của UEFI
+// (/usr/libexec/samhie/boot-next qua pkexec, polkit org.samhie.boot-next
+// không hỏi mật khẩu) rồi khởi động lại — khỏi bấm F8, khỏi mật khẩu BIOS.
+// Danh sách đọc lại mỗi lần mở menu; máy một hệ thì menu y như cũ.
+// Thẻ rộng ra theo tên dài nhất (Restart to Windows…), tối thiểu 180.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
+import Quickshell.Io
 import ".."
 import "../colors.js" as Colors
 
@@ -24,17 +32,49 @@ PopupMotion {
     required property var bar
     readonly property bool open: bar.popup === "power"
 
-    readonly property var actions: [
-        { label: "Lock",      icon: "system-lock-screen", confirm: "",                         cmd: ["loginctl", "lock-session"] },
-        { label: "Sleep",     icon: "system-suspend",     confirm: "",                         cmd: ["systemctl", "suspend"] },
-        { label: "Restart",   icon: "system-reboot",      confirm: "Click again",              cmd: ["systemctl", "reboot"] },
-        { label: "Shut Down", icon: "system-shutdown",    confirm: "Click again",              cmd: ["systemctl", "poweroff"] },
-        { label: "Log Out",   icon: "system-log-out",     confirm: "Click again",              cmd: [] }
-    ]
+    // Hệ khác trong menu khởi động: [{ num: "0001", name: "Bazzite" }].
+    property var otherSystems: []
+
+    readonly property var actions: {
+        const base = [
+            { label: "Lock",      icon: "system-lock-screen", confirm: "",            cmd: ["loginctl", "lock-session"] },
+            { label: "Sleep",     icon: "system-suspend",     confirm: "",            cmd: ["systemctl", "suspend"] },
+            { label: "Restart",   icon: "system-reboot",      confirm: "Click again", cmd: ["systemctl", "reboot"] },
+            { label: "Shut Down", icon: "system-shutdown",    confirm: "Click again", cmd: ["systemctl", "poweroff"] },
+            { label: "Log Out",   icon: "system-log-out",     confirm: "Click again", cmd: [] }
+        ]
+        const others = otherSystems.map(o => ({
+            label: "Restart to " + o.name,
+            icon: "system-reboot",
+            confirm: "Click again",
+            cmd: ["sh", "-c", 'pkexec /usr/libexec/samhie/boot-next set "$1" && systemctl reboot', "sh", o.num]
+        }))
+        return base.slice(0, 3).concat(others, base.slice(3))
+    }
+
+    Process {
+        id: listSystems
+        command: ["/usr/libexec/samhie/boot-next", "list"]
+        // Đọc sẵn lúc khởi động: mở menu là đủ dòng ngay, không giật cỡ thẻ
+        // giữa hiệu ứng mở; mở lại thì đọc lại (menu khởi động có thể đổi).
+        running: true
+        stdout: StdioCollector {
+            onStreamFinished: {
+                root.otherSystems = text.split("\n")
+                    .map(l => l.split("\t"))
+                    .filter(f => f.length === 2 && /^[0-9A-Fa-f]{4}$/.test(f[0]))
+                    .map(f => ({ num: f[0], name: f[1].replace(/ Boot Manager$/, "") }))
+            }
+        }
+    }
 
     // Dòng đang chờ bấm lần hai (-1 = không có).
     property int armed: -1
-    onOpenChanged: armed = -1
+    onOpenChanged: {
+        armed = -1
+        if (open)
+            listSystems.running = true
+    }
     Timer {
         running: root.armed >= 0
         interval: 4000
@@ -62,9 +102,17 @@ PopupMotion {
 
     // Nền Card, viền 1px Sub Secondary, bo 8 — như menu của theme SDDM và
     // popup của fcitx5.
+    FontMetrics {
+        id: labelMetrics
+        font.family: Colors.fonts.ui
+        font.weight: Colors.fonts.uiWeight
+        font.pixelSize: 24
+    }
+
     Rectangle {
         id: card
-        width: 180
+        // 66 = lề thẻ 6+6, lề dòng 12, icon 20, khoảng 10, lề phải 12.
+        width: Math.max(180, Math.ceil(Math.max(...root.actions.map(a => labelMetrics.advanceWidth(a.label)))) + 66)
         height: list.implicitHeight + 12
         radius: 8
         color: Theme.c.card

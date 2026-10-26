@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE policyconfig PUBLIC "-//freedesktop//DTD PolicyKit Policy Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/PolicyKit/1/policyconfig.dtd">
+<!--
+  "Restart to <hệ khác>" trong menu nguồn: pkexec /usr/libexec/samhie/boot-next
+  set XXXX đặt BootNext của UEFI. Phiên đang ngồi trước máy được làm không cần
+  mật khẩu — ngang quyền "Restart" mà logind vốn cho. Script chỉ nhận mục trên
+  phân vùng ổ trong, không nhận USB/mạng (mật khẩu BIOS vẫn chặn những lối đó).
+-->
+<policyconfig>
+  <vendor>Samhie</vendor>
+  <action id="org.samhie.boot-next">
+    <description>Restart into another operating system</description>
+    <message>Authentication is required to choose the system for the next restart</message>
+    <defaults>
+      <allow_any>no</allow_any>
+      <allow_inactive>no</allow_inactive>
+      <allow_active>yes</allow_active>
+    </defaults>
+    <annotate key="org.freedesktop.policykit.exec.path">/usr/libexec/samhie/boot-next</annotate>
+  </action>
+</policyconfig>

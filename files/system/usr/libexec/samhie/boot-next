@@ -1,0 +1,54 @@
+#!/bin/sh
+# "Restart to <hệ khác>" trong menu nguồn (2026-10-26): chọn hệ điều hành cho
+# ĐÚNG lần khởi động tới (BootNext của UEFI) — như chọn ở menu F8 của bo
+# mạch, nhưng khỏi bấm F8 (máy có mật khẩu BIOS thì F8 hỏi mật khẩu đó).
+#   boot-next list       "XXXX<tab>Tên" cho mỗi hệ khác (người thường chạy được)
+#   boot-next set XXXX   đặt BootNext (root; menu gọi qua pkexec, polkit
+#                        org.samhie.boot-next cho phiên đang ngồi trước máy)
+# Chỉ nhận mục nằm trên phân vùng ổ trong (đường dẫn bắt đầu bằng HD(…)):
+# bỏ USB/mạng để nút này không mở lối khởi động USB mà mật khẩu BIOS chặn.
+# Bỏ mục trỏ cùng phân vùng + cùng file với mục đang chạy (chính hệ này, kể
+# cả mục fbx64 tự tạo lại); hệ khác chung phân vùng EFI (Windows) vẫn hiện.
+set -u
+
+usage() {
+    echo "usage: boot-next list | boot-next set XXXX" >&2
+    exit 2
+}
+
+list() {
+    # efibootmgr 18: "Boot0001* Bazzite<tab>HD(2,GPT,…)/\EFI\fedora\shimx64.efi",
+    # có mục dính thêm dữ liệu tuỳ chọn sau tên file (…SHIMX64.EFI0000424f).
+    efibootmgr | awk '
+        /^BootCurrent:/ { cur = $2; next }
+        /^Boot[0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f][0-9A-Fa-f]\* / {
+            num = substr($0, 5, 4)
+            line = substr($0, 11)
+            tab = index(line, "\t")
+            if (!tab) next
+            label = substr(line, 1, tab - 1)
+            sub(/[ \t]+$/, "", label)
+            path = substr(line, tab + 1)
+            if (path !~ /^HD\(/) next
+            path = tolower(path)
+            sub(/\.efi.*/, ".efi", path)
+            n++; nums[n] = num; labels[n] = label; paths[n] = path
+        }
+        END {
+            for (i = 1; i <= n; i++) if (nums[i] == cur) here = paths[i]
+            for (i = 1; i <= n; i++)
+                if (nums[i] != cur && paths[i] != here) print nums[i] "\t" labels[i]
+        }'
+}
+
+set_next() {
+    [ "$(id -u)" = 0 ] || { echo "boot-next: must run as root" >&2; exit 1; }
+    list | cut -f1 | grep -qxF -- "$1" || { echo "boot-next: $1 is not another system on this computer" >&2; exit 1; }
+    efibootmgr -q -n "$1"
+}
+
+case "${1:-}" in
+    list) [ $# -eq 1 ] || usage; list ;;
+    set)  [ $# -eq 2 ] || usage; set_next "$2" ;;
+    *)    usage ;;
+esac

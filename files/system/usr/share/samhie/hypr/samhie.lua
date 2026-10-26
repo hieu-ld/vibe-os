@@ -477,6 +477,10 @@ hl.bind(mod .. " + T",         hl.dsp.exec_cmd(terminal))
 
 -- Win+V: lịch sử clipboard (Quickshell, quickshell/clipboard/).
 hl.bind(mod .. " + V",         hl.dsp.global("samhie:clipboard"))
+
+-- Win+A: S-bot, trợ lý AI chạy trên máy (Quickshell, quickshell/assistant/).
+hl.bind(mod .. " + A",         hl.dsp.global("samhie:assistant"))
+
 -- Chụp màn hình kiểu Windows: tự lưu vào Storage/Pictures/Screenshots + copy
 -- vào clipboard; bấm vào thông báo để vẽ lên ảnh (swappy).
 hl.bind(mod .. " + SHIFT + S", hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot region"))  -- chọn vùng

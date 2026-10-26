@@ -1,0 +1,14 @@
+# S-bot: máy chủ model của trợ lý (RamaLama, 127.0.0.1:8083). Khung chat
+# (quickshell/assistant/Assistant.qml) bật khi mở lần đầu và tắt sau 15 phút
+# không dùng để trả VRAM. Không bật cùng phiên đăng nhập (không [Install]).
+[Unit]
+Description=S-bot local AI model server
+
+[Service]
+Type=exec
+ExecStart=/usr/libexec/samhie/assistant serve
+# Dừng tiến trình ramalama KHÔNG dừng container (đo: systemctl stop xong
+# container vẫn Up) → dừng hẳn bằng podman.
+ExecStop=/usr/bin/podman stop -t 10 samhie-assistant
+ExecStopPost=-/usr/bin/podman rm -f samhie-assistant
+TimeoutStopSec=30

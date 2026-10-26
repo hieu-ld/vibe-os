@@ -2,7 +2,9 @@
 // 2026-09-08/10, bản 2 chốt lại 2026-10-02): mở bằng nút mũi tên trên thanh
 // (bar/QuickButton.qml), mép phải thẳng lề phải cụm nút. Trên cùng là hàng
 // âm lượng, dưới là lưới 2 cột các ô bật/tắt:
-//   Wired · Wi-Fi · Bluetooth · Night light · Do not disturb · Dark mode
+//   Wired · Wi-Fi · Bluetooth · Night light · Do not disturb · Dark mode · S-bot
+// S-bot (2026-10-26) không phải công tắc: bấm là đóng bảng, mở khung chat
+// của trợ lý (assistant/Assistant.qml); ô sáng khi khung chat đang mở.
 // Ô nào máy không có phần cứng thì ẩn (lẻ hàng không sao — user chốt ở 1.0).
 // Ô Wi-Fi tách đôi kiểu Windows 11: phần trái bật/tắt sóng, mũi tên bên phải
 // mở trang chọn mạng (WifiPage.qml) thay chỗ cả bảng; nút › cạnh thanh âm
@@ -128,6 +130,14 @@ PopupMotion {
             id: "dark", label: "Dark mode", icon: "samhie-dark-style", category: "actions",
             active: !shell.prefs.lightMode, sub: ""
         })
+        const ai = shell.assistant
+        list.push({
+            id: "sbot", label: "S-bot", icon: "samhie-assistant", category: "actions",
+            active: ai.open,
+            sub: ai.server === "ready" ? "Ready"
+                : ai.server === "checking" || ai.server === "starting" ? "Waking up…"
+                : ai.server === "downloading" ? "Downloading…" : ""
+        })
         return list
     }
 
@@ -172,6 +182,10 @@ PopupMotion {
             break
         case "dark":
             shell.prefs.lightMode = !shell.prefs.lightMode
+            break
+        case "sbot":
+            bar.popup = ""
+            shell.assistant.toggle()
             break
         }
     }

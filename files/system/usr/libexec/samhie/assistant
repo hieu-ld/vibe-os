@@ -1,0 +1,122 @@
+#!/bin/bash
+# S-bot — trợ lý AI chạy trên máy (giai đoạn 6, 2026-10-26). Khung chat là
+# quickshell/assistant/Assistant.qml; script này lo phần chạy nền:
+#
+#   assistant serve          (samhie-assistant.service gọi) chạy model bằng
+#                            RamaLama trên 127.0.0.1:$PORT, có khoá API
+#   assistant status         "ready" | "missing" (chưa tải model)
+#   assistant pull           tải model
+#   assistant tool TÊN JSON  công cụ CHỈ ĐỌC cho model: read_journal,
+#                            failed_services, find_files
+#
+# Khoá API: llama-server trả CORS bằng chính Origin gửi tới, không khoá thì
+# trang web nào trong trình duyệt cũng gọi được model (đo 2026-10-26). Khoá
+# ngẫu nhiên nằm trong $state (0700), đưa vào container bằng biến môi trường
+# (không lộ trong danh sách tiến trình); khung chat đọc file header cho curl.
+#
+# SELinux: chạy --selinux true (container_t). RamaLama mặc định TẮT SELinux
+# để với tới card NVIDIA; Samhie cho riêng thiết bị card bằng
+# /usr/share/selinux/packages/samhie/samhie-gpu-container.cil.
+set -u
+
+MODEL=${SAMHIE_ASSISTANT_MODEL:-ollama://qwen3.5:9b}
+PORT=8083
+NAME=samhie-assistant
+state=${XDG_STATE_HOME:-$HOME/.local/state}/samhie/assistant
+
+make_key() {
+    mkdir -p -m 0700 "$state"
+    if [ ! -s "$state/key" ]; then
+        (umask 077
+         head -c 32 /dev/urandom | base64 | tr -d '/+=\n' > "$state/key"
+         printf 'Authorization: Bearer %s\n' "$(cat "$state/key")" > "$state/header")
+    fi
+}
+
+serve() {
+    make_key
+    LLAMA_API_KEY=$(cat "$state/key")
+    export LLAMA_API_KEY
+    # Container sót lại từ lần trước (máy tắt ngang) giữ tên → serve lỗi.
+    podman rm -f "$NAME" >/dev/null 2>&1
+    # -c 32768: mặc định lấy ngữ cảnh tối đa của model (qwen3.5: 171k) → 10,7
+    # GB VRAM; 32k → 6,3 GB (đo). --pull missing: không hỏi kho image mỗi lần
+    # mở (chậm, hỏng khi mất mạng); RamaLama lên bản mới thì tag image đổi →
+    # tự tải bản mới.
+    exec ramalama serve --name "$NAME" --webui off --selinux true \
+        --pull missing --env LLAMA_API_KEY --thinking false \
+        -p "$PORT" -c 32768 "$MODEL"
+}
+
+status() {
+    # `ramalama list` ghi tên đầy đủ: ollama://library/qwen3.5:9b
+    if ramalama list --json 2>/dev/null | grep -qF "/${MODEL##*/}\""; then
+        echo ready
+    else
+        echo missing
+    fi
+}
+
+# ── Công cụ chỉ đọc ────────────────────────────────────────────────────────
+# Đối số là JSON do model viết — coi là dữ liệu lạ: kiểm từng trường bằng
+# mẫu chặt rồi mới đưa vào lệnh (truyền thẳng làm đối số, không qua shell).
+# Kết quả cắt ngắn: model chỉ có 32k ngữ cảnh.
+field() {
+    # field JSON TÊN → giá trị chuỗi (rỗng nếu không có / không phải chuỗi)
+    python3 -I -c 'import json,sys
+try:
+    v = json.loads(sys.argv[1]).get(sys.argv[2], "")
+except Exception:
+    v = ""
+print(v if isinstance(v, str) else "")' "$1" "$2"
+}
+
+clip() { tail -n "${1:-80}" | cut -c1-300 | tail -c 8000; }
+
+tool_read_journal() {
+    local unit priority since args
+    unit=$(field "$1" unit)
+    priority=$(field "$1" priority)
+    since=$(field "$1" since)
+    case $priority in emerg|alert|crit|err|warning|notice|info) ;; *) priority=warning ;; esac
+    [[ $since =~ ^[A-Za-z0-9\ :.-]{1,40}$ ]] || since=today
+    args=(--no-pager -o short -p "$priority" --since "$since")
+    if [ -n "$unit" ]; then
+        [[ $unit =~ ^[A-Za-z0-9@._:-]{1,80}$ ]] || { echo "invalid unit name"; return; }
+        args+=(-u "$unit")
+    fi
+    # Bỏ dòng của chính S-bot (stderr của container vào journal ở mức err).
+    journalctl "${args[@]}" 2>&1 | grep -v -E "$NAME|ramalama" | clip 80
+    echo "(end of log)"
+}
+
+tool_failed_services() {
+    echo "System services that failed:"
+    systemctl --failed --no-legend --plain 2>&1 | clip 40
+    echo "User services that failed:"
+    systemctl --user --failed --no-legend --plain 2>&1 | clip 40
+}
+
+tool_find_files() {
+    local pattern roots=("$HOME")
+    pattern=$(field "$1" pattern)
+    [[ $pattern =~ ^[^/]{1,64}$ ]] || { echo "pattern must be a file name part, no slashes"; return; }
+    [ -d /var/mnt/storage ] && roots+=(/var/mnt/storage)
+    # Bỏ thư mục ẩn (cấu hình, bộ đệm, thùng rác…) — tìm file người dùng.
+    find "${roots[@]}" -xdev \( -name '.*' -prune \) -o -iname "*$pattern*" -print 2>/dev/null |
+        head -n 50 | sed "s|^$HOME|~|"
+    echo "(end of results, at most 50)"
+}
+
+case "${1:-}" in
+    serve) serve ;;
+    status) status ;;
+    pull) exec ramalama pull "$MODEL" ;;
+    key) make_key ;;
+    tool)
+        case "${2:-}" in
+            read_journal|failed_services|find_files) "tool_$2" "${3:-"{}"}" ;;
+            *) echo "unknown tool: ${2:-}" ;;
+        esac ;;
+    *) echo "usage: assistant serve|status|pull|key|tool NAME JSON" >&2; exit 2 ;;
+esac

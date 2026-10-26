@@ -342,6 +342,7 @@ MAP = {
     # Ô quick settings (20px)
     "dark-mode":  [("actions", "samhie-dark-style")],
     "bell-off":   [("actions", "samhie-do-not-disturb")],
+    "bot":        [("actions", "samhie-assistant")],   # ô S-bot (2026-10-26)
     "night-light": [("status", "redshift-status-on")],
     "wired":      [("devices", "network-wired-activated")],
     "bluetooth":  [("devices", "network-bluetooth")],
@@ -431,7 +432,7 @@ SIZE = {
     20: ["shut-down", "restart", "sleep", "lock", "logout", "login",
          "next-2", "prev-2", "up-2", "down-2",
          "smart-home", "download", "network", "trash-empty", "trash-full",
-         "storage", "place-folder", "recent", "dark-mode", "bell-off", "night-light", "wired",
+         "storage", "place-folder", "recent", "dark-mode", "bell-off", "bot", "night-light", "wired",
          "bluetooth", "wifi", "wifi-2", "wifi-1", "wifi-0",
          "volume-mute", "volume-35", "volume-70", "volume-full",
          "output-speaker", "output-headphones", "output-display", "input-mic",

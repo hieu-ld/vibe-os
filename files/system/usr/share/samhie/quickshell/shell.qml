@@ -18,10 +18,14 @@
 // sách — thay mako.
 //
 // Lịch sử clipboard (clipboard/): Win+V, hiện cạnh con trỏ — thay fuzzel.
+//
+// S-bot (assistant/): trợ lý AI chạy trên máy — Win+A hoặc ô S-bot trong
+// quick settings, khung chat góc dưới-phải.
 import QtQuick
 import Quickshell
 import Quickshell.Hyprland
 import Quickshell.Io
+import "assistant"
 import "bar"
 import "clipboard"
 import "dock"
@@ -187,6 +191,24 @@ ShellRoot {
     IpcHandler {
         target: "clipboard"
         function toggle(): void { clipboard.toggle() }
+    }
+
+    // S-bot: Win+A → hl.dsp.global("samhie:assistant"); ô S-bot của quick
+    // settings gọi samhie.assistant.toggle().
+    readonly property alias assistant: sbot
+    Assistant { id: sbot }
+    GlobalShortcut {
+        appid: "samhie"
+        name: "assistant"
+        description: "Open or close S-bot"
+        onPressed: {
+            samhie.closeOverview()
+            sbot.toggle()
+        }
+    }
+    IpcHandler {
+        target: "assistant"
+        function toggle(): void { sbot.toggle() }
     }
 
     // Gọi từ dòng lệnh: qs -p /usr/share/samhie/quickshell ipc call overview toggle

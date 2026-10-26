@@ -28,6 +28,9 @@ user nhờ tìm): Claude lấy `dashboard-square-add` từ repo, đổi `#141B34
 `sidebar-close` (nút « thu khung Projects của Kate, 2026-10-12, user nhờ
 chọn): Claude lấy `sidebar-left-01` từ repo ở commit trên, đổi `#141B34` →
 `currentColor`.
+`bot` (ô S-bot — trợ lý AI trong quick settings, 2026-10-26, user chọn "bot
+ của Hugeicons"): Claude lấy `bot` từ repo ở commit trên, đổi `#141B34` →
+`currentColor`.
 `txt` (file .txt) và `star` (sao Rating) user tải 2026-10-08 cho hộp
 Properties, đối chiếu cùng commit: trùng nét `txt-02` và `star`.
 Ba mươi icon LOẠI FILE (2026-10-09, user chọn kiểu "nhãn + nhóm" từ bảng
@@ -119,6 +122,7 @@ Ba file đã sửa (MIT cho sửa):
 | `bluetooth` | `bluetooth-connected` |
 | `bookmark` | `bookmark-02` |
 | `bookmark-plus` | `bookmark-add-02` |
+| `bot` | `bot` |
 | `browse` | `folder-search` |
 | `bt-gamepad` | `game-controller-03` |
 | `bt-keyboard` | `keyboard` |

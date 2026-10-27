@@ -31,6 +31,8 @@ chọn): Claude lấy `sidebar-left-01` từ repo ở commit trên, đổi `#141
 `bot` (ô S-bot — trợ lý AI trong quick settings, 2026-10-26, user chọn "bot
  của Hugeicons"): Claude lấy `bot` từ repo ở commit trên, đổi `#141B34` →
 `currentColor`.
+`user` (trang Users của app Settings, 2026-10-27, user nhờ tìm): Claude lấy
+`user` từ repo ở commit trên, đổi `#141B34` → `currentColor`.
 `txt` (file .txt) và `star` (sao Rating) user tải 2026-10-08 cho hộp
 Properties, đối chiếu cùng commit: trùng nét `txt-02` và `star`.
 Ba mươi icon LOẠI FILE (2026-10-09, user chọn kiểu "nhãn + nhóm" từ bảng

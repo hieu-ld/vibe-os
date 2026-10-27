@@ -366,6 +366,7 @@ MAP = {
     "output-headphones": [("devices", "audio-headphones")],
     "output-display":    [("devices", "video-display")],
     "input-mic":         [("devices", "audio-input-microphone")],  # Input của trang Sound (app Settings)
+    "user":              [("apps", "system-users")],   # trang Users (app Settings, 2026-10-27)
     # Loại thiết bị ở trang Bluetooth (app Settings) — theo `icon` của BlueZ.
     "bt-mouse":    [("devices", "input-mouse")],
     "bt-keyboard": [("devices", "input-keyboard")],
@@ -436,7 +437,7 @@ SIZE = {
          "bluetooth", "wifi", "wifi-2", "wifi-1", "wifi-0",
          "volume-mute", "volume-35", "volume-70", "volume-full",
          "output-speaker", "output-headphones", "output-display", "input-mic",
-         "bt-mouse", "bt-keyboard", "bt-phone", "bt-gamepad", "bt-laptop"],
+         "bt-mouse", "bt-keyboard", "bt-phone", "bt-gamepad", "bt-laptop", "user"],
     22: ["icons", "details", "menu", "search", "prev", "next"],
     32: ["context-menu", "interface", "konsole-general", "konsole-profiles", "memory",
          "tab-bar", "temp-files", "thumbnails",

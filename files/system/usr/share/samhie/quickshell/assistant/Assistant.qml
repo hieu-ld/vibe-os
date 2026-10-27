@@ -69,6 +69,7 @@ PanelWindow {
         server = "checking"
         serverNote = ""
         statusProc.running = true
+        modelProc.running = true
     }
     Process {
         id: statusProc
@@ -195,6 +196,19 @@ PanelWindow {
         "Be practical. Reply in the language the user writes in (usually Vietnamese or English). " +
         "When the user practises English, answer and then gently point out mistakes."
 
+    // Hỏi "bạn là model nào" thì model 9B chối "không phải mô hình AI" (đo
+    // 2026-10-26) → nói thẳng tên. Tên lấy từ helper (model đổi được bằng
+    // SAMHIE_ASSISTANT_MODEL); máy chủ chỉ báo "library/qwen3.5", mất cỡ 9b.
+    property string modelName: ""
+    readonly property string identity: modelName === "" ? "" :
+        "\nYou are an AI language model: the open-weight model " + modelName + ", running locally " +
+        "with RamaLama (llama.cpp). When asked which model you are, say so plainly."
+    Process {
+        id: modelProc
+        command: [root.helper, "model"]
+        stdout: StdioCollector { onStreamFinished: root.modelName = text.trim() }
+    }
+
     readonly property var tools: [
         { type: "function", function: {
             name: "read_journal",
@@ -297,7 +311,7 @@ PanelWindow {
         finish = ""
         phase = "thinking"
         chatProc.body = JSON.stringify({
-            messages: [{ role: "system", content: systemPrompt }].concat(history),
+            messages: [{ role: "system", content: systemPrompt + identity }].concat(history),
             tools: tools,
             stream: true,
             // 0,3 thay mặc định 0,8 của máy chủ: ít thêm thắt hơn (đo bằng

@@ -45,6 +45,7 @@ RESTART_EN = r"\b(try|should|please|just) (restart|reboot)"
 # (tên, câu hỏi, công cụ phải gọi, regex phải có, regex không được có)
 CASES = [
     ("who", "hi, bạn là ai", [], [r"S-bot"], [r"(có thể|can)\s+(sửa|xoá|xóa|cài|chạy lệnh|install|delete)"]),
+    ("model", "bạn là model nào?", [], [r"qwen"], [r"không phải (là )?(một )?(mô hình|model)"]),
     ("today", "hôm nay pc có gì lạ không?", ["read_journal"], [],
      [RESTART_VI, r"cài.{0,20}smartmontools", r"laptop|xách tay"]),
     ("today-en", "anything unusual on my computer today?", ["read_journal"], [r"\b(the|is|are|no)\b"],
@@ -220,6 +221,11 @@ def main():
     qml = root / "usr/share/samhie/quickshell/assistant/Assistant.qml"
     helper = root / "usr/libexec/samhie/assistant"
     system, src = qml_prompt(qml)
+    # Như Assistant.qml (property identity): tên model từ helper.
+    model = subprocess.run([str(helper), "model"], capture_output=True, text=True).stdout.strip()
+    if model:
+        system += ("\nYou are an AI language model: the open-weight model " + model + ", running locally "
+                   "with RamaLama (llama.cpp). When asked which model you are, say so plainly.")
     if args.temp is None and (m := re.search(r"\btemperature:\s*([\d.]+)", src)):
         args.temp = float(m.group(1))   # như khung chat
     if (bad := tools_match(src)):

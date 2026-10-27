@@ -5,6 +5,7 @@
 #   assistant serve          (samhie-assistant.service gọi) chạy model bằng
 #                            RamaLama trên 127.0.0.1:$PORT, có khoá API
 #   assistant status         "ready" | "missing" (chưa tải model)
+#   assistant model          tên model (vd qwen3.5:9b) — để S-bot nói đúng nó là gì
 #   assistant pull           tải model
 #   assistant tool TÊN JSON  công cụ CHỈ ĐỌC cho model: read_journal,
 #                            failed_services, find_files
@@ -133,6 +134,7 @@ case "${1:-}" in
     status) status ;;
     pull) exec ramalama pull "$MODEL" ;;
     key) make_key ;;
+    model) echo "${MODEL##*/}" ;;
     tool)
         case "${2:-}" in
             read_journal|failed_services|find_files)

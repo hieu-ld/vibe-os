@@ -40,4 +40,4 @@ nắp/thân, ký hiệu phóng 32/24 (nét 2), màu ở `theme/palette.toml` `[f
 `folder-<ký hiệu>-<màu>` (đổi màu giữ ký hiệu — style "samhie" mục 47),
 `folder-<màu>`, `user-home` (hình `smart-home`). Thêm ký hiệu: thêm file
 `symbol-<tên>.svg` + tên vào `SYMBOLS` của script, `MAP` của build-icons.py và
-`FOLDER_SYMBOLS` của `style/samhie-style.cpp`.
+`FOLDER_SYMBOLS` của `style/parts/08-dolphin-folders.inc`.

@@ -1,6 +1,8 @@
 // Trang About — như "About This Mac": logo + tên ở giữa, dưới là nhóm thông
 // tin máy. Đọc một lần lúc mở trang (một lệnh sh, không cần quyền root):
-//   tên máy   /proc/sys/kernel/hostname
+//   tên máy   `hostnamectl --pretty` (đúng chữ người dùng gõ), không có thì
+//             /proc/sys/kernel/hostname. Sửa được: ô + Save → `account
+//             set-host` (polkit hỏi mật khẩu admin) — user chốt 2026-10-27.
 //   CPU       "model name" trong /proc/cpuinfo (bỏ (R)/(TM)/"CPU @ …")
 //   GPU       lspci -mm, dòng VGA / 3D / Display controller
 //   RAM       MemTotal trong /proc/meminfo, làm tròn LÊN GB (MemTotal nhỏ
@@ -23,7 +25,7 @@ Column {
     Process {
         running: true
         command: ["sh", "-c",
-            "echo host=$(cat /proc/sys/kernel/hostname);"
+            "p=$(hostnamectl --pretty 2>/dev/null); echo host=${p:-$(cat /proc/sys/kernel/hostname)};"
             + "echo cpu=$(grep -m1 'model name' /proc/cpuinfo | cut -d: -f2-);"
             + "echo mem=$(awk '/MemTotal/ {print $2}' /proc/meminfo);"
             + ". /etc/os-release; echo os=$VERSION_ID;"
@@ -41,7 +43,31 @@ Column {
                         out[key] = val
                 }
                 root.info = out
+                hostField.text = out.host ?? ""
             }
+        }
+    }
+
+    // Đổi tên máy. Huỷ / sai mật khẩu polkit → dòng phụ đỏ.
+    property string hostError: ""
+    readonly property bool hostChanged: hostField.text.trim() !== "" && hostField.text.trim() !== (info.host ?? "")
+    function saveHost() {
+        if (!hostChanged || hostAct.running)
+            return
+        hostError = ""
+        hostAct.command = ["/usr/libexec/samhie/account", "set-host", hostField.text.trim()]
+        hostAct.running = true
+    }
+    Process {
+        id: hostAct
+        stdout: StdioCollector { id: hostOut }
+        onExited: code => {
+            if (code === 0)
+                root.info = Object.assign({}, root.info, { host: hostField.text.trim() })
+            else
+                root.hostError = "Couldn't change the name"
+            if (code !== 0)
+                console.warn("account set-host:", hostOut.text)
         }
     }
 
@@ -92,7 +118,24 @@ Column {
     }
 
     Group {
-        InfoRow { label: "Name"; value: root.info.host ?? "" }
+        SettingRow {
+            label: "Name"
+            sub: root.hostError
+            subColor: Theme.c.danger
+            Row {
+                spacing: 8
+                TextField {
+                    id: hostField
+                    placeholder: "Computer name"
+                    onAccepted: root.saveHost()
+                }
+                Button {
+                    label: "Save"
+                    enabled: root.hostChanged && !hostAct.running
+                    onClicked: root.saveHost()
+                }
+            }
+        }
         InfoRow { label: "Processor"; value: root.cpuName(root.info.cpu) }
         // Mỗi card một dòng (máy Samhie: Intel bo mạch + NVIDIA).
         Repeater {

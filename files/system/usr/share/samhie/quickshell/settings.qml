@@ -31,6 +31,7 @@ ShellRoot {
         { id: "appearance", title: "Appearance", icon: "samhie-dark-style", category: "actions" },
         { id: "input", title: "Mouse & Keyboard", icon: "preferences-desktop-keyboard", category: "actions" },
         { id: "updates", title: "Updates", icon: "view-refresh", category: "actions" },
+        { id: "users", title: "Users", icon: "system-users", category: "apps" },
         { id: "about", title: "About", icon: "help-about", category: "actions" },
     ]
     readonly property var current: pages.find(p => p.id === page) ?? pages[0]
@@ -124,6 +125,7 @@ ShellRoot {
                         input: "settings/InputPage.qml",
                         sound: "settings/SoundPage.qml",
                         updates: "settings/UpdatesPage.qml",
+                        users: "settings/UsersPage.qml",
                     })[root.current.id]
                         ?? "settings/ComingSoon.qml"
                     onLoaded: if (item.title !== undefined) item.title = root.current.title

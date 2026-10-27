@@ -1,0 +1,175 @@
+#!/usr/bin/env python3
+"""Tài khoản + tên máy — phần lệnh; giao diện là trang Users và dòng Name của
+trang About trong Settings (quickshell/settings/UsersPage.qml, AboutPage.qml).
+
+    account info             JSON: user (tên đăng nhập), name (tên hiển thị),
+                             host (tên máy: pretty, không có thì static)
+    account set-name <tên>   tên hiển thị — AccountsService SetRealName
+                             (polkit change-own-user-data: chủ tài khoản
+                             đang ngồi trước máy, không hỏi mật khẩu)
+    account set-host <tên>   tên máy — `hostnamectl set-hostname` (pretty =
+                             đúng chữ gõ; static tự suy ra, vd "Rogg PC" →
+                             "Rogg-PC"); polkit hỏi mật khẩu admin
+    account password         đổi mật khẩu đăng nhập; STDIN hai dòng: mật khẩu
+                             hiện tại, mật khẩu mới. Mã thoát: 0 được,
+                             3 sai mật khẩu hiện tại, 4 mật khẩu mới bị chê
+                             (lý do in ra stdout, tiếng Anh của pwquality),
+                             1 lỗi khác (stdout)
+
+Mật khẩu: chạy CHÍNH `passwd` trong một pty và trả lời từng câu hỏi của nó —
+như GNOME (gnome-control-center run-passwd.c). Lý do: /etc/pam.d/passwd có
+pam_gnome_keyring (use_authtok) → két mật khẩu đổi theo, không thì lần đăng
+nhập sau két không tự mở. AccountsService SetPassword thì không đụng két và
+đòi admin. Mật khẩu KHÔNG BAO GIỜ nằm trên dòng lệnh (/proc/<pid>/cmdline ai
+cũng đọc được) — chỉ qua stdin của lệnh này rồi pty của passwd.
+
+Mật khẩu ổ đĩa (LUKS) / PIN TPM không đổi ở đây (user chốt 2026-10-24).
+"""
+
+import json
+import os
+import pty
+import pwd
+import re
+import select
+import signal
+import subprocess
+import sys
+import time
+
+
+def info():
+    me = pwd.getpwuid(os.getuid())
+    user, name = me.pw_name, me.pw_gecos.split(",")[0]
+    host = ""
+    try:
+        h = json.loads(subprocess.run(["hostnamectl", "--json=short"], capture_output=True,
+                                      text=True, timeout=10).stdout)
+        host = h.get("PrettyHostname") or h.get("StaticHostname") or h.get("Hostname") or ""
+    except Exception:
+        pass
+    if not host:
+        host = open("/proc/sys/kernel/hostname").read().strip()
+    print(json.dumps({"user": user, "name": name, "host": host}))
+
+
+def set_name(name):
+    # GECOS: ':' ngăn cột /etc/passwd, ',' ngăn các trường con của GECOS.
+    if not name.strip() or len(name) > 64 or re.search(r"[:,=\x00-\x1f\x7f]", name):
+        print("Use up to 64 letters, without : , or =")
+        return 1
+    r = subprocess.run(["busctl", "call", "--system", "org.freedesktop.Accounts",
+                        f"/org/freedesktop/Accounts/User{os.getuid()}",
+                        "org.freedesktop.Accounts.User", "SetRealName", "s", name.strip()],
+                       capture_output=True, text=True, timeout=60)
+    if r.returncode:
+        print(r.stderr.strip())
+    return 0 if r.returncode == 0 else 1
+
+
+def set_host(name):
+    if not name.strip() or len(name) > 64 or re.search(r"[\x00-\x1f\x7f]", name):
+        print("Use 1 to 64 characters")
+        return 1
+    r = subprocess.run(["hostnamectl", "set-hostname", name.strip()],
+                       capture_output=True, text=True, timeout=120)
+    if r.returncode:
+        print(r.stderr.strip())
+    return 0 if r.returncode == 0 else 1
+
+
+def password():
+    lines = sys.stdin.read().split("\n")
+    if len(lines) < 2 or not lines[1]:
+        print("No new password given")
+        return 1
+    old, new = lines[0], lines[1]
+
+    pid, fd = pty.fork()
+    if pid == 0:
+        # Câu hỏi của passwd/PAM bằng tiếng Anh để nhận ra được.
+        os.environ["LC_ALL"] = "C"
+        os.execvp("passwd", ["passwd"])
+
+    out = ""          # mọi chữ passwd in ra (để tìm lý do lỗi)
+    pending = ""      # chữ từ lần trả lời trước
+    new_sent = 0
+    result = None
+    deadline = time.monotonic() + 30
+    while result is None:
+        left = deadline - time.monotonic()
+        if left <= 0:
+            result = (1, "passwd did not answer")
+            break
+        ready, _, _ = select.select([fd], [], [], left)
+        if not ready:
+            continue
+        try:
+            chunk = os.read(fd, 4096).decode("utf-8", "replace")
+        except OSError:   # passwd đã thoát (EIO trên pty)
+            break
+        if not chunk:
+            break
+        out += chunk
+        pending += chunk
+        if "BAD PASSWORD" in pending:
+            m = re.search(r"BAD PASSWORD: *(.*)", pending)
+            result = (4, m.group(1).strip() if m else "The new password was rejected")
+            break
+        prompt = pending.rstrip().rsplit("\n", 1)[-1].strip().lower()
+        if not prompt.endswith(":"):
+            continue
+        if "current" in prompt or (new_sent == 0 and "new" not in prompt):
+            answer = old
+        elif "new" in prompt or "retype" in prompt or "again" in prompt:
+            if new_sent >= 2:
+                # Hỏi lại lần ba mà không có BAD PASSWORD: không biết vì sao.
+                result = (1, prompt)
+                break
+            answer = new
+            new_sent += 1
+        else:
+            result = (1, prompt)
+            break
+        os.write(fd, (answer + "\n").encode())
+        pending = ""
+
+    if result is not None:
+        try:
+            os.kill(pid, signal.SIGKILL)
+        except ProcessLookupError:
+            pass
+    _, status = os.waitpid(pid, 0)
+    os.close(fd)
+    if result is not None:
+        print(result[1])
+        return result[0]
+    if os.waitstatus_to_exitcode(status) == 0:
+        return 0
+    # "passwd: Authentication token manipulation error" = mật khẩu hiện tại sai
+    # (pam_unix). Lỗi khác in nguyên dòng cuối.
+    if "manipulation error" in out or "Authentication failure" in out:
+        print("The current password is incorrect")
+        return 3
+    # Bỏ dòng trùng mật khẩu (phòng khi pty có lúc còn bật echo).
+    last = [l.strip() for l in out.splitlines() if l.strip() and l.strip() not in (old, new)]
+    print(last[-1].removeprefix("passwd: ") if last else "passwd failed")
+    return 1
+
+
+def main():
+    args = sys.argv[1:]
+    if args == ["info"]:
+        info()
+        return 0
+    if len(args) == 2 and args[0] == "set-name":
+        return set_name(args[1])
+    if len(args) == 2 and args[0] == "set-host":
+        return set_host(args[1])
+    if args == ["password"]:
+        return password()
+    print("usage: account info | set-name NAME | set-host NAME | password", file=sys.stderr)
+    return 2
+
+
+sys.exit(main())

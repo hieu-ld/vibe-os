@@ -35,6 +35,7 @@ Item {
         width: root.labelWidth - 16
         anchors.verticalCenter: parent.verticalCenter
         Text {
+            visible: root.label !== ""   // dòng chỉ có chữ phụ (vd lỗi) thì chữ phụ giữa dòng
             width: parent.width
             elide: Text.ElideRight
             text: root.label

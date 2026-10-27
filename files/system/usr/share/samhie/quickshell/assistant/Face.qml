@@ -64,15 +64,27 @@ Rectangle {
         border.width: Math.max(1, face.eyeSize * 0.12)
         border.color: face.ink
 
-        // Điểm sáng (như bản vẽ) — ẩn khi mắt gần nhắm.
+        // Điểm sáng — ẩn khi mắt gần nhắm. Một chấm to lệch góc trông như mắt
+        // liếc (user 2026-10-27), nên chấm nhỏ trên phải + chấm phụ dưới trái
+        // cân nhau → nhìn thẳng.
         Rectangle {
             visible: parent.height > face.eyeSize * 0.5
-            width: face.eyeSize * 0.26
+            width: face.eyeSize * 0.18
             height: width
             radius: width / 2
-            x: parent.width * 0.52
-            y: parent.height * 0.2
+            x: parent.width * 0.5
+            y: parent.height * 0.26
             color: Colors.shared.white
+        }
+        Rectangle {
+            visible: parent.height > face.eyeSize * 0.5
+            width: face.eyeSize * 0.1
+            height: width
+            radius: width / 2
+            x: parent.width * 0.3
+            y: parent.height * 0.6
+            color: Colors.shared.white
+            opacity: 0.8
         }
     }
 

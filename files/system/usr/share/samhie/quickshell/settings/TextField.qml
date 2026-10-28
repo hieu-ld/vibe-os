@@ -11,8 +11,8 @@ import "../colors.js" as Colors
 Rectangle {
     id: root
 
-    property alias text: input.text
-    property alias input: input
+    property alias text: edit.text
+    property alias input: edit
     property string placeholder: ""
     property bool password: false
     signal accepted()
@@ -22,8 +22,10 @@ Rectangle {
     radius: 6
     color: Qt.alpha(Theme.c.text, 0.08)
 
+    // id KHÔNG được là `input`: trong Caret { input: … } chữ `input` là
+    // thuộc tính của chính Caret → tự trỏ vào nó (null), dấu nháy lệch + không ẩn.
     TextInput {
-        id: input
+        id: edit
         x: 12
         width: parent.width - 24
         height: parent.height
@@ -38,15 +40,15 @@ Rectangle {
         font.family: Colors.fonts.ui
         font.weight: Colors.fonts.uiWeight
         font.pixelSize: 24
-        cursorDelegate: Caret { input: input; color: Theme.c.text; size: 16 }
+        cursorDelegate: Caret { input: edit; color: Theme.c.text; size: 16 }
         onAccepted: root.accepted()
 
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            visible: input.displayText === ""
+            visible: edit.displayText === ""
             text: root.placeholder
             color: Theme.c.textMuted
-            font: input.font
+            font: edit.font
         }
     }
 }

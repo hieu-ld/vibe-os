@@ -4,9 +4,24 @@
 # chạy nó THAY bản trong image (cùng biến môi trường như samhie.lua).
 #   tools/qs-dev.sh           chạy bản của repo
 #   tools/qs-dev.sh restore   về lại bản trong image (khởi động lại máy cũng vậy)
-# Log: ~/.cache/samhie-qs-dev.log
+#   tools/qs-dev.sh settings [trang]
+#                             mở app Settings của repo — Settings là tiến trình
+#                             riêng, mở từ menu/phím tắt thì LUÔN là bản image
+#                             (/usr/libexec/samhie/settings)
+# Log: ~/.cache/samhie-qs-dev.log, ~/.cache/samhie-settings-dev.log
 repo=$(cd "$(dirname "$0")/.." && pwd)
 dev=$HOME/.cache/samhie-qs-dev
+if [ "${1:-}" = settings ]; then
+    pkill -f '^quickshell -n -p .*/settings\.qml$'; sleep 0.5
+    rm -rf "$dev-settings"
+    cp -a "$repo/files/system/usr/share/samhie/quickshell" "$dev-settings"
+    cd /
+    SAMHIE_SETTINGS_PAGE=${2:-} setsid -f quickshell -n -p "$dev-settings/settings.qml" \
+        >"$HOME/.cache/samhie-settings-dev.log" 2>&1 </dev/null
+    sleep 2
+    pgrep -af '^quickshell -n -p .*/settings\.qml$'
+    exit
+fi
 pkill -x quickshell; sleep 0.5
 if [ "${1:-}" = restore ]; then
     p=/usr/share/samhie/quickshell

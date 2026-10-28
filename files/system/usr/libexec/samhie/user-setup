@@ -203,7 +203,7 @@ fi
 # (katepluginmanager.cpp) không bao giờ tự bật — nên ghi cho từng tài khoản.
 # Chỉ đổi đúng các khoá dưới, giữ mọi thứ khác Kate đã lưu. Mốc riêng: chạy
 # một lần; sau đó người dùng kéo panel đi đâu Kate tự nhớ.
-#   samhiekateplugin      terminal làm tab cạnh file (Ctrl+`), thanh menu gọn,
+#   samhiekateplugin      terminal làm tab cạnh file (Ctrl+` = terminal mới), thanh menu gọn,
 #                         ẩn ô Filter… của Projects (kate/)
 #   katekonsoleplugin     tắt terminal ở khung dưới — trùng với cái trên
 #   cột trái  = Projects (Explorer), Search, Git, Outline như VS Code; Search

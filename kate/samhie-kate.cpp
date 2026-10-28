@@ -13,8 +13,8 @@
 //    Terminal là KonsolePart (kf6/parts/konsolepart) — cùng Konsole của Samhie:
 //    không có DefaultProfile trong katerc thì Konsole lấy DefaultProfile của
 //    konsolerc (ProfileManager.cpp) → profile Samhie, tên tab từ samhie-title.sh.
-//      Ctrl+`        mở/về terminal; đang ở terminal thì quay lại file trước đó
-//      Ctrl+Shift+`  terminal mới
+//      Ctrl+`        terminal mới (user 2026-10-28; trước là Ctrl+Shift+`)
+//      Ctrl+Shift+`  mở/về terminal; đang ở terminal thì quay lại file trước đó
 //    Shell thoát (gõ exit) thì tab tự đóng.
 //    Vùng editor trống (mở Kate khi đã tắt welcome page, đóng hết tab) →
 //    terminal thay cho tài liệu "Untitled" Kate tự mở (mục 18).
@@ -1971,7 +1971,7 @@ public:
         QAction *a = actionCollection()->addAction(QStringLiteral("samhie_terminal_new"));
         a->setText(QStringLiteral("New Terminal"));
         a->setIcon(QIcon::fromTheme(QStringLiteral("utilities-terminal")));
-        actionCollection()->setDefaultShortcut(a, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_QuoteLeft));
+        actionCollection()->setDefaultShortcut(a, QKeySequence(Qt::CTRL | Qt::Key_QuoteLeft));
         connect(a, &QAction::triggered, this, &SamhieKateView::newTerminal);
 
         // Mục 22: tooltip hover của editor (LSP, git blame) = font editor ở cỡ
@@ -1996,7 +1996,7 @@ public:
 
         a = actionCollection()->addAction(QStringLiteral("samhie_terminal_toggle"));
         a->setText(QStringLiteral("Switch Between Terminal and File"));
-        actionCollection()->setDefaultShortcut(a, QKeySequence(Qt::CTRL | Qt::Key_QuoteLeft));
+        actionCollection()->setDefaultShortcut(a, QKeySequence(Qt::CTRL | Qt::SHIFT | Qt::Key_QuoteLeft));
         connect(a, &QAction::triggered, this, &SamhieKateView::toggleTerminal);
 
         // Nhớ tab terminal dùng gần nhất (bấm chuột vào tab cũng tính)

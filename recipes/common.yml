@@ -224,6 +224,12 @@ modules:
         # Tắt đăng nhập vân tay sót từ Kinoite khi không có fprintd (lỗi PAM
         # pam_fprintd.so mỗi lần sudo/màn khoá).
         - samhie-authselect-cleanup.service
+      disabled:
+        # Image nền bật sẵn sshd (nghe cổng 22 mọi địa chỉ — đo 2026-10-30).
+        # Tường lửa đã chặn ssh (files/scripts/firewall.sh), nhưng máy dùng
+        # hằng ngày không cần đăng nhập từ xa: tắt luôn, bớt một cửa mở.
+        # Ai cần thì `sudo systemctl enable --now sshd` + mở ssh trên tường lửa.
+        - sshd.service
     user:
       enabled:
         # Lần đăng nhập đầu của mỗi tài khoản: thư mục Storage + sidebar

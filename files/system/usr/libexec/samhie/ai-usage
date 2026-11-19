@@ -1,0 +1,130 @@
+#!/usr/bin/env python3
+# % đã dùng giới hạn 5 giờ + tuần của Codex CLI và Antigravity CLI (agy) —
+# bảng Claude trên thanh trên (bar/ClaudePopup.qml) gọi khi mở.
+#
+# Cả hai KHÔNG có trong image: người dùng tự cài (thường ~/.local/bin). Không
+# thấy công cụ nào thì bỏ nó khỏi kết quả, bảng ẩn phần đó.
+#
+# Hỏi bằng đường chính thức của từng công cụ, không đọc token đăng nhập:
+#   - Codex: `codex app-server` (JSON-RPC qua stdio), lệnh
+#     account/rateLimits/read → primary (300 phút) / secondary (10080 phút)
+#     { usedPercent, resetsAt }. Đo bản 0.170.0, 2026-11-19.
+#   - agy: `agy -p /usage --output-format json` — changelog agy ghi lệnh này
+#     không chạy lượt agent, không tốn quota, không để lại hội thoại. Trả các
+#     nhóm model (Gemini / Claude and GPT / Argon), mỗi nhóm có bucket "5h" và
+#     "weekly" { remaining_fraction, reset_time ISO UTC }. Đo 2026-11-19.
+#     Lấy nhóm dùng nhiều nhất cho mỗi cửa sổ (nhóm nào cạn trước thì chặn trước).
+#
+# In một dòng JSON ra stdout:
+#   {"at": <giây Unix>, "tools": [{"id", "name", "error"?, "windows":
+#     [{"window": "5h"|"weekly", "used": <0..100>, "resets_at": <giây Unix>,
+#       "group"?: "<tên nhóm agy>"}]}]}
+import datetime
+import json
+import os
+import shutil
+import subprocess
+import sys
+import time
+from concurrent.futures import ThreadPoolExecutor
+
+TIMEOUT = 20
+
+
+def find(name):
+    # Quickshell chạy với PATH của phiên, có thể thiếu ~/.local/bin.
+    local = os.path.expanduser("~/.local/bin/" + name)
+    if os.access(local, os.X_OK):
+        return local
+    return shutil.which(name)
+
+
+def codex(path):
+    p = subprocess.Popen([path, "app-server"], stdin=subprocess.PIPE,
+                         stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+                         text=True)
+    try:
+        def send(o):
+            p.stdin.write(json.dumps(o) + "\n")
+            p.stdin.flush()
+
+        def reply(rid):
+            deadline = time.monotonic() + TIMEOUT
+            while time.monotonic() < deadline:
+                line = p.stdout.readline()
+                if not line:
+                    break
+                try:
+                    msg = json.loads(line)
+                except ValueError:
+                    continue
+                if msg.get("id") == rid:
+                    if "error" in msg:
+                        raise RuntimeError(msg["error"].get("message", "error"))
+                    return msg["result"]
+            raise RuntimeError("no reply")
+
+        send({"id": 1, "method": "initialize",
+              "params": {"clientInfo": {"name": "samhie-bar", "version": "1"}}})
+        reply(1)
+        send({"method": "initialized"})
+        send({"id": 2, "method": "account/rateLimits/read"})
+        rl = reply(2).get("rateLimits") or {}
+    finally:
+        p.kill()
+        p.wait()
+
+    out = []
+    for key, name in (("primary", "5h"), ("secondary", "weekly")):
+        w = rl.get(key)
+        if w and w.get("resetsAt") is not None:
+            out.append({"window": name, "used": float(w.get("usedPercent") or 0),
+                        "resets_at": int(w["resetsAt"])})
+    return out
+
+
+def iso(s):
+    return int(datetime.datetime.fromisoformat(s.replace("Z", "+00:00")).timestamp())
+
+
+def agy(path):
+    r = subprocess.run([path, "-p", "/usage", "--output-format", "json"],
+                       capture_output=True, text=True, timeout=TIMEOUT,
+                       cwd=os.path.expanduser("~"))
+    data = json.loads(r.stdout)
+    groups = ((data.get("command") or {}).get("data") or {}).get("groups") or []
+    best = {}
+    for g in groups:
+        for b in g.get("buckets") or []:
+            win = b.get("window")
+            if win not in ("5h", "weekly") or b.get("remaining_fraction") is None:
+                continue
+            used = (1 - float(b["remaining_fraction"])) * 100
+            if win not in best or used > best[win]["used"]:
+                best[win] = {"window": win, "used": used,
+                             "resets_at": iso(b["reset_time"]),
+                             "group": g.get("name", "")}
+    return [best[w] for w in ("5h", "weekly") if w in best]
+
+
+def one(tid, name, fn, path):
+    t = {"id": tid, "name": name, "windows": []}
+    try:
+        t["windows"] = fn(path)
+        if not t["windows"]:
+            t["error"] = "No plan limits reported"
+    except Exception as e:  # noqa: BLE001 — một công cụ hỏng không làm mất công cụ kia
+        print(f"ai-usage: {tid}: {e}", file=sys.stderr)
+        t["error"] = "Couldn't read limits (signed in?)"
+    return t
+
+
+def main():
+    found = [(tid, name, fn, find(tid))
+             for tid, name, fn in (("codex", "Codex", codex), ("agy", "Antigravity", agy))]
+    # Hỏi song song: agy mất ~4 giây, codex ~1 giây.
+    with ThreadPoolExecutor() as ex:
+        tools = list(ex.map(lambda a: one(*a), [f for f in found if f[3]]))
+    print(json.dumps({"at": int(time.time()), "tools": tools}))
+
+main()

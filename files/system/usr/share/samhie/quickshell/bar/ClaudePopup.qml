@@ -10,6 +10,10 @@
 // "Updated … ago". Qua giờ reset thì cửa sổ đó coi như 0%.
 // Chưa có file → nút Connect (claude-connect thêm statusLine vào
 // ~/.claude/settings.json; đã có statusLine khác thì không đè, báo lại).
+//
+// Dưới Claude: Codex + Antigravity (agy) nếu người dùng đã cài (2026-11-19).
+// Số hỏi trực tiếp bằng /usr/libexec/samhie/ai-usage lúc mở bảng và mỗi phút
+// khi bảng còn mở (agy mất ~4 giây); trong lúc chờ hiện số lần trước.
 import QtQuick
 import Quickshell
 import Quickshell.Io
@@ -44,6 +48,8 @@ PopupMotion {
     onOpenChanged: if (open) {
         now = Date.now()
         view.reload()
+        if (!usageProc.running)
+            usageProc.running = true
     }
     Timer {
         running: root.open
@@ -54,6 +60,27 @@ PopupMotion {
             view.reload()
         }
     }
+
+    // ── Codex / Antigravity ────────────────────────────────────────────────
+    property var others: null
+    Process {
+        id: usageProc
+        command: ["/usr/libexec/samhie/ai-usage"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                try {
+                    root.others = JSON.parse(text)
+                } catch (e) {}
+            }
+        }
+    }
+    Timer {
+        running: root.open
+        interval: 60000
+        repeat: true
+        onTriggered: if (!usageProc.running) usageProc.running = true
+    }
+    readonly property var otherTools: others && others.tools ? others.tools : []
 
     readonly property var windows: {
         const r = usage && usage.rate_limits ? usage.rate_limits : {}
@@ -137,6 +164,61 @@ PopupMotion {
         }
     }
 
+    // Một giới hạn: tên + % + thanh + giờ reset. Qua giờ reset thì 0%.
+    component LimitRow: Column {
+        id: limit
+        property string label
+        property real usedPercent
+        property real resetsAt
+        property string note: ""   // nhóm model của agy, đứng trước giờ reset
+        readonly property bool past: resetsAt * 1000 <= root.now
+        readonly property int used: past ? 0 : Math.round(usedPercent)
+
+        width: content.width
+        spacing: 4
+
+        Item {
+            width: parent.width
+            height: name.height
+            Text {
+                id: name
+                text: limit.label
+                color: Theme.c.text
+                font.family: Colors.fonts.ui
+                font.weight: Colors.fonts.uiWeight
+                font.pixelSize: 24
+            }
+            Text {
+                anchors.right: parent.right
+                text: limit.used + "%"
+                color: limit.used >= 90 ? Theme.c.danger : Theme.c.text
+                font: name.font
+            }
+        }
+        // Thanh như rãnh thanh trượt của Settings (Slider.qml).
+        Rectangle {
+            width: parent.width
+            height: 6
+            radius: 3
+            color: Theme.c.subSecondary
+            Rectangle {
+                width: Math.max(limit.used > 0 ? height : 0, parent.width * Math.min(limit.used, 100) / 100)
+                height: parent.height
+                radius: 3
+                color: limit.used >= 90 ? Theme.c.danger : Theme.c.accent
+            }
+        }
+        Text {
+            width: parent.width
+            elide: Text.ElideRight
+            text: (limit.note ? limit.note + " · " : "") + root.resetText(limit.resetsAt)
+            color: Theme.c.textMuted
+            font.family: Colors.fonts.ui
+            font.weight: Colors.fonts.uiWeight
+            font.pixelSize: 20
+        }
+    }
+
     // Hiện/ẩn có hiệu ứng (PopupMotion).
     showing: open
     transformOrigin: Item.TopRight
@@ -206,59 +288,71 @@ PopupMotion {
             // ── Hai giới hạn ───────────────────────────────────────────────
             Repeater {
                 model: root.windows
-                delegate: Column {
-                    id: limit
+                delegate: LimitRow {
                     required property var modelData
-                    readonly property bool past: modelData.w.resets_at * 1000 <= root.now
-                    readonly property int used: past ? 0 : Math.round(modelData.w.used_percentage)
-
-                    width: content.width
-                    spacing: 4
-
-                    Item {
-                        width: parent.width
-                        height: name.height
-                        Text {
-                            id: name
-                            text: limit.modelData.label
-                            color: Theme.c.text
-                            font.family: Colors.fonts.ui
-                            font.weight: Colors.fonts.uiWeight
-                            font.pixelSize: 24
-                        }
-                        Text {
-                            anchors.right: parent.right
-                            text: limit.used + "%"
-                            color: limit.used >= 90 ? Theme.c.danger : Theme.c.text
-                            font: name.font
-                        }
-                    }
-                    // Thanh như rãnh thanh trượt của Settings (Slider.qml).
-                    Rectangle {
-                        width: parent.width
-                        height: 6
-                        radius: 3
-                        color: Theme.c.subSecondary
-                        Rectangle {
-                            width: Math.max(limit.used > 0 ? height : 0, parent.width * Math.min(limit.used, 100) / 100)
-                            height: parent.height
-                            radius: 3
-                            color: limit.used >= 90 ? Theme.c.danger : Theme.c.accent
-                        }
-                    }
-                    Text {
-                        text: root.resetText(limit.modelData.w.resets_at)
-                        color: Theme.c.textMuted
-                        font.family: Colors.fonts.ui
-                        font.weight: Colors.fonts.uiWeight
-                        font.pixelSize: 20
-                    }
+                    label: modelData.label
+                    usedPercent: modelData.w.used_percentage
+                    resetsAt: modelData.w.resets_at
                 }
             }
 
             Text {
                 visible: root.windows.length > 0 && !!root.usage.at
                 text: root.usage && root.usage.at ? root.updatedText(root.usage.at) : ""
+                color: Theme.c.textMuted
+                font.family: Colors.fonts.ui
+                font.weight: Colors.fonts.uiWeight
+                font.pixelSize: 20
+            }
+
+            // ── Codex / Antigravity ────────────────────────────────────────
+            Repeater {
+                model: root.otherTools
+                delegate: Column {
+                    id: tool
+                    required property var modelData
+                    width: content.width
+                    spacing: 14
+
+                    // Vạch ngăn giữa các công cụ.
+                    Rectangle {
+                        width: parent.width
+                        height: 1
+                        color: Theme.c.subSecondary
+                    }
+                    Text {
+                        text: tool.modelData.name
+                        color: Theme.c.text
+                        font.family: Colors.fonts.ui
+                        font.weight: Colors.fonts.uiWeight
+                        font.pixelSize: 26
+                    }
+                    Text {
+                        visible: !!tool.modelData.error
+                        width: parent.width
+                        wrapMode: Text.Wrap
+                        text: tool.modelData.error || ""
+                        color: Theme.c.textMuted
+                        font.family: Colors.fonts.ui
+                        font.weight: Colors.fonts.uiWeight
+                        font.pixelSize: 22
+                    }
+                    Repeater {
+                        model: tool.modelData.windows
+                        delegate: LimitRow {
+                            required property var modelData
+                            label: modelData.window === "5h" ? "5-hour limit" : "Weekly limit"
+                            usedPercent: modelData.used
+                            resetsAt: modelData.resets_at
+                            note: (modelData.group || "").replace(/ models$/i, "").replace(" and ", " & ")
+                        }
+                    }
+                }
+            }
+
+            Text {
+                visible: root.otherTools.length > 0 && !!root.others.at
+                text: root.others && root.others.at ? root.updatedText(root.others.at) : ""
                 color: Theme.c.textMuted
                 font.family: Colors.fonts.ui
                 font.weight: Colors.fonts.uiWeight

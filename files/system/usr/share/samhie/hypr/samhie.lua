@@ -489,6 +489,10 @@ hl.bind(mod .. " + SHIFT + S", hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot r
 hl.bind("Print",               hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot region"))  -- chọn vùng
 hl.bind("SHIFT + Print",       hl.dsp.exec_cmd("/usr/libexec/samhie/screenshot"))         -- cả màn hình
 
+-- Quay màn hình (Win+Shift+R): chọn vùng / màn hình / cửa sổ rồi nhấn Start;
+-- đang quay mà nhấn lại Win+Shift+R (hoặc nút Stop góc trên-phải) thì dừng và lưu.
+hl.bind(mod .. " + SHIFT + R", hl.dsp.exec_cmd("/usr/libexec/samhie/record"))
+
 hl.bind("ALT + F4",            hl.dsp.window.close())
 hl.bind(mod .. " + Q",         hl.dsp.window.close())
 hl.bind(mod .. " + J",         hl.dsp.layout("togglesplit"))

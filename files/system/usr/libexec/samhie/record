@@ -1,0 +1,540 @@
+#!/usr/bin/env python3
+# Quay màn hình của Samhie (Win+Shift+R):
+#   record              Bật khung chọn vùng/màn hình/cửa sổ; nếu đang quay thì DỪNG.
+#   record region       Mở thẳng chế độ chọn vùng (Region)
+#   record screen       Mở thẳng chế độ toàn màn hình (Screen)
+#   record window       Mở thẳng chế độ chọn cửa sổ (Window)
+#   record stop         Dừng lần quay đang chạy và lưu file MP4
+#   record status       In trạng thái JSON {"recording": bool, ...}
+#
+# Video tự lưu vào <thư mục Videos>/Recordings (= Storage/Videos/Recordings
+# theo cấu trúc của Samhie), copy file URI vào clipboard (text/uri-list để
+# Ctrl+V dán thẳng vào Dolphin / trình duyệt / chat), rồi hiện thông báo.
+# Bấm vào thông báo mở thư mục chứa video trong Dolphin (hoặc phát video).
+
+import fcntl
+import json
+import os
+import re
+import signal
+import subprocess
+import sys
+import time
+import urllib.parse
+from datetime import datetime
+from pathlib import Path
+
+import gi
+gi.require_version("Gst", "1.0")
+from gi.repository import Gio, GLib, Gst
+
+
+RUNTIME_DIR = Path(os.environ.get("XDG_RUNTIME_DIR") or "/tmp")
+PID_FILE = RUNTIME_DIR / "samhie-record.pid"
+STATE_FILE = RUNTIME_DIR / "samhie-record.json"
+LOCK_FILE = RUNTIME_DIR / "samhie-record-ui.lock"
+
+
+def find_qml_dir() -> Path:
+    # Ưu tiên thư mục quickshell cạnh script (khi chạy từ repo app-record),
+    # sau đó tới /usr/share/samhie/quickshell (khi đã tích hợp vào image).
+    here = Path(__file__).resolve().parent
+    local_qml = here / "quickshell"
+    if (local_qml / "record-region.qml").is_file():
+        return local_qml
+    sys_qml = Path("/usr/share/samhie/quickshell")
+    if (sys_qml / "record-region.qml").is_file():
+        return sys_qml
+    return local_qml
+
+
+def is_light_mode() -> bool:
+    state_home = Path(os.environ.get("XDG_STATE_HOME") or (Path.home() / ".local/state"))
+    settings_file = state_home / "samhie/settings.json"
+    try:
+        data = json.loads(settings_file.read_text(encoding="utf-8"))
+        return bool(data.get("lightMode", False))
+    except Exception:
+        return False
+
+
+def get_videos_dir() -> Path:
+    config_home = Path(os.environ.get("XDG_CONFIG_HOME") or (Path.home() / ".config"))
+    dirs_file = config_home / "user-dirs.dirs"
+    videos_dir = Path.home() / "Videos"
+    if dirs_file.is_file():
+        try:
+            for line in dirs_file.read_text(encoding="utf-8").splitlines():
+                line = line.strip()
+                if line.startswith("XDG_VIDEOS_DIR="):
+                    val = line.split("=", 1)[1].strip().strip('"')
+                    val = val.replace("$HOME", str(Path.home()))
+                    videos_dir = Path(val)
+                    break
+        except Exception:
+            pass
+    save_dir = videos_dir / "Recordings"
+    save_dir.mkdir(parents=True, exist_ok=True)
+    return save_dir
+
+
+def next_recording_file(save_dir: Path) -> Path:
+    stamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+    candidate = save_dir / f"Recording_{stamp}.mp4"
+    n = 2
+    while candidate.exists():
+        candidate = save_dir / f"Recording_{stamp}-{n}.mp4"
+        n += 1
+    return candidate
+
+
+def get_active_pid() -> int | None:
+    if not PID_FILE.is_file():
+        return None
+    try:
+        pid = int(PID_FILE.read_text().strip())
+        os.kill(pid, 0)
+        return pid
+    except Exception:
+        try:
+            PID_FILE.unlink(missing_ok=True)
+            STATE_FILE.unlink(missing_ok=True)
+        except Exception:
+            pass
+        return None
+
+
+def stop_active_recording() -> bool:
+    pid = get_active_pid()
+    if pid is None:
+        return False
+    try:
+        os.kill(pid, signal.SIGINT)
+    except ProcessLookupError:
+        return False
+    for _ in range(50):
+        if get_active_pid() is None:
+            break
+        time.sleep(0.1)
+    return True
+
+
+def query_hyprland_windows() -> list[dict]:
+    try:
+        mons_raw = subprocess.check_output(["hyprctl", "monitors", "-j"], timeout=2)
+        clients_raw = subprocess.check_output(["hyprctl", "clients", "-j"], timeout=2)
+        monitors = json.loads(mons_raw.decode("utf-8"))
+        clients = json.loads(clients_raw.decode("utf-8"))
+    except Exception:
+        return []
+
+    mon_by_id = {}
+    active_ws_ids = set()
+    for m in monitors:
+        mon_by_id[m.get("id")] = m
+        aws = m.get("activeWorkspace", {})
+        if aws and aws.get("id"):
+            active_ws_ids.add(aws["id"])
+
+    result = []
+    # Sắp xếp theo focusHistoryID tăng dần (cửa sổ mới dùng nhất nằm đầu)
+    clients.sort(key=lambda c: c.get("focusHistoryID", 9999))
+    for c in clients:
+        if not c.get("mapped") or c.get("hidden"):
+            continue
+        ws_id = c.get("workspace", {}).get("id")
+        if ws_id not in active_ws_ids:
+            continue
+        mon = mon_by_id.get(c.get("monitor"))
+        if not mon:
+            continue
+        at = c.get("at", [0, 0])
+        size = c.get("size", [0, 0])
+        if size[0] < 32 or size[1] < 32:
+            continue
+        result.append({
+            "address": c.get("address", ""),
+            "className": c.get("class", ""),
+            "title": c.get("title", ""),
+            "monitor": mon.get("name", ""),
+            "x": int(at[0] - mon.get("x", 0)),
+            "y": int(at[1] - mon.get("y", 0)),
+            "width": int(size[0]),
+            "height": int(size[1]),
+        })
+    return result
+
+
+def get_audio_devices() -> tuple[str | None, str | None]:
+    sink_monitor = None
+    mic_source = None
+    try:
+        sink = subprocess.check_output(["pactl", "get-default-sink"], timeout=2).decode().strip()
+        if sink:
+            sink_monitor = f"{sink}.monitor"
+    except Exception:
+        pass
+    try:
+        source = subprocess.check_output(["pactl", "get-default-source"], timeout=2).decode().strip()
+        if source and not source.endswith(".monitor"):
+            mic_source = source
+    except Exception:
+        pass
+    return sink_monitor, mic_source
+
+
+def pick_video_encoder() -> str:
+    Gst.init(None)
+    if Gst.ElementFactory.find("vah264enc"):
+        return "vah264enc bitrate=12000"
+    if Gst.ElementFactory.find("nvh264enc"):
+        return "nvh264enc bitrate=12000 preset=low-latency-hq"
+    if Gst.ElementFactory.find("avenc_libx264"):
+        return "avenc_libx264 bitrate=8000000 speed-preset=ultrafast"
+    if Gst.ElementFactory.find("openh264enc"):
+        return "openh264enc bitrate=8000000"
+    return "vah264enc"
+
+
+def pick_audio_encoder() -> str:
+    Gst.init(None)
+    if Gst.ElementFactory.find("fdkaacenc"):
+        return "fdkaacenc bitrate=192000"
+    return "avenc_aac bitrate=192000"
+
+
+def run_daemon(spec_json: str) -> int:
+    spec = json.loads(spec_json)
+    Gst.init(None)
+
+    save_dir = get_videos_dir()
+    out_file = next_recording_file(save_dir)
+
+    mode = spec.get("mode", "region")
+    mon_name = spec.get("monitor", "")
+    with_cursor = 1 if spec.get("cursor", True) else 0
+    want_audio = bool(spec.get("audio", True))
+    want_mic = bool(spec.get("mic", False))
+
+    # Đảm bảo kích thước chẵn cho H.264 NV12 (tối thiểu 64x64)
+    raw_w = max(64, int(spec.get("width", 1920)))
+    raw_h = max(64, int(spec.get("height", 1080)))
+    even_w = raw_w & ~1
+    even_h = raw_h & ~1
+
+    bus = Gio.bus_get_sync(Gio.BusType.SESSION, None)
+    sender_name = bus.get_unique_name().lstrip(":").replace(".", "_")
+    stamp_id = f"rec_{os.getpid()}"
+    sess_path = f"/org/freedesktop/portal/desktop/session/{sender_name}/{stamp_id}"
+    req1 = f"/org/freedesktop/portal/desktop/request/{sender_name}/{stamp_id}_1"
+    req2 = f"/org/freedesktop/portal/desktop/request/{sender_name}/{stamp_id}_2"
+    req3 = f"/org/freedesktop/portal/desktop/request/{sender_name}/{stamp_id}_3"
+
+    bus.call_sync(
+        "org.freedesktop.impl.portal.desktop.hyprland",
+        "/org/freedesktop/portal/desktop",
+        "org.freedesktop.impl.portal.ScreenCast",
+        "CreateSession",
+        GLib.Variant("(oosa{sv})", (req1, sess_path, "samhie.recorder", {})),
+        GLib.VariantType("(ua{sv})"),
+        Gio.DBusCallFlags.NONE,
+        5000,
+        None,
+    )
+
+    if mode == "window":
+        addr_str = spec.get("windowAddress", "0x0")
+        addr_int = int(addr_str, 16) if str(addr_str).startswith("0x") else int(addr_str)
+        restore_dict = {
+            "windowHandle": GLib.Variant("t", addr_int),
+            "windowClass": GLib.Variant("s", spec.get("windowClass", "")),
+            "withCursor": GLib.Variant("u", with_cursor),
+        }
+    elif mode == "region":
+        rx = max(0, int(spec.get("x", 0)))
+        ry = max(0, int(spec.get("y", 0)))
+        restore_dict = {
+            "output": GLib.Variant("s", mon_name),
+            "geometry": GLib.Variant("(uuuu)", (rx, ry, even_w, even_h)),
+            "withCursor": GLib.Variant("u", with_cursor),
+        }
+    else:
+        restore_dict = {
+            "output": GLib.Variant("s", mon_name),
+            "withCursor": GLib.Variant("u", with_cursor),
+        }
+
+    restore_data = GLib.Variant("(suv)", (
+        "hyprland",
+        3,
+        GLib.Variant("a{sv}", restore_dict),
+    ))
+
+    bus.call_sync(
+        "org.freedesktop.impl.portal.desktop.hyprland",
+        "/org/freedesktop/portal/desktop",
+        "org.freedesktop.impl.portal.ScreenCast",
+        "SelectSources",
+        GLib.Variant("(oosa{sv})", (req2, sess_path, "samhie.recorder", {
+            "types": GLib.Variant("u", 3),
+            "multiple": GLib.Variant("b", False),
+            "cursor_mode": GLib.Variant("u", 2 if with_cursor else 1),
+            "persist_mode": GLib.Variant("u", 2),
+            "restore_data": restore_data,
+        })),
+        GLib.VariantType("(ua{sv})"),
+        Gio.DBusCallFlags.NONE,
+        5000,
+        None,
+    )
+
+    res3 = bus.call_sync(
+        "org.freedesktop.impl.portal.desktop.hyprland",
+        "/org/freedesktop/portal/desktop",
+        "org.freedesktop.impl.portal.ScreenCast",
+        "Start",
+        GLib.Variant("(oossa{sv})", (req3, sess_path, "samhie.recorder", "", {})),
+        GLib.VariantType("(ua{sv})"),
+        Gio.DBusCallFlags.NONE,
+        5000,
+        None,
+    )
+    code, details = res3.unpack()
+    if code != 0 or not details.get("streams"):
+        return 1
+
+    node_id = details["streams"][0][0]
+    stream_size = details["streams"][0][1].get("size")
+    if stream_size and len(stream_size) == 2 and stream_size[0] >= 64 and stream_size[1] >= 64:
+        even_w = int(stream_size[0]) & ~1
+        even_h = int(stream_size[1]) & ~1
+
+    venc = pick_video_encoder()
+    aenc = pick_audio_encoder()
+    sink_mon, mic_src = get_audio_devices()
+
+    audio_sources = []
+    if want_audio and sink_mon:
+        audio_sources.append(sink_mon)
+    if want_mic and mic_src:
+        audio_sources.append(mic_src)
+
+    pipeline_parts = [
+        f"mp4mux name=mux ! filesink location=\"{out_file}\"",
+        (
+            f"pipewiresrc path={node_id} do-timestamp=true keepalive-time=16 use-bufferpool=false ! "
+            f"queue max-size-buffers=30 ! videoconvert ! videoscale ! videorate ! "
+            f"video/x-raw,format=NV12,width={even_w},height={even_h},framerate=60/1 ! "
+            f"{venc} ! h264parse ! queue ! mux.video_0"
+        ),
+    ]
+
+    if len(audio_sources) == 1:
+        pipeline_parts.append(
+            f"pulsesrc device=\"{audio_sources[0]}\" do-timestamp=true ! "
+            f"queue ! audioconvert ! audioresample ! audio/x-raw,rate=48000,channels=2 ! "
+            f"{aenc} ! aacparse ! queue ! mux.audio_0"
+        )
+    elif len(audio_sources) == 2:
+        pipeline_parts.append(
+            f"audiomixer name=amix ! audioconvert ! audioresample ! audio/x-raw,rate=48000,channels=2 ! "
+            f"{aenc} ! aacparse ! queue ! mux.audio_0 "
+            f"pulsesrc device=\"{audio_sources[0]}\" do-timestamp=true ! queue ! audioconvert ! audioresample ! amix. "
+            f"pulsesrc device=\"{audio_sources[1]}\" do-timestamp=true ! queue ! audioconvert ! audioresample ! amix."
+        )
+
+    pipeline_str = " ".join(pipeline_parts)
+    pipeline = Gst.parse_launch(pipeline_str)
+
+    # Ghi PID & trạng thái trước khi bắt đầu
+    PID_FILE.write_text(str(os.getpid()), encoding="utf-8")
+    STATE_FILE.write_text(json.dumps({
+        "recording": True,
+        "pid": os.getpid(),
+        "mode": mode,
+        "file": str(out_file),
+        "startedAt": int(time.time()),
+    }), encoding="utf-8")
+
+    # Mở thanh báo đang quay (HUD pill góc trên-phải)
+    qml_dir = find_qml_dir()
+    hud_env = os.environ.copy()
+    hud_env["SAMHIE_REC_LIGHT"] = "1" if is_light_mode() else "0"
+    hud_env["SAMHIE_REC_BIN"] = str(Path(__file__).resolve())
+    hud_proc = subprocess.Popen(
+        ["quickshell", "-p", str(qml_dir / "record-hud.qml")],
+        env=hud_env,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    loop = GLib.MainLoop()
+    stopping = False
+
+    def request_stop(*_args):
+        nonlocal stopping
+        if stopping:
+            return False
+        stopping = True
+        if hud_proc.poll() is None:
+            hud_proc.terminate()
+        pipeline.send_event(Gst.Event.new_eos())
+        # Phòng trường hợp EOS bị kẹt quá 3 giây thì thoát vòng lặp
+        GLib.timeout_add(3000, loop.quit)
+        return False
+
+    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGINT, request_stop)
+    GLib.unix_signal_add(GLib.PRIORITY_DEFAULT, signal.SIGTERM, request_stop)
+
+    gst_bus = pipeline.get_bus()
+    gst_bus.add_signal_watch()
+
+    def on_bus_message(_bus, msg):
+        if msg.type in (Gst.MessageType.EOS, Gst.MessageType.ERROR):
+            loop.quit()
+
+    gst_bus.connect("message", on_bus_message)
+
+    pipeline.set_state(Gst.State.PLAYING)
+    try:
+        loop.run()
+    finally:
+        pipeline.set_state(Gst.State.NULL)
+        if hud_proc.poll() is None:
+            hud_proc.kill()
+        try:
+            bus.call_sync(
+                "org.freedesktop.impl.portal.desktop.hyprland",
+                sess_path,
+                "org.freedesktop.impl.portal.Session",
+                "Close",
+                None,
+                None,
+                Gio.DBusCallFlags.NONE,
+                2000,
+                None,
+            )
+        except Exception:
+            pass
+        PID_FILE.unlink(missing_ok=True)
+        STATE_FILE.unlink(missing_ok=True)
+
+    if not out_file.is_file() or out_file.stat().st_size == 0:
+        out_file.unlink(missing_ok=True)
+        return 1
+
+    # Copy đường dẫn URI vào clipboard để dán thẳng được vào Dolphin / chat
+    file_uri = "file://" + urllib.parse.quote(str(out_file)) + "\r\n"
+    try:
+        wl_proc = subprocess.Popen(
+            ["wl-copy", "--type", "text/uri-list"],
+            stdin=subprocess.PIPE,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        )
+        wl_proc.communicate(input=file_uri.encode("utf-8"), timeout=2)
+    except Exception:
+        pass
+
+    # Hiện thông báo kiểu Samhie: bấm vào mở Dolphin trỏ tới file vừa quay
+    try:
+        res = subprocess.run(
+            [
+                "notify-send",
+                "-a", "Screen Recorder",
+                "-i", "video-mp4",
+                "-t", "6000",
+                "-A", "default=Show in folder",
+                f"Saved {out_file.name} · Click to view",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        if res.stdout.strip() == "default":
+            subprocess.Popen(
+                ["dolphin", "--select", str(out_file)],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL,
+            )
+    except Exception:
+        pass
+
+    return 0
+
+
+def open_picker_and_start(initial_mode: str = "region") -> int:
+    # Nếu đang quay thì bấm phím tắt lần nữa sẽ DỪNG quay ngay lập tức
+    if stop_active_recording():
+        return 0
+
+    lock_fd = open(LOCK_FILE, "w")
+    try:
+        fcntl.flock(lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+    except BlockingIOError:
+        return 0
+
+    qml_dir = find_qml_dir()
+    windows = query_hyprland_windows()
+
+    env = os.environ.copy()
+    env["SAMHIE_REC_LIGHT"] = "1" if is_light_mode() else "0"
+    env["SAMHIE_REC_MODE"] = initial_mode
+    env["SAMHIE_REC_WINDOWS"] = json.dumps(windows)
+
+    proc = subprocess.run(
+        ["quickshell", "-p", str(qml_dir / "record-region.qml")],
+        env=env,
+        capture_output=True,
+        text=True,
+    )
+    lock_fd.close()
+
+    combined = (proc.stdout or "") + "\n" + (proc.stderr or "")
+    match = re.search(r"SAMHIE_REC_RESULT:(\{.*\})", combined)
+    if not match:
+        return 0
+
+    spec_json = match.group(1)
+    # Chạy tiến trình ghi hình ở nền để lệnh gọi phím tắt thoát ngay
+    subprocess.Popen(
+        [sys.executable, str(Path(__file__).resolve()), "_daemon", spec_json],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
+    )
+    return 0
+
+
+def print_status() -> int:
+    pid = get_active_pid()
+    if pid is None or not STATE_FILE.is_file():
+        print(json.dumps({"recording": False}))
+        return 0
+    try:
+        state = json.loads(STATE_FILE.read_text(encoding="utf-8"))
+        state["elapsed"] = max(0, int(time.time()) - int(state.get("startedAt", time.time())))
+        print(json.dumps(state))
+    except Exception:
+        print(json.dumps({"recording": True, "pid": pid}))
+    return 0
+
+
+def main() -> int:
+    cmd = sys.argv[1] if len(sys.argv) > 1 else "toggle"
+    if cmd == "_daemon" and len(sys.argv) > 2:
+        return run_daemon(sys.argv[2])
+    if cmd == "stop":
+        stop_active_recording()
+        return 0
+    if cmd == "status":
+        return print_status()
+    if cmd in ("toggle", "region", "screen", "window"):
+        mode = "region" if cmd == "toggle" else cmd
+        return open_picker_and_start(mode)
+    print(f"usage: {sys.argv[0]} [toggle|region|screen|window|stop|status]", file=sys.stderr)
+    return 2
+
+
+if __name__ == "__main__":
+    sys.exit(main())

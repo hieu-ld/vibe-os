@@ -35,7 +35,15 @@ Item {
     // nằm giữa ô đều bốn phía.
     readonly property int pad: 9
 
-    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(bar.screen)
+    // Tìm màn Hyprland theo TÊN, không dùng Hyprland.monitorFor(screen): màn
+    // ngủ (HDMI bo mạch) = rút ra rồi cắm lại, Quickshell dựng lại cửa sổ
+    // trước khi Hyprland báo màn → monitorFor trả null và không bao giờ tính
+    // lại (phím Win chết, thanh mất chấm màn ảo — máy thật 2026-11-20). Đọc
+    // Hyprland.monitors.values để danh sách màn đổi là tính lại.
+    readonly property HyprlandMonitor monitor: {
+        const name = bar.screen ? bar.screen.name : ""
+        return Hyprland.monitors.values.find(m => m.name === name) ?? null
+    }
     // Danh sách chung với màn tổng quan — xem workspaceSlots() trong shell.qml.
     readonly property var shown: shell.workspaceSlots(monitor)
 

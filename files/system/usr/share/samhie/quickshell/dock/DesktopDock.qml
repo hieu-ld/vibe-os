@@ -21,7 +21,15 @@ PanelWindow {
     id: root
 
     required property var shell
-    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(screen)
+    // Tìm màn Hyprland theo TÊN, không dùng Hyprland.monitorFor(screen): màn
+    // ngủ (HDMI bo mạch) = rút ra rồi cắm lại, Quickshell dựng lại cửa sổ
+    // trước khi Hyprland báo màn → monitorFor trả null và không bao giờ tính
+    // lại (phím Win chết, thanh mất chấm màn ảo — máy thật 2026-11-20). Đọc
+    // Hyprland.monitors.values để danh sách màn đổi là tính lại.
+    readonly property HyprlandMonitor monitor: {
+        const name = screen ? screen.name : ""
+        return Hyprland.monitors.values.find(m => m.name === name) ?? null
+    }
     readonly property HyprlandWorkspace workspace: monitor ? monitor.activeWorkspace : null
     // Màn tổng quan cùng màn hình (shell.qml). Lúc mở mà dock này đang hiện
     // (overview.dockFromDesktop) thì dock này Ở YÊN suốt lúc tổng quan mở —

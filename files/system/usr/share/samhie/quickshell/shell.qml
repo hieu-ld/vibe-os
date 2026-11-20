@@ -219,6 +219,20 @@ ShellRoot {
         function close(): void { samhie.closeOverview() }
     }
 
+    // Màn rút / cắm lại (màn ngủ qua HDMI bo mạch): danh sách màn Hyprland
+    // của Quickshell có thể lệch (log "Got removal for monitor … which was
+    // not previously tracked") → hỏi lại Hyprland. Các chỗ tìm màn theo tên
+    // (Overview, DesktopDock, Workspaces, WindowControls) tự tính lại theo.
+    Connections {
+        target: Quickshell
+        function onScreensChanged() { screensRefresh.restart() }
+    }
+    Timer {
+        id: screensRefresh
+        interval: 500 // chờ Hyprland dựng xong màn mới
+        onTriggered: Hyprland.refreshMonitors()
+    }
+
     Variants {
         model: Quickshell.screens
 

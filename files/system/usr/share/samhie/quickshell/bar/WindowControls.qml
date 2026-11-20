@@ -33,7 +33,15 @@ Item {
 
     required property var bar
 
-    readonly property HyprlandMonitor monitor: Hyprland.monitorFor(bar.screen)
+    // Tìm màn Hyprland theo TÊN, không dùng Hyprland.monitorFor(screen): màn
+    // ngủ (HDMI bo mạch) = rút ra rồi cắm lại, Quickshell dựng lại cửa sổ
+    // trước khi Hyprland báo màn → monitorFor trả null và không bao giờ tính
+    // lại (phím Win chết, thanh mất chấm màn ảo — máy thật 2026-11-20). Đọc
+    // Hyprland.monitors.values để danh sách màn đổi là tính lại.
+    readonly property HyprlandMonitor monitor: {
+        const name = bar.screen ? bar.screen.name : ""
+        return Hyprland.monitors.values.find(m => m.name === name) ?? null
+    }
     readonly property HyprlandToplevel window: {
         const t = Hyprland.activeToplevel
         if (!t || !monitor || !t.workspace || t.workspace !== monitor.activeWorkspace)

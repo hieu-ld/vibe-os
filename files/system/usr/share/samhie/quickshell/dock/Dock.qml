@@ -30,8 +30,14 @@
 //
 // Icon bánh răng (Settings) trong bản vẽ: tạm ẩn từ 2026-10-01 vì chưa có
 // app, bật lại 2026-10-21 khi có app Settings (samhie-settings.desktop) —
-// đứng ĐẦU dãy (user 2026-10-21). Dock chưa cho kéo đổi chỗ icon: thứ tự là
-// mảng `pinned`.
+// đứng ĐẦU danh sách mặc định (user 2026-10-21).
+//
+// Ghim (user 2026-11-21, như Ubuntu): danh sách ghim ở DockPins (mặc định
+// trong image, người dùng sửa thì ghi ~/.config/samhie/dock.json). App đang
+// chạy mà chưa ghim hiện SAU một vạch ngăn, đóng hết cửa sổ thì mất. Chuột
+// phải icon → menu (DockMenuLayer): New Window · Pin / Unpin. Nhấn giữ kéo
+// icon đã ghim sang trái/phải để đổi chỗ, thả là lưu (kéo quá 6px mới tính
+// là kéo, không thì là bấm).
 import QtQuick
 import Quickshell
 import Quickshell.Widgets
@@ -41,14 +47,37 @@ import "../colors.js" as Colors
 Item {
     id: root
 
-    // id của file .desktop (không có đuôi). App nào chưa cài thì bỏ qua.
-    property var pinned: ["samhie-settings", "org.kde.dolphin", "org.kde.konsole", "org.kde.kate", "com.microsoft.Edge"]
+    // Màn hình chứa dock (menu chuột phải vẽ ở lớp của màn đó). Dock luôn ở
+    // giữa, cách đáy màn `bottomGap` — cả desktop lẫn tổng quan.
+    required property var screen
+    readonly property int bottomGap: 8
+
     // Đọc qua applications.values (không dùng byId) để danh sách TỰ CẬP NHẬT:
     // lúc dock dựng mà Quickshell chưa đọc xong file .desktop thì byId trả
     // null và dock trống luôn (đo 2026-10-01).
     readonly property var apps: {
         const all = DesktopEntries.applications.values
-        return pinned.map(id => all.find(e => e.id === id)).filter(e => e)
+        return DockPins.pinned.map(id => all.find(e => e.id === id)).filter(e => e)
+    }
+    // App đang chạy chưa ghim, theo thứ tự cửa sổ mở (không nhảy chỗ khi đổi focus).
+    readonly property var running: {
+        const out = []
+        for (const t of Windows.windows) {
+            const e = Windows.entryOf(t.wayland ? t.wayland.appId : "")
+            if (e && !DockPins.isPinned(e.id) && !out.some(x => x.id === e.id))
+                out.push(e)
+        }
+        return out
+    }
+    readonly property int count: apps.length + running.length
+
+    // Kéo đổi chỗ (chỉ số trong `apps`); -1 = không kéo.
+    property int dragFrom: -1
+    property int dragTo: -1
+    property real dragDx: 0
+
+    function openMenu(entry, slotX) {
+        DockPins.openMenu(screen, (screen.width - width) / 2 + slotX + cell / 2, screen.height - bottomGap - height, entry, true)
     }
 
     signal launched()
@@ -84,7 +113,8 @@ Item {
     readonly property color white: Colors.shared.white
     readonly property color black: Colors.shared.black
 
-    width: 2 * side + apps.length * cell + Math.max(0, apps.length - 1) * gap
+    // Vạch ngăn: rộng 1, khe `gap` hai bên (khe bên trái là khe sẵn có của Row).
+    width: 2 * side + count * cell + Math.max(0, count - 1) * gap + (running.length > 0 && apps.length > 0 ? 1 + gap : 0)
     height: 60
 
     // Mặt kính + viền bắt sáng (Canvas: viền gradient — Rectangle chỉ có viền
@@ -145,60 +175,131 @@ Item {
 
         Repeater {
             model: root.apps
+            delegate: AppSlot { pinnedIndex: index }
+        }
+        // Vạch ngăn giữa app ghim và app đang chạy chưa ghim
+        Rectangle {
+            visible: root.running.length > 0 && root.apps.length > 0
+            width: 1
+            height: 24
+            y: root.cellTop + (root.cell - height) / 2
+            color: Qt.alpha(Theme.c.dockRim, Theme.light ? 0.25 : 0.18)
+        }
+        Repeater {
+            model: root.running
+            delegate: AppSlot { pinnedIndex: -1 }
+        }
+    }
 
-            delegate: Item {
-                id: slot
-                required property var modelData
-                // Cửa sổ của app, dùng gần nhất trước.
-                readonly property var windows: Windows.windowsOf(modelData)
-                readonly property bool focused: windows.indexOf(Windows.focused) >= 0
-                width: root.cell
-                height: root.height
+    component AppSlot: Item {
+        id: slot
+        required property var modelData
+        required property int index
+        property int pinnedIndex: -1   // chỉ số trong danh sách ghim, -1 = đang chạy chưa ghim
+        // Cửa sổ của app, dùng gần nhất trước.
+        readonly property var windows: Windows.windowsOf(modelData)
+        readonly property bool focused: windows.indexOf(Windows.focused) >= 0
+        readonly property bool dragged: pinnedIndex >= 0 && pinnedIndex === root.dragFrom
+        width: root.cell
+        height: root.height
+        z: dragged ? 1 : 0
 
-                Item {
-                    width: root.cell
-                    height: root.cell
-                    y: root.cellTop - (slotArea.containsMouse && !slotArea.pressed ? 2 : 0)
-                    Behavior on y {
-                        NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
-                    }
+        // Đang kéo: icon bị kéo theo chuột, các icon nằm giữa chỗ cũ và chỗ
+        // mới nhường một ô.
+        readonly property real shift: {
+            const f = root.dragFrom, t = root.dragTo, i = pinnedIndex
+            if (f < 0 || i < 0)
+                return 0
+            if (i === f)
+                return root.dragDx
+            if (i > f && i <= t)
+                return -(root.cell + root.gap)
+            if (i < f && i >= t)
+                return root.cell + root.gap
+            return 0
+        }
+        transform: Translate {
+            x: slot.shift
+            Behavior on x {
+                enabled: !slot.dragged
+                NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+            }
+        }
 
-                    Glass {
-                        anchors.fill: parent
-                        radius: 10
-                        fillTop: Theme.c.dockTileTop
-                        fillBottom: Theme.c.dockTileBottom
-                        rimTop: Theme.light ? Theme.c.dockTileRim : Qt.alpha(Theme.c.dockTileRim, 0.18)
-                        rimBottom: Theme.light ? Theme.c.dockTileRim : Qt.alpha(Theme.c.dockTileRim, 0.04)
-                    }
-                    IconImage {
-                        anchors.centerIn: parent
-                        implicitSize: root.iconSizes[slot.modelData.id] ?? root.iconSize
-                        source: Quickshell.iconPath(slot.modelData.icon, "application-x-executable")
-                    }
+        Item {
+            width: root.cell
+            height: root.cell
+            y: root.cellTop - (slotArea.containsMouse && !slotArea.pressed || slot.dragged ? 2 : 0)
+            Behavior on y {
+                NumberAnimation { duration: 120; easing.type: Easing.OutCubic }
+            }
+
+            Glass {
+                anchors.fill: parent
+                radius: 10
+                fillTop: Theme.c.dockTileTop
+                fillBottom: Theme.c.dockTileBottom
+                rimTop: Theme.light ? Theme.c.dockTileRim : Qt.alpha(Theme.c.dockTileRim, 0.18)
+                rimBottom: Theme.light ? Theme.c.dockTileRim : Qt.alpha(Theme.c.dockTileRim, 0.04)
+            }
+            IconImage {
+                anchors.centerIn: parent
+                implicitSize: root.iconSizes[slot.modelData.id] ?? root.iconSize
+                source: Quickshell.iconPath(slot.modelData.icon, "application-x-executable")
+            }
+        }
+        // Mỗi cửa sổ một chấm, giữa dưới ô.
+        Row {
+            anchors.horizontalCenter: parent.horizontalCenter
+            y: root.dotTop
+            spacing: 3
+            visible: !slot.dragged
+            Repeater {
+                model: Math.min(slot.windows.length, 3)
+                delegate: Rectangle {
+                    width: 4
+                    height: 4
+                    radius: 2
+                    color: slot.focused ? Theme.c.dockDotActive : Theme.c.dockDot
                 }
-                // Mỗi cửa sổ một chấm, giữa dưới ô.
-                Row {
-                    anchors.horizontalCenter: parent.horizontalCenter
-                    y: root.dotTop
-                    spacing: 3
-                    Repeater {
-                        model: Math.min(slot.windows.length, 3)
-                        delegate: Rectangle {
-                            width: 4
-                            height: 4
-                            radius: 2
-                            color: slot.focused ? Theme.c.dockDotActive : Theme.c.dockDot
-                        }
-                    }
-                }
-                MouseArea {
-                    id: slotArea
-                    anchors.fill: parent
-                    hoverEnabled: true
-                    acceptedButtons: Qt.LeftButton | Qt.MiddleButton
-                    onClicked: mouse => root.click(slot.modelData, mouse.button)
-                }
+            }
+        }
+        MouseArea {
+            id: slotArea
+            anchors.fill: parent
+            hoverEnabled: true
+            acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
+            property real pressX: 0
+            property bool moved: false
+            onPressed: mouse => { pressX = mouse.x; moved = false }
+            onPositionChanged: mouse => {
+                if (!(mouse.buttons & Qt.LeftButton) || slot.pinnedIndex < 0)
+                    return
+                const dx = mouse.x - pressX
+                if (!moved && Math.abs(dx) < 6)
+                    return
+                moved = true
+                root.dragFrom = slot.pinnedIndex
+                root.dragDx = dx
+                const step = root.cell + root.gap
+                root.dragTo = Math.max(0, Math.min(root.apps.length - 1, slot.pinnedIndex + Math.round(dx / step)))
+            }
+            onReleased: {
+                if (!moved)
+                    return
+                const f = root.dragFrom, t = root.dragTo
+                root.dragFrom = -1
+                root.dragTo = -1
+                root.dragDx = 0
+                DockPins.move(f, t)
+            }
+            onClicked: mouse => {
+                if (moved)
+                    return
+                if (mouse.button === Qt.RightButton)
+                    root.openMenu(slot.modelData, root.side + slot.x)
+                else
+                    root.click(slot.modelData, mouse.button)
             }
         }
     }

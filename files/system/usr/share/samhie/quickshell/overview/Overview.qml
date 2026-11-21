@@ -326,6 +326,10 @@ PanelWindow {
                 width: page.finalW
                 height: page.finalH
                 query: search.displayText
+                screen: root.screen
+                // Cửa sổ tổng quan né thanh trên (ExclusionMode.Normal), neo đáy
+                // màn → toạ độ trong màn = toạ độ trong cửa sổ + phần chênh này.
+                windowTop: root.screen.height - root.height
                 onLaunched: root.close()
             }
 
@@ -380,6 +384,7 @@ PanelWindow {
 
             // ── Dock ───────────────────────────────────────────────────────
             Dock {
+                screen: root.screen
                 anchors.horizontalCenter: parent.horizontalCenter
                 anchors.bottom: parent.bottom
                 anchors.bottomMargin: 8

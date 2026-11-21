@@ -258,6 +258,13 @@ ShellRoot {
                 screen: perScreen.modelData
                 overview: overview
             }
+
+            // Menu chuột phải của dock / lưới tìm app (DockPins.menu)
+            DockMenuLayer {
+                shell: samhie
+                screen: perScreen.modelData
+                forScreen: perScreen.modelData
+            }
         }
     }
 }

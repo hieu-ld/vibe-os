@@ -136,6 +136,7 @@ PanelWindow {
 
     Dock {
         id: dock
+        screen: root.screen
         y: (1 - root.reveal) * (root.bottomGap + height)
         opacity: root.reveal
         // Đang ở trong tổng quan (dock ở yên — xem overviewOpen): bấm app

@@ -15,6 +15,9 @@ Item {
     id: root
 
     required property string query
+    // Chuột phải ô app → menu Pin to Dock (DockMenuLayer vẽ, toạ độ trong màn).
+    property var screen: null
+    property real windowTop: 0
     property int selected: 0
     readonly property int columns: Math.max(1, Math.floor(width / cell))
     readonly property int cell: 132
@@ -120,9 +123,16 @@ Item {
                     id: tileArea
                     anchors.fill: parent
                     hoverEnabled: true
-                    onClicked: {
+                    acceptedButtons: Qt.LeftButton | Qt.RightButton
+                    onClicked: mouse => {
                         root.selected = tile.index
-                        root.launchSelected()
+                        if (mouse.button === Qt.RightButton) {
+                            const p = tileArea.mapToItem(null, mouse.x, mouse.y)
+                            if (root.screen)
+                                DockPins.openMenu(root.screen, p.x, p.y + root.windowTop, tile.modelData, false)
+                        } else {
+                            root.launchSelected()
+                        }
                     }
                 }
             }

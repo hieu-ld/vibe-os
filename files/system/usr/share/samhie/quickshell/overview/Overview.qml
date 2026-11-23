@@ -154,9 +154,16 @@ PanelWindow {
 
     // Dựng lại toàn bộ mỗi lần mở: ô nhỏ bên trái chụp cửa sổ MỘT lần lúc
     // dựng, đóng đi là bỏ — không tốn gì khi tổng quan đang đóng.
+    // Cỡ lấy từ MÀN HÌNH, không theo cỡ cửa sổ: sau khi màn ngủ dậy (HDMI bo
+    // mạch = rút ra cắm lại), lớp vẫn phủ đủ màn nhưng chiều cao cửa sổ trong
+    // QML kẹt ở số cũ ≈ 0 → khung lớn co về 0, dock bị đẩy ra ngoài, cột màn
+    // ảo trôi lên trên (máy thật 2026-11-23). Cửa sổ né thanh trên → cao =
+    // màn − thanh.
+    readonly property int topGap: 30 // = implicitHeight của Bar.qml
     Loader {
         id: loader
-        anchors.fill: parent
+        width: root.screen.width
+        height: root.screen.height - root.topGap
         active: root.visible
         sourceComponent: content
     }
@@ -329,7 +336,7 @@ PanelWindow {
                 screen: root.screen
                 // Cửa sổ tổng quan né thanh trên (ExclusionMode.Normal), neo đáy
                 // màn → toạ độ trong màn = toạ độ trong cửa sổ + phần chênh này.
-                windowTop: root.screen.height - root.height
+                windowTop: root.topGap
                 onLaunched: root.close()
             }
 

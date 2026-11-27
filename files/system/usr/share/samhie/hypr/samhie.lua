@@ -221,12 +221,14 @@ end
 -- khác, nên Image của Qt không giữ ảnh cũ trong bộ nhớ đệm). Đổi hình lúc
 -- shell đang chạy: app Settings báo qua IPC `wallpaper set` (shell.qml).
 -- SAMHIE_SHELL: app mở từ shell (dock → Settings) biết gọi IPC vào đâu.
+-- /usr/libexec/samhie/shell: chạy quickshell, bị tắt ngoài ý muốn (mất kết nối
+-- Wayland, crash) thì tự bật lại — 2026-11-27 máy thật mất cả thanh + dock.
 local function shellCmd()
     return imgCmd(false) .. 'dark=$(readlink -f "$img"); '
         .. imgCmd(true) .. 'light=$(readlink -f "$img"); '
         .. "SAMHIE_SHELL=" .. quoted(samhie.shell)
         .. ' SAMHIE_WALLPAPER="$dark" SAMHIE_WALLPAPER_LIGHT="$light"'
-        .. " exec quickshell -n -p " .. quoted(samhie.shell)
+        .. " exec /usr/libexec/samhie/shell " .. quoted(samhie.shell) -- tự bật lại khi bị tắt ngoài ý muốn
 end
 
 hl.on("hyprland.start", function()

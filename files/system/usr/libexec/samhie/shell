@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+# Chạy shell Samhie (thanh trên, dock, phím Win… — Quickshell) và TỰ BẬT LẠI
+# khi nó bị tắt ngoài ý muốn. samhie.lua gọi lúc Hyprland khởi động:
+#     shell <thư mục quickshell>
+# (biến SAMHIE_SHELL / SAMHIE_WALLPAPER(_LIGHT) do samhie.lua đặt sẵn).
+#
+# Vì sao (2026-11-27, máy thật): Hyprland cắt kết nối với Quickshell ("error in
+# client communication") → mất cả thanh trên, dock, phím Win; phải bật lại tay.
+#
+# Khi nào bật lại / khi nào thôi:
+#   * thoát 0 → thôi (đã có một bản chạy rồi: -n; hoặc tự thoát bình thường)
+#   * bị SIGTERM / SIGINT (143 / 130) → thôi: người hay công cụ cố ý tắt
+#     (tools/qs-dev.sh `pkill -x quickshell` để chạy bản của repo)
+#   * Hyprland không còn (đăng xuất) → thôi
+#   * còn lại (mất kết nối Wayland = 1, crash 134 / 139…) → đợi 1 s rồi bật lại
+#   * crash liên tục (5 lần trong 60 s) → thôi, tránh vòng lặp đốt CPU
+set -u
+dir=${1:?thiếu thư mục quickshell}
+sock=${XDG_RUNTIME_DIR:-/run/user/$(id -u)}/hypr/${HYPRLAND_INSTANCE_SIGNATURE:-}/.socket.sock
+starts=()
+while :; do
+    quickshell -n -p "$dir"
+    rc=$?
+    case $rc in 0 | 130 | 143) exit "$rc" ;; esac
+    [ -S "$sock" ] || exit "$rc"
+    now=$(date +%s)
+    recent=()
+    for t in "${starts[@]}"; do [ $((now - t)) -lt 60 ] && recent+=("$t"); done
+    starts=("${recent[@]}" "$now")
+    if [ ${#starts[@]} -gt 5 ]; then
+        echo "samhie-shell: quickshell tắt ${#starts[@]} lần trong 60 s (mã $rc) — thôi bật lại" >&2
+        exit "$rc"
+    fi
+    echo "samhie-shell: quickshell tắt (mã $rc) — bật lại sau 1 s" >&2
+    sleep 1
+done

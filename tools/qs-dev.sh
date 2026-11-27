@@ -34,6 +34,9 @@ cd /
 SAMHIE_SHELL=/usr/share/samhie/quickshell \
 SAMHIE_WALLPAPER=$(readlink -f /usr/share/backgrounds/samhie/samhie.png) \
 SAMHIE_WALLPAPER_LIGHT=$(readlink -f /usr/share/backgrounds/samhie/samhie-light.png) \
-setsid -f quickshell -n -p "$p" >"$HOME/.cache/samhie-qs-dev.log" 2>&1 </dev/null
+run=(quickshell -n -p "$p")
+# bản image chạy qua /usr/libexec/samhie/shell (tự bật lại khi bị tắt ngoài ý muốn) như lúc đăng nhập
+[ "${1:-}" = restore ] && [ -x /usr/libexec/samhie/shell ] && run=(/usr/libexec/samhie/shell "$p")
+setsid -f "${run[@]}" >"$HOME/.cache/samhie-qs-dev.log" 2>&1 </dev/null
 sleep 2
 pgrep -a -x quickshell

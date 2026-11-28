@@ -62,9 +62,18 @@ Singleton {
         blockLoading: true
         // Chưa có file: dùng mặc định, ghi ra ở lần sửa đầu tiên (writeAdapter
         // tự tạo thư mục samhie/).
+        // adapter.pinned đọc từ JSON là danh sách kiểu Qt (QVariantList), KHÔNG
+        // phải mảng JS: Array.isArray = false (đo 2026-11-28) → trước đây bỏ qua
+        // file, dock về mặc định sau mỗi lần khởi động, ghim lần sau ghi đè mất
+        // danh sách cũ. Chép từng phần tử ra mảng JS thật.
         onLoaded: {
-            if (Array.isArray(adapter.pinned)) {
-                root.pinned = adapter.pinned.filter(x => typeof x === "string")
+            const p = adapter.pinned
+            if (p && typeof p.length === "number") {
+                const list = []
+                for (let i = 0; i < p.length; i++)
+                    if (typeof p[i] === "string")
+                        list.push(p[i])
+                root.pinned = list
                 root.custom = true
             }
         }
